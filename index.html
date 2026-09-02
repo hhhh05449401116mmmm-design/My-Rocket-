@@ -6,7 +6,7 @@
     <title>Rocket Cash</title>
     <script src="https://telegram.org"></script>
     <style>
-        body { font-family: 'Impact', 'Arial Black', sans-serif; background: #07080c; color: #fff; margin: 0; padding: 12px; overflow: hidden; user-select: none; }
+        body { font-family: 'Impact', sans-serif; background: #07080c; color: #fff; margin: 0; padding: 12px; overflow: hidden; user-select: none; }
         #history-bar { display: flex; gap: 6px; padding: 5px 0; overflow-x: auto; min-height: 35px; align-items: center; }
         .h-item { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid #4e9f3d; }
         .c-red { border-color: #e94560; color: #e94560; background: rgba(233,69,96,0.15); }
@@ -17,11 +17,8 @@
         #container { position: relative; width: 100%; height: 35vh; background: radial-gradient(#151c24, #07080c); border-radius: 24px; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; }
         #mult { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 55px; font-weight: 900; color: #66fcf1; text-shadow: 0 0 20px rgba(102,252,241,0.5); font-family: monospace; }
-        
-        /* تأثير النبض والانبثاق التلقائي للأرقام */
         #count-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 90px; font-weight: 900; font-family: 'Impact', sans-serif; text-shadow: 0 4px 20px rgba(0,0,0,0.7); display: none; animation: popPulse 0.3s ease-out infinite alternate; }
         @keyframes popPulse { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.7; } 100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } }
-        
         #btn { background: #0066ff; color: #fff; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 16px; cursor: pointer; width: 100%; margin: 10px 0; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,102,255,0.3); }
         #btn.betting { background: #e94560; box-shadow: 0 4px 15px rgba(233,69,96,0.3); }
         #p-list { display: flex; flex-direction: column; gap: 6px; max-height: 38vh; overflow-y: auto; padding-top: 5px; }
@@ -39,96 +36,44 @@
     </div>
     <button id="btn" onclick="handleAction()">Place bet</button>
     <div id="p-list"></div>
-
     <script>
         if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand();}
         const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
         const mult=document.getElementById('mult'), btn=document.getElementById('btn'), hBar=document.getElementById('history-bar'), pList=document.getElementById('p-list'), cBox=document.getElementById('count-box');
         canvas.width=canvas.parentElement.clientWidth; canvas.height=canvas.parentElement.clientHeight;
-        
         let state='COUNTDOWN', value=1.00, crash=1.00, loop, path=[], rx=40, ry=canvas.height-40, timer=5, countAngle=0, listPlayers=[];
         let hasBet=false, hasCashedOut=false;
-        let historyList=['1.15x', '1.80x', '4.50x', '8.20x', '22.4x'], stars=[];
+        let historyList=['1.15x', '1.80x', '4.50x', '8.20x', '22.4x'], stars=[], particles=[];
         const pool=[{n:'Sasha',b:0.10},{n:'Spay',b:0.50},{n:'يوسف',b:0.24},{n:'Bpex',b:0.15},{n:'Alex',b:0.30},{n:'Mido',b:0.12},{n:'TON_King',b:1.50},{n:'Dani',b:0.45}];
-
         for(let i=0; i<30; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*1.5, sp:Math.random()*0.8+0.4});
-
-        function getHClass(val) {
-            if (val <= 1.30) return 'c-red'; if (val <= 2.00) return 'c-blue'; if (val <= 5.00) return 'c-green'; if (val <= 10.00) return 'c-orange'; return 'c-yellow';
-        }
-
-        function updateHistoryUI() {
-            hBar.innerHTML='';
-            historyList.slice(-6).reverse().forEach(v=>{
-                const d=document.createElement('div'); d.className='h-item '+getHClass(parseFloat(v)); d.innerText=v; hBar.appendChild(d);
-            });
-        }
-
-        function triggerLiveBets() {
-            let delay = 0; const shuffled = [...pool].sort(() => 0.5 - Math.random());
-            shuffled.forEach(p => {
-                delay += Math.random() * 600 + 200;
-                setTimeout(() => { if (state === 'COUNTDOWN') { listPlayers.unshift(p); renderPlayers(); } }, delay);
-            });
-        }
-
-        function renderPlayers() {
-            pList.innerHTML='';
-            listPlayers.forEach(p=>{
-                const r=document.createElement('div'); r.className='p-row';
-                r.innerHTML=`<div><b>${p.n}</b><br><span class="p-blue">🔹 ${p.b} ×1.00</span></div><div><b>🔹 ${p.b}</b></div>`;
-                pList.appendChild(r);
-            });
-        }
-
+        function getHColor(val) { if (val <= 1.30) return '#e94560'; if (val <= 2.00) return '#0066ff'; if (val <= 5.00) return '#4e9f3d'; if (val <= 10.00) return '#ffa500'; return '#ffd700'; }
+        function getHClass(val) { if (val <= 1.30) return 'c-red'; if (val <= 2.00) return 'c-blue'; if (val <= 5.00) return 'c-green'; if (val <= 10.00) return 'c-orange'; return 'c-yellow'; }
+        function updateHistoryUI() { hBar.innerHTML=''; historyList.slice(-6).reverse().forEach(v=>{ const d=document.createElement('div'); d.className='h-item '+getHClass(parseFloat(v)); d.innerText=v; hBar.appendChild(d); }); }
+        function triggerLiveBets() { let delay = 0; const shuffled = [...pool].sort(() => 0.5 - Math.random()); shuffled.forEach(p => { delay += Math.random() * 600 + 200; setTimeout(() => { if (state === 'COUNTDOWN') { listPlayers.unshift(p); renderPlayers(); } }, delay); }); }
+        function renderPlayers() { pList.innerHTML=''; listPlayers.forEach(p=>{ const r=document.createElement('div'); r.className='p-row'; r.innerHTML=`<div><b>${p.n}</b><br><span class="p-blue">🔹 ${p.b} ×1.00</span></div><div><b>🔹 ${p.b}</b></div>`; pList.appendChild(r); }); }
         function startCount() {
-            state='COUNTDOWN'; timer=5; countAngle=0; cBox.style.display='block'; mult.style.display='none';
-            hasBet=false; hasCashedOut=false; btn.innerText='Place bet'; btn.className=''; cBox.innerText=timer; cBox.style.color='#4e9f3d';
-            listPlayers=[]; renderPlayers(); triggerLiveBets();
-            
+            state='COUNTDOWN'; timer=5; countAngle=0; cBox.style.display='block'; mult.style.display='none'; hasBet=false; hasCashedOut=false; btn.innerText='Place bet'; btn.className=''; cBox.innerText=timer; cBox.style.color='#4e9f3d'; mult.style.color='#66fcf1'; listPlayers=[]; renderPlayers(); triggerLiveBets();
             let inter=setInterval(()=>{
-                timer--; cBox.innerText=timer;
-                // إعادة تشغيل تأثير الانبثاق في الـ CSS في كل ثانية جديدة تنزل
-                cBox.style.animation = 'none'; setTimeout(() => { cBox.style.animation = ''; }, 10);
-                if(timer<=0){
-                    clearInterval(inter); cBox.style.display='none'; mult.style.display='block'; state='FLYING'; value=1.00; path=[]; 
-                    if(hasBet) { btn.innerText='Cash Out'; btn.className='betting'; } else { btn.innerText='Place bet'; btn.className=''; }
-                    let r=Math.random(); if(r<0.1) crash=1.00; else if(r<0.65) crash=Math.random()*3+1.01; else if(r<0.93) crash=Math.random()*15+3; else crash=Math.random()*132+18;
-                    if(crash>150) crash=150;
-                }
+                timer--; cBox.innerText=timer; cBox.style.animation = 'none'; setTimeout(() => { cBox.style.animation = ''; }, 10);
+                if(timer<=0){ clearInterval(inter); cBox.style.display='none'; mult.style.display='block'; state='FLYING'; value=1.00; path=[]; particles=[]; if(hasBet) { btn.innerText='Cash Out'; btn.className='betting'; } else { btn.innerText='Place bet'; btn.className=''; } let r=Math.random(); if(r<0.1) crash=1.00; else if(r<0.65) crash=Math.random()*3+1.01; else if(r<0.93) crash=Math.random()*15+3; else crash=Math.random()*132+18; if(crash>150) crash=150; }
             }, 1000);
         }
-
         function draw() {
             ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff';
-            stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill(); if(state==='FLYING'){s.x-=s.sp*2.5;s.y+=s.sp*2.5;}else{s.x-=s.sp*0.2;s.y+=s.sp*0.2;} if(s.x<0)s.x=canvas.width; if(s.y>canvas.height)s.y=0; });
+            stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill(); if(state==='FLYING'){s.x-=s.sp*2.5;s.y+=s.sp*2.5;}else{s.x-=s.sp*0.2;s.y+=s.sp*0.2;} if(s.x<0) s.x=canvas.width; if(s.y>canvas.height) s.y=0; });
             if(state==='COUNTDOWN'){ countAngle+=(Math.PI*2)/(5*60); ctx.beginPath(); ctx.arc(canvas.width/2,canvas.height/2,55,-Math.PI/2,(Math.PI*2-countAngle)-Math.PI/2,false); ctx.strokeStyle='#ff7a00'; ctx.lineWidth=5; ctx.stroke(); }
-            if(path.length>1){ ctx.beginPath(); ctx.moveTo(path.x,path.y); for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x,path[i].y); ctx.strokeStyle='#0066ff'; ctx.lineWidth=4; ctx.stroke(); }
-            
+            let currentColor = getHColor(value);
+            if(path.length>1){ ctx.save(); ctx.beginPath(); ctx.moveTo(path.x, path.y); for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y); ctx.strokeStyle = currentColor; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = currentColor; ctx.stroke(); ctx.restore(); }
+            if(state==='FLYING'){ if(Math.random()<0.7){ particles.push({x:rx, y:ry, vx:(Math.random()-0.7)*1.5, vy:(Math.random()+0.3)*2, size:Math.random()*1.8+0.5, alpha:1}); } }
+            particles.forEach((p, index)=>{ ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = currentColor; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); p.x += p.vx; p.y += p.vy; p.alpha -= 0.03; if(p.alpha<=0) particles.splice(index, 1); });
             if(state==='FLYING'){
-                value+=0.0035; mult.innerText=value.toFixed(2)+'x';
-                let p=(value-1)/(crash>6?crash:6); if(p>0.82)p=0.82; rx=40+(canvas.width-80)*p; ry=(canvas.height-40)-(canvas.height-90)*Math.sin(p*Math.PI/2); path.push({x:rx,y:ry});
-                ctx.save(); ctx.translate(rx,ry); ctx.rotate(-Math.PI/4); ctx.fillStyle='#f0f2f5'; ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(7,4); ctx.lineTo(-7,4); ctx.closePath(); ctx.fill(); ctx.restore();
-                if(value>=crash) end();
+                value+=0.0035; mult.innerText=value.toFixed(2)+'x'; mult.style.color = currentColor; let p=(value-1)/(crash>6?crash:6); if(p>0.82)p=0.82; rx=40+(canvas.width-80)*p; ry=(canvas.height-40)-(canvas.height-90)*Math.sin(p*Math.PI/2); path.push({x:rx,y:ry});
+                ctx.save(); ctx.translate(rx,ry); ctx.rotate(-Math.PI/4); ctx.fillStyle='#f0f2f5'; ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(7,4); ctx.lineTo(-7,4); ctx.closePath(); ctx.fill(); ctx.restore(); if(value>=crash) end();
             } else if(state==='CRASHED'){ ctx.font='40px Arial'; ctx.fillText('💥',rx,ry); }
             loop=requestAnimationFrame(draw);
         }
-
-        function handleAction(){
-            if(state==='COUNTDOWN'){
-                hasBet=true; btn.innerText='Bet Placed'; btn.className='betting';
-            } else if(state==='FLYING' && hasBet && !hasCashedOut){
-                hasCashedOut=true; btn.innerText='Place bet'; btn.className='';
-                mult.style.color='#ffd700'; // تلوين العداد بالذهبي ترحيباً بالفوز والانسحاب الناجح
-            }
-        }
-        
-        function end(){
-            cancelAnimationFrame(loop); state='CRASHED';
-            mult.innerText='💥 FLEW AWAY'; historyList.push(crash.toFixed(2)+'x');
-            updateHistoryUI(); setTimeout(startCount,2500);
-            loop=requestAnimationFrame(draw);
-        }
+        function handleAction(){ if(state==='COUNTDOWN'){ hasBet=true; btn.innerText='Bet Placed'; btn.className='betting'; } else if(state==='FLYING' && hasBet && !hasCashedOut){ hasCashedOut=true; btn.innerText='Place bet'; btn.className=''; } }
+        function end(){ cancelAnimationFrame(loop); state='CRASHED'; mult.innerText='💥 FLEW AWAY'; mult.style.color='#e94560'; historyList.push(crash.toFixed(2)+'x'); updateHistoryUI(); setTimeout(startCount,2500); loop=requestAnimationFrame(draw); }
         updateHistoryUI(); draw(); startCount();
     </script>
 </body>
