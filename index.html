@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الصاروخ المصغرة</title>
+    <!-- استدعاء مكتبة تليجرام الأساسية للتطبيقات المصغرة -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        #game-container {
+            background-color: #161625;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        #rocket {
+            font-size: 50px;
+            transition: transform 0.1s linear;
+            margin: 20px 0;
+        }
+        #multiplier {
+            font-size: 35px;
+            color: #4e9f3d;
+            font-weight: bold;
+        }
+        button {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 80%;
+        }
+        button:disabled {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h2>🚀 لعبة الصاروخ التجريبية</h2>
+        <div id="rocket">🚀</div>
+        <div id="multiplier">1.00x</div>
+        <button id="action-btn" onclick="handleClick()">ابدأ الرحلة</button>
+    </div>
+
+    <script>
+        // إعلام تليجرام بأن التطبيق المصغر جاهز للعمل
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand(); // تمديد الشاشة بالكامل
+
+        let isRunning = false;
+        let multiplier = 1.00;
+        let gameInterval;
+        let crashPoint;
+
+        const rocket = document.getElementById('rocket');
+        const multiplierText = document.getElementById('multiplier');
+        const actionBtn = document.getElementById('action-btn');
+
+        function handleClick() {
+            if (!isRunning) {
+                // بدء اللعبة
+                isRunning = true;
+                multiplier = 1.00;
+                rocket.style.transform = 'translateY(0px)';
+                actionBtn.innerText = 'انسحب الآن (Cash Out)';
+                actionBtn.style.backgroundColor = '#4e9f3d';
+                
+                // تحديد نقطة انفجار عشوائية بين 1.1 و 5.0
+                crashPoint = (Math.random() * 4 + 1.1).toFixed(2);
+                
+                gameInterval = setInterval(() => {
+                    multiplier += 0.05;
+                    multiplierText.innerText = multiplier.toFixed(2) + 'x';
+                    
+                    // تحريك الصاروخ للأعلى بشكل بسيط
+                    rocket.style.transform = `translateY(-${(multiplier - 1) * 20}px)`;
+
+                    // التحقق من الانفجار
+                    if (multiplier >= crashPoint) {
+                        clearInterval(gameInterval);
+                        isRunning = false;
+                        multiplierText.innerText = '💥 انفجر الصاروخ!';
+                        multiplierText.style.color = '#e94560';
+                        actionBtn.innerText = 'حاول مجدداً';
+                        actionBtn.style.backgroundColor = '#e94560';
+                    }
+                }, 100);
+            } else {
+                // الانسحاب والفوز
+                clearInterval(gameInterval);
+                isRunning = false;
+                alert('🎉 مبروك! فزت بمضاعف: ' + multiplier.toFixed(2) + 'x');
+                multiplierText.style.color = '#ffd700';
+                actionBtn.innerText = 'العب مرة أخرى';
+                actionBtn.style.backgroundColor = '#e94560';
+            }
+        }
+    </script>
+</body>
+</html>
