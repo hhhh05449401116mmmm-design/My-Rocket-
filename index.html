@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Rocket Cash Hub</title>
 
+    <!-- استدعاء سكريبت تليجرام + مكتبة أيقونات متطورة للاعبين -->
     <script src="https://telegram.org"></script>
+    <link rel="stylesheet" href="https://cloudflare.com">
 
     <style>
         body {
@@ -24,7 +28,7 @@
             height: 100vh;
             justify-content: space-between;
             box-sizing: border-box;
-            padding-bottom: 70px;
+            padding-bottom: 68px;
         }
 
         /* شريط الحساب العلوي المتطور */
@@ -33,8 +37,9 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 16px;
-            background: rgba(20,24,35,0.4);
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            background: rgba(20,24,35,0.6);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            backdrop-filter: blur(10px);
         }
 
         .user-meta {
@@ -45,16 +50,16 @@
 
         #user-avatar {
             width: 38px;
-            height: 36px;
+            height: 38px;
             border-radius: 50%;
-            background: #1f2833;
+            background: #1a1f2c;
             background-size: cover;
             border: 2px solid #0066ff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .balance-info {
@@ -74,6 +79,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
+            color: #fff;
         }
 
         #deposit-btn {
@@ -85,17 +91,20 @@
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,102,255,0.2);
         }
 
-        /* منطقة المحتوى القابلة للتغيير */
+        /* منطقة المحتوى القابلة للتغيير والتبديل */
         #main-content {
             flex-grow: 1;
             overflow-y: auto;
             padding: 12px;
+            height: calc(100vh - 130px);
         }
 
         .page-view {
             display: none;
+            height: 100%;
         }
 
         .page-view.active {
@@ -103,24 +112,9 @@
         }
 
         /* تصميم الواجهة الرئيسية الكبرى للألعاب */
-        .hub-banner {
-            position: relative;
-            width: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 12px;
-            cursor: pointer;
-            border: 1px solid rgba(102,252,241,0.1);
-        }
-
-        .hub-banner img {
-            width: 100%;
-            display: block;
-        }
-
         .game-card-rocket {
             background: linear-gradient(135deg, #1c2638 0%, #0f141d 100%);
-            padding: 20px;
+            padding: 22px;
             border-radius: 20px;
             border: 1px solid #0066ff;
             text-align: left;
@@ -128,6 +122,7 @@
             overflow: hidden;
             margin-bottom: 12px;
             cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
         }
 
         .card-tag {
@@ -139,6 +134,7 @@
             font-weight: bold;
             padding: 2px 8px;
             border-radius: 8px;
+            text-transform: uppercase;
         }
 
         .card-title {
@@ -152,9 +148,17 @@
         .card-sub {
             font-size: 12px;
             color: #66fcf1;
+            font-weight: bold;
         }
 
-        /* ساحة لعبة الصاروخ الكلاسيكية */
+        /* ساحة لعبة الصاروخ الحركية الاحترافية */
+        #game-section-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
         #game-container {
             position: relative;
             width: 100%;
@@ -162,7 +166,8 @@
             background: radial-gradient(#151c24, #07080c);
             border-radius: 24px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
+            border: 1px solid rgba(255,255,255,0.03);
         }
 
         canvas {
@@ -181,6 +186,7 @@
             color: #66fcf1;
             font-family: monospace;
             z-index: 10;
+            text-shadow: 0 0 15px rgba(102,252,241,0.4);
         }
 
         #count-box {
@@ -210,7 +216,7 @@
         #history-bar {
             display: flex;
             gap: 6px;
-            padding: 6px 0;
+            padding: 4px 0;
             overflow-x: auto;
             min-height: 35px;
             align-items: center;
@@ -227,19 +233,19 @@
         .c-red {
             border-color: #e94560;
             color: #e94560;
-            background: rgba(233,69,96,0.15);
+            background: rgba(233,69,96,0.12);
         }
 
         .c-blue {
             border-color: #0066ff;
             color: #0066ff;
-            background: rgba(0,102,255,0.15);
+            background: rgba(0,102,255,0.12);
         }
 
         .c-green {
             border-color: #4e9f3d;
             color: #4e9f3d;
-            background: rgba(78,159,61,0.15);
+            background: rgba(78,159,61,0.12);
         }
 
         #main-action-btn {
@@ -253,28 +259,39 @@
             cursor: pointer;
             width: 100%;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            box-shadow: 0 4px 15px rgba(0,102,255,0.3);
         }
 
         #main-action-btn.betting {
             background: #e94560;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.3);
         }
 
         #p-list {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            max-height: 30vh;
+            max-height: 25vh;
             overflow-y: auto;
+            flex-grow: 1;
+            margin-top: 2px;
         }
 
         .p-row {
             display: flex;
             justify-content: space-between;
             background: #131722;
-            padding: 12px 14px;
+            padding: 10px 14px;
             border-radius: 16px;
             font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .p-blue {
+            color: #8a9fc4;
+            font-size: 11px;
+            font-weight: bold;
         }
 
         .row-win-low {
@@ -295,6 +312,186 @@
             color: #e94560!important;
         }
 
+        /* لوحة خيارات المراهنة المتطورة المنبثقة للصاروخ */
+        #bet-panel {
+            background: #181c26;
+            border-radius: 24px 24px 0 0;
+            padding: 16px;
+            box-sizing: border-box;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10000;
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #0f121a;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #8a9fc4;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: #b05cff;
+            color: #fff;
+        }
+
+        .panel-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #8a9fc4;
+        }
+
+        .row-val {
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-box {
+            background: #0f121a;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: #516381;
+            margin-bottom: 4px;
+        }
+
+        .input-field {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            outline: none;
+            font-family: sans-serif;
+        }
+
+        .currency-tag {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: #0066ff;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2c354a;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #0066ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        #submit-bet-btn {
+            background: #2c354a;
+            color: #8a9fc4;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        #submit-bet-btn.active {
+            background: #0066ff;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,102,255,0.3);
+        }
+
         /* تصميم الحقيبة والهدايا الـ NFT */
         .pack-grid {
             display: grid;
@@ -306,13 +503,13 @@
         .gift-box-card {
             background: #131722;
             border-radius: 18px;
-            padding: 14px;
+            padding: 16px;
             border: 1px solid rgba(255,255,255,0.03);
             text-align: center;
         }
 
         .gift-icon {
-            font-size: 40px;
+            font-size: 42px;
             margin-bottom: 8px;
         }
 
@@ -324,10 +521,11 @@
 
         .gift-status {
             font-size: 11px;
-            color: #0066ff;
+            color: #b05cff;
+            font-weight: bold;
         }
 
-        /* شريط التنقل السفلي الثابت والمطابق تماماً */
+        /* شريط التنقل السفلي الاحترافي الثابت */
         #bottom-nav-bar {
             position: fixed;
             bottom: 0;
@@ -354,7 +552,7 @@
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
-            transition: color 0.2s;
+            transition: color 0.15s;
         }
 
         .nav-item.active {
@@ -362,100 +560,312 @@
         }
 
         .nav-icon {
-            font-size: 22px;
+            font-size: 20px;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- شريط علوي موحد للبروفايل مأخوذ من تليجرام الحقيقي -->
     <div id="top-profile-bar">
         <div class="user-meta">
+
             <div id="user-avatar">U</div>
 
             <div class="balance-info">
-                <div id="user-name" class="bal-title">Your balance</div>
+                <div id="user-name" class="bal-title">
+                    Your balance
+                </div>
 
                 <div class="bal-amount">
                     <span id="top-balance-text">10.00</span>
                     <span>💎</span>
                 </div>
             </div>
+
         </div>
 
-        <button id="deposit-btn">Deposit</button>
+        <button id="deposit-btn">
+            Wallet Connect
+        </button>
     </div>
+
 
     <div id="wrapper">
 
         <div id="main-content">
 
-            <!-- صفحة الرائيسية (جميع الألعاب) -->
+            <!-- الصفحة الرئيسية -->
             <div id="page-home" class="page-view active">
 
                 <div class="game-card-rocket" onclick="navigateToGame()">
-                    <div class="card-tag">🔥 HOT!</div>
-                    <div class="card-title">ROCKET</div>
-                    <div class="card-sub">x6.46 | x1.94 | x3.09</div>
+
+                    <div class="card-tag">
+                        🔥 HOT!
+                    </div>
+
+                    <div class="card-title">
+                        ROCKET
+                    </div>
+
+                    <div class="card-sub">
+                        Predict & Cash Out up to 150x
+                    </div>
+
                 </div>
+
 
                 <div
                     class="game-card-rocket"
                     style="border-color:#ffa500; background:linear-gradient(135deg, #241c12, #14100c)"
                 >
-                    <div class="card-tag" style="background:#ffa500">🏆 LIVE</div>
-                    <div class="card-title" style="color:#ffa500">PVP MODE</div>
-                    <div class="card-sub" style="color:#ccc">
-                        Compete with other players online
+
+                    <div
+                        class="card-tag"
+                        style="background:#ffa500"
+                    >
+                        🏆 PVP
                     </div>
+
+                    <div
+                        class="card-title"
+                        style="color:#ffa500"
+                    >
+                        PLAY HUB
+                    </div>
+
+                    <div
+                        class="card-sub"
+                        style="color:#ccc"
+                    >
+                        Compete with other players live
+                    </div>
+
                 </div>
 
             </div>
 
-            <!-- صفحة لعبة الصاروخ الحركية الكلاسيكية -->
+
+            <!-- صفحة لعبة الصاروخ -->
             <div id="page-game" class="page-view">
 
-                <div id="game-container">
-                    <div id="mult">1.00x</div>
-                    <div id="count-box">5</div>
-                    <canvas id="gameCanvas"></canvas>
+                <div id="game-section-container">
+
+                    <div id="game-container">
+
+                        <div id="mult">
+                            1.00x
+                        </div>
+
+                        <div id="count-box">
+                            5
+                        </div>
+
+                        <canvas id="gameCanvas"></canvas>
+
+                    </div>
+
+
+                    <div id="control-panel">
+
+                        <div id="history-bar"></div>
+
+                        <button
+                            id="main-action-btn"
+                            onclick="openBetPanel()"
+                        >
+                            Place bet
+                        </button>
+
+                    </div>
+
+
+                    <div id="p-list"></div>
+
                 </div>
 
-                <div id="control-panel">
 
-                    <div id="history-bar"></div>
+                <!-- لوحة المراهنة -->
+                <div id="bet-panel">
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Place bet
+                        </div>
+
+                        <button
+                            class="close-btn"
+                            onclick="closeBetPanel()"
+                        >
+                            ✕
+                        </button>
+
+                    </div>
+
+
+                    <div class="tab-bar">
+
+                        <button
+                            id="tab-gifts"
+                            class="tab-btn"
+                            onclick="switchTab('gifts')"
+                        >
+                            Gifts
+                        </button>
+
+                        <button
+                            id="tab-ton"
+                            class="tab-btn active"
+                            onclick="switchTab('ton')"
+                        >
+                            TON
+                        </button>
+
+                    </div>
+
+
+                    <div class="panel-row">
+
+                        <span>
+                            Available Balance
+                        </span>
+
+                        <span
+                            class="row-val"
+                            id="balance-display"
+                        >
+                            10.00 💎
+                        </span>
+
+                    </div>
+
+
+                    <div class="input-box">
+
+                        <div class="input-label">
+                            Bet Amount
+                        </div>
+
+                        <input
+                            id="bet-input"
+                            class="input-field"
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            placeholder="TON amount"
+                            oninput="validateBetInput()"
+                        >
+
+                        <span
+                            id="currency-unit"
+                            class="currency-tag"
+                        >
+                            💎
+                        </span>
+
+                    </div>
+
+
+                    <div class="panel-row">
+
+                        <span>
+                            Auto cashout
+                        </span>
+
+                        <label class="switch">
+
+                            <input
+                                id="auto-cash-toggle"
+                                type="checkbox"
+                                onchange="toggleAutoCashFields()"
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <div
+                        id="auto-cash-box"
+                        class="input-box"
+                        style="display:none;"
+                    >
+
+                        <div class="input-label">
+                            Cashout Multiplier
+                        </div>
+
+                        <input
+                            id="auto-cash-input"
+                            class="input-field"
+                            type="number"
+                            step="0.01"
+                            value="2.00"
+                        >
+
+                        <span class="currency-tag">
+                            X
+                        </span>
+
+                    </div>
+
 
                     <button
-                        id="main-action-btn"
-                        onclick="handleAction()"
+                        id="submit-bet-btn"
+                        onclick="submitBet()"
+                        disabled
                     >
-                        Place bet
+                        Place TON Bet 🚀
                     </button>
 
                 </div>
 
-                <div id="p-list"></div>
-
             </div>
 
-            <!-- صفحة الحقيبة والهدايا الـ NFT المتاحة لدى اللاعب -->
+
+            <!-- صفحة الحقيبة -->
             <div id="page-backpack" class="page-view">
 
-                <h3>My Backpack (NFT Gifts)</h3>
+                <h3>
+                    My Backpack (NFT Gifts)
+                </h3>
 
                 <div class="pack-grid">
 
                     <div class="gift-box-card">
-                        <div class="gift-icon">🎃</div>
-                        <div class="gift-title">Halloween Gift</div>
-                        <div class="gift-status">Available</div>
+
+                        <div class="gift-icon">
+                            🎃
+                        </div>
+
+                        <div class="gift-title">
+                            Halloween 2026
+                        </div>
+
+                        <div class="gift-status">
+                            Available
+                        </div>
+
                     </div>
 
+
                     <div class="gift-box-card">
-                        <div class="gift-icon">👑</div>
-                        <div class="gift-title">Premium Crown</div>
-                        <div class="gift-status">Equipped</div>
+
+                        <div class="gift-icon">
+                            💎
+                        </div>
+
+                        <div class="gift-title">
+                            TON Diamond
+                        </div>
+
+                        <div class="gift-status">
+                            Equipped
+                        </div>
+
                     </div>
 
                 </div>
@@ -464,122 +874,240 @@
 
         </div>
 
-        <!-- شريط التنقل السفلي الفاخر التلقائي والمطابق تماماً -->
+
+        <!-- شريط التنقل السفلي -->
         <div id="bottom-nav-bar">
 
             <button
+                id="nav-btn-backpack"
                 class="nav-item"
                 onclick="switchPage('backpack', this)"
             >
-                <div class="nav-icon">🎒</div>
-                <div>Backpack</div>
+
+                <div class="nav-icon">
+                    🎒
+                </div>
+
+                <div>
+                    Backpack
+                </div>
+
             </button>
 
+
             <button
+                id="nav-btn-home"
                 class="nav-item active"
                 onclick="switchPage('home', this)"
             >
-                <div class="nav-icon">🏠</div>
-                <div>Home</div>
+
+                <div class="nav-icon">
+                    🏠
+                </div>
+
+                <div>
+                    Home
+                </div>
+
             </button>
 
         </div>
 
     </div>
 
+
     <script>
 
-        // كود تليجرام السحري للتعرف التلقائي على حساب وصورة واسم اللاعب الحقيقي
+        // كود تليجرام الرسمي لسحب اسم وصورة اللاعب التلقائية الفورية وحفظها بالحقيبة
+
         let userName = "Player";
+
 
         if (window.Telegram && window.Telegram.WebApp) {
 
             window.Telegram.WebApp.ready();
+
             window.Telegram.WebApp.expand();
 
-            const initData = window.Telegram.WebApp.initDataUnsafe;
+
+            const initData =
+                window.Telegram.WebApp.initDataUnsafe;
+
 
             if (initData && initData.user) {
 
                 userName =
                     initData.user.first_name +
-                    (initData.user.last_name
-                        ? " " + initData.user.last_name
-                        : "");
+                    (
+                        initData.user.last_name
+                            ? " " + initData.user.last_name
+                            : ""
+                    );
 
-                document.getElementById('user-name').innerText = userName;
+
+                document.getElementById(
+                    'user-name'
+                ).innerText = userName;
+
 
                 if (initData.user.photo_url) {
 
-                    document.getElementById('user-avatar').style.backgroundImage =
+                    document.getElementById(
+                        'user-avatar'
+                    ).style.backgroundImage =
                         `url('${initData.user.photo_url}')`;
 
-                    document.getElementById('user-avatar').innerText = "";
+                    document.getElementById(
+                        'user-avatar'
+                    ).innerText = "";
 
                 } else {
 
-                    document.getElementById('user-avatar').innerText =
-                        initData.user.first_name.charAt(0).toUpperCase();
+                    document.getElementById(
+                        'user-avatar'
+                    ).innerText =
+                        initData.user.first_name
+                            .charAt(0)
+                            .toUpperCase();
 
                 }
             }
         }
 
 
-        // نظام التبديل الذكي بين الصفحات والأزرار السفلية
         function switchPage(pageId, btnEl) {
 
             document
                 .querySelectorAll('.page-view')
-                .forEach(p => p.classList.remove('active'));
+                .forEach(p =>
+                    p.classList.remove('active')
+                );
+
 
             document
                 .querySelectorAll('.nav-item')
-                .forEach(b => b.classList.remove('active'));
+                .forEach(b =>
+                    b.classList.remove('active')
+                );
+
 
             document
                 .getElementById('page-' + pageId)
                 .classList.add('active');
 
+
             if (btnEl) {
+
                 btnEl.classList.add('active');
+
+            } else {
+
+                document
+                    .getElementById('nav-btn-home')
+                    .classList.add('active');
             }
+
+
+            closeBetPanel();
         }
 
 
         function navigateToGame() {
+
             switchPage('game', null);
+
         }
 
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas =
+            document.getElementById('gameCanvas');
 
-        const mult = document.getElementById('mult');
-        const mainBtn = document.getElementById('main-action-btn');
-        const hBar = document.getElementById('history-bar');
-        const pList = document.getElementById('p-list');
-        const cBox = document.getElementById('count-box');
-        const topBalanceText = document.getElementById('top-balance-text');
+        const ctx =
+            canvas.getContext('2d');
+
+
+        const mult =
+            document.getElementById('mult');
+
+        const mainBtn =
+            document.getElementById('main-action-btn');
+
+        const hBar =
+            document.getElementById('history-bar');
+
+        const pList =
+            document.getElementById('p-list');
+
+        const cBox =
+            document.getElementById('count-box');
+
+
+        const betPanel =
+            document.getElementById('bet-panel');
+
+        const betInput =
+            document.getElementById('bet-input');
+
+        const submitBetBtn =
+            document.getElementById('submit-bet-btn');
+
+        const balanceDisplay =
+            document.getElementById('balance-display');
+
+        const currencyUnit =
+            document.getElementById('currency-unit');
+
+        const inputTag =
+            document.getElementById('input-tag');
+
+        const topBalanceText =
+            document.getElementById('top-balance-text');
+
+
+        const autoToggle =
+            document.getElementById('auto-cash-toggle');
+
+        const autoCashBox =
+            document.getElementById('auto-cash-box');
+
+        const autoCashInput =
+            document.getElementById('auto-cash-input');
 
 
         let state = 'COUNTDOWN';
+
         let value = 1.00;
+
         let crash = 1.00;
+
         let loop;
+
         let path = [];
+
         let rx = 40;
+
         let ry = canvas.height - 40;
 
+
         let timer = 5;
+
         let countAngle = 0;
+
         let listPlayers = [];
+
         let lastTickTime = Date.now();
 
+
         let hasBet = false;
+
         let hasCashedOut = false;
+
+        let currentTab = 'ton';
+
         let userBalance = 10.00;
-        let userBetAmount = 1.00;
+
+        let userBetAmount = 0;
+
 
         let historyList = [
             '3.70x',
@@ -589,32 +1117,41 @@
         ];
 
         let stars = [];
+
         let particles = [];
 
 
         const pool = [
+
             {
                 n: 'BOB',
                 b: 0.10,
                 cashOutPoint: 3.36,
                 status: 'active'
             },
+
             {
                 n: 'honey',
                 b: 0.10,
                 cashOutPoint: 2.27,
                 status: 'active'
             }
+
         ];
 
 
         for (let i = 0; i < 30; i++) {
 
             stars.push({
+
                 x: Math.random() * 800,
+
                 y: Math.random() * 600,
+
                 s: Math.random() * 1.5,
+
                 sp: Math.random() * 1.2 + 0.6
+
             });
 
         }
@@ -652,18 +1189,23 @@
 
             hBar.innerHTML = '';
 
+
             historyList
                 .slice(-6)
                 .reverse()
                 .forEach(v => {
 
-                    const d = document.createElement('div');
+                    const d =
+                        document.createElement('div');
+
 
                     d.className =
                         'h-item ' +
                         getHClass(parseFloat(v));
 
+
                     d.innerText = v;
+
 
                     hBar.appendChild(d);
 
@@ -671,83 +1213,260 @@
         }
 
 
-        function renderPlayers() {
+        function openBetPanel() {
 
-            pList.innerHTML = '';
+            if (
+                state === 'COUNTDOWN' &&
+                !hasBet
+            ) {
 
-            listPlayers.forEach(p => {
+                betPanel.style.display = 'block';
 
-                let rowClass = 'p-row';
+            } else if (
+                state === 'FLYING' &&
+                hasBet &&
+                !hasCashedOut
+            ) {
 
-                let rightVal = `🔹 ${p.b.toFixed(2)}`;
+                cashOutUser();
 
-
-                if (p.status === 'win-low') {
-
-                    rowClass += ' row-win-low';
-
-                    rightVal =
-                        `🔹 ${(p.b * p.winMult).toFixed(2)}`;
-
-                } else if (p.status === 'lose') {
-
-                    rowClass += ' row-lose';
-
-                    rightVal = '💥 0.00';
-                }
+            }
+        }
 
 
-                const r = document.createElement('div');
+        function closeBetPanel() {
 
-                r.className = rowClass;
+            betPanel.style.display = 'none';
 
-                r.innerHTML =
-                    `<div>
-                        <b>${p.n}</b>
-                        <br>
-                        <span class="p-blue">
-                            🔹 ${p.b} ×1.00
-                        </span>
-                    </div>
-                    <div>
-                        <b>${rightVal}</b>
-                    </div>`;
+        }
 
 
-                pList.appendChild(r);
+        function switchTab(tab) {
 
-            });
+            currentTab = tab;
+
+
+            document
+                .getElementById('tab-gifts')
+                .classList
+                .toggle(
+                    'active',
+                    tab === 'gifts'
+                );
+
+
+            document
+                .getElementById('tab-ton')
+                .classList
+                .toggle(
+                    'active',
+                    tab === 'ton'
+                );
+
+
+            currencyUnit.innerText =
+                tab === 'ton'
+                    ? '💎'
+                    : '🎁';
+
+
+            if (inputTag) {
+
+                inputTag.innerText =
+                    tab === 'ton'
+                        ? '💎'
+                        : '🎁';
+            }
+
+
+            betInput.placeholder =
+                tab === 'ton'
+                    ? 'TON amount'
+                    : 'NFT Gift ID';
+
+
+            submitBetBtn.innerText =
+                tab === 'ton'
+                    ? 'Place TON Bet 🚀'
+                    : 'Place Gift Bet 🎁';
+
+
+            validateBetInput();
+        }
+
+
+        function toggleAutoCashFields() {
+
+            autoCashBox.style.display =
+                autoToggle.checked
+                    ? 'block'
+                    : 'none';
+        }
+
+
+        function validateBetInput() {
+
+            let val =
+                parseFloat(betInput.value);
+
+
+            if (
+                currentTab === 'ton' &&
+                val >= 0.1 &&
+                val <= userBalance
+            ) {
+
+                submitBetBtn.className = 'active';
+
+                submitBetBtn.disabled = false;
+
+            } else if (
+                currentTab === 'gifts' &&
+                betInput.value.length > 0
+            ) {
+
+                submitBetBtn.className = 'active';
+
+                submitBetBtn.disabled = false;
+
+            } else {
+
+                submitBetBtn.className = '';
+
+                submitBetBtn.disabled = true;
+            }
+        }
+
+
+        function submitBet() {
+
+            hasBet = true;
+
+
+            userBetAmount =
+                currentTab === 'ton'
+                    ? parseFloat(betInput.value)
+                    : 2.50;
+
+
+            if (currentTab === 'ton') {
+
+                userBalance -=
+                    userBetAmount;
+
+            } else {
+
+                userBalance +=
+                    userBetAmount;
+            }
+
+
+            balanceDisplay.innerText =
+                userBalance.toFixed(2);
+
+
+            topBalanceText.innerText =
+                userBalance.toFixed(2);
+
+
+            mainBtn.innerText =
+                'Bet Placed';
+
+            mainBtn.className =
+                'betting';
+
+
+            closeBetPanel();
         }
 
 
         function startCount() {
 
             state = 'COUNTDOWN';
+
             timer = 5;
+
             countAngle = 0;
 
+
             cBox.style.display = 'block';
+
             mult.style.display = 'none';
 
+
             hasBet = false;
+
             hasCashedOut = false;
 
-            mainBtn.innerText = 'Place bet';
+
+            mainBtn.innerText =
+                'Place bet';
+
             mainBtn.className = '';
 
+
             cBox.innerText = timer;
+
 
             listPlayers = [];
 
             renderPlayers();
 
+
             lastTickTime = Date.now();
+        }
+
+
+        function cashOutUser() {
+
+            hasCashedOut = true;
+
+
+            mainBtn.innerText =
+                'Place bet';
+
+            mainBtn.className = '';
+
+
+            userBalance +=
+                userBetAmount * value;
+
+
+            balanceDisplay.innerText =
+                userBalance.toFixed(2);
+
+
+            topBalanceText.innerText =
+                userBalance.toFixed(2);
+
+
+            let userP = {
+
+                n: 'You',
+
+                b: userBetAmount,
+
+                winMult: value,
+
+                status: 'win-low'
+
+            };
+
+
+            listPlayers.unshift(userP);
+
+
+            renderPlayers();
         }
 
 
         function syncLogic() {
 
-            if (!canvas.width) {
+            if (
+                !canvas.width ||
+                canvas.width !==
+                canvas.parentElement.clientWidth
+            ) {
 
                 canvas.width =
                     canvas.parentElement.clientWidth;
@@ -756,14 +1475,18 @@
                     canvas.parentElement.clientHeight;
 
                 rx = 40;
-                ry = canvas.height - 40;
+
+                ry =
+                    canvas.height - 40;
             }
 
 
             let now = Date.now();
 
+
             let delta =
                 (now - lastTickTime) / 1000;
+
 
             lastTickTime = now;
 
@@ -772,6 +1495,7 @@
 
                 timer -= delta;
 
+
                 cBox.innerText =
                     Math.ceil(timer);
 
@@ -779,19 +1503,25 @@
                 if (timer <= 0) {
 
                     cBox.style.display = 'none';
+
                     mult.style.display = 'block';
 
                     state = 'FLYING';
+
                     value = 1.00;
 
                     path = [];
+
                     particles = [];
 
 
                     if (hasBet) {
 
-                        mainBtn.innerText = 'Cash Out';
-                        mainBtn.className = 'betting';
+                        mainBtn.innerText =
+                            'Cash Out';
+
+                        mainBtn.className =
+                            'betting';
                     }
 
 
@@ -803,18 +1533,34 @@
 
                 value += delta * 0.45;
 
+
                 mult.innerText =
                     value.toFixed(2) + 'x';
+
+
+                if (
+                    hasBet &&
+                    !hasCashedOut &&
+                    autoToggle.checked &&
+                    value >=
+                    parseFloat(autoCashInput.value)
+                ) {
+
+                    cashOutUser();
+                }
 
 
                 if (value >= crash) {
 
                     state = 'CRASHED';
 
+
                     mult.innerText =
                         '💥 FLEW AWAY';
 
-                    mult.style.color = '#e94560';
+
+                    mult.style.color =
+                        '#e94560';
 
 
                     historyList.push(
@@ -822,23 +1568,14 @@
                     );
 
 
-                    listPlayers.forEach(p => {
+                    mainBtn.innerText =
+                        'Place bet';
 
-                        if (p.status === 'active') {
-                            p.status = 'lose';
-                        }
-
-                    });
-
-
-                    mainBtn.innerText = 'Place bet';
                     mainBtn.className = '';
 
 
-                    renderPlayers();
-
-
                     if (navigator.vibrate) {
+
                         navigator.vibrate(300);
                     }
 
@@ -859,6 +1596,7 @@
 
             syncLogic();
 
+
             ctx.clearRect(
                 0,
                 0,
@@ -874,6 +1612,7 @@
 
                 ctx.beginPath();
 
+
                 ctx.arc(
                     s.x,
                     s.y,
@@ -882,22 +1621,26 @@
                     Math.PI * 2
                 );
 
+
                 ctx.fill();
 
 
                 if (state === 'FLYING') {
 
                     s.x -= s.sp * 3.5;
-                    s.y += s.sp * 3.5;
 
+                    s.y += s.sp * 3.5;
                 }
 
 
                 if (s.x < 0) {
+
                     s.x = canvas.width;
                 }
 
+
                 if (s.y > canvas.height) {
+
                     s.y = 0;
                 }
 
@@ -913,6 +1656,7 @@
                 ctx.save();
 
                 ctx.beginPath();
+
 
                 ctx.moveTo(
                     path[0].x,
@@ -933,7 +1677,9 @@
                 }
 
 
-                ctx.strokeStyle = currentColor;
+                ctx.strokeStyle =
+                    currentColor;
+
                 ctx.lineWidth = 4;
 
                 ctx.stroke();
@@ -954,15 +1700,18 @@
                             0.45 +
                             (
                                 (value - 10.00) /
-                                (crash > 10
-                                    ? crash - 10
-                                    : 1)
+                                (
+                                    crash > 10
+                                        ? crash - 10
+                                        : 1
+                                )
                             ) *
                             0.37
                         );
 
 
                 if (p > 0.82) {
+
                     p = 0.82;
                 }
 
@@ -974,6 +1723,7 @@
                         (canvas.width - 80) *
                         p *
                         1.5;
+
 
                     ry =
                         canvas.height - 40;
@@ -988,9 +1738,11 @@
 
                     let cProg =
                         (value - 2.00) /
-                        (crash > 2
-                            ? crash - 2
-                            : 1);
+                        (
+                            crash > 2
+                                ? crash - 2
+                                : 1
+                        );
 
 
                     ry =
@@ -1013,17 +1765,40 @@
 
                 ctx.save();
 
-                ctx.translate(rx, ry);
 
-                ctx.rotate(-Math.PI / 3);
+                ctx.translate(
+                    rx,
+                    ry
+                );
 
-                ctx.fillStyle = '#f0f2f5';
+
+                ctx.rotate(
+                    -Math.PI / 3
+                );
+
+
+                ctx.fillStyle =
+                    '#f0f2f5';
+
 
                 ctx.beginPath();
 
-                ctx.moveTo(0, -16);
-                ctx.lineTo(7, 4);
-                ctx.lineTo(-7, 4);
+
+                ctx.moveTo(
+                    0,
+                    -16
+                );
+
+                ctx.lineTo(
+                    7,
+                    4
+                );
+
+                ctx.lineTo(
+                    -7,
+                    4
+                );
+
 
                 ctx.closePath();
 
@@ -1038,51 +1813,10 @@
         }
 
 
-        function handleAction() {
+        function renderPlayers() {
 
-            if (state === 'COUNTDOWN') {
+            pList.innerHTML = '';
 
-                hasBet = true;
-
-                mainBtn.innerText =
-                    'Bet Placed';
-
-                mainBtn.className =
-                    'betting';
-
-            } else if (
-                state === 'FLYING' &&
-                hasBet &&
-                !hasCashedOut
-            ) {
-
-                hasCashedOut = true;
-
-                mainBtn.innerText =
-                    'Place bet';
-
-                mainBtn.className = '';
-
-
-                userBalance +=
-                    userBetAmount * value;
-
-                topBalanceText.innerText =
-                    userBalance.toFixed(2);
-
-
-                let userP = {
-                    n: 'You',
-                    b: userBetAmount,
-                    winMult: value,
-                    status: 'win-low'
-                };
-
-
-                listPlayers.unshift(userP);
-
-                renderPlayers();
-            }
         }
 
 
