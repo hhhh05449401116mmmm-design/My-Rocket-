@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
 
@@ -10,7 +11,6 @@
 
     <title>Rocket Cash</title>
 
-    <!-- Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
@@ -174,7 +174,6 @@
             font-weight: bold;
         }
 
-        /* ألوان أسماء اللاعبين */
         .p-win-low {
             color: #4e9f3d !important;
         }
@@ -193,31 +192,40 @@
 
     <div id="wrapper">
 
-        <!-- اللعبة -->
+        <!-- GAME -->
         <div id="container">
+
             <div id="mult">1.00x</div>
+
             <div id="count-box">5</div>
+
             <canvas id="gameCanvas"></canvas>
+
         </div>
 
-        <!-- التحكم -->
+
+        <!-- CONTROLS -->
         <div id="control-panel">
+
             <div id="history-bar"></div>
 
             <button id="btn" onclick="handleAction()">
                 Place bet
             </button>
+
         </div>
 
-        <!-- اللاعبين -->
+
+        <!-- PLAYERS -->
         <div id="p-list"></div>
 
     </div>
 
 
     <script>
+
         /* =========================================
-           TELEGRAM WEB APP
+           TELEGRAM
         ========================================= */
 
         if (window.Telegram && window.Telegram.WebApp) {
@@ -241,12 +249,14 @@
 
 
         /* =========================================
-           CANVAS SIZE
+           CANVAS
         ========================================= */
 
         function resizeCanvas() {
+
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
+
         }
 
         resizeCanvas();
@@ -261,6 +271,7 @@
         let state = "COUNTDOWN";
 
         let value = 1.00;
+
         let crash = 1.00;
 
         let loop;
@@ -268,9 +279,11 @@
         let path = [];
 
         let rx = 40;
+
         let ry = canvas.height - 40;
 
         let timer = 5;
+
         let countAngle = 0;
 
         let listPlayers = [];
@@ -278,6 +291,7 @@
         let lastTickTime = Date.now();
 
         let hasBet = false;
+
         let hasCashedOut = false;
 
         let historyList = [
@@ -289,6 +303,7 @@
         ];
 
         let stars = [];
+
         let particles = [];
 
 
@@ -297,36 +312,42 @@
         ========================================= */
 
         const pool = [
+
             {
                 n: "Sasha",
                 b: 0.10,
                 cashOutPoint: 1.50,
                 status: "active"
             },
+
             {
                 n: "Spay",
                 b: 0.50,
                 cashOutPoint: 12.40,
                 status: "active"
             },
+
             {
                 n: "Dani",
                 b: 0.45,
                 cashOutPoint: 4.20,
                 status: "active"
             },
+
             {
                 n: "Alex",
                 b: 0.30,
                 cashOutPoint: 2.10,
                 status: "active"
             },
+
             {
                 n: "Bpex",
                 b: 0.15,
                 cashOutPoint: 15.00,
                 status: "active"
             }
+
         ];
 
 
@@ -335,17 +356,24 @@
         ========================================= */
 
         for (let i = 0; i < 30; i++) {
+
             stars.push({
+
                 x: Math.random() * canvas.width,
+
                 y: Math.random() * canvas.height,
+
                 s: Math.random() * 1.5,
+
                 sp: Math.random() * 1.2 + 0.6
+
             });
+
         }
 
 
         /* =========================================
-           HISTORY COLORS
+           HISTORY COLOR
         ========================================= */
 
         function getHColor(val) {
@@ -414,28 +442,35 @@
                     d.innerText = v;
 
                     hBar.appendChild(d);
+
                 });
+
         }
 
 
         /* =========================================
-           LIVE BETS
+           LIVE PLAYERS
         ========================================= */
 
         function triggerLiveBets() {
 
             let delay = 0;
 
-            const shuffled = [...pool].sort(
-                () => 0.5 - Math.random()
-            );
+            const shuffled =
+                [...pool].sort(
+                    () => 0.5 - Math.random()
+                );
+
 
             shuffled.forEach(p => {
 
                 p.status = "active";
+
                 p.winMult = 1.00;
 
-                delay += Math.random() * 400 + 100;
+                delay +=
+                    Math.random() * 400 + 100;
+
 
                 setTimeout(() => {
 
@@ -444,10 +479,13 @@
                         listPlayers.unshift(p);
 
                         renderPlayers();
+
                     }
 
                 }, delay);
+
             });
+
         }
 
 
@@ -459,11 +497,14 @@
 
             pList.innerHTML = "";
 
+
             listPlayers.forEach(p => {
 
-                const r = document.createElement("div");
+                const r =
+                    document.createElement("div");
 
                 r.className = "p-row";
+
 
                 let nameClass = "";
 
@@ -478,56 +519,79 @@
                     rightVal =
                         `🔹 ${(p.b * p.winMult).toFixed(2)}`;
 
-                } else if (p.status === "win-high") {
+                }
+
+
+                else if (p.status === "win-high") {
 
                     nameClass = "p-win-high";
 
                     rightVal =
                         `🔹 ${(p.b * p.winMult).toFixed(2)}`;
 
-                } else if (p.status === "lose") {
+                }
+
+
+                else if (p.status === "lose") {
 
                     nameClass = "p-lose";
 
-                    rightVal = "💥 0.00";
+                    rightVal =
+                        "💥 0.00";
+
                 }
 
 
                 let statText;
+
 
                 if (p.status.startsWith("win")) {
 
                     statText =
                         `🔹 ${p.b} ×${p.winMult.toFixed(2)}`;
 
-                } else {
+                }
+
+                else {
 
                     statText =
                         `🔹 ${p.b} ×1.00`;
+
                 }
 
 
                 r.innerHTML = `
+
                     <div>
+
                         <b class="${nameClass}">
                             ${p.n}
                         </b>
+
                         <br>
 
                         <span class="p-blue">
                             ${statText}
                         </span>
+
                     </div>
 
+
                     <div>
+
                         <b class="${nameClass}">
                             ${rightVal}
                         </b>
+
                     </div>
+
                 `;
 
+
                 pList.appendChild(r);
+
             });
+
         }
 
 
@@ -551,9 +615,11 @@
 
             hasCashedOut = false;
 
+
             btn.innerText = "Place bet";
 
             btn.className = "";
+
 
             cBox.innerText = timer;
 
@@ -561,13 +627,16 @@
 
             mult.style.color = "#66fcf1";
 
+
             listPlayers = [];
 
             renderPlayers();
 
             triggerLiveBets();
 
+
             lastTickTime = Date.now();
+
         }
 
 
@@ -585,7 +654,9 @@
             lastTickTime = now;
 
 
-            /* ---------- COUNTDOWN ---------- */
+            /* =====================================
+               COUNTDOWN
+            ===================================== */
 
             if (state === "COUNTDOWN") {
 
@@ -612,51 +683,71 @@
 
                     if (hasBet) {
 
-                        btn.innerText = "Cash Out";
+                        btn.innerText =
+                            "Cash Out";
 
-                        btn.className = "betting";
+                        btn.className =
+                            "betting";
 
-                    } else {
+                    }
 
-                        btn.innerText = "Place bet";
+                    else {
+
+                        btn.innerText =
+                            "Place bet";
 
                         btn.className = "";
+
                     }
 
 
-                    /* تحديد نقطة الانفجار */
+                    /* CRASH POINT */
 
                     const r = Math.random();
+
 
                     if (r < 0.1) {
 
                         crash = 1.00;
 
-                    } else if (r < 0.65) {
+                    }
+
+                    else if (r < 0.65) {
 
                         crash =
                             Math.random() * 3 + 1.01;
 
-                    } else if (r < 0.9) {
+                    }
+
+                    else if (r < 0.9) {
 
                         crash =
                             Math.random() * 15 + 3;
 
-                    } else {
+                    }
+
+                    else {
 
                         crash =
                             Math.random() * 132 + 18;
+
                     }
 
 
                     if (crash > 150) {
+
                         crash = 150;
+
                     }
+
                 }
+
             }
 
 
-            /* ---------- FLYING ---------- */
+            /* =====================================
+               FLYING
+            ===================================== */
 
             else if (state === "FLYING") {
 
@@ -666,7 +757,7 @@
                     value.toFixed(2) + "x";
 
 
-                /* محاكاة سحب اللاعبين */
+                /* PLAYER CASHOUT */
 
                 listPlayers.forEach(p => {
 
@@ -679,21 +770,30 @@
                         p.winMult =
                             p.cashOutPoint;
 
+
                         if (p.cashOutPoint >= 10.00) {
 
-                            p.status = "win-high";
+                            p.status =
+                                "win-high";
 
-                        } else {
-
-                            p.status = "win-low";
                         }
 
+                        else {
+
+                            p.status =
+                                "win-low";
+
+                        }
+
+
                         renderPlayers();
+
                     }
+
                 });
 
 
-                /* ---------- CRASH ---------- */
+                /* CRASH */
 
                 if (value >= crash) {
 
@@ -716,41 +816,52 @@
                         if (p.status === "active") {
 
                             p.status = "lose";
+
                         }
+
                     });
 
 
-                    if (hasBet && !hasCashedOut) {
+                    if (
+                        hasBet &&
+                        !hasCashedOut
+                    ) {
 
                         btn.innerText =
                             "Place bet";
 
                         btn.className = "";
+
                     }
 
 
                     renderPlayers();
 
-                    updateHistoryUI();
-
 
                     if (navigator.vibrate) {
 
                         navigator.vibrate(300);
+
                     }
+
+
+                    updateHistoryUI();
 
 
                     setTimeout(
                         startCount,
                         2500
                     );
+
                 }
+
             }
+
         }
 
 
         /* =========================================
-           DRAW GAME
+           DRAW
         ========================================= */
 
         function draw() {
@@ -766,7 +877,9 @@
             );
 
 
-            /* ---------- STARS ---------- */
+            /* =====================================
+               STARS
+            ===================================== */
 
             ctx.fillStyle = "#fff";
 
@@ -792,25 +905,36 @@
 
                     s.y += s.sp * 3.5;
 
-                } else {
+                }
+
+                else {
 
                     s.x -= s.sp * 0.2;
 
                     s.y += s.sp * 0.2;
+
                 }
 
 
                 if (s.x < 0) {
+
                     s.x = canvas.width;
+
                 }
 
+
                 if (s.y > canvas.height) {
+
                     s.y = 0;
+
                 }
+
             });
 
 
-            /* ---------- COUNTDOWN CIRCLE ---------- */
+            /* =====================================
+               COUNTDOWN CIRCLE
+            ===================================== */
 
             if (state === "COUNTDOWN") {
 
@@ -820,37 +944,58 @@
 
                 ctx.beginPath();
 
+
                 ctx.arc(
+
                     canvas.width / 2,
+
                     canvas.height / 2,
+
                     55,
+
                     -Math.PI / 2,
-                    (Math.PI * 2 - countAngle) -
+
+                    (
+                        Math.PI * 2 -
+                        countAngle
+                    ) -
                     Math.PI / 2,
+
                     false
+
                 );
 
-                ctx.strokeStyle = "#ff7a00";
+
+                ctx.strokeStyle =
+                    "#ff7a00";
 
                 ctx.lineWidth = 5;
 
                 ctx.stroke();
+
             }
 
-
-            /* ---------- CURRENT COLOR ---------- */
 
             const currentColor =
                 getHColor(value);
 
 
-            /* ---------- ROCKET PATH ---------- */
+            /* =====================================
+               ROCKET PATH
+            ===================================== */
 
             if (path.length > 1) {
 
                 ctx.save();
 
                 ctx.beginPath();
+
+
+                /*
+                    إصلاح الخطأ الموجود في الكود الأصلي:
+                    path.x / path.y
+                    أصبحت path[0].x / path[0].y
+                */
 
                 ctx.moveTo(
                     path[0].x,
@@ -868,6 +1013,7 @@
                         path[i].x,
                         path[i].y
                     );
+
                 }
 
 
@@ -884,10 +1030,13 @@
                 ctx.stroke();
 
                 ctx.restore();
+
             }
 
 
-            /* ---------- PARTICLES ---------- */
+            /* =====================================
+               PARTICLES
+            ===================================== */
 
             if (state === "FLYING") {
 
@@ -909,8 +1058,11 @@
                             Math.random() * 1.8 + 0.5,
 
                         alpha: 1
+
                     });
+
                 }
+
             }
 
 
@@ -953,12 +1105,16 @@
                             index,
                             1
                         );
+
                     }
+
                 }
             );
 
 
-            /* ---------- ROCKET ---------- */
+            /* =====================================
+               ROCKET MOVEMENT
+            ===================================== */
 
             if (state === "FLYING") {
 
@@ -967,7 +1123,7 @@
 
 
                 /*
-                    حساب مسار الصاروخ
+                    حساب نسبة تقدم الصاروخ
                 */
 
                 let p;
@@ -981,7 +1137,9 @@
                             9.00
                         ) * 0.45;
 
-                } else {
+                }
+
+                else {
 
                     p =
                         0.45 +
@@ -993,167 +1151,241 @@
                                     : 1
                             )
                         ) * 0.37;
+
                 }
 
 
                 if (p > 0.82) {
+
                     p = 0.82;
+
                 }
 
 
-                /*
-                    الحركة:
-                    أولاً إلى اليمين
-                    ثم يبدأ الصعود
-                */
+                /* =================================
+                   FIRST STAGE
+                   حركة أفقية
+                ================================= */
 
                 if (value <= 2.00) {
 
                     rx =
                         40 +
-                        (
-                            canvas.width - 80
-                        ) *
+                        (canvas.width - 80) *
                         p *
                         1.5;
+
 
                     ry =
                         canvas.height - 40;
 
-                } else {
+                }
+
+
+                /* =================================
+                   SECOND STAGE
+                   حركة مائلة للأعلى
+                ================================= */
+
+                else {
 
                     rx =
                         40 +
-                        (
-                            canvas.width - 80
-                        ) *
+                        (canvas.width - 80) *
                         p;
 
+
+                    /*
+                        نسبة الصعود
+                    */
+
+                    let cProg =
+                        (
+                            value - 2.00
+                        ) /
+                        (
+                            crash > 2
+                                ? crash - 2
+                                : 1
+                        );
+
+
+                    cProg =
+                        Math.min(
+                            Math.max(cProg, 0),
+                            1
+                        );
+
+
+                    /*
+                        مقدار الصعود العمودي
+
+                        0.60 = 60%
+                    */
+
+                    const climbAmount =
+                        (
+                            canvas.height - 90
+                        ) * 0.60;
+
+
+                    /*
+                        صعود مائل ومنحني
+                    */
 
                     ry =
                         (
                             canvas.height - 40
                         ) -
-                        (
-                            canvas.height - 90
-                        ) *
-                        Math.sin(
-                            (
-                                (value - 2.00) /
-                                (
-                                    crash > 2
-                                        ? crash - 2
-                                        : 1
-                                )
-                            ) *
-                            Math.PI /
-                            2.3
+                        climbAmount *
+                        Math.pow(
+                            cProg,
+                            0.85
                         );
+
                 }
 
 
-                /* اهتزاز الصاروخ عند وصوله للنهاية */
+                /* اهتزاز بسيط */
 
                 if (p >= 0.82) {
 
                     rx +=
-                        (Math.random() - 0.5) * 3;
+                        (
+                            Math.random() - 0.5
+                        ) * 3;
+
 
                     ry +=
-                        (Math.random() - 0.5) * 3;
+                        (
+                            Math.random() - 0.5
+                        ) * 3;
+
                 }
 
 
                 /* حفظ المسار */
 
                 path.push({
+
                     x: rx,
+
                     y: ry
+
                 });
 
 
-                /* رسم الصاروخ */
+                /* =================================
+                   DRAW ROCKET
+                ================================= */
 
                 ctx.save();
+
 
                 ctx.translate(
                     rx,
                     ry
                 );
 
+
+                /*
+                    اتجاه الصاروخ
+                */
+
                 ctx.rotate(
-                    -Math.PI / 4
+                    -Math.PI / 3
                 );
+
 
                 ctx.fillStyle =
                     "#f0f2f5";
 
+
                 ctx.beginPath();
+
 
                 ctx.moveTo(
                     0,
                     -16
                 );
 
+
                 ctx.lineTo(
                     7,
                     4
                 );
+
 
                 ctx.lineTo(
                     -7,
                     4
                 );
 
+
                 ctx.closePath();
 
                 ctx.fill();
 
+
                 ctx.restore();
+
             }
 
 
-            /* ---------- CRASH EFFECT ---------- */
+            /* =====================================
+               CRASH
+            ===================================== */
 
             else if (state === "CRASHED") {
 
                 ctx.font =
                     "40px Arial";
 
+
                 ctx.fillText(
                     "💥",
                     rx,
                     ry
                 );
+
             }
 
 
+            /* =====================================
+               NEXT FRAME
+            ===================================== */
+
             loop =
                 requestAnimationFrame(draw);
+
         }
 
 
         /* =========================================
-           BUTTON ACTION
+           BUTTON
         ========================================= */
 
         function handleAction() {
 
-            /* ---------- PLACE BET ---------- */
+
+            /* PLACE BET */
 
             if (state === "COUNTDOWN") {
 
                 hasBet = true;
 
+
                 btn.innerText =
                     "Bet Placed";
 
+
                 btn.className =
                     "betting";
+
             }
 
 
-            /* ---------- CASH OUT ---------- */
+            /* CASH OUT */
 
             else if (
                 state === "FLYING" &&
@@ -1163,8 +1395,10 @@
 
                 hasCashedOut = true;
 
+
                 btn.innerText =
                     "Place bet";
+
 
                 btn.className = "";
 
@@ -1181,6 +1415,7 @@
                         value >= 10.00
                             ? "win-high"
                             : "win-low"
+
                 };
 
 
@@ -1188,13 +1423,16 @@
                     userP
                 );
 
+
                 renderPlayers();
+
             }
+
         }
 
 
         /* =========================================
-           START
+           START GAME
         ========================================= */
 
         updateHistoryUI();
@@ -1202,6 +1440,7 @@
         startCount();
 
         draw();
+
     </script>
 
 </body>
