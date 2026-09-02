@@ -14,6 +14,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
+
         body {
             font-family: sans-serif;
             background: #07080c;
@@ -72,6 +73,7 @@
         }
 
         @keyframes zPop {
+
             0% {
                 transform: translate(-50%, -50%) scale(0.7);
                 opacity: 0.5;
@@ -81,6 +83,7 @@
                 transform: translate(-50%, -50%) scale(1.2);
                 opacity: 1;
             }
+
         }
 
         #history-bar {
@@ -162,49 +165,85 @@
             display: flex;
             justify-content: space-between;
             background: #131722;
-            padding: 10px 14px;
-            border-radius: 14px;
+            padding: 12px 14px;
+            border-radius: 16px;
             font-size: 14px;
             transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.02);
         }
 
         .p-blue {
-            color: #0066ff;
+            color: #8a9fc4;
             font-size: 11px;
             font-weight: bold;
         }
 
-        .p-win-low {
+        .row-win-low {
+            background: rgba(78, 159, 61, 0.08) !important;
+            border: 1px solid rgba(78, 159, 61, 0.4) !important;
+        }
+
+        .row-win-low b {
             color: #4e9f3d !important;
         }
 
-        .p-win-high {
+        .row-win-low .p-blue {
+            color: #72c361 !important;
+        }
+
+        .row-win-high {
+            background: rgba(255, 215, 0, 0.08) !important;
+            border: 1px solid rgba(255, 215, 0, 0.4) !important;
+        }
+
+        .row-win-high b {
             color: #ffd700 !important;
         }
 
-        .p-lose {
+        .row-win-high .p-blue {
+            color: #ffeb7a !important;
+        }
+
+        .row-lose {
+            background: rgba(233, 69, 96, 0.06) !important;
+            border: 1px solid rgba(233, 69, 96, 0.3) !important;
+        }
+
+        .row-lose b {
             color: #e94560 !important;
         }
+
+        .row-lose .p-blue {
+            color: #ff758c !important;
+        }
+
     </style>
 </head>
+
 
 <body>
 
     <div id="wrapper">
 
-        <!-- GAME -->
+        <!-- GAME AREA -->
+
         <div id="container">
 
-            <div id="mult">1.00x</div>
+            <div id="mult">
+                1.00x
+            </div>
 
-            <div id="count-box">5</div>
+            <div id="count-box">
+                5
+            </div>
 
             <canvas id="gameCanvas"></canvas>
 
         </div>
 
 
-        <!-- CONTROLS -->
+        <!-- CONTROL PANEL -->
+
         <div id="control-panel">
 
             <div id="history-bar"></div>
@@ -216,7 +255,8 @@
         </div>
 
 
-        <!-- PLAYERS -->
+        <!-- PLAYERS LIST -->
+
         <div id="p-list"></div>
 
     </div>
@@ -225,12 +265,18 @@
     <script>
 
         /* =========================================
-           TELEGRAM
+           TELEGRAM WEB APP
         ========================================= */
 
-        if (window.Telegram && window.Telegram.WebApp) {
+        if (
+            window.Telegram &&
+            window.Telegram.WebApp
+        ) {
+
             window.Telegram.WebApp.ready();
+
             window.Telegram.WebApp.expand();
+
         }
 
 
@@ -238,30 +284,49 @@
            ELEMENTS
         ========================================= */
 
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const canvas =
+            document.getElementById("gameCanvas");
 
-        const mult = document.getElementById("mult");
-        const btn = document.getElementById("btn");
-        const hBar = document.getElementById("history-bar");
-        const pList = document.getElementById("p-list");
-        const cBox = document.getElementById("count-box");
+        const ctx =
+            canvas.getContext("2d");
+
+        const mult =
+            document.getElementById("mult");
+
+        const btn =
+            document.getElementById("btn");
+
+        const hBar =
+            document.getElementById("history-bar");
+
+        const pList =
+            document.getElementById("p-list");
+
+        const cBox =
+            document.getElementById("count-box");
 
 
         /* =========================================
-           CANVAS
+           CANVAS SIZE
         ========================================= */
 
         function resizeCanvas() {
 
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            canvas.width =
+                canvas.parentElement.clientWidth;
+
+            canvas.height =
+                canvas.parentElement.clientHeight;
 
         }
 
         resizeCanvas();
 
-        window.addEventListener("resize", resizeCanvas);
+
+        window.addEventListener(
+            "resize",
+            resizeCanvas
+        );
 
 
         /* =========================================
@@ -280,7 +345,8 @@
 
         let rx = 40;
 
-        let ry = canvas.height - 40;
+        let ry =
+            canvas.height - 40;
 
         let timer = 5;
 
@@ -288,11 +354,13 @@
 
         let listPlayers = [];
 
-        let lastTickTime = Date.now();
+        let lastTickTime =
+            Date.now();
 
         let hasBet = false;
 
         let hasCashedOut = false;
+
 
         let historyList = [
             "3.70x",
@@ -301,6 +369,7 @@
             "5.64x",
             "1.00x"
         ];
+
 
         let stars = [];
 
@@ -314,36 +383,36 @@
         const pool = [
 
             {
-                n: "Sasha",
+                n: "BOB",
                 b: 0.10,
-                cashOutPoint: 1.50,
+                cashOutPoint: 3.36,
                 status: "active"
             },
 
             {
-                n: "Spay",
-                b: 0.50,
-                cashOutPoint: 12.40,
+                n: "honey",
+                b: 0.10,
+                cashOutPoint: 2.27,
                 status: "active"
             },
 
             {
-                n: "Dani",
-                b: 0.45,
-                cashOutPoint: 4.20,
-                status: "active"
-            },
-
-            {
-                n: "Alex",
-                b: 0.30,
-                cashOutPoint: 2.10,
-                status: "active"
-            },
-
-            {
-                n: "Bpex",
+                n: "Aho",
                 b: 0.15,
+                cashOutPoint: 2.23,
+                status: "active"
+            },
+
+            {
+                n: "kee",
+                b: 0.25,
+                cashOutPoint: 2.20,
+                status: "active"
+            },
+
+            {
+                n: "Vitaly AUTH",
+                b: 0.50,
                 cashOutPoint: 15.00,
                 status: "active"
             }
@@ -359,13 +428,19 @@
 
             stars.push({
 
-                x: Math.random() * canvas.width,
+                x:
+                    Math.random() *
+                    canvas.width,
 
-                y: Math.random() * canvas.height,
+                y:
+                    Math.random() *
+                    canvas.height,
 
-                s: Math.random() * 1.5,
+                s:
+                    Math.random() * 1.5,
 
-                sp: Math.random() * 1.2 + 0.6
+                sp:
+                    Math.random() * 1.2 + 0.6
 
             });
 
@@ -373,50 +448,68 @@
 
 
         /* =========================================
-           HISTORY COLOR
+           HISTORY COLORS
         ========================================= */
 
         function getHColor(val) {
 
             if (val <= 1.30) {
+
                 return "#e94560";
+
             }
 
             if (val <= 2.00) {
+
                 return "#0066ff";
+
             }
 
             if (val <= 5.00) {
+
                 return "#4e9f3d";
+
             }
 
             if (val <= 10.00) {
+
                 return "#ffa500";
+
             }
 
             return "#ffd700";
+
         }
 
 
         function getHClass(val) {
 
             if (val <= 1.30) {
+
                 return "c-red";
+
             }
 
             if (val <= 2.00) {
+
                 return "c-blue";
+
             }
 
             if (val <= 5.00) {
+
                 return "c-green";
+
             }
 
             if (val <= 10.00) {
+
                 return "c-orange";
+
             }
 
             return "c-yellow";
+
         }
 
 
@@ -428,16 +521,20 @@
 
             hBar.innerHTML = "";
 
+
             historyList
                 .slice(-6)
                 .reverse()
                 .forEach(v => {
 
-                    const d = document.createElement("div");
+                    const d =
+                        document.createElement("div");
 
                     d.className =
                         "h-item " +
-                        getHClass(parseFloat(v));
+                        getHClass(
+                            parseFloat(v)
+                        );
 
                     d.innerText = v;
 
@@ -449,12 +546,13 @@
 
 
         /* =========================================
-           LIVE PLAYERS
+           LIVE BETS
         ========================================= */
 
         function triggerLiveBets() {
 
             let delay = 0;
+
 
             const shuffled =
                 [...pool].sort(
@@ -468,13 +566,16 @@
 
                 p.winMult = 1.00;
 
+
                 delay +=
                     Math.random() * 400 + 100;
 
 
                 setTimeout(() => {
 
-                    if (state === "COUNTDOWN") {
+                    if (
+                        state === "COUNTDOWN"
+                    ) {
 
                         listPlayers.unshift(p);
 
@@ -500,21 +601,21 @@
 
             listPlayers.forEach(p => {
 
-                const r =
-                    document.createElement("div");
-
-                r.className = "p-row";
-
-
-                let nameClass = "";
+                let rowClass = "p-row";
 
                 let rightVal =
                     `🔹 ${p.b.toFixed(2)}`;
 
 
-                if (p.status === "win-low") {
+                /* WIN LOW */
 
-                    nameClass = "p-win-low";
+                if (
+                    p.status === "win-low"
+                ) {
+
+                    rowClass +=
+                        " row-win-low";
+
 
                     rightVal =
                         `🔹 ${(p.b * p.winMult).toFixed(2)}`;
@@ -522,9 +623,15 @@
                 }
 
 
-                else if (p.status === "win-high") {
+                /* WIN HIGH */
 
-                    nameClass = "p-win-high";
+                else if (
+                    p.status === "win-high"
+                ) {
+
+                    rowClass +=
+                        " row-win-high";
+
 
                     rightVal =
                         `🔹 ${(p.b * p.winMult).toFixed(2)}`;
@@ -532,9 +639,15 @@
                 }
 
 
-                else if (p.status === "lose") {
+                /* LOSE */
 
-                    nameClass = "p-lose";
+                else if (
+                    p.status === "lose"
+                ) {
+
+                    rowClass +=
+                        " row-lose";
+
 
                     rightVal =
                         "💥 0.00";
@@ -542,10 +655,20 @@
                 }
 
 
+                const r =
+                    document.createElement("div");
+
+
+                r.className =
+                    rowClass;
+
+
                 let statText;
 
 
-                if (p.status.startsWith("win")) {
+                if (
+                    p.status.startsWith("win")
+                ) {
 
                     statText =
                         `🔹 ${p.b} ×${p.winMult.toFixed(2)}`;
@@ -564,7 +687,7 @@
 
                     <div>
 
-                        <b class="${nameClass}">
+                        <b>
                             ${p.n}
                         </b>
 
@@ -579,7 +702,7 @@
 
                     <div>
 
-                        <b class="${nameClass}">
+                        <b>
                             ${rightVal}
                         </b>
 
@@ -607,25 +730,38 @@
 
             countAngle = 0;
 
-            cBox.style.display = "block";
 
-            mult.style.display = "none";
+            cBox.style.display =
+                "block";
+
+
+            mult.style.display =
+                "none";
+
 
             hasBet = false;
 
             hasCashedOut = false;
 
 
-            btn.innerText = "Place bet";
+            btn.innerText =
+                "Place bet";
 
-            btn.className = "";
+
+            btn.className =
+                "";
 
 
-            cBox.innerText = timer;
+            cBox.innerText =
+                timer;
 
-            cBox.style.color = "#4e9f3d";
 
-            mult.style.color = "#66fcf1";
+            cBox.style.color =
+                "#4e9f3d";
+
+
+            mult.style.color =
+                "#66fcf1";
 
 
             listPlayers = [];
@@ -635,7 +771,8 @@
             triggerLiveBets();
 
 
-            lastTickTime = Date.now();
+            lastTickTime =
+                Date.now();
 
         }
 
@@ -646,35 +783,53 @@
 
         function syncLogic() {
 
-            const now = Date.now();
+            const now =
+                Date.now();
+
 
             const delta =
-                (now - lastTickTime) / 1000;
+                (now - lastTickTime) /
+                1000;
 
-            lastTickTime = now;
+
+            lastTickTime =
+                now;
 
 
             /* =====================================
                COUNTDOWN
             ===================================== */
 
-            if (state === "COUNTDOWN") {
+            if (
+                state === "COUNTDOWN"
+            ) {
 
                 timer -= delta;
+
 
                 cBox.innerText =
                     Math.ceil(timer);
 
 
-                if (timer <= 0) {
+                if (
+                    timer <= 0
+                ) {
 
-                    cBox.style.display = "none";
+                    cBox.style.display =
+                        "none";
 
-                    mult.style.display = "block";
 
-                    state = "FLYING";
+                    mult.style.display =
+                        "block";
 
-                    value = 1.00;
+
+                    state =
+                        "FLYING";
+
+
+                    value =
+                        1.00;
+
 
                     path = [];
 
@@ -696,40 +851,49 @@
                         btn.innerText =
                             "Place bet";
 
-                        btn.className = "";
+                        btn.className =
+                            "";
 
                     }
 
 
                     /* CRASH POINT */
 
-                    const r = Math.random();
+                    const r =
+                        Math.random();
 
 
                     if (r < 0.1) {
 
-                        crash = 1.00;
+                        crash =
+                            1.00;
 
                     }
 
                     else if (r < 0.65) {
 
                         crash =
-                            Math.random() * 3 + 1.01;
+                            Math.random() *
+                            3 +
+                            1.01;
 
                     }
 
                     else if (r < 0.9) {
 
                         crash =
-                            Math.random() * 15 + 3;
+                            Math.random() *
+                            15 +
+                            3;
 
                     }
 
                     else {
 
                         crash =
-                            Math.random() * 132 + 18;
+                            Math.random() *
+                            132 +
+                            18;
 
                     }
 
@@ -749,12 +913,17 @@
                FLYING
             ===================================== */
 
-            else if (state === "FLYING") {
+            else if (
+                state === "FLYING"
+            ) {
 
-                value += delta * 0.45;
+                value +=
+                    delta * 0.45;
+
 
                 mult.innerText =
-                    value.toFixed(2) + "x";
+                    value.toFixed(2) +
+                    "x";
 
 
                 /* PLAYER CASHOUT */
@@ -771,7 +940,9 @@
                             p.cashOutPoint;
 
 
-                        if (p.cashOutPoint >= 10.00) {
+                        if (
+                            p.cashOutPoint >= 10.00
+                        ) {
 
                             p.status =
                                 "win-high";
@@ -795,27 +966,36 @@
 
                 /* CRASH */
 
-                if (value >= crash) {
+                if (
+                    value >= crash
+                ) {
 
-                    state = "CRASHED";
+                    state =
+                        "CRASHED";
+
 
                     mult.innerText =
                         "💥 FLEW AWAY";
+
 
                     mult.style.color =
                         "#e94560";
 
 
                     historyList.push(
-                        value.toFixed(2) + "x"
+                        value.toFixed(2) +
+                        "x"
                     );
 
 
                     listPlayers.forEach(p => {
 
-                        if (p.status === "active") {
+                        if (
+                            p.status === "active"
+                        ) {
 
-                            p.status = "lose";
+                            p.status =
+                                "lose";
 
                         }
 
@@ -830,7 +1010,8 @@
                         btn.innerText =
                             "Place bet";
 
-                        btn.className = "";
+                        btn.className =
+                            "";
 
                     }
 
@@ -838,7 +1019,9 @@
                     renderPlayers();
 
 
-                    if (navigator.vibrate) {
+                    if (
+                        navigator.vibrate
+                    ) {
 
                         navigator.vibrate(300);
 
@@ -881,12 +1064,14 @@
                STARS
             ===================================== */
 
-            ctx.fillStyle = "#fff";
+            ctx.fillStyle =
+                "#fff";
 
 
             stars.forEach(s => {
 
                 ctx.beginPath();
+
 
                 ctx.arc(
                     s.x,
@@ -896,34 +1081,46 @@
                     Math.PI * 2
                 );
 
+
                 ctx.fill();
 
 
-                if (state === "FLYING") {
+                if (
+                    state === "FLYING"
+                ) {
 
-                    s.x -= s.sp * 3.5;
+                    s.x -=
+                        s.sp * 3.5;
 
-                    s.y += s.sp * 3.5;
+                    s.y +=
+                        s.sp * 3.5;
 
                 }
 
                 else {
 
-                    s.x -= s.sp * 0.2;
+                    s.x -=
+                        s.sp * 0.2;
 
-                    s.y += s.sp * 0.2;
-
-                }
-
-
-                if (s.x < 0) {
-
-                    s.x = canvas.width;
+                    s.y +=
+                        s.sp * 0.2;
 
                 }
 
 
-                if (s.y > canvas.height) {
+                if (
+                    s.x < 0
+                ) {
+
+                    s.x =
+                        canvas.width;
+
+                }
+
+
+                if (
+                    s.y > canvas.height
+                ) {
 
                     s.y = 0;
 
@@ -936,10 +1133,13 @@
                COUNTDOWN CIRCLE
             ===================================== */
 
-            if (state === "COUNTDOWN") {
+            if (
+                state === "COUNTDOWN"
+            ) {
 
                 countAngle +=
-                    (Math.PI * 2) / (5 * 60);
+                    (Math.PI * 2) /
+                    (5 * 60);
 
 
                 ctx.beginPath();
@@ -969,12 +1169,19 @@
                 ctx.strokeStyle =
                     "#ff7a00";
 
-                ctx.lineWidth = 5;
+
+                ctx.lineWidth =
+                    5;
+
 
                 ctx.stroke();
 
             }
 
+
+            /* =====================================
+               COLOR
+            ===================================== */
 
             const currentColor =
                 getHColor(value);
@@ -984,17 +1191,21 @@
                ROCKET PATH
             ===================================== */
 
-            if (path.length > 1) {
+            if (
+                path.length > 1
+            ) {
 
                 ctx.save();
+
 
                 ctx.beginPath();
 
 
                 /*
-                    إصلاح الخطأ الموجود في الكود الأصلي:
-                    path.x / path.y
-                    أصبحت path[0].x / path[0].y
+                    FIX:
+                    path.x
+                    أصبحت
+                    path[0].x
                 */
 
                 ctx.moveTo(
@@ -1020,14 +1231,21 @@
                 ctx.strokeStyle =
                     currentColor;
 
-                ctx.lineWidth = 4;
 
-                ctx.shadowBlur = 10;
+                ctx.lineWidth =
+                    4;
+
+
+                ctx.shadowBlur =
+                    10;
+
 
                 ctx.shadowColor =
                     currentColor;
 
+
                 ctx.stroke();
+
 
                 ctx.restore();
 
@@ -1038,9 +1256,13 @@
                PARTICLES
             ===================================== */
 
-            if (state === "FLYING") {
+            if (
+                state === "FLYING"
+            ) {
 
-                if (Math.random() < 0.7) {
+                if (
+                    Math.random() < 0.7
+                ) {
 
                     particles.push({
 
@@ -1049,13 +1271,21 @@
                         y: ry,
 
                         vx:
-                            (Math.random() - 0.7) * 2,
+                            (
+                                Math.random() -
+                                0.7
+                            ) * 2,
 
                         vy:
-                            (Math.random() + 0.3) * 2.5,
+                            (
+                                Math.random() +
+                                0.3
+                            ) * 2.5,
 
                         size:
-                            Math.random() * 1.8 + 0.5,
+                            Math.random() *
+                            1.8 +
+                            0.5,
 
                         alpha: 1
 
@@ -1071,13 +1301,17 @@
 
                     ctx.save();
 
+
                     ctx.globalAlpha =
                         p.alpha;
+
 
                     ctx.fillStyle =
                         currentColor;
 
+
                     ctx.beginPath();
+
 
                     ctx.arc(
                         p.x,
@@ -1087,19 +1321,28 @@
                         Math.PI * 2
                     );
 
+
                     ctx.fill();
+
 
                     ctx.restore();
 
 
-                    p.x += p.vx;
-
-                    p.y += p.vy;
-
-                    p.alpha -= 0.03;
+                    p.x +=
+                        p.vx;
 
 
-                    if (p.alpha <= 0) {
+                    p.y +=
+                        p.vy;
+
+
+                    p.alpha -=
+                        0.03;
+
+
+                    if (
+                        p.alpha <= 0
+                    ) {
 
                         particles.splice(
                             index,
@@ -1113,29 +1356,32 @@
 
 
             /* =====================================
-               ROCKET MOVEMENT
+               ROCKET
             ===================================== */
 
-            if (state === "FLYING") {
+            if (
+                state === "FLYING"
+            ) {
 
                 mult.style.color =
                     currentColor;
 
 
-                /*
-                    حساب نسبة تقدم الصاروخ
-                */
+                /* MOVEMENT PROGRESS */
 
                 let p;
 
 
-                if (value <= 10.00) {
+                if (
+                    value <= 10.00
+                ) {
 
                     p =
                         (
                             (value - 1.00) /
                             9.00
-                        ) * 0.45;
+                        ) *
+                        0.45;
 
                 }
 
@@ -1150,12 +1396,15 @@
                                     ? crash - 10
                                     : 1
                             )
-                        ) * 0.37;
+                        ) *
+                        0.37;
 
                 }
 
 
-                if (p > 0.82) {
+                if (
+                    p > 0.82
+                ) {
 
                     p = 0.82;
 
@@ -1163,15 +1412,19 @@
 
 
                 /* =================================
-                   FIRST STAGE
-                   حركة أفقية
+                   FIRST PART:
+                   HORIZONTAL
                 ================================= */
 
-                if (value <= 2.00) {
+                if (
+                    value <= 2.00
+                ) {
 
                     rx =
                         40 +
-                        (canvas.width - 80) *
+                        (
+                            canvas.width - 80
+                        ) *
                         p *
                         1.5;
 
@@ -1183,21 +1436,19 @@
 
 
                 /* =================================
-                   SECOND STAGE
-                   حركة مائلة للأعلى
+                   SECOND PART:
+                   DIAGONAL UP
                 ================================= */
 
                 else {
 
                     rx =
                         40 +
-                        (canvas.width - 80) *
+                        (
+                            canvas.width - 80
+                        ) *
                         p;
 
-
-                    /*
-                        نسبة الصعود
-                    */
 
                     let cProg =
                         (
@@ -1212,25 +1463,27 @@
 
                     cProg =
                         Math.min(
-                            Math.max(cProg, 0),
+                            Math.max(
+                                cProg,
+                                0
+                            ),
                             1
                         );
 
 
                     /*
-                        مقدار الصعود العمودي
-
-                        0.60 = 60%
+                        60% CLIMB
                     */
 
                     const climbAmount =
                         (
                             canvas.height - 90
-                        ) * 0.60;
+                        ) *
+                        0.60;
 
 
                     /*
-                        صعود مائل ومنحني
+                        DIAGONAL CURVE
                     */
 
                     ry =
@@ -1246,25 +1499,31 @@
                 }
 
 
-                /* اهتزاز بسيط */
+                /* =================================
+                   ROCKET SHAKE
+                ================================= */
 
-                if (p >= 0.82) {
+                if (
+                    p >= 0.82
+                ) {
 
                     rx +=
                         (
-                            Math.random() - 0.5
+                            Math.random() -
+                            0.5
                         ) * 3;
 
 
                     ry +=
                         (
-                            Math.random() - 0.5
+                            Math.random() -
+                            0.5
                         ) * 3;
 
                 }
 
 
-                /* حفظ المسار */
+                /* SAVE PATH */
 
                 path.push({
 
@@ -1287,10 +1546,6 @@
                     ry
                 );
 
-
-                /*
-                    اتجاه الصاروخ
-                */
 
                 ctx.rotate(
                     -Math.PI / 3
@@ -1324,6 +1579,7 @@
 
                 ctx.closePath();
 
+
                 ctx.fill();
 
 
@@ -1336,7 +1592,9 @@
                CRASH
             ===================================== */
 
-            else if (state === "CRASHED") {
+            else if (
+                state === "CRASHED"
+            ) {
 
                 ctx.font =
                     "40px Arial";
@@ -1351,18 +1609,18 @@
             }
 
 
-            /* =====================================
-               NEXT FRAME
-            ===================================== */
+            /* NEXT FRAME */
 
             loop =
-                requestAnimationFrame(draw);
+                requestAnimationFrame(
+                    draw
+                );
 
         }
 
 
         /* =========================================
-           BUTTON
+           BUTTON ACTION
         ========================================= */
 
         function handleAction() {
@@ -1370,9 +1628,12 @@
 
             /* PLACE BET */
 
-            if (state === "COUNTDOWN") {
+            if (
+                state === "COUNTDOWN"
+            ) {
 
-                hasBet = true;
+                hasBet =
+                    true;
 
 
                 btn.innerText =
@@ -1393,14 +1654,16 @@
                 !hasCashedOut
             ) {
 
-                hasCashedOut = true;
+                hasCashedOut =
+                    true;
 
 
                 btn.innerText =
                     "Place bet";
 
 
-                btn.className = "";
+                btn.className =
+                    "";
 
 
                 const userP = {
@@ -1432,7 +1695,7 @@
 
 
         /* =========================================
-           START GAME
+           INITIALIZE
         ========================================= */
 
         updateHistoryUI();
@@ -1444,4 +1707,5 @@
     </script>
 
 </body>
+
 </html>
