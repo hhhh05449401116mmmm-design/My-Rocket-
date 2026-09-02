@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>Rocket Cash</title>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #07080c;
             color: #fff;
             margin: 0;
@@ -36,7 +30,7 @@
         #container {
             position: relative;
             width: 100%;
-            height: 38vh;
+            height: 32vh;
             background: radial-gradient(#151c24, #07080c);
             border-radius: 24px;
             overflow: hidden;
@@ -73,7 +67,6 @@
         }
 
         @keyframes zPop {
-
             0% {
                 transform: translate(-50%, -50%) scale(0.7);
                 opacity: 0.5;
@@ -83,7 +76,6 @@
                 transform: translate(-50%, -50%) scale(1.2);
                 opacity: 1;
             }
-
         }
 
         #history-bar {
@@ -101,7 +93,6 @@
             font-size: 13px;
             font-weight: bold;
             border: 1px solid #4e9f3d;
-            white-space: nowrap;
         }
 
         .c-red {
@@ -134,7 +125,7 @@
             background: rgba(255, 215, 0, 0.15);
         }
 
-        #btn {
+        #main-action-btn {
             background: #0066ff;
             color: #fff;
             border: none;
@@ -148,15 +139,191 @@
             margin-bottom: 8px;
         }
 
-        #btn.betting {
+        #main-action-btn.betting {
             background: #e94560;
+        }
+
+        #bet-panel {
+            background: #181c26;
+            border-radius: 24px 24px 0 0;
+            padding: 16px;
+            box-sizing: border-box;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            display: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #0f121a;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #8a9fc4;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: #b05cff;
+            color: #fff;
+        }
+
+        .panel-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: #8a9fc4;
+        }
+
+        .row-val {
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-box {
+            background: #0f121a;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 14px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: #516381;
+            margin-bottom: 6px;
+        }
+
+        .input-field {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            outline: none;
+        }
+
+        .currency-tag {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: #0066ff;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2c354a;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #0066ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        #submit-bet-btn {
+            background: linear-gradient(135deg, #3b4252 0%, #2e3440 100%);
+            color: #8a9fc4;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        #submit-bet-btn.active {
+            background: #0066ff;
+            color: #fff;
         }
 
         #p-list {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            max-height: 32vh;
+            max-height: 25vh;
             overflow-y: auto;
             flex-grow: 1;
         }
@@ -168,7 +335,6 @@
             padding: 12px 14px;
             border-radius: 16px;
             font-size: 14px;
-            transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.02);
         }
 
@@ -187,10 +353,6 @@
             color: #4e9f3d !important;
         }
 
-        .row-win-low .p-blue {
-            color: #72c361 !important;
-        }
-
         .row-win-high {
             background: rgba(255, 215, 0, 0.08) !important;
             border: 1px solid rgba(255, 215, 0, 0.4) !important;
@@ -198,10 +360,6 @@
 
         .row-win-high b {
             color: #ffd700 !important;
-        }
-
-        .row-win-high .p-blue {
-            color: #ffeb7a !important;
         }
 
         .row-lose {
@@ -212,1500 +370,911 @@
         .row-lose b {
             color: #e94560 !important;
         }
-
-        .row-lose .p-blue {
-            color: #ff758c !important;
-        }
-
     </style>
 </head>
 
-
 <body>
 
-    <div id="wrapper">
+<div id="wrapper">
 
-        <!-- GAME AREA -->
-
-        <div id="container">
-
-            <div id="mult">
-                1.00x
-            </div>
-
-            <div id="count-box">
-                5
-            </div>
-
-            <canvas id="gameCanvas"></canvas>
-
-        </div>
-
-
-        <!-- CONTROL PANEL -->
-
-        <div id="control-panel">
-
-            <div id="history-bar"></div>
-
-            <button id="btn" onclick="handleAction()">
-                Place bet
-            </button>
-
-        </div>
-
-
-        <!-- PLAYERS LIST -->
-
-        <div id="p-list"></div>
-
+    <div id="container">
+        <div id="mult">1.00x</div>
+        <div id="count-box">5</div>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="control-panel">
+        <div id="history-bar"></div>
 
-    <script>
+        <button id="main-action-btn" onclick="openBetPanel()">
+            Place bet
+        </button>
+    </div>
 
-        /* =========================================
-           TELEGRAM WEB APP
-        ========================================= */
+    <div id="p-list"></div>
+
+    <div id="bet-panel">
+
+        <div class="panel-header">
+            <div class="panel-title">Place bet</div>
+
+            <button class="close-btn" onclick="closeBetPanel()">
+                ✕
+            </button>
+        </div>
+
+        <div class="tab-bar">
+            <button id="tab-gifts" class="tab-btn" onclick="switchTab('gifts')">
+                Gifts
+            </button>
+
+            <button id="tab-ton" class="tab-btn active" onclick="switchTab('ton')">
+                TON
+            </button>
+        </div>
+
+        <div class="panel-row">
+            <div>Available Balance</div>
+
+            <div class="row-val">
+                <span id="balance-display">10.00</span>
+                <span id="currency-unit">💎</span>
+            </div>
+        </div>
+
+        <div class="input-box">
+            <div class="input-label">Bet Amount</div>
+
+            <input
+                type="number"
+                id="bet-input"
+                class="input-field"
+                placeholder="TON amount"
+                step="0.1"
+                min="0.1"
+                oninput="validateBetInput()"
+            >
+
+            <div id="input-tag" class="currency-tag">
+                💎
+            </div>
+        </div>
+
+        <div class="panel-row">
+            <div>Auto cashout</div>
+
+            <label class="switch">
+                <input
+                    type="checkbox"
+                    id="auto-cash-toggle"
+                    onchange="toggleAutoCashFields()"
+                >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="input-box" id="auto-cash-box" style="display:none;">
+
+            <div class="input-label">
+                Cashout Multiplier
+            </div>
+
+            <input
+                type="number"
+                id="auto-cash-input"
+                class="input-field"
+                placeholder="e.g. 5.00"
+                step="0.1"
+                min="1.1"
+            >
+
+            <div class="currency-tag">
+                X
+            </div>
+        </div>
+
+        <button id="submit-bet-btn" onclick="submitBet()">
+            Place TON Bet 🚀
+        </button>
+
+    </div>
+</div>
+
+<script>
+
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const mult = document.getElementById('mult');
+    const mainBtn = document.getElementById('main-action-btn');
+    const hBar = document.getElementById('history-bar');
+    const pList = document.getElementById('p-list');
+    const cBox = document.getElementById('count-box');
+
+    const betPanel = document.getElementById('bet-panel');
+    const betInput = document.getElementById('bet-input');
+    const submitBetBtn = document.getElementById('submit-bet-btn');
+
+    const balanceDisplay = document.getElementById('balance-display');
+    const currencyUnit = document.getElementById('currency-unit');
+    const inputTag = document.getElementById('input-tag');
+
+    const autoToggle = document.getElementById('auto-cash-toggle');
+    const autoCashBox = document.getElementById('auto-cash-box');
+    const autoCashInput = document.getElementById('auto-cash-input');
+
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+
+    let state = 'COUNTDOWN';
+    let value = 1.00;
+    let crash = 1.00;
+    let loop;
+
+    let path = [];
+    let rx = 40;
+    let ry = canvas.height - 40;
+
+    let timer = 5;
+    let countAngle = 0;
+    let listPlayers = [];
+    let lastTickTime = Date.now();
+
+    let hasBet = false;
+    let hasCashedOut = false;
+
+    let currentTab = 'ton';
+    let userBalance = 10.00;
+    let userBetAmount = 0;
+
+    let historyList = [
+        '3.70x',
+        '3.07x',
+        '11.26x',
+        '5.64x',
+        '1.00x'
+    ];
+
+    let stars = [];
+    let particles = [];
+
+    const pool = [
+        {
+            n: 'BOB',
+            b: 0.10,
+            cashOutPoint: 3.36,
+            status: 'active'
+        },
+        {
+            n: 'honey',
+            b: 0.10,
+            cashOutPoint: 2.27,
+            status: 'active'
+        },
+        {
+            n: 'Aho',
+            b: 0.15,
+            cashOutPoint: 2.23,
+            status: 'active'
+        },
+        {
+            n: 'kee',
+            b: 0.25,
+            cashOutPoint: 2.20,
+            status: 'active'
+        }
+    ];
+
+    for (let i = 0; i < 30; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            s: Math.random() * 1.5,
+            sp: Math.random() * 1.2 + 0.6
+        });
+    }
+
+    function getHColor(val) {
+        if (val <= 1.30) return '#e94560';
+        if (val <= 2.00) return '#0066ff';
+        if (val <= 5.00) return '#4e9f3d';
+        if (val <= 10.00) return '#ffa500';
+        return '#ffd700';
+    }
+
+    function getHClass(val) {
+        if (val <= 1.30) return 'c-red';
+        if (val <= 2.00) return 'c-blue';
+        if (val <= 5.00) return 'c-green';
+        if (val <= 10.00) return 'c-orange';
+        return 'c-yellow';
+    }
+
+    function updateHistoryUI() {
+        hBar.innerHTML = '';
+
+        historyList
+            .slice(-6)
+            .reverse()
+            .forEach(v => {
+                const d = document.createElement('div');
+
+                d.className =
+                    'h-item ' +
+                    getHClass(parseFloat(v));
+
+                d.innerText = v;
+
+                hBar.appendChild(d);
+            });
+    }
+
+    function openBetPanel() {
+
+        if (state === 'COUNTDOWN' && !hasBet) {
+            betPanel.style.display = 'block';
+
+        } else if (
+            state === 'FLYING' &&
+            hasBet &&
+            !hasCashedOut
+        ) {
+            cashOutUser();
+        }
+    }
+
+    function closeBetPanel() {
+        betPanel.style.display = 'none';
+    }
+
+    function switchTab(tab) {
+
+        currentTab = tab;
+
+        document
+            .getElementById('tab-gifts')
+            .classList.toggle('active', tab === 'gifts');
+
+        document
+            .getElementById('tab-ton')
+            .classList.toggle('active', tab === 'ton');
+
+        currencyUnit.innerText =
+            tab === 'ton' ? '💎' : '🎁';
+
+        inputTag.innerText =
+            tab === 'ton' ? '💎' : '🎁';
+
+        betInput.placeholder =
+            tab === 'ton'
+                ? 'TON amount'
+                : 'NFT Gift ID';
+
+        submitBetBtn.innerText =
+            tab === 'ton'
+                ? 'Place TON Bet 🚀'
+                : 'Place Gift Bet 🎁';
+
+        validateBetInput();
+    }
+
+    function toggleAutoCashFields() {
+        autoCashBox.style.display =
+            autoToggle.checked ? 'block' : 'none';
+    }
+
+    function validateBetInput() {
+
+        let val = parseFloat(betInput.value);
 
         if (
-            window.Telegram &&
-            window.Telegram.WebApp
+            currentTab === 'ton' &&
+            val >= 0.1 &&
+            val <= userBalance
         ) {
 
-            window.Telegram.WebApp.ready();
+            submitBetBtn.className = 'active';
+            submitBetBtn.disabled = false;
 
-            window.Telegram.WebApp.expand();
+        } else if (
+            currentTab === 'gifts' &&
+            betInput.value.length > 0
+        ) {
 
+            submitBetBtn.className = 'active';
+            submitBetBtn.disabled = false;
+
+        } else {
+
+            submitBetBtn.className = '';
+            submitBetBtn.disabled = true;
+        }
+    }
+
+    function submitBet() {
+
+        hasBet = true;
+
+        userBetAmount =
+            currentTab === 'ton'
+                ? parseFloat(betInput.value)
+                : 0.1;
+
+        if (currentTab === 'ton') {
+
+            userBalance -= userBetAmount;
+
+            balanceDisplay.innerText =
+                userBalance.toFixed(2);
         }
 
+        mainBtn.innerText = 'Bet Placed';
+        mainBtn.className = 'betting';
 
-        /* =========================================
-           ELEMENTS
-        ========================================= */
+        closeBetPanel();
+    }
 
-        const canvas =
-            document.getElementById("gameCanvas");
+    function triggerLiveBets() {
 
-        const ctx =
-            canvas.getContext("2d");
+        let delay = 0;
 
-        const mult =
-            document.getElementById("mult");
+        const shuffled =
+            [...pool].sort(() => 0.5 - Math.random());
 
-        const btn =
-            document.getElementById("btn");
+        shuffled.forEach(p => {
 
-        const hBar =
-            document.getElementById("history-bar");
+            p.status = 'active';
+            p.winMult = 1.00;
 
-        const pList =
-            document.getElementById("p-list");
+            delay +=
+                Math.random() * 400 + 100;
 
-        const cBox =
-            document.getElementById("count-box");
+            setTimeout(() => {
 
+                if (state === 'COUNTDOWN') {
 
-        /* =========================================
-           CANVAS SIZE
-        ========================================= */
+                    listPlayers.unshift(p);
 
-        function resizeCanvas() {
+                    renderPlayers();
+                }
 
-            canvas.width =
-                canvas.parentElement.clientWidth;
+            }, delay);
+        });
+    }
 
-            canvas.height =
-                canvas.parentElement.clientHeight;
+    function renderPlayers() {
 
+        pList.innerHTML = '';
+
+        listPlayers.forEach(p => {
+
+            let rowClass = 'p-row';
+            let rightVal = `🔹 ${p.b.toFixed(2)}`;
+
+            if (p.status === 'win-low') {
+
+                rowClass += ' row-win-low';
+
+                rightVal =
+                    `🔹 ${(p.b * p.winMult).toFixed(2)}`;
+
+            } else if (p.status === 'win-high') {
+
+                rowClass += ' row-win-high';
+
+                rightVal =
+                    `🔹 ${(p.b * p.winMult).toFixed(2)}`;
+
+            } else if (p.status === 'lose') {
+
+                rowClass += ' row-lose';
+
+                rightVal = '💥 0.00';
+            }
+
+            let statText;
+
+            if (p.status.startsWith('win')) {
+
+                statText =
+                    `🔹 ${p.b} ×${p.winMult.toFixed(2)}`;
+
+            } else {
+
+                statText =
+                    `🔹 ${p.b} ×1.00`;
+            }
+
+            const r =
+                document.createElement('div');
+
+            r.className = rowClass;
+
+            r.innerHTML = `
+                <div>
+                    <b>${p.n}</b><br>
+                    <span class="p-blue">${statText}</span>
+                </div>
+
+                <div>
+                    <b>${rightVal}</b>
+                </div>
+            `;
+
+            pList.appendChild(r);
+        });
+    }
+
+    function startCount() {
+
+        state = 'COUNTDOWN';
+
+        timer = 5;
+        countAngle = 0;
+
+        cBox.style.display = 'block';
+        mult.style.display = 'none';
+
+        hasBet = false;
+        hasCashedOut = false;
+
+        mainBtn.innerText = 'Place bet';
+        mainBtn.className = '';
+
+        cBox.innerText = timer;
+        cBox.style.color = '#4e9f3d';
+
+        mult.style.color = '#66fcf1';
+
+        listPlayers = [];
+
+        renderPlayers();
+
+        triggerLiveBets();
+
+        lastTickTime = Date.now();
+    }
+
+    function cashOutUser() {
+
+        hasCashedOut = true;
+
+        mainBtn.innerText = 'Place bet';
+        mainBtn.className = '';
+
+        if (currentTab === 'ton') {
+
+            userBalance +=
+                userBetAmount * value;
+
+            balanceDisplay.innerText =
+                userBalance.toFixed(2);
         }
 
-        resizeCanvas();
+        let userP = {
+            n: 'You',
+            b: userBetAmount,
+            winMult: value,
+            status:
+                value >= 10.00
+                    ? 'win-high'
+                    : 'win-low'
+        };
 
+        listPlayers.unshift(userP);
 
-        window.addEventListener(
-            "resize",
-            resizeCanvas
-        );
+        renderPlayers();
+    }
 
+    function syncLogic() {
 
-        /* =========================================
-           GAME VARIABLES
-        ========================================= */
+        let now = Date.now();
 
-        let state = "COUNTDOWN";
+        let delta =
+            (now - lastTickTime) / 1000;
 
-        let value = 1.00;
+        lastTickTime = now;
 
-        let crash = 1.00;
+        if (state === 'COUNTDOWN') {
 
-        let loop;
+            timer -= delta;
 
-        let path = [];
+            cBox.innerText =
+                Math.ceil(timer);
 
-        let rx = 40;
+            if (timer <= 0) {
 
-        let ry =
-            canvas.height - 40;
+                cBox.style.display = 'none';
+                mult.style.display = 'block';
 
-        let timer = 5;
+                state = 'FLYING';
 
-        let countAngle = 0;
+                value = 1.00;
 
-        let listPlayers = [];
+                path = [];
+                particles = [];
 
-        let lastTickTime =
-            Date.now();
+                if (hasBet) {
 
-        let hasBet = false;
+                    mainBtn.innerText = 'Cash Out';
+                    mainBtn.className = 'betting';
 
-        let hasCashedOut = false;
+                } else {
 
+                    mainBtn.innerText = 'Place bet';
+                    mainBtn.className = '';
+                }
 
-        let historyList = [
-            "3.70x",
-            "3.07x",
-            "11.26x",
-            "5.64x",
-            "1.00x"
-        ];
+                let r = Math.random();
 
+                if (r < 0.1) {
 
-        let stars = [];
+                    crash = 1.00;
 
-        let particles = [];
+                } else if (r < 0.65) {
 
+                    crash =
+                        Math.random() * 3 + 1.01;
 
-        /* =========================================
-           PLAYERS
-        ========================================= */
+                } else if (r < 0.9) {
 
-        const pool = [
+                    crash =
+                        Math.random() * 15 + 3;
 
-            {
-                n: "BOB",
-                b: 0.10,
-                cashOutPoint: 3.36,
-                status: "active"
-            },
+                } else {
 
-            {
-                n: "honey",
-                b: 0.10,
-                cashOutPoint: 2.27,
-                status: "active"
-            },
+                    crash =
+                        Math.random() * 132 + 18;
+                }
 
-            {
-                n: "Aho",
-                b: 0.15,
-                cashOutPoint: 2.23,
-                status: "active"
-            },
-
-            {
-                n: "kee",
-                b: 0.25,
-                cashOutPoint: 2.20,
-                status: "active"
-            },
-
-            {
-                n: "Vitaly AUTH",
-                b: 0.50,
-                cashOutPoint: 15.00,
-                status: "active"
+                if (crash > 150) {
+                    crash = 150;
+                }
             }
 
-        ];
+        } else if (state === 'FLYING') {
 
+            value += delta * 0.45;
 
-        /* =========================================
-           STARS
-        ========================================= */
+            mult.innerText =
+                value.toFixed(2) + 'x';
 
-        for (let i = 0; i < 30; i++) {
-
-            stars.push({
-
-                x:
-                    Math.random() *
-                    canvas.width,
-
-                y:
-                    Math.random() *
-                    canvas.height,
-
-                s:
-                    Math.random() * 1.5,
-
-                sp:
-                    Math.random() * 1.2 + 0.6
-
-            });
-
-        }
-
-
-        /* =========================================
-           HISTORY COLORS
-        ========================================= */
-
-        function getHColor(val) {
-
-            if (val <= 1.30) {
-
-                return "#e94560";
-
+            if (
+                hasBet &&
+                !hasCashedOut &&
+                autoToggle.checked &&
+                value >= parseFloat(autoCashInput.value)
+            ) {
+                cashOutUser();
             }
-
-            if (val <= 2.00) {
-
-                return "#0066ff";
-
-            }
-
-            if (val <= 5.00) {
-
-                return "#4e9f3d";
-
-            }
-
-            if (val <= 10.00) {
-
-                return "#ffa500";
-
-            }
-
-            return "#ffd700";
-
-        }
-
-
-        function getHClass(val) {
-
-            if (val <= 1.30) {
-
-                return "c-red";
-
-            }
-
-            if (val <= 2.00) {
-
-                return "c-blue";
-
-            }
-
-            if (val <= 5.00) {
-
-                return "c-green";
-
-            }
-
-            if (val <= 10.00) {
-
-                return "c-orange";
-
-            }
-
-            return "c-yellow";
-
-        }
-
-
-        /* =========================================
-           HISTORY UI
-        ========================================= */
-
-        function updateHistoryUI() {
-
-            hBar.innerHTML = "";
-
-
-            historyList
-                .slice(-6)
-                .reverse()
-                .forEach(v => {
-
-                    const d =
-                        document.createElement("div");
-
-                    d.className =
-                        "h-item " +
-                        getHClass(
-                            parseFloat(v)
-                        );
-
-                    d.innerText = v;
-
-                    hBar.appendChild(d);
-
-                });
-
-        }
-
-
-        /* =========================================
-           LIVE BETS
-        ========================================= */
-
-        function triggerLiveBets() {
-
-            let delay = 0;
-
-
-            const shuffled =
-                [...pool].sort(
-                    () => 0.5 - Math.random()
-                );
-
-
-            shuffled.forEach(p => {
-
-                p.status = "active";
-
-                p.winMult = 1.00;
-
-
-                delay +=
-                    Math.random() * 400 + 100;
-
-
-                setTimeout(() => {
-
-                    if (
-                        state === "COUNTDOWN"
-                    ) {
-
-                        listPlayers.unshift(p);
-
-                        renderPlayers();
-
-                    }
-
-                }, delay);
-
-            });
-
-        }
-
-
-        /* =========================================
-           RENDER PLAYERS
-        ========================================= */
-
-        function renderPlayers() {
-
-            pList.innerHTML = "";
-
 
             listPlayers.forEach(p => {
 
-                let rowClass = "p-row";
-
-                let rightVal =
-                    `🔹 ${p.b.toFixed(2)}`;
-
-
-                /* WIN LOW */
-
                 if (
-                    p.status === "win-low"
+                    p.status === 'active' &&
+                    value >= p.cashOutPoint &&
+                    p.cashOutPoint < crash
                 ) {
 
-                    rowClass +=
-                        " row-win-low";
+                    p.winMult =
+                        p.cashOutPoint;
 
+                    p.status =
+                        p.cashOutPoint >= 10.00
+                            ? 'win-high'
+                            : 'win-low';
 
-                    rightVal =
-                        `🔹 ${(p.b * p.winMult).toFixed(2)}`;
-
+                    renderPlayers();
                 }
-
-
-                /* WIN HIGH */
-
-                else if (
-                    p.status === "win-high"
-                ) {
-
-                    rowClass +=
-                        " row-win-high";
-
-
-                    rightVal =
-                        `🔹 ${(p.b * p.winMult).toFixed(2)}`;
-
-                }
-
-
-                /* LOSE */
-
-                else if (
-                    p.status === "lose"
-                ) {
-
-                    rowClass +=
-                        " row-lose";
-
-
-                    rightVal =
-                        "💥 0.00";
-
-                }
-
-
-                const r =
-                    document.createElement("div");
-
-
-                r.className =
-                    rowClass;
-
-
-                let statText;
-
-
-                if (
-                    p.status.startsWith("win")
-                ) {
-
-                    statText =
-                        `🔹 ${p.b} ×${p.winMult.toFixed(2)}`;
-
-                }
-
-                else {
-
-                    statText =
-                        `🔹 ${p.b} ×1.00`;
-
-                }
-
-
-                r.innerHTML = `
-
-                    <div>
-
-                        <b>
-                            ${p.n}
-                        </b>
-
-                        <br>
-
-                        <span class="p-blue">
-                            ${statText}
-                        </span>
-
-                    </div>
-
-
-                    <div>
-
-                        <b>
-                            ${rightVal}
-                        </b>
-
-                    </div>
-
-                `;
-
-
-                pList.appendChild(r);
-
             });
 
-        }
+            if (value >= crash) {
 
+                state = 'CRASHED';
 
-        /* =========================================
-           START COUNTDOWN
-        ========================================= */
+                mult.innerText = '💥 FLEW AWAY';
+                mult.style.color = '#e94560';
 
-        function startCount() {
-
-            state = "COUNTDOWN";
-
-            timer = 5;
-
-            countAngle = 0;
-
-
-            cBox.style.display =
-                "block";
-
-
-            mult.style.display =
-                "none";
-
-
-            hasBet = false;
-
-            hasCashedOut = false;
-
-
-            btn.innerText =
-                "Place bet";
-
-
-            btn.className =
-                "";
-
-
-            cBox.innerText =
-                timer;
-
-
-            cBox.style.color =
-                "#4e9f3d";
-
-
-            mult.style.color =
-                "#66fcf1";
-
-
-            listPlayers = [];
-
-            renderPlayers();
-
-            triggerLiveBets();
-
-
-            lastTickTime =
-                Date.now();
-
-        }
-
-
-        /* =========================================
-           GAME LOGIC
-        ========================================= */
-
-        function syncLogic() {
-
-            const now =
-                Date.now();
-
-
-            const delta =
-                (now - lastTickTime) /
-                1000;
-
-
-            lastTickTime =
-                now;
-
-
-            /* =====================================
-               COUNTDOWN
-            ===================================== */
-
-            if (
-                state === "COUNTDOWN"
-            ) {
-
-                timer -= delta;
-
-
-                cBox.innerText =
-                    Math.ceil(timer);
-
-
-                if (
-                    timer <= 0
-                ) {
-
-                    cBox.style.display =
-                        "none";
-
-
-                    mult.style.display =
-                        "block";
-
-
-                    state =
-                        "FLYING";
-
-
-                    value =
-                        1.00;
-
-
-                    path = [];
-
-                    particles = [];
-
-
-                    if (hasBet) {
-
-                        btn.innerText =
-                            "Cash Out";
-
-                        btn.className =
-                            "betting";
-
-                    }
-
-                    else {
-
-                        btn.innerText =
-                            "Place bet";
-
-                        btn.className =
-                            "";
-
-                    }
-
-
-                    /* CRASH POINT */
-
-                    const r =
-                        Math.random();
-
-
-                    if (r < 0.1) {
-
-                        crash =
-                            1.00;
-
-                    }
-
-                    else if (r < 0.65) {
-
-                        crash =
-                            Math.random() *
-                            3 +
-                            1.01;
-
-                    }
-
-                    else if (r < 0.9) {
-
-                        crash =
-                            Math.random() *
-                            15 +
-                            3;
-
-                    }
-
-                    else {
-
-                        crash =
-                            Math.random() *
-                            132 +
-                            18;
-
-                    }
-
-
-                    if (crash > 150) {
-
-                        crash = 150;
-
-                    }
-
-                }
-
-            }
-
-
-            /* =====================================
-               FLYING
-            ===================================== */
-
-            else if (
-                state === "FLYING"
-            ) {
-
-                value +=
-                    delta * 0.45;
-
-
-                mult.innerText =
-                    value.toFixed(2) +
-                    "x";
-
-
-                /* PLAYER CASHOUT */
+                historyList.push(
+                    value.toFixed(2) + 'x'
+                );
 
                 listPlayers.forEach(p => {
 
-                    if (
-                        p.status === "active" &&
-                        value >= p.cashOutPoint &&
-                        p.cashOutPoint < crash
-                    ) {
-
-                        p.winMult =
-                            p.cashOutPoint;
-
-
-                        if (
-                            p.cashOutPoint >= 10.00
-                        ) {
-
-                            p.status =
-                                "win-high";
-
-                        }
-
-                        else {
-
-                            p.status =
-                                "win-low";
-
-                        }
-
-
-                        renderPlayers();
-
+                    if (p.status === 'active') {
+                        p.status = 'lose';
                     }
-
                 });
 
-
-                /* CRASH */
-
                 if (
-                    value >= crash
+                    hasBet &&
+                    !hasCashedOut
                 ) {
-
-                    state =
-                        "CRASHED";
-
-
-                    mult.innerText =
-                        "💥 FLEW AWAY";
-
-
-                    mult.style.color =
-                        "#e94560";
-
-
-                    historyList.push(
-                        value.toFixed(2) +
-                        "x"
-                    );
-
-
-                    listPlayers.forEach(p => {
-
-                        if (
-                            p.status === "active"
-                        ) {
-
-                            p.status =
-                                "lose";
-
-                        }
-
-                    });
-
-
-                    if (
-                        hasBet &&
-                        !hasCashedOut
-                    ) {
-
-                        btn.innerText =
-                            "Place bet";
-
-                        btn.className =
-                            "";
-
-                    }
-
-
-                    renderPlayers();
-
-
-                    if (
-                        navigator.vibrate
-                    ) {
-
-                        navigator.vibrate(300);
-
-                    }
-
-
-                    updateHistoryUI();
-
-
-                    setTimeout(
-                        startCount,
-                        2500
-                    );
-
+                    mainBtn.innerText = 'Place bet';
+                    mainBtn.className = '';
                 }
-
-            }
-
-        }
-
-
-        /* =========================================
-           DRAW
-        ========================================= */
-
-        function draw() {
-
-            syncLogic();
-
-
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-
-            /* =====================================
-               STARS
-            ===================================== */
-
-            ctx.fillStyle =
-                "#fff";
-
-
-            stars.forEach(s => {
-
-                ctx.beginPath();
-
-
-                ctx.arc(
-                    s.x,
-                    s.y,
-                    s.s,
-                    0,
-                    Math.PI * 2
-                );
-
-
-                ctx.fill();
-
-
-                if (
-                    state === "FLYING"
-                ) {
-
-                    s.x -=
-                        s.sp * 3.5;
-
-                    s.y +=
-                        s.sp * 3.5;
-
-                }
-
-                else {
-
-                    s.x -=
-                        s.sp * 0.2;
-
-                    s.y +=
-                        s.sp * 0.2;
-
-                }
-
-
-                if (
-                    s.x < 0
-                ) {
-
-                    s.x =
-                        canvas.width;
-
-                }
-
-
-                if (
-                    s.y > canvas.height
-                ) {
-
-                    s.y = 0;
-
-                }
-
-            });
-
-
-            /* =====================================
-               COUNTDOWN CIRCLE
-            ===================================== */
-
-            if (
-                state === "COUNTDOWN"
-            ) {
-
-                countAngle +=
-                    (Math.PI * 2) /
-                    (5 * 60);
-
-
-                ctx.beginPath();
-
-
-                ctx.arc(
-
-                    canvas.width / 2,
-
-                    canvas.height / 2,
-
-                    55,
-
-                    -Math.PI / 2,
-
-                    (
-                        Math.PI * 2 -
-                        countAngle
-                    ) -
-                    Math.PI / 2,
-
-                    false
-
-                );
-
-
-                ctx.strokeStyle =
-                    "#ff7a00";
-
-
-                ctx.lineWidth =
-                    5;
-
-
-                ctx.stroke();
-
-            }
-
-
-            /* =====================================
-               COLOR
-            ===================================== */
-
-            const currentColor =
-                getHColor(value);
-
-
-            /* =====================================
-               ROCKET PATH
-            ===================================== */
-
-            if (
-                path.length > 1
-            ) {
-
-                ctx.save();
-
-
-                ctx.beginPath();
-
-
-                /*
-                    FIX:
-                    path.x
-                    أصبحت
-                    path[0].x
-                */
-
-                ctx.moveTo(
-                    path[0].x,
-                    path[0].y
-                );
-
-
-                for (
-                    let i = 1;
-                    i < path.length;
-                    i++
-                ) {
-
-                    ctx.lineTo(
-                        path[i].x,
-                        path[i].y
-                    );
-
-                }
-
-
-                ctx.strokeStyle =
-                    currentColor;
-
-
-                ctx.lineWidth =
-                    4;
-
-
-                ctx.shadowBlur =
-                    10;
-
-
-                ctx.shadowColor =
-                    currentColor;
-
-
-                ctx.stroke();
-
-
-                ctx.restore();
-
-            }
-
-
-            /* =====================================
-               PARTICLES
-            ===================================== */
-
-            if (
-                state === "FLYING"
-            ) {
-
-                if (
-                    Math.random() < 0.7
-                ) {
-
-                    particles.push({
-
-                        x: rx,
-
-                        y: ry,
-
-                        vx:
-                            (
-                                Math.random() -
-                                0.7
-                            ) * 2,
-
-                        vy:
-                            (
-                                Math.random() +
-                                0.3
-                            ) * 2.5,
-
-                        size:
-                            Math.random() *
-                            1.8 +
-                            0.5,
-
-                        alpha: 1
-
-                    });
-
-                }
-
-            }
-
-
-            particles.forEach(
-                (p, index) => {
-
-                    ctx.save();
-
-
-                    ctx.globalAlpha =
-                        p.alpha;
-
-
-                    ctx.fillStyle =
-                        currentColor;
-
-
-                    ctx.beginPath();
-
-
-                    ctx.arc(
-                        p.x,
-                        p.y,
-                        p.size,
-                        0,
-                        Math.PI * 2
-                    );
-
-
-                    ctx.fill();
-
-
-                    ctx.restore();
-
-
-                    p.x +=
-                        p.vx;
-
-
-                    p.y +=
-                        p.vy;
-
-
-                    p.alpha -=
-                        0.03;
-
-
-                    if (
-                        p.alpha <= 0
-                    ) {
-
-                        particles.splice(
-                            index,
-                            1
-                        );
-
-                    }
-
-                }
-            );
-
-
-            /* =====================================
-               ROCKET
-            ===================================== */
-
-            if (
-                state === "FLYING"
-            ) {
-
-                mult.style.color =
-                    currentColor;
-
-
-                /* MOVEMENT PROGRESS */
-
-                let p;
-
-
-                if (
-                    value <= 10.00
-                ) {
-
-                    p =
-                        (
-                            (value - 1.00) /
-                            9.00
-                        ) *
-                        0.45;
-
-                }
-
-                else {
-
-                    p =
-                        0.45 +
-                        (
-                            (value - 10.00) /
-                            (
-                                crash > 10
-                                    ? crash - 10
-                                    : 1
-                            )
-                        ) *
-                        0.37;
-
-                }
-
-
-                if (
-                    p > 0.82
-                ) {
-
-                    p = 0.82;
-
-                }
-
-
-                /* =================================
-                   FIRST PART:
-                   HORIZONTAL
-                ================================= */
-
-                if (
-                    value <= 2.00
-                ) {
-
-                    rx =
-                        40 +
-                        (
-                            canvas.width - 80
-                        ) *
-                        p *
-                        1.5;
-
-
-                    ry =
-                        canvas.height - 40;
-
-                }
-
-
-                /* =================================
-                   SECOND PART:
-                   DIAGONAL UP
-                ================================= */
-
-                else {
-
-                    rx =
-                        40 +
-                        (
-                            canvas.width - 80
-                        ) *
-                        p;
-
-
-                    let cProg =
-                        (
-                            value - 2.00
-                        ) /
-                        (
-                            crash > 2
-                                ? crash - 2
-                                : 1
-                        );
-
-
-                    cProg =
-                        Math.min(
-                            Math.max(
-                                cProg,
-                                0
-                            ),
-                            1
-                        );
-
-
-                    /*
-                        60% CLIMB
-                    */
-
-                    const climbAmount =
-                        (
-                            canvas.height - 90
-                        ) *
-                        0.60;
-
-
-                    /*
-                        DIAGONAL CURVE
-                    */
-
-                    ry =
-                        (
-                            canvas.height - 40
-                        ) -
-                        climbAmount *
-                        Math.pow(
-                            cProg,
-                            0.85
-                        );
-
-                }
-
-
-                /* =================================
-                   ROCKET SHAKE
-                ================================= */
-
-                if (
-                    p >= 0.82
-                ) {
-
-                    rx +=
-                        (
-                            Math.random() -
-                            0.5
-                        ) * 3;
-
-
-                    ry +=
-                        (
-                            Math.random() -
-                            0.5
-                        ) * 3;
-
-                }
-
-
-                /* SAVE PATH */
-
-                path.push({
-
-                    x: rx,
-
-                    y: ry
-
-                });
-
-
-                /* =================================
-                   DRAW ROCKET
-                ================================= */
-
-                ctx.save();
-
-
-                ctx.translate(
-                    rx,
-                    ry
-                );
-
-
-                ctx.rotate(
-                    -Math.PI / 3
-                );
-
-
-                ctx.fillStyle =
-                    "#f0f2f5";
-
-
-                ctx.beginPath();
-
-
-                ctx.moveTo(
-                    0,
-                    -16
-                );
-
-
-                ctx.lineTo(
-                    7,
-                    4
-                );
-
-
-                ctx.lineTo(
-                    -7,
-                    4
-                );
-
-
-                ctx.closePath();
-
-
-                ctx.fill();
-
-
-                ctx.restore();
-
-            }
-
-
-            /* =====================================
-               CRASH
-            ===================================== */
-
-            else if (
-                state === "CRASHED"
-            ) {
-
-                ctx.font =
-                    "40px Arial";
-
-
-                ctx.fillText(
-                    "💥",
-                    rx,
-                    ry
-                );
-
-            }
-
-
-            /* NEXT FRAME */
-
-            loop =
-                requestAnimationFrame(
-                    draw
-                );
-
-        }
-
-
-        /* =========================================
-           BUTTON ACTION
-        ========================================= */
-
-        function handleAction() {
-
-
-            /* PLACE BET */
-
-            if (
-                state === "COUNTDOWN"
-            ) {
-
-                hasBet =
-                    true;
-
-
-                btn.innerText =
-                    "Bet Placed";
-
-
-                btn.className =
-                    "betting";
-
-            }
-
-
-            /* CASH OUT */
-
-            else if (
-                state === "FLYING" &&
-                hasBet &&
-                !hasCashedOut
-            ) {
-
-                hasCashedOut =
-                    true;
-
-
-                btn.innerText =
-                    "Place bet";
-
-
-                btn.className =
-                    "";
-
-
-                const userP = {
-
-                    n: "You",
-
-                    b: 1.00,
-
-                    winMult: value,
-
-                    status:
-                        value >= 10.00
-                            ? "win-high"
-                            : "win-low"
-
-                };
-
-
-                listPlayers.unshift(
-                    userP
-                );
-
 
                 renderPlayers();
 
+                if (navigator.vibrate) {
+                    navigator.vibrate(300);
+                }
+
+                updateHistoryUI();
+
+                setTimeout(startCount, 2500);
+            }
+        }
+    }
+
+    function draw() {
+
+        syncLogic();
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        ctx.fillStyle = '#fff';
+
+        stars.forEach(s => {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                s.x,
+                s.y,
+                s.s,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+            if (state === 'FLYING') {
+
+                s.x -= s.sp * 3.5;
+                s.y += s.sp * 3.5;
+
+            } else {
+
+                s.x -= s.sp * 0.2;
+                s.y += s.sp * 0.2;
             }
 
+            if (s.x < 0) {
+                s.x = canvas.width;
+            }
+
+            if (s.y > canvas.height) {
+                s.y = 0;
+            }
+        });
+
+        if (state === 'COUNTDOWN') {
+
+            countAngle +=
+                (Math.PI * 2) / 560;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                canvas.width / 2,
+                canvas.height / 2,
+                55,
+                -Math.PI / 2,
+                (Math.PI * 2 - countAngle) -
+                    Math.PI / 2,
+                false
+            );
+
+            ctx.strokeStyle = '#ff7a00';
+            ctx.lineWidth = 5;
+            ctx.stroke();
         }
 
+        let currentColor =
+            getHColor(value);
 
-        /* =========================================
-           INITIALIZE
-        ========================================= */
+        if (path.length > 1) {
 
-        updateHistoryUI();
+            ctx.save();
 
-        startCount();
+            ctx.beginPath();
 
-        draw();
+            ctx.moveTo(
+                path[0].x,
+                path[0].y
+            );
 
-    </script>
+            for (
+                let i = 1;
+                i < path.length;
+                i++
+            ) {
+                ctx.lineTo(
+                    path[i].x,
+                    path[i].y
+                );
+            }
+
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = currentColor;
+
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        if (state === 'FLYING') {
+
+            if (Math.random() < 0.7) {
+
+                particles.push({
+                    x: rx,
+                    y: ry,
+                    vx: (Math.random() - 0.7) * 2,
+                    vy: (Math.random() + 0.3) * 2.5,
+                    size: Math.random() * 1.8 + 0.5,
+                    alpha: 1
+                });
+            }
+        }
+
+        particles.forEach((p, index) => {
+
+            ctx.save();
+
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = currentColor;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                p.x,
+                p.y,
+                p.size,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+            ctx.restore();
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= 0.03;
+
+            if (p.alpha <= 0) {
+                particles.splice(index, 1);
+            }
+        });
+
+        if (state === 'FLYING') {
+
+            mult.style.color =
+                currentColor;
+
+            let p =
+                value <= 10.00
+                    ? (
+                        ((value - 1.00) / 9.00) *
+                        0.45
+                    )
+                    : (
+                        0.45 +
+                        (
+                            (value - 10.00) /
+                            (crash > 10
+                                ? crash - 10
+                                : 1)
+                        ) *
+                        0.37
+                    );
+
+            if (p > 0.82) {
+                p = 0.82;
+            }
+
+            if (value <= 2.00) {
+
+                rx =
+                    40 +
+                    (canvas.width - 80) *
+                    p *
+                    1.5;
+
+                ry =
+                    canvas.height - 40;
+
+            } else {
+
+                rx =
+                    40 +
+                    (canvas.width - 80) *
+                    p;
+
+                let cProg =
+                    (value - 2.00) /
+                    (crash > 2
+                        ? crash - 2
+                        : 1);
+
+                ry =
+                    (canvas.height - 40) -
+                    Math.min(
+                        canvas.height - 90,
+                        (rx - 40) *
+                        Math.sqrt(3) *
+                        cProg *
+                        0.7
+                    );
+            }
+
+            if (p >= 0.82) {
+
+                rx +=
+                    (Math.random() - 0.5) * 3;
+
+                ry +=
+                    (Math.random() - 0.5) * 3;
+            }
+
+            path.push({
+                x: rx,
+                y: ry
+            });
+
+            ctx.save();
+
+            ctx.translate(rx, ry);
+
+            ctx.rotate(-Math.PI / 3);
+
+            ctx.fillStyle = '#f0f2f5';
+
+            ctx.beginPath();
+
+            ctx.moveTo(0, -16);
+            ctx.lineTo(7, 4);
+            ctx.lineTo(-7, 4);
+
+            ctx.closePath();
+
+            ctx.fill();
+
+            ctx.restore();
+
+        } else if (state === 'CRASHED') {
+
+            ctx.font = '40px Arial';
+
+            ctx.fillText(
+                '💥',
+                rx,
+                ry
+            );
+        }
+
+        loop = requestAnimationFrame(draw);
+    }
+
+    updateHistoryUI();
+    draw();
+    startCount();
+
+</script>
 
 </body>
-
 </html>
