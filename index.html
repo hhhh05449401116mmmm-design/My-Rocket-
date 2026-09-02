@@ -1,29 +1,13 @@
-let rocketX = 0;
-    let rocketY = 0;
-
-    // دالة تحديث شريط آخر جولات على الشاشة
-    function updateHistoryUI() {
-        historyBar.innerHTML = '';
-        // عرض آخر 5 جولات فقط لمنع الازدحام
-        const lastFive = historyList.slice(-5).reverse();
-        lastFive.forEach(val => {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            const num = parseFloat(val);
-            if (num <= 1.2) item.classList.add('crash-low');
-            else if (num < 5) item.classList.add('crash-med');
-            else item.classList.add('crash-high');
+add('crash-high');
             item.innerText = val;
             historyBar.appendChild(item);
         });
     }
     updateHistoryUI();
 
-    // حلقة الرسم والتحديث المستمر (الخلفية والخط والصاروخ)
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. رسم وتحديث النجوم في الخلفية (تحرك مائل لأسفل يعطي إيحاء صعود الصاروخ لأعلى)
         ctx.fillStyle = '#ffffff';
         stars.forEach(star => {
             ctx.beginPath();
@@ -42,7 +26,6 @@ let rocketX = 0;
             if (star.y > canvas.height) star.y = 0;
         });
 
-        // 2. رسم مسار الخط النيوني المتوهج خلف الصاروخ
         if (flightPath.length > 1) {
             ctx.beginPath();
             ctx.moveTo(flightPath[0].x, flightPath[0].y);
@@ -54,46 +37,39 @@ let rocketX = 0;
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#66fcf1';
             ctx.stroke();
-            ctx.shadowBlur = 0; // إعادة تصفير التوهج حتى لا يخرب باقي العناصر
+            ctx.shadowBlur = 0;
         }
 
-        // 3. رسم وحركة الصاروخ بشكل منحنٍ للزاوية العلوية
         if (gameState === 'FLYING') {
-            multiplier += 0.008; // سرعة حساب المضاعف
+            multiplier += 0.008;
             multiplierDisplay.innerText = multiplier.toFixed(2) + 'x';
 
-            // حساب الإحداثيات الرياضية للمنحنى المتجه للزاوية
             let progress = (multiplier - 1.00) / 4; 
-            if (progress > 0.85) progress = 0.85; // البقاء داخل حدود الشاشة الآمنة
+            if (progress > 0.85) progress = 0.85;
 
             rocketX = 40 + (canvas.width - 100) * progress;
             rocketY = (canvas.height - 40) - (canvas.height - 120) * Math.sin(progress * Math.PI / 2);
 
             flightPath.push({x: rocketX, y: rocketY});
 
-            // رسم مجسم الصاروخ (نص إيموجي مائل بزاوية طيران)
             ctx.save();
             ctx.translate(rocketX, rocketY);
-            ctx.rotate(-Math.PI / 4); // إمالة الصاروخ للزاوية عاليًا
+            ctx.rotate(-Math.PI / 4);
             ctx.font = '38px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🚀', 0, 0);
             ctx.restore();
 
-            // التحقق من نقطة الانفجار اللحظية
             if (multiplier >= crashPoint) {
                 endGame(false);
             }
-        } else if (gameState === 'CRASHED') {
-        // رسم تأثير الانفجار مكان توقف الصاروخ
         } else if (gameState === 'CRASHED') {
             ctx.font = '45px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('💥', rocketX, rocketY);
         } else {
-            // وضع الانتظار الأولي للصاروخ أسفل اليسار جاهز للإطلاق
             rocketX = 40;
             rocketY = canvas.height - 40;
             ctx.save();
@@ -109,13 +85,10 @@ let rocketX = 0;
         gameLoopId = requestAnimationFrame(draw);
     }
 
-    // بدء حلقة الرسوم المتحركة تلقائياً عند التشغيل لأول مرة
     draw();
 
-    // إدارة ضغطات أزرار اللعبة (بدء الرحلة والانسحاب)
     function handleGameAction() {
         if (gameState === 'IDLE' || gameState === 'CRASHED') {
-            // إطلاق الجولة الجديدة
             gameState = 'FLYING';
             multiplier = 1.00;
             flightPath = [];
@@ -126,15 +99,12 @@ let rocketX = 0;
             actionBtn.innerText = 'Cash Out';
             actionBtn.className = 'betting';
 
-            // تحديد نقطة انفجار عشوائية ذكية ومثيرة
             crashPoint = (Math.random() * 5 + 1.01).toFixed(2);
         } else if (gameState === 'FLYING') {
-            // فوز وانسحاب اللاعب قبل الانفجار بنجاح
             endGame(true);
         }
     }
 
-    // دالة إنهاء الجولة وتحديث السجلات
     function endGame(isWin) {
         cancelAnimationFrame(gameLoopId);
         
@@ -150,8 +120,8 @@ let rocketX = 0;
             gameState = 'CRASHED';
             multiplierDisplay.innerText = '💥 FLEW AWAY';
             multiplierDisplay.style.color = '#e94560';
-            statusMessage.innerText =1.2) item.classList.add('crash-low');
-            els
+            statusMessage.innerText =        star.x -= star.speed * 2;
+                sta
             statusMessage.style.color = '#e94560';
             historyList.push(parseFloat(crashPoint).toFixed(2) + 'x');
             actionBtn.innerText = 'Try Again';
@@ -159,6 +129,5 @@ let rocketX = 0;
         }
         
         updateHistoryUI();
-        // إعادة تشغيل دورة حركية النجوم في وضع الثبات والانتظار
         gameLoopId = requestAnimationFrame(draw);
     }
