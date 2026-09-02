@@ -6,152 +6,82 @@
     <title>Rocket Cash</title>
     <script src="https://telegram.org"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #07080c; color: #fff; text-align: center; margin: 0; overflow: hidden; user-select: none; }
-        #wrapper { display: flex; flex-direction: column; height: 100vh; justify-content: space-between; padding: 15px; box-sizing: border-box; }
-        #history-bar { display: flex; gap: 8px; background: rgba(20, 20, 35, 0.7); padding: 12px; border-radius: 14px; min-height: 25px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.05); }
-        .h-item { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-        .c-low { background: rgba(233,69,96,0.25); color: #e94560; border: 1px solid #e94560; }
-        .c-med { background: rgba(78,159,61,0.25); color: #4e9f3d; border: 1px solid #4e9f3d; }
-        .c-high { background: rgba(255,215,0,0.25); color: #ffd700; border: 1px solid #ffd700; }
-        #container { position: relative; width: 100%; height: 58vh; background: radial-gradient(circle at center, #151c24 0%, #07080c 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(102,252,241,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        body { font-family: sans-serif; background: #0b0c11; color: #fff; margin: 0; padding: 12px; overflow: hidden; user-select: none; }
+        #history-bar { display: flex; gap: 6px; padding: 5px 0; overflow-x: auto; }
+        .h-item { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #4e9f3d; color: #4e9f3d; }
+        #container { position: relative; width: 100%; height: 35vh; background: #0e121a; border-radius: 20px; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; }
-        #mult { position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%); font-size: 58px; font-weight: 900; color: #66fcf1; text-shadow: 0 0 25px rgba(102, 252, 241, 0.7); font-family: monospace; }
-        #msg { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); font-size: 15px; color: #8f94a5; font-weight: 500; letter-spacing: 0.5px; }
-        #controls { margin-bottom: 45px; padding: 0 5px; }
-        #btn { background: linear-gradient(135deg, #1f4068 0%, #162447 100%); color: #66fcf1; border: 2px solid #66fcf1; padding: 16px; font-size: 20px; font-weight: bold; border-radius: 16px; cursor: pointer; width: 100%; box-shadow: 0 6px 20px rgba(102,252,241,0.15); transition: all 0.15s ease; text-transform: uppercase; }
-        #btn.betting { background: linear-gradient(135deg, #4e9f3d 0%, #195110 100%); color: #fff; border-color: #4e9f3d; box-shadow: 0 6px 20px rgba(78,159,61,0.25); }
-        #btn.crashed { background: linear-gradient(135deg, #e94560 0%, #530e1b 100%); color: #fff; border-color: #e94560; box-shadow: 0 6px 20px rgba(233,69,96,0.25); }
+        #mult { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 45px; font-weight: 800; }
+        #count-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; display: none; }
+        #btn { background: #0066ff; color: #fff; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 14px; cursor: pointer; width: 100%; margin: 10px 0; }
+        #btn.betting { background: #e94560; }
+        #p-list { display: flex; flex-direction: column; gap: 6px; max-height: 35vh; overflow-y: auto; }
+        .p-row { display: flex; justify-content: space-between; background: #131722; padding: 8px 12px; border-radius: 12px; font-size: 13px; }
+        .p-blue { color: #0066ff; font-size: 11px; }
     </style>
 </head>
 <body>
-    <div id="wrapper">
-        <div id="history-bar"></div>
-        <div id="container">
-            <div id="msg">READY TO LAUNCH</div>
-            <div id="mult">1.00x</div>
-            <canvas id="gameCanvas"></canvas>
-        </div>
-        <div id="controls">
-            <button id="btn" onclick="action()">Place Bet</button>
-        </div>
+    <div id="history-bar"></div>
+    <div id="container">
+        <div id="mult">1.00x</div>
+        <div id="count-box">5</div>
+        <canvas id="gameCanvas"></canvas>
     </div>
+    <button id="btn" onclick="handleAction()">Place bet</button>
+    <div id="p-list"></div>
+
     <script>
         if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand();}
         const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
-        const mult=document.getElementById('mult'), msg=document.getElementById('msg'), btn=document.getElementById('btn'), hBar=document.getElementById('history-bar');
+        const mult=document.getElementById('mult'), btn=document.getElementById('btn'), hBar=document.getElementById('history-bar'), pList=document.getElementById('p-list'), cBox=document.getElementById('count-box');
+        canvas.width=canvas.parentElement.clientWidth; canvas.height=canvas.parentElement.clientHeight;
         
-        function resize() { canvas.width=canvas.parentElement.clientWidth; canvas.height=canvas.parentElement.clientHeight; }
-        resize(); window.addEventListener('resize', resize);
+        let state='COUNTDOWN', value=1.00, crash=1.00, loop, path=[], rx=40, ry=canvas.height-40, timer=5, countAngle=0;
+        let historyList=['1.01x', '1.13x', '1.91x', '1.43x', '13.8x'], stars=[];
+        const players=[{n:'Sasha',b:0.10},{n:'Spay',b:0.50},{n:'يوسف',b:0.24},{n:'Bpex',b:0.10}];
 
-        let state='IDLE', value=1.00, crash=1.00, loop, path=[], rx=40, ry=canvas.height-40;
-        let historyList=[]; 
-        let stars=[], flames=[];
+        for(let i=0; i<25; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*1.5, sp:Math.random()*1});
 
-        for(let i=0; i<45; i++) {
-            stars.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2+0.5, sp:Math.random()*3+1 });
-        }
-
-        function updateH() {
-            hBar.innerHTML='';
-            if(historyList.length===0){ hBar.style.display='none'; return; }
-            hBar.style.display='flex';
-            historyList.slice(-5).reverse().forEach(v=>{
-                const d=document.createElement('div'); d.className='h-item';
-                const n=parseFloat(v);
-                if(n<=1.30) d.classList.add('c-low');
-                else if(n<5.00) d.classList.add('c-med');
-                else d.classList.add('c-high');
-                d.innerText=v; hBar.appendChild(d);
+        function updateUI(active, crashed) {
+            hBar.innerHTML=''; historyList.slice(-6).reverse().forEach(v=>{ const d=document.createElement('div'); d.className='h-item'; d.innerText=v; hBar.appendChild(d); });
+            pList.innerHTML=''; players.forEach(p=>{
+                const r=document.createElement('div'); r.className='p-row';
+                r.innerHTML=`<div><b>${p.n}</b><br><span class="p-blue">🔹 ${p.b} ×1.00</span></div><div><b>🔹 ${p.b}</b></div>`;
+                pList.appendChild(r);
             });
         }
-        updateH();
+
+        function startCount() {
+            state='COUNTDOWN'; timer=5; countAngle=0; cBox.style.display='block'; mult.style.display='none';
+            btn.innerText='Place bet'; btn.className=''; cBox.innerText=timer;
+            let inter=setInterval(()=>{
+                timer--; cBox.innerText=timer;
+                if(timer<=0){ clearInterval(inter); cBox.style.display='none'; mult.style.display='block'; state='FLYING'; value=1.00; path=[]; btn.innerText='Cash Out'; btn.className='betting'; crash=Math.random()*10+1.05; if(crash>150)crash=150; }
+            }, 1000);
+        }
 
         function draw() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            
-            // تحريك النجوم بسرعة عكس مسار الصاروخ لأسفل اليسار ليعطي شعور الطيران الحقيقي
-            ctx.fillStyle='#ffffff';
-            stars.forEach(s=>{
-                ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
-                if(state==='FLYING'){ s.x -= s.sp*3.5; s.y += s.sp*3.5; }
-                else { s.x -= s.sp*0.3; s.y += s.sp*0.3; }
-                if(s.x<0) s.x=canvas.width; if(s.y>canvas.height) s.y=0;
-            });
-
-            // رسم مسار منحنى خط الطيران النيوني
-            if(path.length>1){
-                ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y);
-                for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-                ctx.strokeStyle='#66fcf1'; ctx.lineWidth=4; ctx.stroke();
-            }
-
-            // تحديث ورسم محرك جزيئات النار النيوني المتحرك خلف الصاروخ مباشرة
+            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff';
+            stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill(); if(state==='FLYING'){s.x-=s.sp*2;s.y+=s.sp*2;}else{s.x-=s.sp*0.2;s.y+=s.sp*0.2;} if(s.x<0)s.x=canvas.width; if(s.y>canvas.height)s.y=0; });
+            if(state==='COUNTDOWN'){ countAngle+=(Math.PI*2)/(5*60); ctx.beginPath(); ctx.arc(canvas.width/2,canvas.height/2,50,-Math.PI/2,(Math.PI*2-countAngle)-Math.PI/2,false); ctx.strokeStyle='#ff7a00'; ctx.lineWidth=4; ctx.stroke(); }
+            if(path.length>1){ ctx.beginPath(); ctx.moveTo(path.x,path.y); for(let i=1;i<path.length;i++)ctx.lineTo(path[i].x,path[i].y); ctx.strokeStyle='#0066ff'; ctx.lineWidth=3; ctx.stroke(); }
             if(state==='FLYING'){
-                if(Math.random()<0.6){
-                    flames.push({ x:rx, y:ry, vx:(Math.random()-0.8)*2, vy:(Math.random()+0.2)*3, l:Math.random()*20+10, c:Math.random()>0.4?'#ff4500':'#ffcc00' });
-                }
-            }
-            flames.forEach((f,i)=>{
-                ctx.beginPath(); ctx.arc(f.x, f.y, Math.max(0.1, f.l/4), 0, Math.PI*2);
-                ctx.fillStyle=f.c; ctx.fill(); f.x+=f.vx; f.y+=f.vy; f.l--;
-                if(f.l<=0) flames.splice(i,1);
-            });
-
-            if(state==='FLYING'){
-                value+=0.008; mult.innerText=value.toFixed(2)+'x';
-                let p=(value-1)/4; if(p>0.85) p=0.85;
-                rx=40+(canvas.width-80)*p; ry=(canvas.height-40)-(canvas.height-100)*Math.sin(p*Math.PI/2);
-                path.push({x:rx, y:ry});
-
-                // تصميم الصاروخ البرمجي الاحترافي
-                ctx.save(); ctx.translate(rx,ry); ctx.rotate(-Math.PI/4);
-                ctx.fillStyle='#e5e9f0'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(10,5); ctx.lineTo(-10,5); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='#3b4252'; ctx.beginPath(); ctx.moveTo(-10,5); ctx.lineTo(-15,12); ctx.lineTo(-10,12); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='#3b4252'; ctx.beginPath(); ctx.moveTo(10,5); ctx.lineTo(15,12); ctx.lineTo(10,12); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='#88c0d0'; ctx.beginPath(); ctx.arc(0,-3,4,0,Math.PI*2); ctx.fill();
-                ctx.restore();
-
+                value+=0.003; mult.innerText=value.toFixed(2)+'x'; // عداد بطيء وسلس
+                let p=(value-1)/5; if(p>0.8)p=0.8; rx=40+(canvas.width-80)*p; ry=(canvas.height-40)-(canvas.height-90)*Math.sin(p*Math.PI/2); path.push({x:rx,y:ry});
+                ctx.save(); ctx.translate(rx,ry); ctx.rotate(-Math.PI/4); ctx.fillStyle='#f0f2f5'; ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(6,4); ctx.lineTo(-6,4); ctx.closePath(); ctx.fill(); ctx.restore();
                 if(value>=crash) end(false);
-            } else if(state==='CRASHED'){
-                ctx.font='45px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💥', rx, ry);
-            } else {
-                ctx.save(); ctx.translate(40, canvas.height-40); ctx.rotate(-Math.PI/4);
-                ctx.fillStyle='#e5e9f0'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(10,5); ctx.lineTo(-10,5); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='#88c0d0'; ctx.beginPath(); ctx.arc(0,-3,4,0,Math.PI*2); ctx.fill();
-                ctx.restore();
-            }
+            } else if(state==='CRASHED'){ ctx.font='35px Arial'; ctx.fillText('💥',rx,ry); }
             loop=requestAnimationFrame(draw);
         }
-        draw();
 
-        function action(){
-            if(state==='IDLE'||state==='CRASHED'){
-                state='FLYING'; value=1.00; path=[]; flames=[]; mult.style.color='#66fcf1';
-                msg.innerText='FLIGHT IN PROGRESS... WATCH OUT!'; msg.style.color='#66fcf1';
-                btn.innerText='Cash Out'; btn.className='betting';
-                
-                // حساب عشوائي مثير مع ضبط الحد الأقصى للمضاعفة ليكون 150x بدقة
-                let r=Math.random();
-                if(r<0.05) crash=1.00;
-                else if(r<0.75) crash=(Math.random()*3+1.01).toFixed(2);
-                else if(r<0.96) crash=(Math.random()*20+4).toFixed(2);
-                else crash=(Math.random()*126+24).toFixed(2); // حد أقصى يصل إلى 150x
-            } else if(state==='FLYING') end(true);
-        }
-
+        function handleAction(){ if(state==='FLYING') end(true); else startCount(); }
         function end(w){
             cancelAnimationFrame(loop);
-            if(w){
-                state='IDLE'; msg.innerText='🎉 CASH OUT SUCCESSFUL! WON: '+value.toFixed(2)+'x';
-                msg.style.color='#ffd700'; mult.style.color='#ffd700';
-                historyList.push(value.toFixed(2)+'x'); btn.innerText='Place Bet'; btn.className='';
-            } else {
-                state='CRASHED'; mult.innerText='💥 FLEW AWAY'; mult.style.color='#e94560';
-                msg.innerText='CRASHED AT '+parseFloat(crash).toFixed(2)+'x!'; msg.style.color='#e94560';
-                historyList.push(parseFloat(crash).toFixed(2)+'x'); btn.innerText='Try Again'; btn.className='crashed';
-            }
-            updateH(); loop=requestAnimationFrame(draw);
+            if(w){ state='IDLE'; mult.innerText='🎉 '+value.toFixed(2)+'x'; historyList.push(value.toFixed(2)+'x'); setTimeout(startCount,2000); }
+            else { state='CRASHED'; mult.innerText='💥 CRASH'; historyList.push(crash.toFixed(2)+'x'); setTimeout(startCount,2500); }
+            updateUI(); loop=requestAnimationFrame(draw);
         }
+        updateUI(); draw(); startCount();
     </script>
 </body>
 </html>
