@@ -1,131 +1,164 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الصاروخ المصغرة</title>
-    <script src="https://telegram.org"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1a1a2e;
-            color: #ffffff;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-        }
-        #game-container {
-            background-color: #161625;
-            border-radius: 15px;
-            padding: 30px;
-            margin-top: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        #rocket {
-            font-size: 50px;
-            transition: transform 0.1s linear;
-            margin: 20px 0;
-            display: inline-block;
-        }
-        #multiplier {
-            font-size: 35px;
-            color: #4e9f3d;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        #status-text {
-            font-size: 18px;
-            color: #ffd700;
-            min-height: 25px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #e94560;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 80%;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
+let rocketX = 0;
+    let rocketY = 0;
 
-    <div id="game-container">
-        <h2>🚀 لعبة الصاروخ التجريبية</h2>
-        <div id="status-text">اضغط لتبدأ الرحلة!</div>
-        <div id="rocket">🚀</div>
-        <div id="multiplier">1.00x</div>
-        <button id="action-btn" onclick="handleClick()">ابدأ الرحلة</button>
-    </div>
+    // دالة تحديث شريط آخر جولات على الشاشة
+    function updateHistoryUI() {
+        historyBar.innerHTML = '';
+        // عرض آخر 5 جولات فقط لمنع الازدحام
+        const lastFive = historyList.slice(-5).reverse();
+        lastFive.forEach(val => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            const num = parseFloat(val);
+            if (num <= 1.2) item.classList.add('crash-low');
+            else if (num < 5) item.classList.add('crash-med');
+            else item.classList.add('crash-high');
+            item.innerText = val;
+            historyBar.appendChild(item);
+        });
+    }
+    updateHistoryUI();
 
-    <script>
-        // التحقق الآمن مما إذا كان المستخدم داخل تليجرام أم متصفح عادي
-        try {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-            }
-        } catch (e) {
-            console.log("تعمل خارج بيئة تليجرام");
-        }
+    // حلقة الرسم والتحديث المستمر (الخلفية والخط والصاروخ)
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        let isRunning = false;
-        let multiplier = 1.00;
-        let gameInterval;
-        let crashPoint;
+        // 1. رسم وتحديث النجوم في الخلفية (تحرك مائل لأسفل يعطي إيحاء صعود الصاروخ لأعلى)
+        ctx.fillStyle = '#ffffff';
+        stars.forEach(star => {
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
 
-        const rocket = document.getElementById('rocket');
-        const multiplierText = document.getElementById('multiplier');
-        const actionBtn = document.getElementById('action-btn');
-        const statusText = document.getElementById('status-text');
-
-        function handleClick() {
-            if (!isRunning) {
-                // بدء اللعبة
-                isRunning = true;
-                multiplier = 1.00;
-                multiplierText.style.color = '#4e9f3d';
-                statusText.innerText = "الرحلة مستمرة... راقب!";
-                rocket.style.transform = 'translateY(0px)';
-                actionBtn.innerText = 'انسحب الآن (Cash Out)';
-                actionBtn.style.backgroundColor = '#4e9f3d';
-                
-                // تحديد نقطة انفجار عشوائية
-                crashPoint = (Math.random() * 4 + 1.1).toFixed(2);
-                
-                gameInterval = setInterval(() => {
-                    multiplier += 0.05;
-                    multiplierText.innerText = multiplier.toFixed(2) + 'x';
-                    
-                    // تحريك الصاروخ للأعلى
-                    rocket.style.transform = `translateY(-${(multiplier - 1) * 25}px)`;
-
-                    // تحقق من الانفجار
-                    if (multiplier >= crashPoint) {
-                        clearInterval(gameInterval);
-                        isRunning = false;
-                        multiplierText.innerText = '💥 ' + crashPoint + 'x';
-                        multiplierText.style.color = '#e94560';
-                        statusText.innerText = `انفجر الصاروخ عند ${crashPoint}x! خسرت المحاولة.`;
-                        actionBtn.innerText = 'حاول مجدداً';
-                        actionBtn.style.backgroundColor = '#e94560';
-                    }
-                }, 100);
+            if (gameState === 'FLYING') {
+                star.x -= star.speed * 2;
+                star.y += star.speed * 2;
             } else {
-                // الانسحاب والفوز
-                clearInterval(gameInterval);
-                isRunning = false;
-                statusText.innerText = `🎉 كفو! انسحبت بنجاح وفزت بمضاعف: ${multiplier.toFixed(2)}x`;
-                multiplierText.style.color = '#ffd700';
-                actionBtn.innerText = 'العب جولة جديدة';
-                actionBtn.style.backgroundColor = '#e94560';
+                star.x -= star.speed * 0.2;
+                star.y += star.speed * 0.2;
             }
+
+            if (star.x < 0) star.x = canvas.width;
+            if (star.y > canvas.height) star.y = 0;
+        });
+
+        // 2. رسم مسار الخط النيوني المتوهج خلف الصاروخ
+        if (flightPath.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(flightPath[0].x, flightPath[0].y);
+            for (let i = 1; i < flightPath.length; i++) {
+                ctx.lineTo(flightPath[i].x, flightPath[i].y);
+            }
+            ctx.strokeStyle = '#66fcf1';
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#66fcf1';
+            ctx.stroke();
+            ctx.shadowBlur = 0; // إعادة تصفير التوهج حتى لا يخرب باقي العناصر
         }
-    </script>
-</body>
-</html>
+
+        // 3. رسم وحركة الصاروخ بشكل منحنٍ للزاوية العلوية
+        if (gameState === 'FLYING') {
+            multiplier += 0.008; // سرعة حساب المضاعف
+            multiplierDisplay.innerText = multiplier.toFixed(2) + 'x';
+
+            // حساب الإحداثيات الرياضية للمنحنى المتجه للزاوية
+            let progress = (multiplier - 1.00) / 4; 
+            if (progress > 0.85) progress = 0.85; // البقاء داخل حدود الشاشة الآمنة
+
+            rocketX = 40 + (canvas.width - 100) * progress;
+            rocketY = (canvas.height - 40) - (canvas.height - 120) * Math.sin(progress * Math.PI / 2);
+
+            flightPath.push({x: rocketX, y: rocketY});
+
+            // رسم مجسم الصاروخ (نص إيموجي مائل بزاوية طيران)
+            ctx.save();
+            ctx.translate(rocketX, rocketY);
+            ctx.rotate(-Math.PI / 4); // إمالة الصاروخ للزاوية عاليًا
+            ctx.font = '38px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚀', 0, 0);
+            ctx.restore();
+
+            // التحقق من نقطة الانفجار اللحظية
+            if (multiplier >= crashPoint) {
+                endGame(false);
+            }
+        } else if (gameState === 'CRASHED') {
+        // رسم تأثير الانفجار مكان توقف الصاروخ
+        } else if (gameState === 'CRASHED') {
+            ctx.font = '45px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💥', rocketX, rocketY);
+        } else {
+            // وضع الانتظار الأولي للصاروخ أسفل اليسار جاهز للإطلاق
+            rocketX = 40;
+            rocketY = canvas.height - 40;
+            ctx.save();
+            ctx.translate(rocketX, rocketY);
+            ctx.rotate(-Math.PI / 4);
+            ctx.font = '38px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚀', 0, 0);
+            ctx.restore();
+        }
+
+        gameLoopId = requestAnimationFrame(draw);
+    }
+
+    // بدء حلقة الرسوم المتحركة تلقائياً عند التشغيل لأول مرة
+    draw();
+
+    // إدارة ضغطات أزرار اللعبة (بدء الرحلة والانسحاب)
+    function handleGameAction() {
+        if (gameState === 'IDLE' || gameState === 'CRASHED') {
+            // إطلاق الجولة الجديدة
+            gameState = 'FLYING';
+            multiplier = 1.00;
+            flightPath = [];
+            statusMessage.innerText = 'FLIGHT IN PROGRESS... WATCH OUT!';
+            statusMessage.style.color = '#66fcf1';
+            multiplierDisplay.style.color = '#66fcf1';
+            
+            actionBtn.innerText = 'Cash Out';
+            actionBtn.className = 'betting';
+
+            // تحديد نقطة انفجار عشوائية ذكية ومثيرة
+            crashPoint = (Math.random() * 5 + 1.01).toFixed(2);
+        } else if (gameState === 'FLYING') {
+            // فوز وانسحاب اللاعب قبل الانفجار بنجاح
+            endGame(true);
+        }
+    }
+
+    // دالة إنهاء الجولة وتحديث السجلات
+    function endGame(isWin) {
+        cancelAnimationFrame(gameLoopId);
+        
+        if (isWin) {
+            gameState = 'IDLE';
+            statusMessage.innerText = `🎉 CASH OUT SUCCESSFUL! WON: ${multiplier.toFixed(2)}x`;
+            statusMessage.style.color = '#ffd700';
+            multiplierDisplay.style.color = '#ffd700';
+            historyList.push(multiplier.toFixed(2) + 'x');
+            actionBtn.innerText = 'Place Bet';
+            actionBtn.className = '';
+        } else {
+            gameState = 'CRASHED';
+            multiplierDisplay.innerText = '💥 FLEW AWAY';
+            multiplierDisplay.style.color = '#e94560';
+            statusMessage.innerText =1.2) item.classList.add('crash-low');
+            els
+            statusMessage.style.color = '#e94560';
+            historyList.push(parseFloat(crashPoint).toFixed(2) + 'x');
+            actionBtn.innerText = 'Try Again';
+            actionBtn.className = 'crashed';
+        }
+        
+        updateHistoryUI();
+        // إعادة تشغيل دورة حركية النجوم في وضع الثبات والانتظار
+        gameLoopId = requestAnimationFrame(draw);
+    }
