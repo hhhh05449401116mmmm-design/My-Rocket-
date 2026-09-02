@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
     <title>Rocket Cash</title>
 
@@ -30,7 +33,7 @@
         #container {
             position: relative;
             width: 100%;
-            height: 32vh;
+            height: 38vh;
             background: radial-gradient(#151c24, #07080c);
             border-radius: 24px;
             overflow: hidden;
@@ -40,6 +43,28 @@
             display: block;
             width: 100%;
             height: 100%;
+        }
+
+        #top-balance-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(28, 37, 56, 0.65);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(5px);
+            z-index: 20;
+        }
+
+        #top-balance-btn span {
+            color: #0066ff;
         }
 
         #mult {
@@ -98,31 +123,31 @@
         .c-red {
             border-color: #e94560;
             color: #e94560;
-            background: rgba(233, 69, 96, 0.15);
+            background: rgba(233,69,96,0.15);
         }
 
         .c-blue {
             border-color: #0066ff;
             color: #0066ff;
-            background: rgba(0, 102, 255, 0.15);
+            background: rgba(0,102,255,0.15);
         }
 
         .c-green {
             border-color: #4e9f3d;
             color: #4e9f3d;
-            background: rgba(78, 159, 61, 0.15);
+            background: rgba(78,159,61,0.15);
         }
 
         .c-orange {
             border-color: #ffa500;
             color: #ffa500;
-            background: rgba(255, 165, 0, 0.15);
+            background: rgba(255,165,0,0.15);
         }
 
         .c-yellow {
             border-color: #ffd700;
             color: #ffd700;
-            background: rgba(255, 215, 0, 0.15);
+            background: rgba(255,215,0,0.15);
         }
 
         #main-action-btn {
@@ -136,11 +161,65 @@
             cursor: pointer;
             width: 100%;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         #main-action-btn.betting {
             background: #e94560;
+        }
+
+        #p-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 42vh;
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-top: 2px;
+            padding-bottom: 5px;
+        }
+
+        .p-row {
+            display: flex;
+            justify-content: space-between;
+            background: #131722;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .p-blue {
+            color: #8a9fc4;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .row-win-low {
+            background: rgba(78, 159, 61, 0.08)!important;
+            border: 1px solid rgba(78, 159, 61, 0.4)!important;
+        }
+
+        .row-win-low b {
+            color: #4e9f3d!important;
+        }
+
+        .row-win-high {
+            background: rgba(255, 215, 0, 0.08)!important;
+            border: 1px solid rgba(255, 215, 0, 0.4)!important;
+        }
+
+        .row-win-high b {
+            color: #ffd700!important;
+        }
+
+        .row-lose {
+            background: rgba(233, 69, 96, 0.06)!important;
+            border: 1px solid rgba(233, 69, 96, 0.3)!important;
+        }
+
+        .row-lose b {
+            color: #e94560!important;
         }
 
         #bet-panel {
@@ -154,7 +233,7 @@
             width: 100%;
             z-index: 100;
             display: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
 
         .panel-header {
@@ -170,7 +249,7 @@
         }
 
         .close-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.1);
             border: none;
             color: #fff;
             width: 28px;
@@ -228,7 +307,7 @@
             padding: 12px;
             margin-bottom: 14px;
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255,255,255,0.02);
         }
 
         .input-label {
@@ -318,58 +397,6 @@
             background: #0066ff;
             color: #fff;
         }
-
-        #p-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 25vh;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .p-row {
-            display: flex;
-            justify-content: space-between;
-            background: #131722;
-            padding: 12px 14px;
-            border-radius: 16px;
-            font-size: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.02);
-        }
-
-        .p-blue {
-            color: #8a9fc4;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .row-win-low {
-            background: rgba(78, 159, 61, 0.08) !important;
-            border: 1px solid rgba(78, 159, 61, 0.4) !important;
-        }
-
-        .row-win-low b {
-            color: #4e9f3d !important;
-        }
-
-        .row-win-high {
-            background: rgba(255, 215, 0, 0.08) !important;
-            border: 1px solid rgba(255, 215, 0, 0.4) !important;
-        }
-
-        .row-win-high b {
-            color: #ffd700 !important;
-        }
-
-        .row-lose {
-            background: rgba(233, 69, 96, 0.06) !important;
-            border: 1px solid rgba(233, 69, 96, 0.3) !important;
-        }
-
-        .row-lose b {
-            color: #e94560 !important;
-        }
     </style>
 </head>
 
@@ -378,17 +405,31 @@
 <div id="wrapper">
 
     <div id="container">
+
+        <div id="top-balance-btn">
+            <span id="top-balance-text">10.00</span>
+            <span>💎</span>
+        </div>
+
         <div id="mult">1.00x</div>
+
         <div id="count-box">5</div>
+
         <canvas id="gameCanvas"></canvas>
+
     </div>
 
     <div id="control-panel">
+
         <div id="history-bar"></div>
 
-        <button id="main-action-btn" onclick="openBetPanel()">
+        <button
+            id="main-action-btn"
+            onclick="openBetPanel()"
+        >
             Place bet
         </button>
+
     </div>
 
     <div id="p-list"></div>
@@ -396,34 +437,65 @@
     <div id="bet-panel">
 
         <div class="panel-header">
-            <div class="panel-title">Place bet</div>
 
-            <button class="close-btn" onclick="closeBetPanel()">
+            <div class="panel-title">
+                Place bet
+            </div>
+
+            <button
+                class="close-btn"
+                onclick="closeBetPanel()"
+            >
                 ✕
             </button>
+
         </div>
 
         <div class="tab-bar">
-            <button id="tab-gifts" class="tab-btn" onclick="switchTab('gifts')">
+
+            <button
+                id="tab-gifts"
+                class="tab-btn"
+                onclick="switchTab('gifts')"
+            >
                 Gifts
             </button>
 
-            <button id="tab-ton" class="tab-btn active" onclick="switchTab('ton')">
+            <button
+                id="tab-ton"
+                class="tab-btn active"
+                onclick="switchTab('ton')"
+            >
                 TON
             </button>
+
         </div>
 
         <div class="panel-row">
-            <div>Available Balance</div>
+
+            <div>
+                Available Balance
+            </div>
 
             <div class="row-val">
-                <span id="balance-display">10.00</span>
-                <span id="currency-unit">💎</span>
+
+                <span id="balance-display">
+                    10.00
+                </span>
+
+                <span id="currency-unit">
+                    💎
+                </span>
+
             </div>
+
         </div>
 
         <div class="input-box">
-            <div class="input-label">Bet Amount</div>
+
+            <div class="input-label">
+                Bet Amount
+            </div>
 
             <input
                 type="number"
@@ -435,25 +507,40 @@
                 oninput="validateBetInput()"
             >
 
-            <div id="input-tag" class="currency-tag">
+            <div
+                id="input-tag"
+                class="currency-tag"
+            >
                 💎
             </div>
+
         </div>
 
         <div class="panel-row">
-            <div>Auto cashout</div>
+
+            <div>
+                Auto cashout
+            </div>
 
             <label class="switch">
+
                 <input
                     type="checkbox"
                     id="auto-cash-toggle"
                     onchange="toggleAutoCashFields()"
                 >
+
                 <span class="slider"></span>
+
             </label>
+
         </div>
 
-        <div class="input-box" id="auto-cash-box" style="display:none;">
+        <div
+            class="input-box"
+            id="auto-cash-box"
+            style="display:none;"
+        >
 
             <div class="input-label">
                 Cashout Multiplier
@@ -471,13 +558,18 @@
             <div class="currency-tag">
                 X
             </div>
+
         </div>
 
-        <button id="submit-bet-btn" onclick="submitBet()">
+        <button
+            id="submit-bet-btn"
+            onclick="submitBet()"
+        >
             Place TON Bet 🚀
         </button>
 
     </div>
+
 </div>
 
 <script>
@@ -503,6 +595,7 @@
     const balanceDisplay = document.getElementById('balance-display');
     const currencyUnit = document.getElementById('currency-unit');
     const inputTag = document.getElementById('input-tag');
+    const topBalanceText = document.getElementById('top-balance-text');
 
     const autoToggle = document.getElementById('auto-cash-toggle');
     const autoCashBox = document.getElementById('auto-cash-box');
@@ -571,38 +664,47 @@
     ];
 
     for (let i = 0; i < 30; i++) {
+
         stars.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
             s: Math.random() * 1.5,
             sp: Math.random() * 1.2 + 0.6
         });
+
     }
 
     function getHColor(val) {
+
         if (val <= 1.30) return '#e94560';
         if (val <= 2.00) return '#0066ff';
         if (val <= 5.00) return '#4e9f3d';
         if (val <= 10.00) return '#ffa500';
+
         return '#ffd700';
     }
 
     function getHClass(val) {
+
         if (val <= 1.30) return 'c-red';
         if (val <= 2.00) return 'c-blue';
         if (val <= 5.00) return 'c-green';
         if (val <= 10.00) return 'c-orange';
+
         return 'c-yellow';
     }
 
     function updateHistoryUI() {
+
         hBar.innerHTML = '';
 
         historyList
             .slice(-6)
             .reverse()
             .forEach(v => {
-                const d = document.createElement('div');
+
+                const d =
+                    document.createElement('div');
 
                 d.className =
                     'h-item ' +
@@ -616,7 +718,11 @@
 
     function openBetPanel() {
 
-        if (state === 'COUNTDOWN' && !hasBet) {
+        if (
+            state === 'COUNTDOWN' &&
+            !hasBet
+        ) {
+
             betPanel.style.display = 'block';
 
         } else if (
@@ -624,6 +730,7 @@
             hasBet &&
             !hasCashedOut
         ) {
+
             cashOutUser();
         }
     }
@@ -638,17 +745,27 @@
 
         document
             .getElementById('tab-gifts')
-            .classList.toggle('active', tab === 'gifts');
+            .classList.toggle(
+                'active',
+                tab === 'gifts'
+            );
 
         document
             .getElementById('tab-ton')
-            .classList.toggle('active', tab === 'ton');
+            .classList.toggle(
+                'active',
+                tab === 'ton'
+            );
 
         currencyUnit.innerText =
-            tab === 'ton' ? '💎' : '🎁';
+            tab === 'ton'
+                ? '💎'
+                : '🎁';
 
         inputTag.innerText =
-            tab === 'ton' ? '💎' : '🎁';
+            tab === 'ton'
+                ? '💎'
+                : '🎁';
 
         betInput.placeholder =
             tab === 'ton'
@@ -664,13 +781,17 @@
     }
 
     function toggleAutoCashFields() {
+
         autoCashBox.style.display =
-            autoToggle.checked ? 'block' : 'none';
+            autoToggle.checked
+                ? 'block'
+                : 'none';
     }
 
     function validateBetInput() {
 
-        let val = parseFloat(betInput.value);
+        let val =
+            parseFloat(betInput.value);
 
         if (
             currentTab === 'ton' &&
@@ -703,13 +824,26 @@
         userBetAmount =
             currentTab === 'ton'
                 ? parseFloat(betInput.value)
-                : 0.1;
+                : 2.50;
 
         if (currentTab === 'ton') {
 
             userBalance -= userBetAmount;
 
             balanceDisplay.innerText =
+                userBalance.toFixed(2);
+
+            topBalanceText.innerText =
+                userBalance.toFixed(2);
+
+        } else {
+
+            userBalance += userBetAmount;
+
+            balanceDisplay.innerText =
+                userBalance.toFixed(2);
+
+            topBalanceText.innerText =
                 userBalance.toFixed(2);
         }
 
@@ -724,7 +858,9 @@
         let delay = 0;
 
         const shuffled =
-            [...pool].sort(() => 0.5 - Math.random());
+            [...pool].sort(
+                () => 0.5 - Math.random()
+            );
 
         shuffled.forEach(p => {
 
@@ -754,7 +890,9 @@
         listPlayers.forEach(p => {
 
             let rowClass = 'p-row';
-            let rightVal = `🔹 ${p.b.toFixed(2)}`;
+
+            let rightVal =
+                `🔹 ${p.b.toFixed(2)}`;
 
             if (p.status === 'win-low') {
 
@@ -798,7 +936,9 @@
             r.innerHTML = `
                 <div>
                     <b>${p.n}</b><br>
-                    <span class="p-blue">${statText}</span>
+                    <span class="p-blue">
+                        ${statText}
+                    </span>
                 </div>
 
                 <div>
@@ -847,19 +987,23 @@
         mainBtn.innerText = 'Place bet';
         mainBtn.className = '';
 
-        if (currentTab === 'ton') {
+        userBalance +=
+            userBetAmount * value;
 
-            userBalance +=
-                userBetAmount * value;
+        balanceDisplay.innerText =
+            userBalance.toFixed(2);
 
-            balanceDisplay.innerText =
-                userBalance.toFixed(2);
-        }
+        topBalanceText.innerText =
+            userBalance.toFixed(2);
 
         let userP = {
+
             n: 'You',
+
             b: userBetAmount,
+
             winMult: value,
+
             status:
                 value >= 10.00
                     ? 'win-high'
@@ -948,8 +1092,10 @@
                 hasBet &&
                 !hasCashedOut &&
                 autoToggle.checked &&
-                value >= parseFloat(autoCashInput.value)
+                value >=
+                    parseFloat(autoCashInput.value)
             ) {
+
                 cashOutUser();
             }
 
@@ -971,14 +1117,18 @@
 
                     renderPlayers();
                 }
+
             });
 
             if (value >= crash) {
 
                 state = 'CRASHED';
 
-                mult.innerText = '💥 FLEW AWAY';
-                mult.style.color = '#e94560';
+                mult.innerText =
+                    '💥 FLEW AWAY';
+
+                mult.style.color =
+                    '#e94560';
 
                 historyList.push(
                     value.toFixed(2) + 'x'
@@ -989,13 +1139,17 @@
                     if (p.status === 'active') {
                         p.status = 'lose';
                     }
+
                 });
 
                 if (
                     hasBet &&
                     !hasCashedOut
                 ) {
-                    mainBtn.innerText = 'Place bet';
+
+                    mainBtn.innerText =
+                        'Place bet';
+
                     mainBtn.className = '';
                 }
 
@@ -1007,7 +1161,10 @@
 
                 updateHistoryUI();
 
-                setTimeout(startCount, 2500);
+                setTimeout(
+                    startCount,
+                    2500
+                );
             }
         }
     }
@@ -1057,6 +1214,7 @@
             if (s.y > canvas.height) {
                 s.y = 0;
             }
+
         });
 
         if (state === 'COUNTDOWN') {
@@ -1076,8 +1234,11 @@
                 false
             );
 
-            ctx.strokeStyle = '#ff7a00';
+            ctx.strokeStyle =
+                '#ff7a00';
+
             ctx.lineWidth = 5;
+
             ctx.stroke();
         }
 
@@ -1100,16 +1261,22 @@
                 i < path.length;
                 i++
             ) {
+
                 ctx.lineTo(
                     path[i].x,
                     path[i].y
                 );
             }
 
-            ctx.strokeStyle = currentColor;
+            ctx.strokeStyle =
+                currentColor;
+
             ctx.lineWidth = 4;
+
             ctx.shadowBlur = 10;
-            ctx.shadowColor = currentColor;
+
+            ctx.shadowColor =
+                currentColor;
 
             ctx.stroke();
 
@@ -1121,45 +1288,63 @@
             if (Math.random() < 0.7) {
 
                 particles.push({
+
                     x: rx,
                     y: ry,
-                    vx: (Math.random() - 0.7) * 2,
-                    vy: (Math.random() + 0.3) * 2.5,
-                    size: Math.random() * 1.8 + 0.5,
+
+                    vx:
+                        (Math.random() - 0.7) * 2,
+
+                    vy:
+                        (Math.random() + 0.3) * 2.5,
+
+                    size:
+                        Math.random() * 1.8 + 0.5,
+
                     alpha: 1
                 });
             }
         }
 
-        particles.forEach((p, index) => {
+        particles.forEach(
+            (p, index) => {
 
-            ctx.save();
+                ctx.save();
 
-            ctx.globalAlpha = p.alpha;
-            ctx.fillStyle = currentColor;
+                ctx.globalAlpha =
+                    p.alpha;
 
-            ctx.beginPath();
+                ctx.fillStyle =
+                    currentColor;
 
-            ctx.arc(
-                p.x,
-                p.y,
-                p.size,
-                0,
-                Math.PI * 2
-            );
+                ctx.beginPath();
 
-            ctx.fill();
+                ctx.arc(
+                    p.x,
+                    p.y,
+                    p.size,
+                    0,
+                    Math.PI * 2
+                );
 
-            ctx.restore();
+                ctx.fill();
 
-            p.x += p.vx;
-            p.y += p.vy;
-            p.alpha -= 0.03;
+                ctx.restore();
 
-            if (p.alpha <= 0) {
-                particles.splice(index, 1);
+                p.x += p.vx;
+                p.y += p.vy;
+
+                p.alpha -= 0.03;
+
+                if (p.alpha <= 0) {
+
+                    particles.splice(
+                        index,
+                        1
+                    );
+                }
             }
-        });
+        );
 
         if (state === 'FLYING') {
 
@@ -1167,7 +1352,7 @@
                 currentColor;
 
             let p =
-                value <= 10.00
+                (value <= 10.00)
                     ? (
                         ((value - 1.00) / 9.00) *
                         0.45
@@ -1176,9 +1361,11 @@
                         0.45 +
                         (
                             (value - 10.00) /
-                            (crash > 10
-                                ? crash - 10
-                                : 1)
+                            (
+                                crash > 10
+                                    ? crash - 10
+                                    : 1
+                            )
                         ) *
                         0.37
                     );
@@ -1207,9 +1394,11 @@
 
                 let cProg =
                     (value - 2.00) /
-                    (crash > 2
-                        ? crash - 2
-                        : 1);
+                    (
+                        crash > 2
+                            ? crash - 2
+                            : 1
+                    );
 
                 ry =
                     (canvas.height - 40) -
@@ -1238,17 +1427,34 @@
 
             ctx.save();
 
-            ctx.translate(rx, ry);
+            ctx.translate(
+                rx,
+                ry
+            );
 
-            ctx.rotate(-Math.PI / 3);
+            ctx.rotate(
+                -Math.PI / 3
+            );
 
-            ctx.fillStyle = '#f0f2f5';
+            ctx.fillStyle =
+                '#f0f2f5';
 
             ctx.beginPath();
 
-            ctx.moveTo(0, -16);
-            ctx.lineTo(7, 4);
-            ctx.lineTo(-7, 4);
+            ctx.moveTo(
+                0,
+                -16
+            );
+
+            ctx.lineTo(
+                7,
+                4
+            );
+
+            ctx.lineTo(
+                -7,
+                4
+            );
 
             ctx.closePath();
 
@@ -1256,9 +1462,12 @@
 
             ctx.restore();
 
-        } else if (state === 'CRASHED') {
+        } else if (
+            state === 'CRASHED'
+        ) {
 
-            ctx.font = '40px Arial';
+            ctx.font =
+                '40px Arial';
 
             ctx.fillText(
                 '💥',
@@ -1267,11 +1476,14 @@
             );
         }
 
-        loop = requestAnimationFrame(draw);
+        loop =
+            requestAnimationFrame(draw);
     }
 
     updateHistoryUI();
+
     draw();
+
     startCount();
 
 </script>
