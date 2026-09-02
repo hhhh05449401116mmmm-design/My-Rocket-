@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لعبة الصاروخ المصغرة</title>
-    <!-- استدعاء مكتبة تليجرام الأساسية للتطبيقات المصغرة -->
     <script src="https://telegram.org"></script>
     <style>
         body {
@@ -26,11 +25,19 @@
             font-size: 50px;
             transition: transform 0.1s linear;
             margin: 20px 0;
+            display: inline-block;
         }
         #multiplier {
             font-size: 35px;
             color: #4e9f3d;
             font-weight: bold;
+            margin: 15px 0;
+        }
+        #status-text {
+            font-size: 18px;
+            color: #ffd700;
+            min-height: 25px;
+            margin-bottom: 10px;
         }
         button {
             background-color: #e94560;
@@ -42,9 +49,7 @@
             cursor: pointer;
             margin-top: 20px;
             width: 80%;
-        }
-        button:disabled {
-            background-color: #555;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -52,15 +57,22 @@
 
     <div id="game-container">
         <h2>🚀 لعبة الصاروخ التجريبية</h2>
+        <div id="status-text">اضغط لتبدأ الرحلة!</div>
         <div id="rocket">🚀</div>
         <div id="multiplier">1.00x</div>
         <button id="action-btn" onclick="handleClick()">ابدأ الرحلة</button>
     </div>
 
     <script>
-        // إعلام تليجرام بأن التطبيق المصغر جاهز للعمل
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand(); // تمديد الشاشة بالكامل
+        // التحقق الآمن مما إذا كان المستخدم داخل تليجرام أم متصفح عادي
+        try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+        } catch (e) {
+            console.log("تعمل خارج بيئة تليجرام");
+        }
 
         let isRunning = false;
         let multiplier = 1.00;
@@ -70,32 +82,36 @@
         const rocket = document.getElementById('rocket');
         const multiplierText = document.getElementById('multiplier');
         const actionBtn = document.getElementById('action-btn');
+        const statusText = document.getElementById('status-text');
 
         function handleClick() {
             if (!isRunning) {
                 // بدء اللعبة
                 isRunning = true;
                 multiplier = 1.00;
+                multiplierText.style.color = '#4e9f3d';
+                statusText.innerText = "الرحلة مستمرة... راقب!";
                 rocket.style.transform = 'translateY(0px)';
                 actionBtn.innerText = 'انسحب الآن (Cash Out)';
                 actionBtn.style.backgroundColor = '#4e9f3d';
                 
-                // تحديد نقطة انفجار عشوائية بين 1.1 و 5.0
+                // تحديد نقطة انفجار عشوائية
                 crashPoint = (Math.random() * 4 + 1.1).toFixed(2);
                 
                 gameInterval = setInterval(() => {
                     multiplier += 0.05;
                     multiplierText.innerText = multiplier.toFixed(2) + 'x';
                     
-                    // تحريك الصاروخ للأعلى بشكل بسيط
-                    rocket.style.transform = `translateY(-${(multiplier - 1) * 20}px)`;
+                    // تحريك الصاروخ للأعلى
+                    rocket.style.transform = `translateY(-${(multiplier - 1) * 25}px)`;
 
-                    // التحقق من الانفجار
+                    // تحقق من الانفجار
                     if (multiplier >= crashPoint) {
                         clearInterval(gameInterval);
                         isRunning = false;
-                        multiplierText.innerText = '💥 انفجر الصاروخ!';
+                        multiplierText.innerText = '💥 ' + crashPoint + 'x';
                         multiplierText.style.color = '#e94560';
+                        statusText.innerText = `انفجر الصاروخ عند ${crashPoint}x! خسرت المحاولة.`;
                         actionBtn.innerText = 'حاول مجدداً';
                         actionBtn.style.backgroundColor = '#e94560';
                     }
@@ -104,9 +120,9 @@
                 // الانسحاب والفوز
                 clearInterval(gameInterval);
                 isRunning = false;
-                alert('🎉 مبروك! فزت بمضاعف: ' + multiplier.toFixed(2) + 'x');
+                statusText.innerText = `🎉 كفو! انسحبت بنجاح وفزت بمضاعف: ${multiplier.toFixed(2)}x`;
                 multiplierText.style.color = '#ffd700';
-                actionBtn.innerText = 'العب مرة أخرى';
+                actionBtn.innerText = 'العب جولة جديدة';
                 actionBtn.style.backgroundColor = '#e94560';
             }
         }
