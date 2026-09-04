@@ -7,6 +7,11 @@
 
     <title>Rocket Cash Hub</title>
 
+    <!-- تعريف رابط السيرفر المباشر لتتعرف اللعبة على حساب اللاعبين والمالك -->
+    <script>
+        window.BACKEND_URL = "https://railway.app";
+    </script>
+
     <!-- استدعاء سكريبت تليجرام + مكتبة أيقونات متطورة للاعبين -->
     <script src="https://telegram.org"></script>
     <link rel="stylesheet" href="https://cloudflare.com">
@@ -18,6 +23,10 @@
             color: #fff;
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
             overflow: hidden;
             user-select: none;
         }
