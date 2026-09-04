@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <title>Epic Gift Rocket Pro Ultra v3</title>
+    <title>Epic Gift Rocket Pro Ultra v4</title>
 
-    <!-- Telegram Mini App -->
     <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <style>
@@ -93,7 +90,7 @@
 
         .game-container {
             padding: 10px;
-            height: 240px;
+            height: 250px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -127,9 +124,26 @@
             }
 
             100% {
-                transform: translateY(270px) translateX(-270px);
+                transform: translateY(280px) translateX(-280px);
                 opacity: 0;
             }
+        }
+
+        .svg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .curve-line {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.06s linear, stroke 0.1s;
         }
 
         .rocket-wrapper {
@@ -139,16 +153,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 2;
+            z-index: 3;
             transform: translate(0, 0);
-            transition: transform 0.06s linear;
         }
 
         .rocket-zone {
-            font-size: 55px;
-            filter: drop-shadow(0 0 15px rgba(0, 255, 204, 0.6));
+            font-size: 52px;
+            display: inline-block;
             position: relative;
-            transition: transform 0.06s linear;
+            transform-origin: center center;
         }
 
         .jet-trail {
@@ -170,7 +183,7 @@
             border-radius: 50%;
             opacity: 0.8;
             filter: blur(0.5px);
-            animation: emitParticle 0.35s linear infinite;
+            animation: emitParticle 0.3s linear infinite;
         }
 
         @keyframes emitParticle {
@@ -180,19 +193,19 @@
             }
 
             100% {
-                transform: translate(-45px, 45px) scale(0.1);
+                transform: translate(-35px, 35px) scale(0.1);
                 opacity: 0;
             }
         }
 
         .multiplier {
-            font-size: 52px;
+            font-size: 55px;
             font-weight: bold;
             color: #fff;
-            z-index: 3;
+            z-index: 4;
             font-family: sans-serif;
             position: relative;
-            text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 12px rgba(255,255,255,0.2);
         }
 
         .countdown-container {
@@ -202,7 +215,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 3;
+            z-index: 4;
         }
 
         .countdown-svg {
@@ -257,25 +270,25 @@
         }
 
         .history-badge.red {
-            background: rgba(255, 51, 102, 0.15);
+            background: rgba(255,51,102,0.15);
             color: #ff3366;
             border: 1px solid #ff336644;
         }
 
         .history-badge.green {
-            background: rgba(0, 255, 204, 0.15);
+            background: rgba(0,255,204,0.15);
             color: #00ffcc;
             border: 1px solid #00ffcc44;
         }
 
         .history-badge.purple {
-            background: rgba(160, 32, 240, 0.15);
+            background: rgba(160,32,240,0.15);
             color: #a020f0;
             border: 1px solid #a020f044;
         }
 
         .history-badge.gold {
-            background: rgba(255, 170, 0, 0.15);
+            background: rgba(255,170,0,0.15);
             color: #ffaa00;
             border: 1px solid #ffaa0044;
         }
@@ -410,13 +423,13 @@
         .main-btn.cashout {
             background: #00ffcc;
             color: #07080c;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0,255,204,0.3);
         }
 
         .main-btn.queued {
             background: #ffaa00;
             color: #fff;
-            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(255,170,0,0.3);
         }
 
         .main-btn:disabled {
@@ -432,6 +445,12 @@
             background: #0c0d14;
         }
 
+        #players-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .player-card {
             display: flex;
             justify-content: space-between;
@@ -443,18 +462,18 @@
         }
 
         .player-card.active {
-            border-color: rgba(0, 102, 255, 0.3);
-            background: rgba(0, 102, 255, 0.04);
+            border-color: rgba(0,102,255,0.3);
+            background: rgba(0,102,255,0.04);
         }
 
         .player-card.win {
-            border-color: rgba(0, 255, 204, 0.3);
-            background: rgba(0, 255, 204, 0.04);
+            border-color: rgba(0,255,204,0.3);
+            background: rgba(0,255,204,0.04);
         }
 
         .player-card.lose {
-            border-color: rgba(255, 51, 102, 0.2);
-            background: rgba(255, 51, 102, 0.02);
+            border-color: rgba(255,51,102,0.2);
+            background: rgba(255,51,102,0.02);
         }
 
         .p-info {
@@ -483,17 +502,17 @@
         }
 
         .p-status-box.active {
-            background: rgba(0, 102, 255, 0.15);
+            background: rgba(0,102,255,0.15);
             color: #0066ff;
         }
 
         .p-status-box.win {
-            background: rgba(0, 255, 204, 0.15);
+            background: rgba(0,255,204,0.15);
             color: #00ffcc;
         }
 
         .p-status-box.lose {
-            background: rgba(255, 51, 102, 0.15);
+            background: rgba(255,51,102,0.15);
             color: #ff3366;
         }
     </style>
@@ -503,6 +522,7 @@
 
     <!-- HEADER -->
     <div class="header">
+
         <div class="profile-zone">
 
             <div id="avatar-box" class="avatar-container">
@@ -510,7 +530,9 @@
             </div>
 
             <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                <span id="username" style="font-weight:bold; font-size:13px;">
+
+                <span id="username"
+                      style="font-weight:bold; font-size:13px;">
                     جاري التحميل...
                 </span>
 
@@ -519,40 +541,82 @@
                       style="background:#0066ff;">
                     لاعب
                 </span>
+
             </div>
+
         </div>
 
         <div class="balances-wrapper">
+
             <div class="balance-box ton">
-                <i class="fas fa-wallet" style="margin-right:4px;"></i>
+
+                <i class="fas fa-wallet"
+                   style="margin-right:4px;"></i>
+
                 <span id="ton-balance">126.14</span>
                 TON
+
             </div>
+
         </div>
+
     </div>
 
 
-    <!-- GAME -->
+    <!-- GAME AREA -->
     <div class="game-container">
 
         <div id="space-bg" class="space-bg"></div>
 
-        <div id="rocket-container" class="rocket-wrapper">
-            <div id="rocket" class="rocket-zone">🚀</div>
-            <div id="trail" class="jet-trail"></div>
+
+        <!-- NEON SVG CURVE -->
+        <svg
+            class="svg-canvas"
+            viewBox="0 0 400 250"
+            preserveAspectRatio="none">
+
+            <path
+                id="neon-curve"
+                class="curve-line"
+                d="M 55 220"
+                stroke="#00ffcc"
+                style="filter:drop-shadow(0 0 6px #00ffcc);">
+            </path>
+
+        </svg>
+
+
+        <!-- ROCKET -->
+        <div id="rocket-container"
+             class="rocket-wrapper">
+
+            <div id="rocket"
+                 class="rocket-zone">
+                🚀
+            </div>
+
+            <div id="trail"
+                 class="jet-trail">
+            </div>
+
         </div>
 
+
+        <!-- MULTIPLIER -->
         <div id="multiplier"
              class="multiplier"
              style="display:none;">
             1.00x
         </div>
 
-        <!-- COUNTDOWN -->
-        <div id="countdown-wrapper" class="countdown-container">
 
-            <svg class="countdown-svg"
-                 viewBox="0 0 80 80">
+        <!-- COUNTDOWN -->
+        <div id="countdown-wrapper"
+             class="countdown-container">
+
+            <svg
+                class="countdown-svg"
+                viewBox="0 0 80 80">
 
                 <circle
                     class="bg-circle"
@@ -582,26 +646,31 @@
 
 
     <!-- HISTORY -->
-    <div id="history-bar" class="history-row">
+    <div id="history-bar"
+         class="history-row">
 
         <div class="history-badge green">
-            51.30x
+            1.00x
         </div>
 
         <div class="history-badge green">
-            2.86x
+            51.02x
+        </div>
+
+        <div class="history-badge green">
+            1.91x
+        </div>
+
+        <div class="history-badge purple">
+            9.43x
         </div>
 
         <div class="history-badge gold">
-            13.80x
+            17.30x
         </div>
 
         <div class="history-badge green">
-            6.94x
-        </div>
-
-        <div class="history-badge red">
-            1.13x
+            2.24x
         </div>
 
     </div>
@@ -611,13 +680,22 @@
     <div class="bet-panel">
 
         <div class="info-row">
-            <span id="balance-label">126.14 TON</span>
-            <span>Available Balance</span>
+
+            <span id="balance-label">
+                126.14 TON
+            </span>
+
+            <span>
+                Available Balance
+            </span>
+
         </div>
+
 
         <div style="font-size:13px; color:#8a92b2;">
             Bet Amount
         </div>
+
 
         <div class="input-box-wrapper">
 
@@ -669,7 +747,7 @@
             <div
                 id="auto-cashout-val"
                 class="auto-val-display">
-                1.50 x
+                1.50
             </div>
 
             <button
@@ -681,7 +759,7 @@
         </div>
 
 
-        <!-- ACTION -->
+        <!-- ACTION BUTTON -->
         <button
             id="action-btn"
             class="main-btn"
@@ -695,8 +773,7 @@
     <!-- PLAYERS -->
     <div class="players-list">
 
-        <div
-            style="font-size:13px; color:#8a92b2; margin-bottom:2px;">
+        <div style="font-size:13px; color:#8a92b2;">
             Players
         </div>
 
@@ -708,9 +785,9 @@
     <!-- JAVASCRIPT -->
     <script>
 
-        // ==============================
+        // ==========================================
         // TELEGRAM
-        // ==============================
+        // ==========================================
 
         const tg = window.Telegram?.WebApp || null;
 
@@ -730,14 +807,16 @@
             tg?.initDataUnsafe?.user?.photo_url;
 
 
-        // ==============================
+        // ==========================================
         // PROFILE
-        // ==============================
+        // ==========================================
 
-        document.getElementById("username").innerText = firstName;
+        document.getElementById("username").innerText =
+            firstName;
 
         const avatarBox =
             document.getElementById("avatar-box");
+
 
         if (userPhoto) {
 
@@ -752,7 +831,6 @@
         }
 
 
-        // OWNER
         if (telegramId === "7385640899") {
 
             const role =
@@ -763,9 +841,9 @@
         }
 
 
-        // ==============================
+        // ==========================================
         // GAME VARIABLES
-        // ==============================
+        // ==========================================
 
         let tonBalance = 126.14;
 
@@ -774,31 +852,46 @@
         let isQueuedForNextRound = false;
 
         let currentMultiplier = 1.00;
+
         let loopInterval = null;
 
         let autoCashoutEnabled = false;
         let autoCashoutTarget = 1.50;
 
-        let rotationDegree = 0;
+        let screwRotation = 0;
 
 
-        // ==============================
-        // PLAYERS
-        // ==============================
+        // ==========================================
+        // BASE PLAYERS
+        // ==========================================
 
         const basePlayers = [
 
             {
-                name: "Sasha",
-                bet: "0.10",
+                name: "LA",
+                bet: "1.00",
                 color: "#e066ff",
                 state: "active"
             },
 
             {
-                name: "Spay",
-                bet: "0.50",
+                name: "755",
+                bet: "0.10",
+                color: "#ffaa00",
+                state: "active"
+            },
+
+            {
+                name: "مكسم",
+                bet: "0.10",
                 color: "#00ffcc",
+                state: "active"
+            },
+
+            {
+                name: "Макс",
+                bet: "0.30",
+                color: "#ff3366",
                 state: "active"
             }
 
@@ -807,9 +900,9 @@
         let livePlayers = [];
 
 
-        // ==============================
-        // SPACE STARS
-        // ==============================
+        // ==========================================
+        // STARS
+        // ==========================================
 
         const bg =
             document.getElementById("space-bg");
@@ -821,6 +914,7 @@
             "#ffaa00",
             "#ff3366"
         ];
+
 
         for (let i = 0; i < 35; i++) {
 
@@ -843,20 +937,21 @@
                 ];
 
             star.style.animationDuration =
-                (Math.random() * 1.0 + 0.5) + "s";
+                (Math.random() * 0.8 + 0.4) + "s";
 
             bg.appendChild(star);
         }
 
 
-        // ==============================
+        // ==========================================
         // AUTO CASHOUT
-        // ==============================
+        // ==========================================
 
         function toggleAutoCashout() {
 
             autoCashoutEnabled =
                 !autoCashoutEnabled;
+
 
             document.getElementById(
                 "auto-switch"
@@ -867,6 +962,7 @@
                         ? " active"
                         : ""
                 );
+
 
             document.getElementById(
                 "auto-control-box"
@@ -882,7 +978,10 @@
 
         function adjustAutoVal(val) {
 
-            if (!autoCashoutEnabled) return;
+            if (!autoCashoutEnabled) {
+                return;
+            }
+
 
             autoCashoutTarget =
                 parseFloat(
@@ -891,24 +990,27 @@
                     ).toFixed(2)
                 );
 
-            if (autoCashoutTarget < 1.1) {
-                autoCashoutTarget = 1.1;
+
+            if (autoCashoutTarget < 1.10) {
+                autoCashoutTarget = 1.10;
             }
 
-            if (autoCashoutTarget > 1000.0) {
-                autoCashoutTarget = 1000.0;
+
+            if (autoCashoutTarget > 1000.00) {
+                autoCashoutTarget = 1000.00;
             }
+
 
             document.getElementById(
                 "auto-cashout-val"
             ).innerText =
-                autoCashoutTarget.toFixed(2) + " x";
+                autoCashoutTarget.toFixed(2);
         }
 
 
-        // ==============================
+        // ==========================================
         // PLAYERS UI
-        // ==============================
+        // ==========================================
 
         function updatePlayersUI() {
 
@@ -919,13 +1021,16 @@
 
             feed.innerHTML = "";
 
+
             livePlayers.forEach(p => {
 
                 const card =
                     document.createElement("div");
 
+
                 card.className =
                     `player-card ${p.state}`;
+
 
                 const stateClass =
                     p.state === "active"
@@ -936,7 +1041,9 @@
                                 : "lose"
                         );
 
+
                 card.innerHTML = `
+
                     <div class="p-info">
 
                         <div
@@ -978,20 +1085,24 @@
                         class="p-status-box ${stateClass}">
                         💎 ${p.bet}
                     </div>
+
                 `;
 
+
                 feed.appendChild(card);
+
             });
         }
 
 
-        // ==============================
-        // GLOBAL COUNTDOWN
-        // ==============================
+        // ==========================================
+        // COUNTDOWN
+        // ==========================================
 
         function runGlobalLoop() {
 
             let count = 5;
+
 
             const wrapper =
                 document.getElementById(
@@ -1018,6 +1129,12 @@
                     "action-btn"
                 );
 
+            const path =
+                document.getElementById(
+                    "neon-curve"
+                );
+
+
             isGameRunning = false;
 
             multText.style.display = "none";
@@ -1025,17 +1142,25 @@
             wrapper.style.display = "flex";
 
 
-            // لاعبين الجولة الجديدة
+            // تصفير الخط
+            path.setAttribute(
+                "d",
+                "M 55 220"
+            );
+
+
+            // اللاعبين
             livePlayers =
                 JSON.parse(
                     JSON.stringify(basePlayers)
                 );
 
 
-            // الرهان المحجوز للجولة القادمة
+            // الرهان المحجوز
             if (isQueuedForNextRound) {
 
                 hasBet = true;
+
                 isQueuedForNextRound = false;
             }
 
@@ -1043,7 +1168,7 @@
             // إضافة اللاعب
             if (hasBet) {
 
-                livePlayers.push({
+                livePlayers.unshift({
 
                     name: firstName,
 
@@ -1056,6 +1181,7 @@
                     color: "#ff3366",
 
                     state: "active"
+
                 });
             }
 
@@ -1066,13 +1192,17 @@
             if (!hasBet) {
 
                 btn.disabled = false;
-                btn.className = "main-btn";
+
+                btn.className =
+                    "main-btn";
+
                 btn.innerText =
                     "Place TON Bet 🚀";
 
             } else {
 
                 btn.disabled = false;
+
                 btn.className =
                     "main-btn cashout";
 
@@ -1085,7 +1215,9 @@
 
                 if (count > 0) {
 
-                    numText.innerText = count;
+                    numText.innerText =
+                        count;
+
 
                     const offset =
                         236 -
@@ -1094,12 +1226,17 @@
                             (count / 5)
                         );
 
+
                     bar.style.strokeDashoffset =
                         offset;
 
+
                     count--;
 
-                    setTimeout(timer, 1000);
+                    setTimeout(
+                        timer,
+                        1000
+                    );
 
                 } else {
 
@@ -1114,15 +1251,16 @@
             }
 
 
-            bar.style.strokeDashoffset = 0;
+            bar.style.strokeDashoffset =
+                0;
 
             timer();
         }
 
 
-        // ==============================
-        // MULTIPLIER COLORS
-        // ==============================
+        // ==========================================
+        // MULTIPLIER COLOR
+        // ==========================================
 
         function getColorByMultiplier(val) {
 
@@ -1133,6 +1271,7 @@
                     hex: "#ff3366"
                 };
             }
+
 
             if (
                 val >= 1.30 &&
@@ -1145,6 +1284,7 @@
                 };
             }
 
+
             if (
                 val >= 5.20 &&
                 val < 9.20
@@ -1156,6 +1296,7 @@
                 };
             }
 
+
             if (val >= 10.00) {
 
                 return {
@@ -1164,6 +1305,7 @@
                 };
             }
 
+
             return {
                 name: "green",
                 hex: "#00ffcc"
@@ -1171,9 +1313,9 @@
         }
 
 
-        // ==============================
+        // ==========================================
         // ROCKET FLIGHT
-        // ==============================
+        // ==========================================
 
         function startRocketFlight() {
 
@@ -1181,7 +1323,8 @@
 
             currentMultiplier = 1.00;
 
-            rotationDegree = 0;
+            screwRotation = 0;
+
 
             const rCont =
                 document.getElementById(
@@ -1193,9 +1336,9 @@
                     "rocket"
                 );
 
-            const trail =
+            const path =
                 document.getElementById(
-                    "trail"
+                    "neon-curve"
                 );
 
             const multText =
@@ -1207,9 +1350,6 @@
                 document.getElementById(
                     "action-btn"
                 );
-
-
-            trail.style.opacity = "1";
 
 
             if (hasBet) {
@@ -1234,15 +1374,20 @@
             }
 
 
-            // نقطة الانفجار
+            // ======================================
+            // CRASH POINT
+            // ======================================
+
             let crashPoint =
                 Math.random() * 6 + 1.01;
 
-            if (Math.random() < 0.08) {
+
+            if (Math.random() < 0.12) {
 
                 crashPoint =
-                    Math.random() * 365 + 5;
+                    Math.random() * 365 + 3;
             }
+
 
             crashPoint =
                 Math.min(
@@ -1251,16 +1396,20 @@
                 );
 
 
+            // ======================================
+            // FLIGHT LOOP
+            // ======================================
+
             loopInterval =
                 setInterval(() => {
 
                     currentMultiplier +=
                         currentMultiplier < 5
-                            ? 0.015
+                            ? 0.025
                             : (
                                 currentMultiplier < 50
-                                    ? 0.3
-                                    : 1.8
+                                    ? 0.4
+                                    : 2.2
                             );
 
 
@@ -1276,35 +1425,42 @@
                         );
 
 
-                    trail.style.background =
-                        `linear-gradient(
-                            to bottom,
-                            ${currentColors.hex},
-                            transparent
+                    path.setAttribute(
+                        "stroke",
+                        currentColors.hex
+                    );
+
+
+                    path.style.filter =
+                        `drop-shadow(
+                            0 0 6px
+                            ${currentColors.hex}
                         )`;
 
-                    trail.style.boxShadow =
-                        `0 0 10px ${currentColors.hex}`;
 
+                    // ==================================
+                    // ROCKET POSITION
+                    // ==================================
 
-                    // الحركة
                     let xMove = 0;
                     let yMove = 0;
 
 
-                    if (currentMultiplier <= 1.30) {
+                    if (
+                        currentMultiplier <= 1.30
+                    ) {
 
                         xMove =
                             (
                                 currentMultiplier - 1
-                            ) * 220;
+                            ) * 230;
 
                         yMove = 0;
 
                     } else {
 
                         xMove =
-                            66 +
+                            69 +
                             (
                                 currentMultiplier - 1.30
                             ) * 85;
@@ -1312,50 +1468,91 @@
                         yMove =
                             (
                                 currentMultiplier - 1.30
-                            ) * 115;
+                            ) * 120;
                     }
 
 
                     const finalX =
                         Math.min(
-                            195,
+                            210,
                             xMove
                         );
 
+
                     const finalY =
                         Math.min(
-                            145,
+                            150,
                             yMove
                         );
 
 
-                    rotationDegree += 15;
+                    // ==================================
+                    // SCREW ROTATION
+                    // ==================================
+
+                    screwRotation += 35;
 
 
                     rCont.style.transform =
                         `translate(
                             ${finalX}px,
                             -${finalY}px
-                        )`;
+                        ) rotate(-15deg)`;
 
 
                     rocket.style.transform =
-                        `rotate(
-                            ${rotationDegree}deg
-                        ) scale(1.0)`;
+                        `rotateY(
+                            ${screwRotation}deg
+                        )`;
 
 
-                    trail.style.height =
-                        `${Math.min(
-                            32,
-                            (
-                                currentMultiplier - 1
-                            ) * 35
-                        )}px`;
+                    // ==================================
+                    // SVG CURVE
+                    // ==================================
+
+                    const startX = 55;
+                    const startY = 220;
+
+                    const currentX =
+                        startX + finalX;
+
+                    const currentY =
+                        startY - finalY;
 
 
-                    // particles
-                    if (Math.random() < 0.5) {
+                    if (
+                        currentMultiplier <= 1.30
+                    ) {
+
+                        path.setAttribute(
+                            "d",
+                            `M ${startX} ${startY}
+                             L ${currentX} ${currentY}`
+                        );
+
+                    } else {
+
+                        const controlX =
+                            startX + 69;
+
+                        const controlY =
+                            startY;
+
+
+                        path.setAttribute(
+                            "d",
+                            `M ${startX} ${startY}
+                             Q ${controlX} ${controlY}
+                             ${currentX} ${currentY}`
+                        );
+                    }
+
+
+                    // ==================================
+                    // PARTICLES
+                    // ==================================
+
+                    if (Math.random() < 0.6) {
 
                         const p =
                             document.createElement(
@@ -1365,23 +1562,30 @@
                         p.className =
                             "particle-glow";
 
+
                         p.style.setProperty(
                             "--p-color",
                             currentColors.hex
                         );
 
+
                         p.style.left = "22px";
-                        p.style.top = "42px";
+                        p.style.top = "22px";
+
 
                         rCont.appendChild(p);
 
+
                         setTimeout(() => {
                             p.remove();
-                        }, 350);
+                        }, 300);
                     }
 
 
-                    // محاكاة اللاعبين
+                    // ==================================
+                    // OTHER PLAYERS
+                    // ==================================
+
                     livePlayers.forEach(p => {
 
                         if (
@@ -1395,10 +1599,14 @@
 
                             updatePlayersUI();
                         }
+
                     });
 
 
+                    // ==================================
                     // AUTO CASHOUT
+                    // ==================================
+
                     if (
                         hasBet &&
                         autoCashoutEnabled &&
@@ -1418,7 +1626,10 @@
                     }
 
 
+                    // ==================================
                     // CRASH
+                    // ==================================
+
                     if (
                         currentMultiplier >=
                         crashPoint
@@ -1433,17 +1644,18 @@
                         triggerRocketCrash();
                     }
 
-                }, 65);
+                }, 60);
         }
 
 
-        // ==============================
+        // ==========================================
         // CRASH
-        // ==============================
+        // ==========================================
 
         function triggerRocketCrash() {
 
             isGameRunning = false;
+
 
             const finalColors =
                 getColorByMultiplier(
@@ -1451,15 +1663,11 @@
                 );
 
 
-            document.getElementById(
-                "trail"
-            ).style.opacity = "0";
-
-
             const rocket =
                 document.getElementById(
                     "rocket"
                 );
+
 
             rocket.innerText = "💥";
 
@@ -1481,12 +1689,13 @@
             `;
 
 
-            // اللاعبين المتبقين يخسرون
+            // اللاعبين الذين لم يسحبوا
             livePlayers.forEach(p => {
 
                 if (p.state === "active") {
                     p.state = "lose";
                 }
+
             });
 
 
@@ -1498,7 +1707,9 @@
 
             setTimeout(() => {
 
-                rocket.innerText = "🚀";
+                rocket.innerText =
+                    "🚀";
+
 
                 rocket.style.transform =
                     "none";
@@ -1516,9 +1727,9 @@
         }
 
 
-        // ==============================
-        // MAIN ACTION
-        // ==============================
+        // ==========================================
+        // ACTION
+        // ==========================================
 
         function handleAction() {
 
@@ -1527,7 +1738,8 @@
                     "action-btn"
                 );
 
-            const betInput =
+
+            const input =
                 document.getElementById(
                     "bet-input"
                 );
@@ -1535,23 +1747,21 @@
 
             const amt =
                 parseFloat(
-                    betInput.value
+                    input.value
                 );
 
 
-            // حماية المبلغ
             if (
                 !Number.isFinite(amt) ||
                 amt < 0.10
             ) {
 
-                betInput.value = "0.10";
+                input.value = "0.10";
 
                 return;
             }
 
 
-            // عدم السماح برهان أكبر من الرصيد
             if (
                 !hasBet &&
                 !isQueuedForNextRound &&
@@ -1564,9 +1774,9 @@
             }
 
 
-            // ==========================
-            // أثناء الطيران
-            // ==========================
+            // ======================================
+            // DURING FLIGHT
+            // ======================================
 
             if (isGameRunning) {
 
@@ -1585,7 +1795,7 @@
                 }
 
 
-                // حجز للجولة القادمة
+                // Queue next round
                 if (
                     !isQueuedForNextRound
                 ) {
@@ -1593,12 +1803,15 @@
                     isQueuedForNextRound =
                         true;
 
+
                     tonBalance -= amt;
+
 
                     document.getElementById(
                         "ton-balance"
                     ).innerText =
                         tonBalance.toFixed(2);
+
 
                     document.getElementById(
                         "balance-label"
@@ -1610,19 +1823,22 @@
                     btn.className =
                         "main-btn queued";
 
+
                     btn.innerText =
                         "Queued for Next Round ⏳";
 
+
                     btn.disabled = true;
                 }
+
 
                 return;
             }
 
 
-            // ==========================
-            // قبل الإقلاع
-            // ==========================
+            // ======================================
+            // BEFORE TAKEOFF
+            // ======================================
 
             if (
                 !isGameRunning &&
@@ -1631,6 +1847,7 @@
             ) {
 
                 hasBet = true;
+
 
                 tonBalance -= amt;
 
@@ -1648,7 +1865,7 @@
                     + " TON";
 
 
-                livePlayers.push({
+                livePlayers.unshift({
 
                     name: firstName,
 
@@ -1657,6 +1874,7 @@
                     color: "#ff3366",
 
                     state: "active"
+
                 });
 
 
@@ -1666,14 +1884,15 @@
                 btn.innerText =
                     "Waiting for Takeoff...";
 
+
                 btn.disabled = true;
             }
         }
 
 
-        // ==============================
+        // ==========================================
         // CASHOUT SUCCESS
-        // ==============================
+        // ==========================================
 
         function triggerCashoutSuccess() {
 
@@ -1705,12 +1924,12 @@
                 + " TON";
 
 
-            // تحويل اللاعب إلى Win
             livePlayers.forEach(p => {
 
                 if (p.name === firstName) {
                     p.state = "win";
                 }
+
             });
 
 
@@ -1726,21 +1945,21 @@
             btn.innerText =
                 "Cashed Out! 🎉";
 
+
             btn.disabled = true;
 
 
-            // انتهاء رهان اللاعب
             hasBet = false;
 
 
-            // إبقاء سلوك الجولة الأصلي
+            // استمرار سلوك الجولة
             triggerRocketCrash();
         }
 
 
-        // ==============================
+        // ==========================================
         // INITIAL BALANCE
-        // ==============================
+        // ==========================================
 
         document.getElementById(
             "ton-balance"
@@ -1755,9 +1974,9 @@
             + " TON";
 
 
-        // ==============================
-        // START
-        // ==============================
+        // ==========================================
+        // START GAME
+        // ==========================================
 
         runGlobalLoop();
 
