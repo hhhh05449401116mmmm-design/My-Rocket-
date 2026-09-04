@@ -6,7 +6,11 @@
 
     <title>Epic Gift Rocket Multiplayer Pro</title>
 
+    <!-- Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- TON Connect -->
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
     <style>
         body {
@@ -78,6 +82,7 @@
 
         .balance-box.ton {
             color: #0088cc;
+            cursor: pointer;
         }
 
         .admin-badge {
@@ -581,13 +586,24 @@
 
     <div class="balances-wrapper">
 
-        <div class="balance-box ton">
+        <div
+            id="ton-wallet-box"
+            class="balance-box ton"
+            onclick="openTonWallet()"
+            title="Connect TON Wallet">
+
             <span id="ton-balance">126.04</span> TON
+
         </div>
 
         <div class="balance-box">
+
             🚀
-            <span id="header-multiplier">1.00x</span>
+
+            <span id="header-multiplier">
+                1.00x
+            </span>
+
         </div>
 
     </div>
@@ -838,13 +854,255 @@ if (telegramId === "7385640899") {
    RAILWAY
 ========================================= */
 
-/*
-    هذا هو رابط Railway المستخدم
-    بواسطة السيرفر الحالي.
-*/
-
 const BACKEND_URL =
     "https://my-rocket-production.up.railway.app";
+
+
+/* =========================================
+   TON CONNECT
+========================================= */
+
+let tonConnectUI = null;
+
+let tonWalletAddress = null;
+
+let tonWalletConnected = false;
+
+
+/*
+    تهيئة TON Connect.
+
+    لا يوجد هنا:
+    - إيداع
+    - سحب
+    - تحويل TON
+    - تعديل الرصيد
+
+    هذه المرحلة للاتصال بالمحفظة فقط.
+*/
+
+function initTonConnect() {
+
+    if (
+        typeof TON_CONNECT_UI === "undefined"
+    ) {
+
+        console.error(
+            "TON Connect UI library failed to load."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        tonConnectUI =
+            new TON_CONNECT_UI.TonConnectUI({
+                manifestUrl:
+                    "https://my-rocket.vercel.app/tonconnect-manifest.json",
+
+                restoreConnection:
+                    true,
+
+                language:
+                    "en"
+            });
+
+
+        tonConnectUI.onStatusChange(
+            function(wallet) {
+
+                if (wallet) {
+
+                    tonWalletConnected =
+                        true;
+
+                    tonWalletAddress =
+                        wallet.account?.address ||
+                        null;
+
+                    console.log(
+                        "💎 TON Wallet connected:",
+                        tonWalletAddress
+                    );
+
+                    updateTonWalletUI();
+
+                } else {
+
+                    tonWalletConnected =
+                        false;
+
+                    tonWalletAddress =
+                        null;
+
+                    console.log(
+                        "💎 TON Wallet disconnected"
+                    );
+
+                    resetTonWalletUI();
+
+                }
+
+            }
+        );
+
+
+        /*
+            محاولة قراءة الحالة الحالية
+            إذا كانت الجلسة مستعادة.
+        */
+
+        if (
+            tonConnectUI.wallet
+        ) {
+
+            tonWalletConnected =
+                true;
+
+            tonWalletAddress =
+                tonConnectUI.wallet.account?.address ||
+                null;
+
+            updateTonWalletUI();
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "TON Connect initialization error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   OPEN TON WALLET
+========================================= */
+
+function openTonWallet() {
+
+    if (!tonConnectUI) {
+
+        console.error(
+            "TON Connect is not initialized."
+        );
+
+        return;
+
+    }
+
+
+    tonConnectUI
+        .openModal()
+        .catch(function(error) {
+
+            console.error(
+                "Unable to open TON wallet modal:",
+                error
+            );
+
+        });
+
+}
+
+
+/* =========================================
+   TON WALLET UI
+========================================= */
+
+function updateTonWalletUI() {
+
+    const box =
+        document.getElementById(
+            "ton-wallet-box"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    if (
+        tonWalletConnected &&
+        tonWalletAddress
+    ) {
+
+        box.title =
+            "TON Wallet: " +
+            tonWalletAddress;
+
+
+        box.innerHTML = `
+            <span id="ton-balance">
+                ${Number(tonBalance).toFixed(2)}
+            </span>
+            TON
+            <span
+                style="
+                    font-size:9px;
+                    margin-left:2px;
+                    color:#00ffcc;
+                ">
+                ●
+            </span>
+        `;
+
+        return;
+
+    }
+
+
+    box.title =
+        "Connect TON Wallet";
+
+
+    box.innerHTML = `
+        <span id="ton-balance">
+            ${Number(tonBalance).toFixed(2)}
+        </span>
+        TON
+    `;
+
+}
+
+
+/* =========================================
+   RESET TON WALLET UI
+========================================= */
+
+function resetTonWalletUI() {
+
+    const box =
+        document.getElementById(
+            "ton-wallet-box"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    box.title =
+        "Connect TON Wallet";
+
+
+    box.innerHTML = `
+        <span id="ton-balance">
+            ${Number(tonBalance).toFixed(2)}
+        </span>
+        TON
+    `;
+
+}
 
 
 /* =========================================
@@ -1029,6 +1287,8 @@ function handleServerMessage(data) {
 
         updateBalanceUI();
 
+        updateTonWalletUI();
+
     }
 
 
@@ -1053,13 +1313,6 @@ function handleServerMessage(data) {
 
     }
 
-
-    /*
-        أهم جزء:
-
-        self هو وضع اللاعب الحقيقي
-        القادم من السيرفر.
-    */
 
     if (data.self) {
 
@@ -1192,10 +1445,6 @@ function syncSelfState(self) {
         String(self.state || "none");
 
 
-    /*
-        السيرفر يقول إن الرهان فعال.
-    */
-
     if (state === "active") {
 
         hasBet = true;
@@ -1214,10 +1463,6 @@ function syncSelfState(self) {
         return;
     }
 
-
-    /*
-        الرهان في الجولة القادمة.
-    */
 
     if (state === "pending") {
 
@@ -1238,10 +1483,6 @@ function syncSelfState(self) {
     }
 
 
-    /*
-        تم Cashout.
-    */
-
     if (state === "win") {
 
         hasBet = false;
@@ -1251,10 +1492,6 @@ function syncSelfState(self) {
         return;
     }
 
-
-    /*
-        Crash / lose / none.
-    */
 
     if (
         state === "lose" ||
@@ -1387,11 +1624,6 @@ function updateCountdownUI(seconds) {
     );
 
 
-    /*
-        إذا كان السيرفر يقول إن اللاعب
-        لديه رهان فعال.
-    */
-
     if (hasBet) {
 
         btn.disabled = true;
@@ -1405,10 +1637,6 @@ function updateCountdownUI(seconds) {
         return;
     }
 
-
-    /*
-        رهان للجولة القادمة.
-    */
 
     if (isQueuedForNextRound) {
 
@@ -1548,11 +1776,6 @@ function updateFlightUI(mult) {
     );
 
 
-    /*
-        زر Cashout لا يظهر إلا إذا
-        السيرفر يقول إن اللاعب active.
-    */
-
     if (hasBet) {
 
         btn.disabled = false;
@@ -1585,11 +1808,6 @@ function updateFlightUI(mult) {
 
     }
 
-
-    /*
-        مؤثرات الصاروخ فقط.
-        لا يوجد أي حساب للعبة هنا.
-    */
 
     if (Math.random() < 0.3) {
 
@@ -2270,12 +2488,6 @@ function handleAction() {
     }
 
 
-    /*
-        أثناء الطيران:
-        إذا كان عندنا رهان فعال
-        فالزر = Cashout.
-    */
-
     if (
         isGameRunning &&
         hasBet
@@ -2286,11 +2498,6 @@ function handleAction() {
         return;
     }
 
-
-    /*
-        أثناء الطيران:
-        رهان للجولة القادمة.
-    */
 
     if (
         isGameRunning &&
@@ -2311,11 +2518,6 @@ function handleAction() {
         return;
     }
 
-
-    /*
-        أثناء Countdown:
-        رهان الجولة الحالية.
-    */
 
     if (
         !isGameRunning &&
@@ -2391,43 +2593,29 @@ function placeBet() {
         "جاري تسجيل الرهان...";
 
 
-    /*
-        الرهان والـAuto Cashout
-        يذهبان للسيرفر.
-
-        السيرفر هو مصدر الحقيقة.
-    */
-
     sendServerAction(
         {
             type: "BET",
 
             telegramId:
-
                 telegramId,
 
             name:
-
                 firstName,
 
             avatar:
-
                 userPhoto,
 
             amount:
-
                 amount,
 
             roundId:
-
                 currentRoundId,
 
             autoCashout:
-
                 autoCashoutEnabled,
 
             autoTarget:
-
                 autoCashoutTarget
         },
 
@@ -2446,10 +2634,23 @@ function placeBet() {
                     amount;
 
 
-                /*
-                    إذا كان Flight:
-                    السيرفر يضعه pending.
-                */
+                if (
+                    Number.isFinite(
+                        Number(data.balance)
+                    )
+                ) {
+
+                    tonBalance =
+                        Number(
+                            data.balance
+                        );
+
+                    updateBalanceUI();
+
+                    updateTonWalletUI();
+
+                }
+
 
                 if (
                     isGameRunning
@@ -2542,23 +2743,14 @@ function triggerCashoutSuccess() {
         "Cashing out... 💎";
 
 
-    /*
-        لا نحسب الربح محلياً.
-
-        السيرفر يحدد multiplier
-        وقيمة payout.
-    */
-
     sendServerAction(
         {
             type: "CASHOUT",
 
             telegramId:
-
                 telegramId,
 
             roundId:
-
                 currentRoundId
         },
 
@@ -2596,6 +2788,8 @@ function triggerCashoutSuccess() {
 
                     updateBalanceUI();
 
+                    updateTonWalletUI();
+
                 }
 
 
@@ -2609,11 +2803,6 @@ function triggerCashoutSuccess() {
                     "Bet for Next Round ⏳";
 
             } else {
-
-                /*
-                    إذا رفض السيرفر Cashout،
-                    ننتظر حالة السيرفر التالية.
-                */
 
                 btn.disabled =
                     false;
@@ -2697,7 +2886,7 @@ function sendServerAction(
 
             } catch (e) {}
 
-            
+
             if (!response.ok) {
 
                 throw new Error(
@@ -2884,6 +3073,13 @@ updatePlayersUI();
 /* =========================================
    START
 ========================================= */
+
+/*
+    نبدأ TON Connect والـRailway
+    بشكل مستقل عن بعضهما.
+*/
+
+initTonConnect();
 
 connectToGlobalServer();
 
