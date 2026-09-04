@@ -10,22 +10,31 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #07080c; color: #fff; margin: 0; padding: 0; overflow: hidden; user-select: none; text-align: center; }
         .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; direction: rtl; align-items: center; }
         .profile-zone { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; background: #0066ff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #1f2544; }
-        .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; direction: ltr; }
-        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0066ff, #00ffcc); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #1f2544; box-shadow: 0 0 10px rgba(0,102,255,0.3); }
+        .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; direction: ltr; border: 1px solid #00ffcc33; }
+        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; box-shadow: 0 0 8px rgba(255,51,102,0.4); }
         .player-badge { background: #0066ff; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-        .game-container { padding: 20px; height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .rocket-zone { font-size: 80px; margin-bottom: 20px; transition: transform 0.05s linear; }
-        .multiplier { font-size: 55px; font-weight: bold; color: #fff; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        
+        /* قسم العملات المتاحة المتطور */
+        .currencies-container { display: flex; justify-content: center; gap: 15px; padding: 10px; background: #0d101d; border-bottom: 1px solid #1f2544; direction: rtl; font-size: 13px; }
+        .crypto-item { display: flex; align-items: center; gap: 6px; background: #161b33; padding: 5px 12px; border-radius: 15px; border: 1px solid #ffffff10; }
+        .crypto-item.ton { color: #0088cc; font-weight: bold; }
+        .crypto-item.usdt { color: #26a17b; font-weight: bold; }
+
+        .game-container { padding: 20px; height: calc(100vh - 240px); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: radial-gradient(circle at center, #11152b 0%, #07080c 70%); }
+        .rocket-zone { font-size: 85px; margin-bottom: 20px; transition: transform 0.08s linear; filter: drop-shadow(0 0 15px rgba(255,102,0,0.5)); }
+        .multiplier { font-size: 60px; font-weight: bold; color: #fff; margin-bottom: 5px; font-family: monospace; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
         .status-text { font-size: 16px; color: #8a92b2; height: 25px; font-weight: 500; }
-        .controls { padding: 20px; background: #111424; position: absolute; bottom: 0; left: 0; right: 0; }
-        .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); transition: all 0.2s; }
+        
+        .controls { padding: 20px; background: #111424; position: absolute; bottom: 0; left: 0; right: 0; border-top: 1px solid #1f2544; }
+        .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); transition: all 0.2s ease; }
         .btn.cashout { background: #00ffcc; color: #07080c; box-shadow: 0 4px 15px rgba(0,255,204,0.4); }
         .btn:disabled { background: #3a3f58; color: #686d87; box-shadow: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
+    <!-- الهيدر والبروفايل الحقيقي للاعب -->
     <div class="header">
         <div class="profile-zone">
             <div id="user-avatar" class="avatar">⚙️</div>
@@ -40,12 +49,30 @@
         </div>
     </div>
 
+    <!-- قسم العملات المتاحة والمحافظ في شبكة TON البلوكشين -->
+    <div class="currencies-container">
+        <div class="crypto-item ton">
+            <i class="fas fa-wallet"></i>
+            <span>0.00 TON</span>
+        </div>
+        <div class="crypto-item usdt">
+            <i class="fas fa-dollar-sign"></i>
+            <span>0.00 USDT</span>
+        </div>
+        <div class="crypto-item" style="color: #ffaa00;">
+            <i class="fas fa-coins"></i>
+            <span>0 NOT</span>
+        </div>
+    </div>
+
+    <!-- منطقة الجيم والحركة الحية للصاروخ -->
     <div class="game-container">
         <div id="rocket" class="rocket-zone">🚀</div>
         <div id="multiplier" class="multiplier">1.00x</div>
-        <div id="status" class="status-text">بانتظار الجولة القادمة...</div>
+        <div id="status" class="status-text">بانتظار بدء الجولة...</div>
     </div>
 
+    <!-- لوحة التحكم بأزرار الرهان والكاش أوت -->
     <div class="controls">
         <button id="action-btn" class="btn" onclick="handleAction()">BET</button>
     </div>
@@ -54,14 +81,14 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // جلب البيانات الحقيقية من حساب التيليجرام الفعلي بالـ SDK الرسمي
+        // سحب بيانات المستخدم الحقيقية من الـ SDK الموثق في تيليجرام
         const telegramId = String(tg.initDataUnsafe?.user?.id || "7385640899"); 
         const firstName = tg.initDataUnsafe?.user?.first_name || "المطور";
         
         document.getElementById('username').innerText = firstName;
         document.getElementById('user-avatar').innerText = firstName.charAt(0).toUpperCase();
 
-        // شرط التحقق الحقيقي الصارم: المالك فقط من يظهر له شارة الأدمن
+        // التحقق من هوية المالك لتفعيل الشارة الحمراء الفخمة للأدمن
         if (telegramId === "7385640899") {
             const role = document.getElementById('role-tag');
             role.innerText = "المالك";
@@ -74,6 +101,7 @@
         let currentMultiplier = 1.00;
         let loopInterval;
 
+        // محرك الجولات الذاتي - لتشغيل حركة الصاروخ والعداد بشكل فوري ومستمر
         function startLiveGameLoop() {
             if (isGameRunning) return;
             
@@ -86,36 +114,40 @@
             currentMultiplier = 1.00;
             rocket.innerText = "🚀";
             rocket.style.transform = "none";
-            status.innerText = "الصاروخ يحلّق الآن الحين...";
+            status.innerText = "الصاروخ يحلّق الآن في الفضاء الحين...";
             
             if (hasBet) {
                 btn.innerText = "CASH OUT";
                 btn.className = "btn cashout";
                 btn.disabled = false;
             } else {
-                btn.innerText = "جاري الطيران أونلاين...";
+                btn.innerText = "جاري الطيران.. انتظر الجولة التالية";
+                btn.className = "btn";
                 btn.disabled = true;
             }
 
             loopInterval = setInterval(() => {
                 currentMultiplier += 0.03;
                 multText.innerText = currentMultiplier.toFixed(2) + "x";
-                // حركة حركية تفاعلية دقيقة للارتفاع
-                rocket.style.transform = `translateY(-${(currentMultiplier-1)*35}px) scale(${1 + (currentMultiplier-1)*0.02})`;
+                
+                // معادلة الحركة الرسومية الصاعدة للصاروخ ليعطيك تأثير الطيران الحقيقي
+                let yMove = (currentMultiplier - 1) * 45;
+                let scaleMove = 1 + (currentMultiplier - 1) * 0.03;
+                rocket.style.transform = `translateY(-${yMove}px) scale(${scaleMove}) rotate(-15deg)`;
 
-                // نقطة انفجار ديناميكية عشوائية
-                if (currentMultiplier > 1.15 && Math.random() < 0.025) {
+                // منطق الانفجار العشوائي المتغير غير المتوقع
+                if (currentMultiplier > 1.15 && Math.random() < 0.022) {
                     clearInterval(loopInterval);
                     explodeRocket();
                 }
-            }, 80);
+            }, 75);
         }
 
         function explodeRocket() {
             isGameRunning = false;
             hasBet = false;
             document.getElementById('rocket').innerText = "💥";
-            document.getElementById('rocket').style.transform = "scale(1.4)";
+            document.getElementById('rocket').style.transform = "scale(1.5)";
             document.getElementById('status').innerText = "انفجر الصاروخ! جولة جديدة ستبدأ...";
             
             const btn = document.getElementById('action-btn');
@@ -125,33 +157,33 @@
 
             setTimeout(() => {
                 document.getElementById('multiplier').innerText = "1.00x";
-                document.getElementById('status').innerText = "بانتظار بدء الجولة تلقائياً...";
+                document.getElementById('status').innerText = "بانتظار الإقلاع القادم تلقائياً...";
                 startLiveGameLoop();
-            }, 3500); 
+            }, 4000); // 4 ثوانٍ وقت انتظار بين الجولات
         }
 
         function handleAction() {
             const btn = document.getElementById('action-btn');
             if (!isGameRunning && !hasBet) {
                 hasBet = true;
-                currentBalance -= 100;
+                currentBalance -= 100; // رهان افتراضي بـ 100 جوهرة
                 document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                btn.innerText = "تم قبول الرهان..";
+                btn.innerText = "تم قبول الرهان.. انتظر الإقلاع";
                 btn.disabled = true;
             } else if (isGameRunning && hasBet) {
                 hasBet = false;
                 const winAmount = 100 * currentMultiplier;
                 currentBalance += winAmount;
                 document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                document.getElementById('status').innerText = `فزت بـ +${winAmount.toFixed(1)} 💎`;
+                document.getElementById('status').innerText = `كاش أوت ناجح! فزت بـ +${winAmount.toFixed(1)} 💎`;
                 btn.innerText = "انتظر الجولة القادمة";
                 btn.className = "btn";
                 btn.disabled = true;
             }
         }
 
-        // إطلاق فوري للحركة التلقائية والدوران عند الدخول
-        setTimeout(startLiveGameLoop, 1500);
+        // بدء تشغيل اللعبة والحركات تلقائياً فور دخول اللاعبين للشاشة
+        setTimeout(startLiveGameLoop, 2000);
     </script>
 </body>
 </html>
