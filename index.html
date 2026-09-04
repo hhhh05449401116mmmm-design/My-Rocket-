@@ -6,7 +6,7 @@
 
     <title>Epic Gift Rocket Multiplayer Pro</title>
 
-    <!-- Telegram WebApp الرسمي -->
+    <!-- Telegram WebApp SDK الرسمي -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
@@ -212,7 +212,7 @@
             z-index: 4;
             font-family: sans-serif;
             position: relative;
-            text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 12px rgba(255,255,255,0.2);
         }
 
         .countdown-container {
@@ -311,7 +311,7 @@
             color: #ff4400;
             border: 1px solid #ff440055;
             font-weight: 800;
-            box-shadow: 0 0 6px rgba(255, 68, 0, 0.2);
+            box-shadow: 0 0 6px rgba(255,68,0,0.2);
         }
 
         .bet-panel {
@@ -456,13 +456,13 @@
         .main-btn.cashout {
             background: #00ffcc;
             color: #07080c;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0,255,204,0.3);
         }
 
         .main-btn.queued {
             background: #ffaa00;
             color: #fff;
-            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(255,170,0,0.3);
         }
 
         .main-btn:disabled {
@@ -540,17 +540,17 @@
         }
 
         .p-status-box.active {
-            background: rgba(0, 102, 255, 0.15);
+            background: rgba(0,102,255,0.15);
             color: #0066ff;
         }
 
         .p-status-box.win {
-            background: rgba(0, 255, 204, 0.2);
+            background: rgba(0,255,204,0.2);
             color: #00ffcc;
         }
 
         .p-status-box.lose {
-            background: rgba(255, 51, 102, 0.15);
+            background: rgba(255,51,102,0.15);
             color: #ff3366;
         }
     </style>
@@ -558,89 +558,169 @@
 
 <body>
 
-    <div class="header">
+<div class="header">
 
-        <div class="profile-zone">
-            <div id="avatar-box" class="avatar-container">⚙️</div>
+    <div class="profile-zone">
 
-            <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                <span id="username" style="font-weight:bold; font-size:13px;">
-                    جاري التحميل...
-                </span>
-
-                <span id="role-tag" class="player-badge">
-                    لاعب
-                </span>
-            </div>
+        <div id="avatar-box" class="avatar-container">
+            ⚙️
         </div>
 
-        <div class="balances-wrapper">
+        <div style="display:flex; flex-direction:column; align-items:flex-start;">
 
-            <div class="balance-box ton">
-                <span id="ton-balance">126.04</span> TON
-            </div>
+            <span id="username" style="font-weight:bold; font-size:13px;">
+                جاري الاتصال...
+            </span>
 
-            <div class="balance-box">
-                🚀
-                <span id="header-multiplier">1.00x</span>
-            </div>
+            <span id="role-tag" class="player-badge">
+                لاعب
+            </span>
 
         </div>
+
     </div>
 
 
-    <div class="game-container">
+    <div class="balances-wrapper">
 
-        <div id="space-bg" class="space-bg"></div>
+        <div class="balance-box ton">
+            <span id="ton-balance">126.04</span> TON
+        </div>
 
-        <svg class="svg-canvas" viewBox="0 0 320 250" preserveAspectRatio="none">
-            <path
-                id="neon-curve"
-                class="curve-line"
-                d="M 45 220"
-                stroke="#ff3366">
-            </path>
+        <div class="balance-box">
+            🚀
+            <span id="header-multiplier">1.00x</span>
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="game-container">
+
+    <div id="space-bg" class="space-bg"></div>
+
+    <svg
+        class="svg-canvas"
+        viewBox="0 0 320 250"
+        preserveAspectRatio="none">
+
+        <path
+            id="neon-curve"
+            class="curve-line"
+            d="M 45 220"
+            stroke="#ff3366">
+        </path>
+
+    </svg>
+
+
+    <div
+        id="rocket-container"
+        class="rocket-container-wrapper">
+
+        <div
+            id="rocket"
+            class="rocket-zone">
+            🚀
+        </div>
+
+    </div>
+
+
+    <div
+        id="multiplier"
+        class="multiplier"
+        style="display:none;">
+        1.00x
+    </div>
+
+
+    <div
+        id="countdown-wrapper"
+        class="countdown-container">
+
+        <svg
+            class="countdown-svg"
+            viewBox="0 0 80 80">
+
+            <circle
+                class="bg-circle"
+                cx="40"
+                cy="40"
+                r="37">
+            </circle>
+
+            <circle
+                id="progress-bar"
+                class="bar-circle"
+                cx="40"
+                cy="40"
+                r="37">
+            </circle>
+
         </svg>
 
-        <div id="rocket-container" class="rocket-container-wrapper">
-            <div id="rocket" class="rocket-zone">🚀</div>
+        <div
+            id="countdown-num"
+            class="countdown-number">
+            5
         </div>
 
-        <div
-            id="multiplier"
-            class="multiplier"
-            style="display:none;">
-            1.00x
-        </div>
+    </div>
+
+</div>
+
+
+<div
+    id="history-bar"
+    class="history-row">
+</div>
+
+
+<div class="bet-panel">
+
+    <div class="info-row">
+        <span>Available Balance</span>
+
+        <span id="balance-label">
+            126.04 TON
+        </span>
+    </div>
+
+
+    <div class="info-row">
+        <span>Bet Amount</span>
+    </div>
+
+
+    <div class="input-box-wrapper">
+
+        <input
+            id="bet-input"
+            class="amount-input"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value="1.00"
+            inputmode="decimal">
+
+        <span>TON</span>
+
+    </div>
+
+
+    <div class="switch-row">
+
+        <span>Auto cashout</span>
 
         <div
-            id="countdown-wrapper"
-            class="countdown-container">
+            id="auto-switch"
+            class="switch-btn"
+            onclick="toggleAutoCashout()">
 
-            <svg class="countdown-svg" viewBox="0 0 80 80">
-
-                <circle
-                    class="bg-circle"
-                    cx="40"
-                    cy="40"
-                    r="37">
-                </circle>
-
-                <circle
-                    id="progress-bar"
-                    class="bar-circle"
-                    cx="40"
-                    cy="40"
-                    r="37">
-                </circle>
-
-            </svg>
-
-            <div
-                id="countdown-num"
-                class="countdown-number">
-                5
-            </div>
+            <div class="switch-circle"></div>
 
         </div>
 
@@ -648,1468 +728,1640 @@
 
 
     <div
-        id="history-bar"
-        class="history-row">
-    </div>
-
-
-    <div class="bet-panel">
-
-        <div class="info-row">
-            <span>Available Balance</span>
-            <span id="balance-label">126.04 TON</span>
-        </div>
-
-        <div class="info-row">
-            <span>Bet Amount</span>
-        </div>
-
-        <div class="input-box-wrapper">
-
-            <input
-                id="bet-input"
-                class="amount-input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value="1.00"
-                inputmode="decimal">
-
-            <span>TON</span>
-
-        </div>
-
-
-        <div class="switch-row">
-
-            <span>Auto cashout</span>
-
-            <div
-                id="auto-switch"
-                class="switch-btn"
-                onclick="toggleAutoCashout()">
-
-                <div class="switch-circle"></div>
-
-            </div>
-
-        </div>
-
-
-        <div
-            id="auto-control-box"
-            class="auto-cashout-control-row">
-
-            <button
-                class="step-btn"
-                type="button"
-                onclick="adjustAutoVal(-0.1)">
-                -
-            </button>
-
-            <span
-                id="auto-cashout-val"
-                class="auto-val-display">
-                1.50 x
-            </span>
-
-            <button
-                class="step-btn"
-                type="button"
-                onclick="adjustAutoVal(0.1)">
-                +
-            </button>
-
-        </div>
-
+        id="auto-control-box"
+        class="auto-cashout-control-row">
 
         <button
-            id="action-btn"
-            class="main-btn"
-            onclick="handleAction()">
-            Place TON Bet 🚀
+            class="step-btn"
+            type="button"
+            onclick="adjustAutoVal(-0.1)">
+            -
+        </button>
+
+        <span
+            id="auto-cashout-val"
+            class="auto-val-display">
+            1.50 x
+        </span>
+
+        <button
+            class="step-btn"
+            type="button"
+            onclick="adjustAutoVal(0.1)">
+            +
         </button>
 
     </div>
 
 
-    <div
-        id="players-feed"
-        class="players-list">
-    </div>
+    <button
+        id="action-btn"
+        class="main-btn"
+        onclick="handleAction()">
+        Place TON Bet 🚀
+    </button>
 
+</div>
 
-    <script>
-        "use strict";
 
-        /* =========================
-           Telegram
-        ========================== */
+<div
+    id="players-feed"
+    class="players-list">
+</div>
 
-        const tg = window.Telegram?.WebApp;
 
-        if (tg) {
-            tg.expand();
-        }
+<script>
+"use strict";
 
-        const telegramId = String(
-            tg?.initDataUnsafe?.user?.id || "7385640899"
-        );
+/* =========================================
+   Telegram
+========================================= */
 
-        const firstName =
-            tg?.initDataUnsafe?.user?.first_name || "اللاعب";
+const tg = window.Telegram?.WebApp;
 
-        const userPhoto =
-            tg?.initDataUnsafe?.user?.photo_url || "";
+if (tg) {
+    tg.expand();
+}
 
+const telegramUser =
+    tg?.initDataUnsafe?.user || {};
 
-        document.getElementById("username").innerText = firstName;
+const telegramId =
+    String(telegramUser.id || "7385640899");
 
+const firstName =
+    telegramUser.first_name || "اللاعب";
 
-        const avatarBox =
-            document.getElementById("avatar-box");
+const userPhoto =
+    telegramUser.photo_url || "";
 
 
-        if (userPhoto) {
+document.getElementById("username").innerText =
+    firstName;
 
-            avatarBox.innerHTML =
-                `<img src="${userPhoto}" alt="profile">`;
 
-        } else {
+const avatarBox =
+    document.getElementById("avatar-box");
 
-            avatarBox.innerText =
-                firstName.charAt(0).toUpperCase();
 
-        }
+if (userPhoto) {
 
+    avatarBox.innerHTML =
+        `<img src="${userPhoto}" alt="profile">`;
 
-        if (telegramId === "7385640899") {
+} else {
 
-            const role =
-                document.getElementById("role-tag");
+    avatarBox.innerText =
+        firstName.charAt(0).toUpperCase();
 
-            role.innerText = "المالك";
-            role.className = "admin-badge";
+}
 
-        }
 
+if (telegramId === "7385640899") {
 
-        /* =========================
-           Game Variables
-        ========================== */
+    const role =
+        document.getElementById("role-tag");
 
-        let tonBalance = 126.04;
+    role.innerText = "المالك";
+    role.className = "admin-badge";
 
-        let isGameRunning = false;
+}
 
-        let hasBet = false;
 
-        let isQueuedForNextRound = false;
+/* =========================================
+   Game State
+========================================= */
 
-        let currentMultiplier = 1.00;
+/*
+    مهم جداً:
 
-        let loopInterval = null;
+    لا يوجد هنا أي محرك لعبة محلي.
 
-        let autoCashoutEnabled = false;
+    الجولة يتم إنشاؤها وتشغيلها على السيرفر فقط.
+    جميع الأجهزة تستقبل نفس:
+    - COUNTDOWN
+    - FLIGHT
+    - CRASH
 
-        let autoCashoutTarget = 1.50;
+    وبالتالي جميع اللاعبين يرون نفس الجولة.
+*/
 
-        let userBetAmount = 0;
+let tonBalance = 126.04;
 
-        let serverConnected = false;
+let isGameRunning = false;
 
-        let fallbackStarted = false;
+let hasBet = false;
 
+let isQueuedForNextRound = false;
 
-        let basePlayers = [
+let currentMultiplier = 1.00;
 
-            {
-                name: "LA",
-                bet: 1.00,
-                color: "#e066ff",
-                avatar: "unsplash.com",
-                state: "active",
-                finalMult: 1.00
-            },
+let autoCashoutEnabled = false;
 
-            {
-                name: "755",
-                bet: 0.10,
-                color: "#ffaa00",
-                avatar: "unsplash.com",
-                state: "active",
-                finalMult: 1.00
-            }
+let autoCashoutTarget = 1.50;
 
-        ];
+let userBetAmount = 0;
 
+let currentRoundId = null;
 
-        let livePlayers = [];
+let serverConnected = false;
 
-        let globalHistory = [
-            1.24,
-            2.15,
-            6.40,
-            11.86,
-            27.50
-        ];
+let eventSource = null;
 
+let reconnectTimer = null;
 
-        /* =========================
-           Railway Backend
-        ========================== */
 
-        const BACKEND_URL = "https://railway.app";
+let globalHistory = [
+    1.24,
+    2.15,
+    6.40,
+    11.86,
+    27.50
+];
 
 
-        function listenToGlobalServer() {
+let livePlayers = [];
 
-            try {
 
-                if (
-                    !BACKEND_URL ||
-                    !/^https?:\/\//i.test(BACKEND_URL)
-                ) {
-                    startLocalLoop();
-                    return;
-                }
+/* =========================================
+   Railway
+========================================= */
 
+/*
+    ضع هنا رابط Railway الحقيقي.
 
-                const eventSource =
-                    new EventSource(
-                        `${BACKEND_URL}/api/game-stream`
-                    );
+    مثال:
+    https://your-project.up.railway.app
 
+    ويجب أن يكون السيرفر لديه:
+    GET /api/game-stream
+*/
 
-                eventSource.onopen = function () {
+const BACKEND_URL =
+    "https://railway.app";
 
-                    serverConnected = true;
 
-                    console.log(
-                        "تم الاتصال بقناة البث المشتركة أونلاين."
-                    );
+/* =========================================
+   Server Connection
+========================================= */
 
-                };
+function connectToGlobalServer() {
 
+    if (eventSource) {
 
-                eventSource.onmessage = function (event) {
+        try {
+            eventSource.close();
+        } catch (e) {}
 
-                    try {
+        eventSource = null;
+    }
 
-                        const data =
-                            JSON.parse(event.data);
 
+    if (
+        !BACKEND_URL ||
+        !/^https?:\/\//i.test(BACKEND_URL)
+    ) {
 
-                        if (data.type === "COUNTDOWN") {
+        showServerOffline();
 
-                            updateCountdownUI(
-                                Number(data.seconds)
-                            );
+        return;
 
-                        }
+    }
 
-                        else if (data.type === "FLIGHT") {
 
-                            updateFlightUI(
-                                Number(data.multiplier)
-                            );
+    try {
 
-                        }
-
-                        else if (data.type === "CRASH") {
-
-                            updateCrashUI(
-                                Number(data.finalMultiplier),
-                                data.history
-                            );
-
-                        }
-
-                    } catch (error) {
-
-                        console.error(
-                            "خطأ في بيانات السيرفر:",
-                            error
-                        );
-
-                    }
-
-                };
-
-
-                eventSource.onerror = function () {
-
-                    if (!serverConnected) {
-
-                        console.log(
-                            "جاري الاتصال بقنوات البث المشتركة أونلاين..."
-                        );
-
-                        setTimeout(function () {
-
-                            if (!serverConnected) {
-                                startLocalLoop();
-                            }
-
-                        }, 1500);
-
-                    }
-
-                };
-
-            } catch (err) {
-
-                console.log(
-                    "جاري الاتصال بقنوات البث المشتركة أونلاين..."
-                );
-
-                startLocalLoop();
-
-            }
-
-        }
-
-
-        /* =========================
-           Countdown UI
-        ========================== */
-
-        function updateCountdownUI(seconds) {
-
-            if (isGameRunning) return;
-
-
-            const wrapper =
-                document.getElementById(
-                    "countdown-wrapper"
-                );
-
-            const numText =
-                document.getElementById(
-                    "countdown-num"
-                );
-
-            const bar =
-                document.getElementById(
-                    "progress-bar"
-                );
-
-            const multText =
-                document.getElementById(
-                    "multiplier"
-                );
-
-
-            seconds =
-                Math.max(
-                    0,
-                    Math.min(5, Number(seconds))
-                );
-
-
-            multText.style.display = "none";
-
-            wrapper.style.display = "flex";
-
-            numText.innerText = seconds;
-
-            const offset =
-                236 -
-                (236 * (seconds / 5));
-
-
-            bar.style.strokeDashoffset =
-                offset;
-
-
-            document
-                .getElementById("auto-switch")
-                .classList.remove("disabled");
-
-
-            document
-                .getElementById("auto-control-box")
-                .classList.remove("locked");
-
-
-            document
-                .getElementById("header-multiplier")
-                .innerText = "1.00x";
-
-        }
-
-
-        /* =========================
-           Flight UI
-        ========================== */
-
-        function updateFlightUI(mult) {
-
-            if (!Number.isFinite(mult)) return;
-
-
-            isGameRunning = true;
-
-            currentMultiplier = mult;
-
-
-            const rCont =
-                document.getElementById(
-                    "rocket-container"
-                );
-
-            const path =
-                document.getElementById(
-                    "neon-curve"
-                );
-
-            const multText =
-                document.getElementById(
-                    "multiplier"
-                );
-
-
-            document
-                .getElementById("countdown-wrapper")
-                .style.display = "none";
-
-
-            multText.style.display = "block";
-
-            multText.innerText =
-                mult.toFixed(2) + "x";
-
-
-            document
-                .getElementById("header-multiplier")
-                .innerText =
-                mult.toFixed(2) + "x";
-
-
-            const currentColors =
-                getColorByMultiplier(mult);
-
-
-            path.setAttribute(
-                "stroke",
-                currentColors.hex
+        eventSource =
+            new EventSource(
+                `${BACKEND_URL}/api/game-stream`
             );
 
 
-            const xMove =
-                Math.min(
-                    210,
-                    Math.max(0, (mult - 1) * 45)
-                );
+        eventSource.onopen = function () {
 
+            serverConnected = true;
 
-            const yMove =
-                Math.min(
-                    150,
-                    Math.max(0, (mult - 1) * 65)
-                );
-
-
-            const finalY = yMove;
-
-
-            rCont.style.transform =
-                `translate(${xMove}px, -${finalY}px) rotate(-15deg)`;
-
-
-            document
-                .getElementById("auto-switch")
-                .classList.add("disabled");
-
-
-            document
-                .getElementById("auto-control-box")
-                .classList.add("locked");
-
-
-            updatePlayersUI();
-
-
-            if (
-                hasBet &&
-                autoCashoutEnabled &&
-                mult >= autoCashoutTarget
-            ) {
-
-                triggerCashoutSuccess();
-
-            }
-
-        }
-
-
-        /* =========================
-           Crash UI
-        ========================== */
-
-        function updateCrashUI(
-            finalMult,
-            newHistory
-        ) {
-
-            isGameRunning = false;
-
-
-            if (Number.isFinite(finalMult)) {
-
-                currentMultiplier =
-                    finalMult;
-
-            }
-
-
-            if (Array.isArray(newHistory)) {
-
-                globalHistory =
-                    newHistory;
-
-            }
-
-
-            clearInterval(loopInterval);
-
-            loopInterval = null;
-
-
-            const rocket =
-                document.getElementById(
-                    "rocket"
-                );
-
-
-            rocket.innerText = "💥";
-
-            rocket.style.transform =
-                "scale(1.4)";
-
-
-            livePlayers.forEach(function (p) {
-
-                if (p.state === "active") {
-
-                    p.state = "lose";
-
-                    p.finalMult =
-                        currentMultiplier;
-
-                }
-
-            });
-
-
-            updatePlayersUI();
-
-            renderHistoryUI();
-
-
-            hasBet = false;
-
-
-            const btn =
-                document.getElementById(
-                    "action-btn"
-                );
-
-
-            if (isQueuedForNextRound) {
-
-                btn.innerText =
-                    "Waiting for Takeoff...";
-
-                btn.className =
-                    "main-btn";
-
-                btn.disabled = true;
-
-            }
-
-
-            setTimeout(function () {
-
-                rocket.innerText = "🚀";
-
-                rocket.style.transform = "none";
-
-                document
-                    .getElementById(
-                        "rocket-container"
-                    )
-                    .style.transform = "none";
-
-
-                if (!serverConnected) {
-
-                    startLocalLoop();
-
-                }
-
-            }, 3000);
-
-        }
-
-
-        /* =========================
-           Stars
-        ========================== */
-
-        const bg =
             document.getElementById(
-                "space-bg"
+                "username"
+            ).innerText = firstName;
+
+            clearTimeout(reconnectTimer);
+
+            console.log(
+                "تم الاتصال بالسيرفر المركزي."
             );
 
+        };
 
-        const starColors = [
-            "#fff",
-            "#00ffcc",
-            "#0066ff",
-            "#ffaa00",
-            "#ff3366"
-        ];
 
+        eventSource.onmessage =
+            function(event) {
 
-        for (let i = 0; i < 35; i++) {
+                try {
 
-            const star =
-                document.createElement("div");
-
-
-            star.className = "star";
-
-            star.style.left =
-                Math.random() * 100 + "%";
-
-            star.style.top =
-                Math.random() * 100 + "%";
-
-            star.style.background =
-                starColors[
-                    Math.floor(
-                        Math.random() *
-                        starColors.length
-                    )
-                ];
-
-            star.style.animationDuration =
-                (Math.random() * 1.5 + 0.8) +
-                "s";
-
-
-            bg.appendChild(star);
-
-        }
-
-
-        /* =========================
-           Auto Cashout
-        ========================== */
-
-        function toggleAutoCashout() {
-
-            if (isGameRunning) return;
-
-
-            autoCashoutEnabled =
-                !autoCashoutEnabled;
-
-
-            document
-                .getElementById("auto-switch")
-                .className =
-                "switch-btn" +
-                (
-                    autoCashoutEnabled
-                        ? " active"
-                        : ""
-                );
-
-
-            document
-                .getElementById("auto-control-box")
-                .className =
-                "auto-cashout-control-row" +
-                (
-                    autoCashoutEnabled
-                        ? " active"
-                        : ""
-                );
-
-        }
-
-
-        function adjustAutoVal(val) {
-
-            if (
-                !autoCashoutEnabled ||
-                isGameRunning
-            ) {
-                return;
-            }
-
-
-            autoCashoutTarget =
-                parseFloat(
-                    (
-                        autoCashoutTarget +
-                        val
-                    ).toFixed(2)
-                );
-
-
-            if (autoCashoutTarget < 1.1) {
-                autoCashoutTarget = 1.1;
-            }
-
-
-            if (autoCashoutTarget > 1000.0) {
-                autoCashoutTarget = 1000.0;
-            }
-
-
-            document
-                .getElementById(
-                    "auto-cashout-val"
-                )
-                .innerText =
-                autoCashoutTarget.toFixed(2) +
-                " x";
-
-        }
-
-
-        /* =========================
-           History
-        ========================== */
-
-        function renderHistoryUI() {
-
-            const bar =
-                document.getElementById(
-                    "history-bar"
-                );
-
-
-            if (!bar) return;
-
-
-            bar.innerHTML = "";
-
-
-            globalHistory.forEach(function (val) {
-
-                const badgeColors =
-                    getColorByMultiplier(
-                        Number(val)
-                    );
-
-
-                const badge =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                badge.className =
-                    `history-badge ${badgeColors.name}`;
-
-
-                badge.innerText =
-                    Number(val).toFixed(2) +
-                    "x";
-
-
-                bar.appendChild(badge);
-
-            });
-
-        }
-
-
-        /* =========================
-           Players
-        ========================== */
-
-        function updatePlayersUI() {
-
-            const feed =
-                document.getElementById(
-                    "players-feed"
-                );
-
-
-            if (!feed) return;
-
-
-            feed.innerHTML = "";
-
-
-            livePlayers.forEach(function (p) {
-
-                const card =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                card.className =
-                    `player-card ${p.state}`;
-
-
-                const stateClass =
-                    p.state === "active"
-                        ? "active"
-                        : (
-                            p.state === "win"
-                                ? "win"
-                                : "lose"
+                    const data =
+                        JSON.parse(
+                            event.data
                         );
 
+                    handleServerMessage(data);
 
-                const runningMult =
-                    p.state === "active"
-                        ? currentMultiplier
-                        : p.finalMult;
+                } catch (error) {
 
-
-                let imgTag;
-
-
-                if (p.avatar) {
-
-                    imgTag =
-                        `<img src="${p.avatar}" alt="${p.name}">`;
-
-                } else {
-
-                    imgTag =
-                        `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${p.color}">${p.name.charAt(0)}</div>`;
+                    console.error(
+                        "بيانات السيرفر غير صالحة:",
+                        error
+                    );
 
                 }
 
-
-                card.innerHTML = `
-                    <div class="p-info">
-
-                        <div class="p-avatar">
-                            ${imgTag}
-                        </div>
-
-                        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-
-                            <span style="font-weight:bold; font-size:13px;">
-                                ${p.name}
-                            </span>
-
-                            <span style="font-size:11px; color:#8a92b2; direction:ltr;">
-                                💎 ${Number(p.bet).toFixed(2)} ×${Number(runningMult).toFixed(2)}
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="p-status-box ${stateClass}">
-                        💎 ${(Number(p.bet) * Number(runningMult)).toFixed(2)}
-                    </div>
-                `;
-
-
-                feed.appendChild(card);
-
-            });
-
-        }
-
-
-        /* =========================
-           Multiplier Colors
-        ========================== */
-
-        function getColorByMultiplier(val) {
-
-            if (val < 1.30) {
-                return {
-                    name: "red",
-                    hex: "#ff3366"
-                };
-            }
-
-            if (val >= 1.30 && val < 2.00) {
-                return {
-                    name: "green",
-                    hex: "#00ffcc"
-                };
-            }
-
-            if (val >= 2.00 && val < 5.00) {
-                return {
-                    name: "blue",
-                    hex: "#0066ff"
-                };
-            }
-
-            if (val >= 5.00 && val < 9.00) {
-                return {
-                    name: "purple",
-                    hex: "#a020f0"
-                };
-            }
-
-            if (val >= 9.00 && val < 25.00) {
-                return {
-                    name: "gold",
-                    hex: "#ffaa00"
-                };
-            }
-
-            if (val >= 25.00) {
-                return {
-                    name: "fire",
-                    hex: "#ff4400"
-                };
-            }
-
-            return {
-                name: "green",
-                hex: "#00ffcc"
             };
 
-        }
+
+        eventSource.onerror =
+            function() {
+
+                serverConnected = false;
+
+                showServerOffline();
+
+                try {
+                    eventSource.close();
+                } catch (e) {}
 
 
-        /* =========================
-           Balance UI
-        ========================== */
-
-        function updateBalanceUI() {
-
-            document
-                .getElementById("ton-balance")
-                .innerText =
-                tonBalance.toFixed(2);
-
-
-            document
-                .getElementById("balance-label")
-                .innerText =
-                tonBalance.toFixed(2) +
-                " TON";
-
-        }
-
-
-        /* =========================
-           Bet Validation
-        ========================== */
-
-        function getBetAmount() {
-
-            const input =
-                document.getElementById(
-                    "bet-input"
+                clearTimeout(
+                    reconnectTimer
                 );
 
 
-            const amount =
-                parseFloat(input.value);
+                reconnectTimer =
+                    setTimeout(
+                        connectToGlobalServer,
+                        3000
+                    );
+
+            };
 
 
-            if (
-                !Number.isFinite(amount) ||
-                amount <= 0
-            ) {
+    } catch (error) {
 
-                return 0;
+        serverConnected = false;
 
-            }
+        showServerOffline();
 
-
-            return amount;
-
-        }
+        clearTimeout(
+            reconnectTimer
+        );
 
 
-        /* =========================
-           Find User Player
-        ========================== */
-
-        function getUserPlayer() {
-
-            return livePlayers.find(
-                function (p) {
-                    return p.isUser === true;
-                }
+        reconnectTimer =
+            setTimeout(
+                connectToGlobalServer,
+                3000
             );
 
-        }
+    }
 
+}
 
-        /* =========================
-           Local Game Loop
-        ========================== */
 
-        function startLocalLoop() {
+/* =========================================
+   Server Messages
+========================================= */
 
-            if (
-                serverConnected ||
-                fallbackStarted
-            ) {
-                return;
-            }
+function handleServerMessage(data) {
 
+    if (!data || !data.type) {
+        return;
+    }
 
-            fallbackStarted = true;
 
+    /*
+        إذا أرسل السيرفر roundId
+        نستخدمه للتأكد أن الجهاز يتابع
+        نفس الجولة.
+    */
 
-            clearInterval(loopInterval);
+    if (data.roundId !== undefined) {
 
+        currentRoundId =
+            data.roundId;
 
-            isGameRunning = false;
+    }
 
-            isQueuedForNextRound = false;
 
-            currentMultiplier = 1.00;
+    switch (data.type) {
 
+        case "COUNTDOWN":
 
-            let count = 5;
+            updateCountdownUI(
+                Number(data.seconds)
+            );
 
+            if (Array.isArray(data.players)) {
 
-            updateCountdownUI(count);
-
-
-            loopInterval =
-                setInterval(function () {
-
-                    if (serverConnected) {
-
-                        clearInterval(
-                            loopInterval
-                        );
-
-                        loopInterval = null;
-
-                        fallbackStarted = false;
-
-                        return;
-
-                    }
-
-
-                    if (count > 0) {
-
-                        updateCountdownUI(count);
-
-                        count--;
-
-                        return;
-
-                    }
-
-
-                    clearInterval(
-                        loopInterval
-                    );
-
-
-                    loopInterval = null;
-
-
-                    startLocalFlight();
-
-                }, 1000);
-
-        }
-
-
-        function startLocalFlight() {
-
-            if (serverConnected) {
-                fallbackStarted = false;
-                return;
-            }
-
-
-            isGameRunning = true;
-
-            fallbackStarted = true;
-
-            currentMultiplier = 1.00;
-
-
-            document
-                .getElementById(
-                    "countdown-wrapper"
-                )
-                .style.display = "none";
-
-
-            document
-                .getElementById(
-                    "multiplier"
-                )
-                .style.display = "block";
-
-
-            /* تفعيل الرهان المؤجل */
-            if (isQueuedForNextRound) {
-
-                hasBet = true;
-
-                isQueuedForNextRound = false;
-
-                const userPlayer =
-                    getUserPlayer();
-
-
-                if (userPlayer) {
-
-                    userPlayer.state =
-                        "active";
-
-                    userPlayer.finalMult =
-                        1.00;
-
-                }
-
-            }
-
-
-            let crashPoint = 1.01;
-
-            const diceRoll =
-                Math.random();
-
-
-            if (diceRoll < 0.70) {
-
-                crashPoint =
-                    1.01 +
-                    (Math.random() * 0.78);
-
-            }
-
-            else if (diceRoll < 0.99) {
-
-                crashPoint =
-                    1.80 +
-                    (Math.random() * 8.20);
-
-            }
-
-            else {
-
-                crashPoint =
-                    10.00 +
-                    (Math.random() * 25.00);
-
-            }
-
-
-            loopInterval =
-                setInterval(function () {
-
-                    if (
-                        !isGameRunning ||
-                        serverConnected
-                    ) {
-
-                        clearInterval(
-                            loopInterval
-                        );
-
-                        loopInterval = null;
-
-                        return;
-
-                    }
-
-
-                    currentMultiplier +=
-                        0.0111;
-
-
-                    updateFlightUI(
-                        currentMultiplier
-                    );
-
-
-                    if (
-                        currentMultiplier >=
-                        crashPoint
-                    ) {
-
-                        clearInterval(
-                            loopInterval
-                        );
-
-                        loopInterval = null;
-
-                        updateCrashUI(
-                            currentMultiplier
-                        );
-
-                    }
-
-                }, 30);
-
-        }
-
-
-        /* =========================
-           Action Button
-        ========================== */
-
-        function handleAction() {
-
-            const btn =
-                document.getElementById(
-                    "action-btn"
-                );
-
-
-            /* Cashout */
-            if (
-                isGameRunning &&
-                hasBet
-            ) {
-
-                triggerCashoutSuccess();
-
-                return;
-
-            }
-
-
-            /* Queue for next round */
-            if (
-                isGameRunning &&
-                !hasBet
-            ) {
-
-                if (
-                    !isQueuedForNextRound
-                ) {
-
-                    const amt =
-                        getBetAmount();
-
-
-                    if (
-                        amt <= 0 ||
-                        amt > tonBalance
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    isQueuedForNextRound =
-                        true;
-
-
-                    userBetAmount =
-                        amt;
-
-
-                    tonBalance -= amt;
-
-
-                    updateBalanceUI();
-
-
-                    const existing =
-                        getUserPlayer();
-
-
-                    if (existing) {
-
-                        existing.bet = amt;
-
-                        existing.state =
-                            "active";
-
-                        existing.finalMult =
-                            1.00;
-
-                    } else {
-
-                        livePlayers.unshift({
-
-                            name: firstName,
-
-                            bet: amt,
-
-                            color: "#ff3366",
-
-                            avatar: userPhoto,
-
-                            state: "active",
-
-                            finalMult: 1.00,
-
-                            isUser: true
-
-                        });
-
-                    }
-
-
-                    updatePlayersUI();
-
-
-                    btn.className =
-                        "main-btn queued";
-
-
-                    btn.innerText =
-                        "Queued for Next Round ⏳";
-
-
-                    btn.disabled = true;
-
-                }
-
-
-                return;
-
-            }
-
-
-            /* Bet during countdown */
-            if (
-                !isGameRunning &&
-                !hasBet
-            ) {
-
-                const amt =
-                    getBetAmount();
-
-
-                if (
-                    amt <= 0 ||
-                    amt > tonBalance
-                ) {
-
-                    return;
-
-                }
-
-
-                hasBet = true;
-
-                userBetAmount =
-                    amt;
-
-
-                tonBalance -= amt;
-
-
-                updateBalanceUI();
-
-
-                const existing =
-                    getUserPlayer();
-
-
-                if (existing) {
-
-                    existing.bet =
-                        amt;
-
-                    existing.state =
-                        "active";
-
-                    existing.finalMult =
-                        1.00;
-
-                } else {
-
-                    livePlayers.unshift({
-
-                        name: firstName,
-
-                        bet: amt,
-
-                        color: "#ff3366",
-
-                        avatar: userPhoto,
-
-                        state: "active",
-
-                        finalMult: 1.00,
-
-                        isUser: true
-
-                    });
-
-                }
-
+                livePlayers =
+                    data.players;
 
                 updatePlayersUI();
 
+            }
 
-                btn.innerText =
-                    "Waiting for Takeoff...";
+            break;
 
 
-                btn.disabled = true;
+        case "FLIGHT":
+
+            if (
+                data.players &&
+                Array.isArray(data.players)
+            ) {
+
+                livePlayers =
+                    data.players;
+
+            }
+
+            updateFlightUI(
+                Number(data.multiplier)
+            );
+
+            break;
+
+
+        case "CRASH":
+
+            updateCrashUI(
+                Number(data.finalMultiplier),
+                data.history,
+                data.players
+            );
+
+            break;
+
+
+        case "PLAYERS":
+
+            if (
+                Array.isArray(data.players)
+            ) {
+
+                livePlayers =
+                    data.players;
+
+                updatePlayersUI();
+
+            }
+
+            break;
+
+
+        case "BALANCE":
+
+            if (
+                Number.isFinite(
+                    Number(data.balance)
+                )
+            ) {
+
+                tonBalance =
+                    Number(data.balance);
+
+                updateBalanceUI();
+
+            }
+
+            break;
+
+    }
+
+}
+
+
+/* =========================================
+   Server Offline
+========================================= */
+
+function showServerOffline() {
+
+    const btn =
+        document.getElementById(
+            "action-btn"
+        );
+
+
+    btn.disabled = true;
+
+    btn.className =
+        "main-btn";
+
+    btn.innerText =
+        "جاري الاتصال بالسيرفر...";
+
+}
+
+
+/* =========================================
+   Countdown UI
+========================================= */
+
+function updateCountdownUI(seconds) {
+
+    seconds =
+        Math.max(
+            0,
+            Math.min(
+                5,
+                Number(seconds)
+            )
+        );
+
+
+    isGameRunning = false;
+
+
+    const wrapper =
+        document.getElementById(
+            "countdown-wrapper"
+        );
+
+
+    const numText =
+        document.getElementById(
+            "countdown-num"
+        );
+
+
+    const bar =
+        document.getElementById(
+            "progress-bar"
+        );
+
+
+    const multText =
+        document.getElementById(
+            "multiplier"
+        );
+
+
+    const btn =
+        document.getElementById(
+            "action-btn"
+        );
+
+
+    wrapper.style.display =
+        "flex";
+
+
+    multText.style.display =
+        "none";
+
+
+    numText.innerText =
+        seconds;
+
+
+    const offset =
+        236 -
+        (
+            236 *
+            (seconds / 5)
+        );
+
+
+    bar.style.strokeDashoffset =
+        offset;
+
+
+    document.getElementById(
+        "header-multiplier"
+    ).innerText =
+        "1.00x";
+
+
+    document.getElementById(
+        "auto-switch"
+    ).classList.remove(
+        "disabled"
+    );
+
+
+    document.getElementById(
+        "auto-control-box"
+    ).classList.remove(
+        "locked"
+    );
+
+
+    /*
+        إذا كان اللاعب قد وضع رهاناً
+        فلا نعيد زر المراهنة.
+    */
+
+    if (!hasBet && !isQueuedForNextRound) {
+
+        btn.disabled = false;
+
+        btn.className =
+            "main-btn";
+
+        btn.innerText =
+            "Place TON Bet 🚀";
+
+    }
+
+}
+
+
+/* =========================================
+   Flight UI
+========================================= */
+
+function updateFlightUI(mult) {
+
+    if (!Number.isFinite(mult)) {
+        return;
+    }
+
+
+    isGameRunning = true;
+
+    currentMultiplier =
+        mult;
+
+
+    const rCont =
+        document.getElementById(
+            "rocket-container"
+        );
+
+
+    const path =
+        document.getElementById(
+            "neon-curve"
+        );
+
+
+    const multText =
+        document.getElementById(
+            "multiplier"
+        );
+
+
+    document.getElementById(
+        "countdown-wrapper"
+    ).style.display =
+        "none";
+
+
+    multText.style.display =
+        "block";
+
+
+    multText.innerText =
+        mult.toFixed(2) + "x";
+
+
+    document.getElementById(
+        "header-multiplier"
+    ).innerText =
+        mult.toFixed(2) + "x";
+
+
+    const currentColors =
+        getColorByMultiplier(
+            mult
+        );
+
+
+    path.setAttribute(
+        "stroke",
+        currentColors.hex
+    );
+
+
+    path.style.filter =
+        `drop-shadow(0 0 6px ${currentColors.hex})`;
+
+
+    const xMove =
+        Math.min(
+            210,
+            Math.max(
+                0,
+                (mult - 1) * 35
+            )
+        );
+
+
+    const yMove =
+        Math.min(
+            150,
+            Math.max(
+                0,
+                (mult - 1) * 45
+            )
+        );
+
+
+    rCont.style.transform =
+        `translate(${xMove}px, -${yMove}px) rotate(-15deg)`;
+
+
+    document.getElementById(
+        "auto-switch"
+    ).classList.add(
+        "disabled"
+    );
+
+
+    document.getElementById(
+        "auto-control-box"
+    ).classList.add(
+        "locked"
+    );
+
+
+    /* Particle */
+
+    if (Math.random() < 0.3) {
+
+        const p =
+            document.createElement(
+                "div"
+            );
+
+
+        p.className =
+            "particle-glow";
+
+
+        p.style.setProperty(
+            "--p-color",
+            currentColors.hex
+        );
+
+
+        p.style.left =
+            "22px";
+
+
+        p.style.top =
+            "22px";
+
+
+        rCont.appendChild(p);
+
+
+        setTimeout(
+            () => p.remove(),
+            400
+        );
+
+    }
+
+
+    updatePlayersUI();
+
+
+    /*
+        Auto cashout يعمل محلياً على قرار اللاعب،
+        لكن قيمة multiplier نفسها تأتي من السيرفر.
+    */
+
+    if (
+        hasBet &&
+        autoCashoutEnabled &&
+        mult >= autoCashoutTarget
+    ) {
+
+        triggerCashoutSuccess();
+
+    }
+
+}
+
+
+/* =========================================
+   Crash UI
+========================================= */
+
+function updateCrashUI(
+    finalMult,
+    newHistory,
+    serverPlayers
+) {
+
+    isGameRunning = false;
+
+
+    if (
+        Number.isFinite(finalMult)
+    ) {
+
+        currentMultiplier =
+            finalMult;
+
+    }
+
+
+    if (
+        Array.isArray(newHistory)
+    ) {
+
+        globalHistory =
+            newHistory;
+
+    }
+
+
+    if (
+        Array.isArray(serverPlayers)
+    ) {
+
+        livePlayers =
+            serverPlayers;
+
+    }
+
+
+    const rocket =
+        document.getElementById(
+            "rocket"
+        );
+
+
+    rocket.innerText =
+        "💥";
+
+
+    rocket.style.transform =
+        "scale(1.4)";
+
+
+    /*
+        إذا لم يرسل السيرفر حالة اللاعبين،
+        نحدد النتيجة المرئية فقط.
+    */
+
+    livePlayers.forEach(
+        function(player) {
+
+            if (
+                player.state === "active"
+            ) {
+
+                player.state =
+                    "lose";
+
+
+                player.finalMult =
+                    currentMultiplier;
 
             }
 
         }
+    );
 
 
-        /* =========================
-           Cashout
-        ========================== */
+    updatePlayersUI();
 
-        function triggerCashoutSuccess() {
-
-            if (!hasBet) return;
+    renderHistoryUI();
 
 
-            hasBet = false;
+    hasBet = false;
 
 
-            const amt =
-                userBetAmount > 0
-                    ? userBetAmount
-                    : getBetAmount();
+    isQueuedForNextRound = false;
+
+    userBetAmount = 0;
 
 
-            const winAmt =
-                amt * currentMultiplier;
+    const btn =
+        document.getElementById(
+            "action-btn"
+        );
 
 
-            tonBalance +=
-                winAmt;
+    btn.disabled = true;
 
 
-            updateBalanceUI();
+    btn.className =
+        "main-btn";
 
 
-            livePlayers.forEach(
-                function (p) {
+    btn.innerText =
+        "Place TON Bet 🚀";
 
-                    if (p.isUser === true) {
 
-                        p.state = "win";
+    setTimeout(
+        function() {
 
-                        p.finalMult =
-                            currentMultiplier;
+            rocket.innerText =
+                "🚀";
 
-                    }
 
-                }
+            rocket.style.transform =
+                "none";
+
+
+            document.getElementById(
+                "rocket-container"
+            ).style.transform =
+                "none";
+
+        },
+        3000
+    );
+
+}
+
+
+/* =========================================
+   Stars
+========================================= */
+
+const bg =
+    document.getElementById(
+        "space-bg"
+    );
+
+
+const starColors = [
+    "#fff",
+    "#00ffcc",
+    "#0066ff",
+    "#ffaa00",
+    "#ff3366"
+];
+
+
+for (
+    let i = 0;
+    i < 35;
+    i++
+) {
+
+    const star =
+        document.createElement(
+            "div"
+        );
+
+
+    star.className =
+        "star";
+
+
+    star.style.left =
+        Math.random() * 100 + "%";
+
+
+    star.style.top =
+        Math.random() * 100 + "%";
+
+
+    star.style.background =
+        starColors[
+            Math.floor(
+                Math.random() *
+                starColors.length
+            )
+        ];
+
+
+    star.style.animationDuration =
+        (
+            Math.random() * 1.5 +
+            0.8
+        ) + "s";
+
+
+    bg.appendChild(star);
+
+}
+
+
+/* =========================================
+   Auto Cashout
+========================================= */
+
+function toggleAutoCashout() {
+
+    if (isGameRunning) {
+        return;
+    }
+
+
+    autoCashoutEnabled =
+        !autoCashoutEnabled;
+
+
+    document.getElementById(
+        "auto-switch"
+    ).className =
+        "switch-btn" +
+        (
+            autoCashoutEnabled
+                ? " active"
+                : ""
+        );
+
+
+    document.getElementById(
+        "auto-control-box"
+    ).className =
+        "auto-cashout-control-row" +
+        (
+            autoCashoutEnabled
+                ? " active"
+                : ""
+        );
+
+}
+
+
+function adjustAutoVal(val) {
+
+    if (
+        !autoCashoutEnabled ||
+        isGameRunning
+    ) {
+
+        return;
+
+    }
+
+
+    autoCashoutTarget =
+        parseFloat(
+            (
+                autoCashoutTarget +
+                val
+            ).toFixed(2)
+        );
+
+
+    if (
+        autoCashoutTarget < 1.1
+    ) {
+
+        autoCashoutTarget =
+            1.1;
+
+    }
+
+
+    if (
+        autoCashoutTarget > 1000.0
+    ) {
+
+        autoCashoutTarget =
+            1000.0;
+
+    }
+
+
+    document.getElementById(
+        "auto-cashout-val"
+    ).innerText =
+        autoCashoutTarget.toFixed(2) +
+        " x";
+
+}
+
+
+/* =========================================
+   History
+========================================= */
+
+function renderHistoryUI() {
+
+    const bar =
+        document.getElementById(
+            "history-bar"
+        );
+
+
+    if (!bar) {
+        return;
+    }
+
+
+    bar.innerHTML = "";
+
+
+    globalHistory.forEach(
+        function(val) {
+
+            const number =
+                Number(val);
+
+
+            if (
+                !Number.isFinite(number)
+            ) {
+                return;
+            }
+
+
+            const badgeColors =
+                getColorByMultiplier(
+                    number
+                );
+
+
+            const badge =
+                document.createElement(
+                    "div"
+                );
+
+
+            badge.className =
+                `history-badge ${badgeColors.name}`;
+
+
+            badge.innerText =
+                number.toFixed(2) +
+                "x";
+
+
+            bar.appendChild(
+                badge
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   Players
+========================================= */
+
+function updatePlayersUI() {
+
+    const feed =
+        document.getElementById(
+            "players-feed"
+        );
+
+
+    if (!feed) {
+        return;
+    }
+
+
+    feed.innerHTML = "";
+
+
+    if (
+        !Array.isArray(livePlayers)
+    ) {
+
+        return;
+
+    }
+
+
+    livePlayers.forEach(
+        function(p) {
+
+            if (!p) {
+                return;
+            }
+
+
+            const bet =
+                Number(p.bet) || 0;
+
+
+            const finalMult =
+                Number(p.finalMult) || 1;
+
+
+            const runningMult =
+                p.state === "active"
+                    ? currentMultiplier
+                    : finalMult;
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                `player-card ${p.state || "active"}`;
+
+
+            const stateClass =
+                p.state === "win"
+                    ? "win"
+                    : (
+                        p.state === "lose"
+                            ? "lose"
+                            : "active"
+                    );
+
+
+            let imgTag;
+
+
+            if (p.avatar) {
+
+                imgTag =
+                    `<img src="${p.avatar}" alt="${escapeHtml(p.name || "")}">`;
+
+            } else {
+
+                imgTag =
+                    `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${p.color || "#2b3047"}">${escapeHtml((p.name || "?").charAt(0))}</div>`;
+
+            }
+
+
+            card.innerHTML = `
+                <div class="p-info">
+
+                    <div class="p-avatar">
+                        ${imgTag}
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+
+                        <span style="font-weight:bold; font-size:13px;">
+                            ${escapeHtml(p.name || "Player")}
+                        </span>
+
+                        <span style="font-size:11px; color:#8a92b2; direction:ltr;">
+                            💎 ${bet.toFixed(2)} ×${runningMult.toFixed(2)}
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="p-status-box ${stateClass}">
+                    💎 ${(bet * runningMult).toFixed(2)}
+                </div>
+            `;
+
+
+            feed.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   Color
+========================================= */
+
+function getColorByMultiplier(val) {
+
+    if (val < 1.30) {
+
+        return {
+            name: "red",
+            hex: "#ff3366"
+        };
+
+    }
+
+
+    if (
+        val >= 1.30 &&
+        val < 2.00
+    ) {
+
+        return {
+            name: "green",
+            hex: "#00ffcc"
+        };
+
+    }
+
+
+    if (
+        val >= 2.00 &&
+        val < 5.00
+    ) {
+
+        return {
+            name: "blue",
+            hex: "#0066ff"
+        };
+
+    }
+
+
+    if (
+        val >= 5.00 &&
+        val < 9.00
+    ) {
+
+        return {
+            name: "purple",
+            hex: "#a020f0"
+        };
+
+    }
+
+
+    if (
+        val >= 9.00 &&
+        val < 25.00
+    ) {
+
+        return {
+            name: "gold",
+            hex: "#ffaa00"
+        };
+
+    }
+
+
+    if (val >= 25.00) {
+
+        return {
+            name: "fire",
+            hex: "#ff4400"
+        };
+
+    }
+
+
+    return {
+        name: "green",
+        hex: "#00ffcc"
+    };
+
+}
+
+
+/* =========================================
+   Balance
+========================================= */
+
+function updateBalanceUI() {
+
+    document.getElementById(
+        "ton-balance"
+    ).innerText =
+        tonBalance.toFixed(2);
+
+
+    document.getElementById(
+        "balance-label"
+    ).innerText =
+        tonBalance.toFixed(2) +
+        " TON";
+
+}
+
+
+/* =========================================
+   Bet Amount
+========================================= */
+
+function getBetAmount() {
+
+    const input =
+        document.getElementById(
+            "bet-input"
+        );
+
+
+    const amount =
+        parseFloat(
+            input.value
+        );
+
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+
+        return 0;
+
+    }
+
+
+    return amount;
+
+}
+
+
+/* =========================================
+   Place Bet
+========================================= */
+
+function handleAction() {
+
+    /*
+        لا تسمح بالمراهنة إذا لم يكن
+        الجهاز متصلاً بالسيرفر المركزي.
+    */
+
+    if (!serverConnected) {
+
+        return;
+
+    }
+
+
+    const btn =
+        document.getElementById(
+            "action-btn"
+        );
+
+
+    /* Cashout */
+
+    if (
+        isGameRunning &&
+        hasBet
+    ) {
+
+        triggerCashoutSuccess();
+
+        return;
+
+    }
+
+
+    /* Queue */
+
+    if (
+        isGameRunning &&
+        !hasBet
+    ) {
+
+        if (
+            isQueuedForNextRound
+        ) {
+
+            return;
+
+        }
+
+
+        const amount =
+            getBetAmount();
+
+
+        if (
+            amount <= 0 ||
+            amount > tonBalance
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            الرهان الحقيقي يجب أن يسجل
+            في السيرفر المركزي.
+        */
+
+        sendServerAction({
+            type: "BET",
+            telegramId: telegramId,
+            name: firstName,
+            amount: amount,
+            roundId: currentRoundId
+        });
+
+
+        userBetAmount =
+            amount;
+
+
+        isQueuedForNextRound =
+            true;
+
+
+        btn.className =
+            "main-btn queued";
+
+
+        btn.innerText =
+            "Queued for Next Round ⏳";
+
+
+        btn.disabled = true;
+
+
+        return;
+
+    }
+
+
+    /* Countdown bet */
+
+    if (
+        !isGameRunning &&
+        !hasBet
+    ) {
+
+        const amount =
+            getBetAmount();
+
+
+        if (
+            amount <= 0 ||
+            amount > tonBalance
+        ) {
+
+            return;
+
+        }
+
+
+        sendServerAction({
+            type: "BET",
+            telegramId: telegramId,
+            name: firstName,
+            amount: amount,
+            roundId: currentRoundId
+        });
+
+
+        userBetAmount =
+            amount;
+
+
+        hasBet = true;
+
+
+        btn.innerText =
+            "Waiting for Takeoff...";
+
+
+        btn.disabled = true;
+
+    }
+
+}
+
+
+/* =========================================
+   Cashout
+========================================= */
+
+function triggerCashoutSuccess() {
+
+    if (!hasBet) {
+        return;
+    }
+
+
+    /*
+        لا نحسب الجولة محلياً.
+        نرسل طلب cashout للسيرفر.
+
+        السيرفر هو الذي يقرر:
+        - هل الطلب وصل قبل الانفجار؟
+        - ما هو multiplier؟
+        - كم قيمة الربح؟
+    */
+
+    sendServerAction({
+        type: "CASHOUT",
+        telegramId: telegramId,
+        roundId: currentRoundId
+    });
+
+
+    hasBet = false;
+
+
+    const btn =
+        document.getElementById(
+            "action-btn"
+        );
+
+
+    btn.innerText =
+        "Bet for Next Round ⏳";
+
+
+    btn.className =
+        "main-btn";
+
+
+    btn.disabled = true;
+
+}
+
+
+/* =========================================
+   Server Action
+========================================= */
+
+function sendServerAction(payload) {
+
+    /*
+        EventSource للقراءة فقط.
+
+        لذلك إرسال BET/CASHOUT يحتاج endpoint
+        POST في السيرفر.
+
+        إذا كان لديك endpoint مختلف،
+        غيّر هذا الرابط فقط.
+    */
+
+    const url =
+        `${BACKEND_URL}/api/game-action`;
+
+
+    fetch(
+        url,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify(
+                    payload
+                )
+
+        }
+    )
+    .then(
+        function(response) {
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Server action failed"
+                );
+
+            }
+
+            return response.json()
+                .catch(
+                    () => ({})
+                );
+
+        }
+    )
+    .then(
+        function(data) {
+
+            /*
+                السيرفر هو مصدر الحقيقة.
+                لا يتم تعديل الرصيد محلياً هنا.
+            */
+
+            if (
+                data &&
+                Number.isFinite(
+                    Number(data.balance)
+                )
+            ) {
+
+                tonBalance =
+                    Number(data.balance);
+
+                updateBalanceUI();
+
+            }
+
+        }
+    )
+    .catch(
+        function(error) {
+
+            console.error(
+                "تعذر إرسال العملية للسيرفر:",
+                error
             );
 
 
-            updatePlayersUI();
+            /*
+                إذا فشل الطلب، نعيد الزر
+                للحالة الطبيعية.
+            */
+
+            hasBet = false;
+
+            isQueuedForNextRound =
+                false;
 
 
             const btn =
@@ -2118,50 +2370,57 @@
                 );
 
 
-            btn.innerText =
-                "Bet for Next Round ⏳";
+            btn.disabled =
+                !serverConnected;
 
 
             btn.className =
                 "main-btn";
 
 
-            btn.disabled = true;
-
-
-            userBetAmount = 0;
+            btn.innerText =
+                "Place TON Bet 🚀";
 
         }
+    );
+
+}
 
 
-        /* =========================
-           Initial Players
-        ========================== */
+/* =========================================
+   HTML Escape
+========================================= */
 
-        livePlayers =
-            basePlayers.map(function (p) {
+function escapeHtml(value) {
 
-                return {
-                    ...p
-                };
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
-            });
-
-
-        renderHistoryUI();
-
-        updatePlayersUI();
-
-        updateBalanceUI();
+}
 
 
-        /* =========================
-           Start
-        ========================== */
+/* =========================================
+   Initial UI
+========================================= */
 
-        listenToGlobalServer();
+renderHistoryUI();
 
-    </script>
+updateBalanceUI();
+
+updatePlayersUI();
+
+
+/* =========================================
+   Start Global Server
+========================================= */
+
+connectToGlobalServer();
+
+</script>
 
 </body>
 </html>
