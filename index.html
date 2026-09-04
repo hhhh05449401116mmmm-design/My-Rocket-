@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rocket Cash Hub</title>
+    <title>Rocket Game</title>
     <script src="https://telegram.org"></script>
     <link rel="stylesheet" href="https://cloudflare.com">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #07080c; color: #fff; margin: 0; padding: 0; overflow: hidden; user-select: none; text-align: center; }
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; }
-        .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; }
-        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
-        .game-container { padding: 20px; height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .rocket-zone { font-size: 80px; margin-bottom: 20px; transition: transform 0.1s linear; }
-        .multiplier { font-size: 48px; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; direction: rtl; }
+        .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; direction: ltr; }
+        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 8px; }
+        .game-container { padding: 20px; height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        .rocket-zone { font-size: 80px; margin-bottom: 20px; transition: transform 0.1s linear; transform: translateY(0); }
+        .multiplier { font-size: 55px; font-weight: bold; color: #fff; margin-bottom: 10px; }
         .status-text { font-size: 18px; color: #8a92b2; height: 25px; }
         .controls { padding: 20px; background: #111424; position: absolute; bottom: 0; left: 0; right: 0; }
         .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); }
@@ -27,18 +27,18 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <i class="fas fa-user-astronaut" style="font-size:20px; color:#0066ff;"></i>
             <span id="username">اللاعب</span>
-            <span id="admin-tag" class="admin-badge" style="display:none;">المالك</span>
+            <span id="admin-tag" class="admin-badge">المالك</span>
         </div>
         <div class="balance-box">
             <i class="fas fa-gem"></i>
-            <span id="balance">10.00</span>
+            <span id="balance">1000.00</span>
         </div>
     </div>
 
     <div class="game-container">
         <div id="rocket" class="rocket-zone">🚀</div>
         <div id="multiplier" class="multiplier">1.00x</div>
-        <div id="status" class="status-text">بانتظار الجولة القادمة...</div>
+        <div id="status" class="status-text">بانتظار بدء الجولة تلقائياً...</div>
     </div>
 
     <div class="controls">
@@ -49,105 +49,96 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const BACKEND_URL = "https://railway.app";
         const telegramId = tg.initDataUnsafe?.user?.id || "7385640899"; 
         const firstName = tg.initDataUnsafe?.user?.first_name || "المدير";
-
-        let currentBalance = 10.00;
-        let isGameRunning = false;
-        let hasBet = false;
-        let simInterval;
-
         document.getElementById('username').innerText = firstName;
 
-        // الاتصال بالسيرفر والتعرف على الحساب وقاعدة البيانات فوراً
-        async function loadUserData() {
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/user?id=${telegramId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    currentBalance = data.balance;
-                    document.getElementById('balance').innerText = parseFloat(currentBalance).toFixed(2);
-                    if (data.is_admin) {
-                        document.getElementById('admin-tag').style.display = 'inline-block';
-                    }
-                }
-            } catch (error) {
-                console.log("اتصال تجريبي بالسيرفر المحلي");
-                document.getElementById('balance').innerText = "1000.00";
-                document.getElementById('admin-tag').style.display = 'inline-block';
+        let currentBalance = 1000.00;
+        let isGameRunning = false;
+        let hasBet = false;
+        let currentMultiplier = 1.00;
+        let loopInterval;
+
+        // نظام المحاكاة التلقائية الفورية للجولات بدون توقف
+        function startAutoGameLoop() {
+            if (isGameRunning) return;
+            
+            const btn = document.getElementById('action-btn');
+            const rocket = document.getElementById('rocket');
+            const status = document.getElementById('status');
+            const multText = document.getElementById('multiplier');
+
+            isGameRunning = true;
+            currentMultiplier = 1.00;
+            rocket.style.transform = "none";
+            status.innerText = "الصاروخ يحلّق الآن الحين...";
+            
+            if (hasBet) {
+                btn.innerText = "CASH OUT";
+                btn.className = "btn cashout";
+                btn.disabled = false;
+            } else {
+                btn.innerText = "الجولة بدأت (فاتك الرهان)";
+                btn.disabled = true;
             }
+
+            loopInterval = setInterval(() => {
+                currentMultiplier += 0.04;
+                multText.innerText = currentMultiplier.toFixed(2) + "x";
+                rocket.style.transform = `translateY(-${(currentMultiplier-1)*25}px) scale(${1 + (currentMultiplier-1)*0.03})`;
+
+                // تحديد نقطة الانفجار العشوائية للصاروخ أونلاين
+                if (currentMultiplier > 1.20 && Math.random() < 0.02) {
+                    clearInterval(loopInterval);
+                    explodeRocket();
+                }
+            }, 100);
+        }
+
+        function explodeRocket() {
+            isGameRunning = false;
+            hasBet = false;
+            document.getElementById('rocket').style.transform = "scale(1.5)";
+            document.getElementById('rocket').innerText = "💥";
+            document.getElementById('status').innerText = "انفجر الصاروخ! جولة جديدة خلال ثوانٍ...";
+            
+            const btn = document.getElementById('action-btn');
+            btn.innerText = "BET";
+            btn.className = "btn";
+            btn.disabled = false;
+
+            setTimeout(() => {
+                document.getElementById('rocket').innerText = "🚀";
+                document.getElementById('rocket').style.transform = "none";
+                document.getElementById('multiplier').innerText = "1.00x";
+                startAutoGameLoop();
+            }, 4000); // 4 ثوانٍ بين كل جولة وجولة تلقائياً
         }
 
         function handleAction() {
             const btn = document.getElementById('action-btn');
             if (!isGameRunning && !hasBet) {
                 hasBet = true;
-                btn.innerText = "WAITING...";
+                currentBalance -= 100; // خصم رهان تجريبي
+                document.getElementById('balance').innerText = currentBalance.toFixed(2);
+                btn.innerText = "تم قبول الرهان.. بانتظار الإقلاع";
                 btn.disabled = true;
-                startSimulation();
             } else if (isGameRunning && hasBet) {
-                cashOut();
+                // عملية كاش أوت ناجحة
+                hasBet = false;
+                const winAmount = 100 * currentMultiplier;
+                currentBalance += winAmount;
+                document.getElementById('balance').innerText = currentBalance.toFixed(2);
+                document.getElementById('status').innerText = `كاش أوت ناجح! فزت بـ +${winAmount.toFixed(0)} 💎`;
+                
+                btn.innerText = "انتظر الجولة التالية";
+                btn.className = "btn";
+                btn.disabled = true;
             }
         }
 
-        function startSimulation() {
-            isGameRunning = true;
-            hasBet = true;
-            let mult = 1.00;
-            const btn = document.getElementById('action-btn');
-            const rocket = document.getElementById('rocket');
-            const status = document.getElementById('status');
-            
-            btn.innerText = "CASH OUT";
-            btn.className = "btn cashout";
-            btn.disabled = false;
-            status.innerText = "الصاروخ يحلّق الآن...";
-
-            simInterval = setInterval(() => {
-                mult += 0.05;
-                document.getElementById('multiplier').innerText = mult.toFixed(2) + "x";
-                rocket.style.transform = `translateY(-${(mult-1)*15}px) scale(${1 + (mult-1)*0.05})`;
-
-                if (mult > 3.50 && Math.random() < 0.03) {
-                    crash();
-                }
-            }, 100);
-        }
-
-        function cashOut() {
-            clearInterval(simInterval);
-            isGameRunning = false;
-            hasBet = false;
-            const finalMult = parseFloat(document.getElementById('multiplier').innerText);
-            document.getElementById('status').innerText = `تم الكاش أوت بنجاح على ${finalMult.toFixed(2)}x!`;
-            
-            const btn = document.getElementById('action-btn');
-            btn.innerText = "BET";
-            btn.className = "btn";
-            
-            // تحديث الرصيد في قاعدة البيانات
-            fetch(`${BACKEND_URL}/api/cashout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegram_id: telegramId, multiplier: finalMult })
-            }).then(() => loadUserData());
-        }
-
-        function crash() {
-            clearInterval(simInterval);
-            isGameRunning = false;
-            hasBet = false;
-            document.getElementById('rocket').style.transform = "none";
-            document.getElementById('status').innerText = "انفجر الصاروخ! 💥";
-            document.getElementById('multiplier').innerText = "1.00x";
-            
-            const btn = document.getElementById('action-btn');
-            btn.innerText = "BET";
-            btn.className = "btn";
-        }
-
-        loadUserData();
+        // إطلاق الحركة التلقائية فور فتح الشاشة
+        setTimeout(startAutoGameLoop, 2000);
     </script>
 </body>
 </html>
