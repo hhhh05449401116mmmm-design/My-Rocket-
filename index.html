@@ -1,22 +1,13 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Epic Gift Rocket Ultimate Pro v10.1</title>
+    <title>Epic Gift Rocket Ultimate Pro v10.2</title>
 
-    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        button, input {
-            font: inherit;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0c0d14;
@@ -165,7 +156,7 @@
             fill: none;
             stroke-width: 4;
             stroke-linecap: round;
-            transition: stroke 0.1s;
+            transition: stroke-dasharray 0.06s linear, stroke 0.1s;
         }
 
         .rocket-container-wrapper {
@@ -220,7 +211,6 @@
             font-family: sans-serif;
             position: relative;
             text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-            direction: ltr;
         }
 
         .countdown-container {
@@ -446,7 +436,6 @@
             font-weight: bold;
             color: #fff;
             font-family: monospace;
-            direction: ltr;
         }
 
         .main-btn {
@@ -477,7 +466,6 @@
         .main-btn:disabled {
             background: #2b3047;
             color: #5a607a;
-            cursor: not-allowed;
         }
 
         .players-list {
@@ -547,7 +535,6 @@
             font-weight: bold;
             min-width: 50px;
             text-align: center;
-            direction: ltr;
         }
 
         .p-status-box.active {
@@ -570,90 +557,44 @@
 <body>
 
     <div class="header">
-
         <div class="profile-zone">
             <div id="avatar-box" class="avatar-container">⚙️</div>
 
             <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                <span id="username" style="font-weight:bold; font-size:13px;">
-                    جاري التحميل...
-                </span>
-
-                <span id="role-tag" class="player-badge">
-                    لاعب
-                </span>
+                <span id="username" style="font-weight:bold; font-size:13px;">جاري التحميل...</span>
+                <span id="role-tag" class="player-badge">لاعب</span>
             </div>
         </div>
 
         <div class="balances-wrapper">
-            <div id="ton-balance" class="balance-box ton">
-                126.04 TON
-            </div>
-
-            <div class="balance-box">
-                🚀 <span id="header-multiplier">1.00x</span>
+            <div class="balance-box ton">
+                <span id="ton-balance">126.04</span>
+                <span>TON</span>
             </div>
         </div>
-
     </div>
 
     <div class="game-container">
 
         <div id="space-bg" class="space-bg"></div>
 
-        <svg
-            class="svg-canvas"
-            viewBox="0 0 320 250"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-        >
-            <path
-                id="neon-curve"
-                class="curve-line"
-                d="M 55 220"
-                stroke="#ff3366"
-            ></path>
+        <svg class="svg-canvas" viewBox="0 0 320 250" preserveAspectRatio="none">
+            <path id="neon-curve" class="curve-line" d="M 55 220" stroke="#00ffcc"></path>
         </svg>
 
         <div id="rocket-container" class="rocket-container-wrapper">
             <div id="rocket" class="rocket-zone">🚀</div>
         </div>
 
-        <div
-            id="multiplier"
-            class="multiplier"
-            style="display:none;"
-        >
-            1.00x
-        </div>
+        <div id="multiplier" class="multiplier" style="display:none;">1.00x</div>
 
         <div id="countdown-wrapper" class="countdown-container">
-
-            <svg
-                class="countdown-svg"
-                viewBox="0 0 80 80"
-                aria-hidden="true"
-            >
-                <circle
-                    class="bg-circle"
-                    cx="40"
-                    cy="40"
-                    r="37.5"
-                ></circle>
-
-                <circle
-                    id="progress-bar"
-                    class="bar-circle"
-                    cx="40"
-                    cy="40"
-                    r="37.5"
-                ></circle>
+            <svg class="countdown-svg" viewBox="0 0 80 80">
+                <circle class="bg-circle" cx="40" cy="40" r="37.5"></circle>
+                <circle id="progress-bar" class="bar-circle" cx="40" cy="40" r="37.5"></circle>
             </svg>
 
-            <div id="countdown-num" class="countdown-number">
-                5
-            </div>
-
+            <div id="countdown-num" class="countdown-number">5</div>
         </div>
 
     </div>
@@ -668,91 +609,48 @@
         </div>
 
         <div class="input-box-wrapper">
-            <span style="font-size:13px;color:#8a92b2;">
-                Bet Amount
-            </span>
-
             <input
                 id="bet-input"
                 class="amount-input"
                 type="number"
-                min="0.10"
-                step="0.05"
-                value="0.10"
+                value="1.00"
+                min="0.01"
+                step="0.01"
                 inputmode="decimal"
             >
-
-            <span style="font-weight:bold;color:#0088cc;">
-                TON
-            </span>
+            <span>Bet Amount</span>
         </div>
 
         <div class="switch-row">
-            <span style="font-size:13px;font-weight:bold;">
-                Auto cashout
-            </span>
+            <span>Auto cashout</span>
 
-            <div
-                id="auto-switch"
-                class="switch-btn"
-                onclick="toggleAutoCashout()"
-                role="button"
-                aria-label="Auto cashout"
-            >
+            <div id="auto-switch" class="switch-btn" onclick="toggleAutoCashout()">
                 <div class="switch-circle"></div>
             </div>
         </div>
 
         <div id="auto-control-box" class="auto-cashout-control-row">
 
-            <button
-                class="step-btn"
-                type="button"
-                onclick="adjustAutoVal(-0.10)"
-            >
-                −
-            </button>
+            <button class="step-btn" onclick="adjustAutoVal(-0.10)">-</button>
 
-            <div class="auto-val-display">
-                <span id="auto-cashout-val">1.50</span> x
-            </div>
+            <span id="auto-cashout-val" class="auto-val-display">1.50 x</span>
 
-            <button
-                class="step-btn"
-                type="button"
-                onclick="adjustAutoVal(0.10)"
-            >
-                +
-            </button>
+            <button class="step-btn" onclick="adjustAutoVal(0.10)">+</button>
 
         </div>
 
-        <button
-            id="action-btn"
-            class="main-btn"
-            type="button"
-            onclick="handleAction()"
-        >
+        <button id="action-btn" class="main-btn" onclick="handleAction()">
             Place TON Bet 🚀
         </button>
 
     </div>
 
-    <div class="players-list">
-        <div id="players-feed"></div>
-    </div>
+    <div id="players-feed" class="players-list"></div>
 
     <script>
-        "use strict";
-
-        /* ================================
-           TELEGRAM MINI APP
-        ================================= */
-
-        const tg = window.Telegram?.WebApp || null;
+        const tg = window.Telegram.WebApp;
 
         if (tg) {
-            tg.ready();
             tg.expand();
         }
 
@@ -768,57 +666,40 @@
 
         document.getElementById("username").innerText = firstName;
 
-        const avatarBox =
-            document.getElementById("avatar-box");
+        const avatarBox = document.getElementById("avatar-box");
 
         if (userPhoto) {
-            avatarBox.innerHTML =
-                `<img src="${escapeHtml(userPhoto)}" alt="profile">`;
+            const img = document.createElement("img");
+            img.src = userPhoto;
+            img.alt = "profile";
+            avatarBox.innerHTML = "";
+            avatarBox.appendChild(img);
         } else {
-            avatarBox.innerText =
-                firstName.charAt(0).toUpperCase();
+            avatarBox.innerText = firstName.charAt(0).toUpperCase();
         }
 
         if (telegramId === "7385640899") {
-            const role =
-                document.getElementById("role-tag");
-
+            const role = document.getElementById("role-tag");
             role.innerText = "المالك";
             role.className = "admin-badge";
         }
 
-
-        /* ================================
-           GAME VARIABLES
-        ================================= */
-
         let tonBalance = 126.04;
-
         let isGameRunning = false;
         let hasBet = false;
         let isQueuedForNextRound = false;
-
         let currentMultiplier = 1.00;
-        let playerBetAmount = 0;
-
-        let loopInterval = null;
+        let loopInterval;
 
         let autoCashoutEnabled = false;
         let autoCashoutTarget = 1.50;
-
-        let countdownTimer = null;
-
-
-        /* ================================
-           PLAYERS
-        ================================= */
 
         const basePlayers = [
             {
                 name: "LA",
                 bet: 1.00,
                 color: "#e066ff",
-                avatar: "",
+                avatar: "https://unsplash.com",
                 state: "active",
                 finalMult: 1.00
             },
@@ -826,7 +707,7 @@
                 name: "755",
                 bet: 0.10,
                 color: "#ffaa00",
-                avatar: "",
+                avatar: "https://unsplash.com",
                 state: "active",
                 finalMult: 1.00
             },
@@ -834,7 +715,7 @@
                 name: "مكسم",
                 bet: 0.10,
                 color: "#00ffcc",
-                avatar: "",
+                avatar: "https://unsplash.com",
                 state: "active",
                 finalMult: 1.00
             }
@@ -850,86 +731,7 @@
             27.50
         ];
 
-
-        /* ================================
-           HELPERS
-        ================================= */
-
-        function escapeHtml(value) {
-            return String(value).replace(/[&<>"']/g, function (ch) {
-                return {
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                    "'": "&#039;"
-                }[ch];
-            });
-        }
-
-
-        function updateBalanceUI() {
-            const balance =
-                tonBalance.toFixed(2) + " TON";
-
-            document.getElementById("ton-balance")
-                .innerText = balance;
-
-            document.getElementById("balance-label")
-                .innerText = balance;
-        }
-
-
-        function getColorByMultiplier(val) {
-
-            if (val < 1.30) {
-                return {
-                    name: "red",
-                    hex: "#ff3366"
-                };
-            }
-
-            if (val < 2.00) {
-                return {
-                    name: "green",
-                    hex: "#00ffcc"
-                };
-            }
-
-            if (val < 5.00) {
-                return {
-                    name: "blue",
-                    hex: "#0066ff"
-                };
-            }
-
-            if (val < 9.00) {
-                return {
-                    name: "purple",
-                    hex: "#a020f0"
-                };
-            }
-
-            if (val < 25.00) {
-                return {
-                    name: "gold",
-                    hex: "#ffaa00"
-                };
-            }
-
-            return {
-                name: "fire",
-                hex: "#ff4400"
-            };
-        }
-
-
-        /* ================================
-           STARS
-        ================================= */
-
-        const bg =
-            document.getElementById("space-bg");
+        const bg = document.getElementById("space-bg");
 
         const colors = [
             "#fff",
@@ -940,24 +742,13 @@
         ];
 
         for (let i = 0; i < 35; i++) {
-
-            const star =
-                document.createElement("div");
+            const star = document.createElement("div");
 
             star.className = "star";
-
-            star.style.left =
-                Math.random() * 100 + "%";
-
-            star.style.top =
-                Math.random() * 100 + "%";
-
+            star.style.left = Math.random() * 100 + "%";
+            star.style.top = Math.random() * 100 + "%";
             star.style.background =
-                colors[
-                    Math.floor(
-                        Math.random() * colors.length
-                    )
-                ];
+                colors[Math.floor(Math.random() * colors.length)];
 
             star.style.animationDuration =
                 (Math.random() * 1.5 + 0.8) + "s";
@@ -965,91 +756,49 @@
             bg.appendChild(star);
         }
 
-
-        /* ================================
-           AUTO CASHOUT
-        ================================= */
-
         function toggleAutoCashout() {
+            if (isGameRunning) return;
 
-            if (isGameRunning) {
-                return;
-            }
+            autoCashoutEnabled = !autoCashoutEnabled;
 
-            autoCashoutEnabled =
-                !autoCashoutEnabled;
-
-            document.getElementById("auto-switch")
-                .className =
+            document.getElementById("auto-switch").className =
                 "switch-btn" +
-                (
-                    autoCashoutEnabled
-                        ? " active"
-                        : ""
-                );
+                (autoCashoutEnabled ? " active" : "");
 
-            document.getElementById("auto-control-box")
-                .className =
+            document.getElementById("auto-control-box").className =
                 "auto-cashout-control-row" +
-                (
-                    autoCashoutEnabled
-                        ? " active"
-                        : ""
-                );
+                (autoCashoutEnabled ? " active" : "");
         }
 
-
         function adjustAutoVal(val) {
-
-            if (
-                !autoCashoutEnabled ||
-                isGameRunning
-            ) {
-                return;
-            }
+            if (!autoCashoutEnabled || isGameRunning) return;
 
             autoCashoutTarget =
                 parseFloat(
-                    (
-                        autoCashoutTarget + val
-                    ).toFixed(2)
+                    (autoCashoutTarget + val).toFixed(2)
                 );
 
-            if (autoCashoutTarget < 1.10) {
-                autoCashoutTarget = 1.10;
+            if (autoCashoutTarget < 1.1) {
+                autoCashoutTarget = 1.1;
             }
 
-            if (autoCashoutTarget > 1000.00) {
-                autoCashoutTarget = 1000.00;
+            if (autoCashoutTarget > 1000.0) {
+                autoCashoutTarget = 1000.0;
             }
 
-            document.getElementById(
-                "auto-cashout-val"
-            ).innerText =
-                autoCashoutTarget.toFixed(2);
+            document.getElementById("auto-cashout-val").innerText =
+                autoCashoutTarget.toFixed(2) + " x";
         }
 
-
-        /* ================================
-           HISTORY
-        ================================= */
-
         function renderHistoryUI() {
-
-            const bar =
-                document.getElementById(
-                    "history-bar"
-                );
+            const bar = document.getElementById("history-bar");
 
             bar.innerHTML = "";
 
-            globalHistory.forEach(val => {
+            globalHistory.forEach((val) => {
+                const badgeColors = getColorByMultiplier(val);
 
-                const badgeColors =
-                    getColorByMultiplier(val);
-
-                const badge =
-                    document.createElement("div");
+                const badge = document.createElement("div");
 
                 badge.className =
                     `history-badge ${badgeColors.name}`;
@@ -1061,24 +810,15 @@
             });
         }
 
-
-        /* ================================
-           PLAYERS UI
-        ================================= */
-
         function updatePlayersUI() {
-
             const feed =
-                document.getElementById(
-                    "players-feed"
-                );
+                document.getElementById("players-feed");
 
             feed.innerHTML = "";
 
-            livePlayers.forEach(p => {
+            livePlayers.forEach((p) => {
 
-                const card =
-                    document.createElement("div");
+                const card = document.createElement("div");
 
                 card.className =
                     `player-card ${p.state}`;
@@ -1086,256 +826,168 @@
                 const stateClass =
                     p.state === "active"
                         ? "active"
-                        : (
-                            p.state === "win"
-                                ? "win"
-                                : "lose"
-                        );
+                        : p.state === "win"
+                            ? "win"
+                            : "lose";
 
                 const runningMult =
                     p.state === "active"
                         ? currentMultiplier
                         : p.finalMult;
 
-                const currentLiveWin =
-                    (
-                        p.bet * runningMult
-                    ).toFixed(2);
+                const pInfo = document.createElement("div");
+                pInfo.className = "p-info";
 
-                const safeName =
-                    escapeHtml(p.name);
+                const pAvatar = document.createElement("div");
+                pAvatar.className = "p-avatar";
 
-                const safeAvatar =
-                    escapeHtml(p.avatar || "");
+                if (p.avatar) {
+                    const img = document.createElement("img");
 
-                const safeColor =
-                    escapeHtml(
-                        p.color || "#2b3047"
-                    );
+                    img.src = p.avatar;
+                    img.alt = p.name;
 
-                const initial =
-                    escapeHtml(
-                        String(p.name)
-                            .charAt(0)
-                            .toUpperCase()
-                    );
+                    pAvatar.appendChild(img);
+                } else {
+                    pAvatar.innerText =
+                        p.name.charAt(0);
+                }
 
-                const imgTag = p.avatar
-                    ? `<img src="${safeAvatar}" alt="">`
-                    : `
-                        <div style="
-                            width:100%;
-                            height:100%;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            background:${safeColor};
-                        ">
-                            ${initial}
-                        </div>
-                    `;
+                const details = document.createElement("div");
 
-                card.innerHTML = `
-                    <div class="p-info">
+                details.style.display = "flex";
+                details.style.flexDirection = "column";
+                details.style.alignItems = "flex-start";
+                details.style.gap = "2px";
 
-                        <div class="p-avatar">
-                            ${imgTag}
-                        </div>
+                const name = document.createElement("span");
 
-                        <div style="
-                            display:flex;
-                            flex-direction:column;
-                            align-items:flex-start;
-                            gap:2px;
-                        ">
+                name.style.fontWeight = "bold";
+                name.style.fontSize = "13px";
+                name.innerText = p.name;
 
-                            <span style="
-                                font-weight:bold;
-                                font-size:13px;
-                            ">
-                                ${safeName}
-                            </span>
+                const betInfo = document.createElement("span");
 
-                            <span style="
-                                font-size:11px;
-                                color:#8a92b2;
-                                direction:ltr;
-                            ">
-                                💎 ${p.bet.toFixed(2)}
-                                ×${runningMult.toFixed(2)}
-                            </span>
+                betInfo.style.fontSize = "11px";
+                betInfo.style.color = "#8a92b2";
+                betInfo.style.direction = "ltr";
 
-                        </div>
+                betInfo.innerText =
+                    `💎 ${p.bet.toFixed(2)} ×${runningMult.toFixed(2)}`;
 
-                    </div>
+                details.appendChild(name);
+                details.appendChild(betInfo);
 
-                    <div class="p-status-box ${stateClass}">
-                        💎 ${currentLiveWin}
-                    </div>
-                `;
+                pInfo.appendChild(pAvatar);
+                pInfo.appendChild(details);
+
+                const statusBox = document.createElement("div");
+
+                statusBox.className =
+                    `p-status-box ${stateClass}`;
+
+                statusBox.innerText =
+                    `💎 ${(p.bet * runningMult).toFixed(2)}`;
+
+                card.appendChild(pInfo);
+                card.appendChild(statusBox);
 
                 feed.appendChild(card);
             });
         }
 
-
-        /* ================================
-           ROUND COUNTDOWN
-        ================================= */
-
         function runGlobalLoop() {
-
-            if (loopInterval) {
-                clearInterval(loopInterval);
-                loopInterval = null;
-            }
-
-            if (countdownTimer) {
-                clearTimeout(countdownTimer);
-                countdownTimer = null;
-            }
+            if (isGameRunning) return;
 
             let count = 5;
 
             const wrapper =
-                document.getElementById(
-                    "countdown-wrapper"
-                );
+                document.getElementById("countdown-wrapper");
 
             const numText =
-                document.getElementById(
-                    "countdown-num"
-                );
+                document.getElementById("countdown-num");
 
             const bar =
-                document.getElementById(
-                    "progress-bar"
-                );
+                document.getElementById("progress-bar");
 
             const multText =
-                document.getElementById(
-                    "multiplier"
-                );
+                document.getElementById("multiplier");
 
             const btn =
-                document.getElementById(
-                    "action-btn"
-                );
+                document.getElementById("action-btn");
 
             const path =
-                document.getElementById(
-                    "neon-curve"
-                );
-
-            const rocketContainer =
-                document.getElementById(
-                    "rocket-container"
-                );
-
-            const rocket =
-                document.getElementById("rocket");
-
+                document.getElementById("neon-curve");
 
             isGameRunning = false;
             currentMultiplier = 1.00;
 
-            multText.innerText = "1.00x";
-            document.getElementById(
-                "header-multiplier"
-            ).innerText = "1.00x";
-
             multText.style.display = "none";
             wrapper.style.display = "flex";
-
-            rocket.innerText = "🚀";
-            rocket.style.transform = "none";
-
-            rocketContainer.style.transform =
-                "none";
 
             path.setAttribute(
                 "d",
                 "M 55 220"
             );
 
-            path.setAttribute(
-                "stroke",
-                "#ff3366"
-            );
+            document
+                .getElementById("auto-switch")
+                .classList.remove("disabled");
 
-            path.style.filter = "none";
-
-            document.getElementById(
-                "auto-switch"
-            ).classList.remove("disabled");
-
-            document.getElementById(
-                "auto-control-box"
-            ).classList.remove("locked");
-
-
-            /* Bet queued from previous running round */
-
-            if (isQueuedForNextRound) {
-
-                hasBet = true;
-
-                isQueuedForNextRound = false;
-            }
-
-
-            /* Reset bot players */
+            document
+                .getElementById("auto-control-box")
+                .classList.remove("locked");
 
             livePlayers =
                 JSON.parse(
                     JSON.stringify(basePlayers)
                 );
 
-            livePlayers.forEach(p => {
-
+            livePlayers.forEach((p) => {
                 p.state = "active";
                 p.finalMult = 1.00;
             });
 
-
-            /* Add our player */
-
-            if (hasBet) {
-
-                livePlayers.unshift({
-                    name: firstName,
-                    bet: playerBetAmount,
-                    color: "#ff3366",
-                    avatar: userPhoto,
-                    state: "active",
-                    finalMult: 1.00
-                });
+            if (isQueuedForNextRound) {
+                hasBet = true;
+                isQueuedForNextRound = false;
             }
 
+            if (hasBet) {
+                const userAlreadyExists =
+                    livePlayers.some(
+                        (p) => p.name === firstName
+                    );
+
+                if (!userAlreadyExists) {
+                    livePlayers.unshift({
+                        name: firstName,
+                        bet: parseFloat(
+                            document.getElementById("bet-input").value
+                        ),
+                        color: "#ff3366",
+                        avatar: userPhoto,
+                        state: "active",
+                        finalMult: 1.00
+                    });
+                }
+            }
 
             updatePlayersUI();
             renderHistoryUI();
 
-
             if (!hasBet) {
-
                 btn.disabled = false;
                 btn.className = "main-btn";
-                btn.innerText =
-                    "Place TON Bet 🚀";
-
+                btn.innerText = "Place TON Bet 🚀";
             } else {
-
                 btn.disabled = false;
-                btn.className =
-                    "main-btn cashout";
-
-                btn.innerText =
-                    "Cash Out 💰";
+                btn.className = "main-btn cashout";
+                btn.innerText = "Cash Out 💰";
             }
 
-
             function timer() {
+                if (isGameRunning) return;
 
                 if (count > 0) {
 
@@ -1343,576 +995,367 @@
 
                     const offset =
                         236 -
-                        (
-                            236 *
-                            (count / 5)
-                        );
+                        (236 * (count / 5));
 
                     bar.style.strokeDashoffset =
                         offset;
 
                     count--;
 
-                    countdownTimer =
-                        setTimeout(
-                            timer,
-                            1000
-                        );
+                    setTimeout(timer, 1000);
 
                 } else {
 
-                    countdownTimer = null;
-
-                    wrapper.style.display =
-                        "none";
-
-                    multText.style.display =
-                        "block";
+                    wrapper.style.display = "none";
+                    multText.style.display = "block";
 
                     startRocketFlight();
                 }
             }
-
 
             bar.style.strokeDashoffset = 0;
 
             timer();
         }
 
+        function getColorByMultiplier(val) {
 
-        /* ================================
-           ROCKET FLIGHT
-        ================================= */
+            if (val < 1.30) {
+                return {
+                    name: "red",
+                    hex: "#ff3366"
+                };
+            }
+
+            if (val >= 1.30 && val < 2.00) {
+                return {
+                    name: "green",
+                    hex: "#00ffcc"
+                };
+            }
+
+            if (val >= 2.00 && val < 5.00) {
+                return {
+                    name: "blue",
+                    hex: "#0066ff"
+                };
+            }
+
+            if (val >= 5.00 && val < 9.00) {
+                return {
+                    name: "purple",
+                    hex: "#a020f0"
+                };
+            }
+
+            if (val >= 9.00 && val < 25.00) {
+                return {
+                    name: "gold",
+                    hex: "#ffaa00"
+                };
+            }
+
+            if (val >= 25.00) {
+                return {
+                    name: "fire",
+                    hex: "#ff4400"
+                };
+            }
+
+            return {
+                name: "green",
+                hex: "#00ffcc"
+            };
+        }
 
         function startRocketFlight() {
+
+            if (isGameRunning) return;
 
             isGameRunning = true;
             currentMultiplier = 1.00;
 
             const rCont =
-                document.getElementById(
-                    "rocket-container"
-                );
+                document.getElementById("rocket-container");
 
             const path =
-                document.getElementById(
-                    "neon-curve"
-                );
+                document.getElementById("neon-curve");
 
             const multText =
-                document.getElementById(
-                    "multiplier"
-                );
-
-            const headerMult =
-                document.getElementById(
-                    "header-multiplier"
-                );
+                document.getElementById("multiplier");
 
             const btn =
-                document.getElementById(
-                    "action-btn"
-                );
+                document.getElementById("action-btn");
 
+            document
+                .getElementById("auto-switch")
+                .classList.add("disabled");
 
-            document.getElementById(
-                "auto-switch"
-            ).classList.add("disabled");
-
-            document.getElementById(
-                "auto-control-box"
-            ).classList.add("locked");
-
+            document
+                .getElementById("auto-control-box")
+                .classList.add("locked");
 
             if (hasBet) {
-
-                btn.innerText =
-                    "Cash Out 💰";
-
-                btn.className =
-                    "main-btn cashout";
-
+                btn.innerText = "Cash Out 💰";
+                btn.className = "main-btn cashout";
                 btn.disabled = false;
-
             } else {
-
                 btn.disabled = false;
-
-                btn.className =
-                    "main-btn";
-
-                btn.innerText =
-                    "Bet for Next Round ⏳";
+                btn.className = "main-btn";
+                btn.innerText = "Bet for Next Round ⏳";
             }
 
-
-            /* Crash point */
-
             let crashPoint = 1.01;
-
-            const diceRoll =
-                Math.random();
+            const diceRoll = Math.random();
 
             if (diceRoll < 0.70) {
 
                 crashPoint =
                     1.01 +
-                    (
-                        Math.random() * 0.78
-                    );
+                    (Math.random() * 0.78);
 
             } else if (diceRoll < 0.99) {
 
                 crashPoint =
                     1.80 +
-                    (
-                        Math.random() * 8.20
-                    );
+                    (Math.random() * 8.20);
 
             } else {
 
                 crashPoint =
                     10.00 +
-                    (
-                        Math.random() * 25.00
-                    );
+                    (Math.random() * 25.00);
             }
 
+            loopInterval = setInterval(() => {
 
-            loopInterval =
-                setInterval(() => {
+                currentMultiplier += 0.01111;
 
-                    if (!isGameRunning) {
-                        return;
-                    }
+                multText.innerText =
+                    currentMultiplier.toFixed(2) + "x";
 
-                    currentMultiplier += 0.01111;
+                const currentColors =
+                    getColorByMultiplier(
+                        currentMultiplier
+                    );
 
-                    multText.innerText =
-                        currentMultiplier.toFixed(2)
-                        + "x";
+                path.setAttribute(
+                    "stroke",
+                    currentColors.hex
+                );
 
-                    headerMult.innerText =
-                        currentMultiplier.toFixed(2)
-                        + "x";
+                path.style.filter =
+                    `drop-shadow(0 0 6px ${currentColors.hex})`;
 
+                let xMove = 0;
+                let yMove = 0;
 
-                    const currentColors =
-                        getColorByMultiplier(
-                            currentMultiplier
-                        );
+                if (currentMultiplier <= 1.30) {
+
+                    xMove =
+                        (currentMultiplier - 1) * 230;
+
+                    yMove = 0;
+
+                } else {
+
+                    xMove =
+                        69 +
+                        (currentMultiplier - 1.30) * 45;
+
+                    yMove =
+                        (currentMultiplier - 1.30) * 65;
+                }
+
+                const finalX =
+                    Math.min(210, xMove);
+
+                const finalY =
+                    Math.min(150, yMove);
+
+                rCont.style.transform =
+                    `translate(${finalX}px, -${finalY}px) rotate(-15deg)`;
+
+                const startX = 55;
+                const startY = 220;
+
+                const currentX =
+                    startX + finalX;
+
+                const currentY =
+                    startY - finalY;
+
+                if (currentMultiplier <= 1.30) {
 
                     path.setAttribute(
-                        "stroke",
+                        "d",
+                        `M ${startX} ${startY} L ${currentX} ${currentY}`
+                    );
+
+                } else {
+
+                    const controlX =
+                        startX + 69;
+
+                    const controlY =
+                        startY;
+
+                    path.setAttribute(
+                        "d",
+                        `M ${startX} ${startY} Q ${controlX} ${controlY} ${currentX} ${currentY}`
+                    );
+                }
+
+                if (Math.random() < 0.4) {
+
+                    const p =
+                        document.createElement("div");
+
+                    p.className =
+                        "particle-glow";
+
+                    p.style.setProperty(
+                        "--p-color",
                         currentColors.hex
                     );
 
-                    path.style.filter =
-                        `drop-shadow(0 0 6px ${currentColors.hex})`;
+                    p.style.left = "22px";
+                    p.style.top = "22px";
 
+                    rCont.appendChild(p);
 
-                    /* Rocket movement */
+                    setTimeout(() => {
+                        p.remove();
+                    }, 400);
+                }
 
-                    let xMove = 0;
-                    let yMove = 0;
-
-                    if (
-                        currentMultiplier <= 1.30
-                    ) {
-
-                        xMove =
-                            (
-                                currentMultiplier - 1
-                            ) * 230;
-
-                        yMove = 0;
-
-                    } else {
-
-                        xMove =
-                            69 +
-                            (
-                                currentMultiplier - 1.30
-                            ) * 45;
-
-                        yMove =
-                            (
-                                currentMultiplier - 1.30
-                            ) * 65;
-                    }
-
-
-                    const finalX =
-                        Math.min(210, xMove);
-
-                    const finalY =
-                        Math.min(150, yMove);
-
-
-                    rCont.style.transform =
-                        `translate(${finalX}px, -${finalY}px) rotate(-15deg)`;
-
-
-                    /* SVG curve */
-
-                    const startX = 55;
-                    const startY = 220;
-
-                    const currentX =
-                        startX + finalX;
-
-                    const currentY =
-                        startY - finalY;
-
+                livePlayers.forEach((p) => {
 
                     if (
-                        currentMultiplier <= 1.30
+                        p.name !== firstName &&
+                        p.state === "active"
                     ) {
-
-                        path.setAttribute(
-                            "d",
-                            `M ${startX} ${startY} L ${currentX} ${currentY}`
-                        );
-
-                    } else {
-
-                        const controlX =
-                            startX + 69;
-
-                        const controlY =
-                            startY;
-
-                        path.setAttribute(
-                            "d",
-                            `M ${startX} ${startY} Q ${controlX} ${controlY} ${currentX} ${currentY}`
-                        );
-                    }
-
-
-                    /* Particles */
-
-                    if (Math.random() < 0.4) {
-
-                        const particle =
-                            document.createElement(
-                                "div"
-                            );
-
-                        particle.className =
-                            "particle-glow";
-
-                        particle.style.setProperty(
-                            "--p-color",
-                            currentColors.hex
-                        );
-
-                        particle.style.left =
-                            "22px";
-
-                        particle.style.top =
-                            "22px";
-
-                        rCont.appendChild(
-                            particle
-                        );
-
-                        setTimeout(() => {
-                            particle.remove();
-                        }, 400);
-                    }
-
-
-                    /* Bot players */
-
-                    livePlayers.forEach(p => {
 
                         if (
-                            p.name !== firstName &&
-                            p.state === "active"
+                            Math.random() < 0.015 &&
+                            currentMultiplier > 1.15
                         ) {
-
-                            if (
-                                Math.random() < 0.015 &&
-                                currentMultiplier > 1.15
-                            ) {
-
-                                p.state = "win";
-
-                                p.finalMult =
-                                    currentMultiplier;
-                            }
+                            p.state = "win";
+                            p.finalMult =
+                                currentMultiplier;
                         }
-                    });
-
-
-                    updatePlayersUI();
-
-
-                    /* Auto cashout */
-
-                    if (
-                        hasBet &&
-                        autoCashoutEnabled &&
-                        currentMultiplier >=
-                        autoCashoutTarget
-                    ) {
-
-                        clearInterval(loopInterval);
-                        loopInterval = null;
-
-                        triggerCashoutSuccess();
-
-                        return;
                     }
+                });
 
-
-                    /* Crash */
-
-                    if (
-                        currentMultiplier >=
-                        crashPoint
-                    ) {
-
-                        clearInterval(
-                            loopInterval
-                        );
-
-                        loopInterval = null;
-
-                        triggerRocketCrash();
-                    }
-
-                }, 30);
-        }
-
-
-        /* ================================
-           CASHOUT
-        ================================= */
-
-        function triggerCashoutSuccess() {
-
-            if (!hasBet) {
-                return;
-            }
-
-            const amt =
-                Number(playerBetAmount);
-
-            if (
-                !Number.isFinite(amt) ||
-                amt <= 0
-            ) {
-                return;
-            }
-
-
-            const winAmt =
-                amt * currentMultiplier;
-
-            tonBalance += winAmt;
-
-            updateBalanceUI();
-
-
-            livePlayers.forEach(p => {
+                updatePlayersUI();
 
                 if (
-                    p.name === firstName &&
-                    p.state === "active"
+                    hasBet &&
+                    autoCashoutEnabled &&
+                    currentMultiplier >= autoCashoutTarget
                 ) {
-
-                    p.state = "win";
-
-                    p.finalMult =
-                        currentMultiplier;
+                    triggerCashoutSuccess();
                 }
-            });
 
+                if (currentMultiplier >= crashPoint) {
 
-            updatePlayersUI();
+                    clearInterval(loopInterval);
 
+                    triggerRocketCrash();
+                }
 
-            hasBet = false;
-
-
-            const btn =
-                document.getElementById(
-                    "action-btn"
-                );
-
-            btn.innerText =
-                "Cashed Out! 🎉";
-
-            btn.className =
-                "main-btn";
-
-            btn.disabled = true;
-
-
-            /*
-             * End the current visual round.
-             * The next round starts automatically.
-             */
-
-            triggerRocketCrash();
+            }, 30);
         }
-
-
-        /* ================================
-           CRASH
-        ================================= */
 
         function triggerRocketCrash() {
 
-            if (loopInterval) {
-
-                clearInterval(
-                    loopInterval
-                );
-
-                loopInterval = null;
-            }
-
+            clearInterval(loopInterval);
 
             isGameRunning = false;
 
-
             globalHistory.unshift(
-                Number(
-                    currentMultiplier.toFixed(2)
-                )
+                currentMultiplier
             );
 
             if (globalHistory.length > 5) {
                 globalHistory.pop();
             }
 
-
             const rocket =
-                document.getElementById(
-                    "rocket"
-                );
-
-            const rocketContainer =
-                document.getElementById(
-                    "rocket-container"
-                );
-
+                document.getElementById("rocket");
 
             rocket.innerText = "💥";
+            rocket.style.transform = "scale(1.4)";
 
-            rocket.style.transform =
-                "scale(1.4)";
-
-
-            livePlayers.forEach(p => {
+            livePlayers.forEach((p) => {
 
                 if (p.state === "active") {
-
                     p.state = "lose";
-
                     p.finalMult =
                         currentMultiplier;
                 }
             });
 
-
             updatePlayersUI();
-            renderHistoryUI();
-
-
-            /*
-             * If the player did not cash out,
-             * the bet is lost.
-             */
 
             hasBet = false;
-
 
             setTimeout(() => {
 
                 rocket.innerText = "🚀";
+                rocket.style.transform = "none";
 
-                rocket.style.transform =
-                    "none";
-
-                rocketContainer.style.transform =
-                    "none";
+                document
+                    .getElementById("rocket-container")
+                    .style.transform = "none";
 
                 runGlobalLoop();
 
             }, 3500);
         }
 
-
-        /* ================================
-           MAIN ACTION BUTTON
-        ================================= */
-
         function handleAction() {
 
             const btn =
-                document.getElementById(
-                    "action-btn"
-                );
+                document.getElementById("action-btn");
 
-            const input =
-                document.getElementById(
-                    "bet-input"
-                );
+            if (isGameRunning && hasBet) {
 
-            const amt =
-                parseFloat(input.value);
-
-
-            if (
-                !Number.isFinite(amt) ||
-                amt < 0.10 ||
-                amt > tonBalance
-            ) {
-
+                triggerCashoutSuccess();
                 return;
             }
 
-
-            /* ============================
-               GAME RUNNING
-            ============================ */
-
-            if (isGameRunning) {
-
-                /* Cash out existing bet */
-
-                if (hasBet) {
-
-                    if (loopInterval) {
-
-                        clearInterval(
-                            loopInterval
-                        );
-
-                        loopInterval = null;
-                    }
-
-                    triggerCashoutSuccess();
-
-                    return;
-                }
-
-
-                /* Queue bet for next round */
+            if (isGameRunning && !hasBet) {
 
                 if (!isQueuedForNextRound) {
 
-                    isQueuedForNextRound = true;
+                    const amt =
+                        parseFloat(
+                            document.getElementById("bet-input").value
+                        );
 
-                    playerBetAmount = amt;
+                    if (
+                        !Number.isFinite(amt) ||
+                        amt <= 0 ||
+                        amt > tonBalance
+                    ) {
+                        return;
+                    }
+
+                    isQueuedForNextRound = true;
 
                     tonBalance -= amt;
 
-                    updateBalanceUI();
+                    document.getElementById(
+                        "ton-balance"
+                    ).innerText =
+                        tonBalance.toFixed(2);
 
+                    document.getElementById(
+                        "balance-label"
+                    ).innerText =
+                        tonBalance.toFixed(2) +
+                        " TON";
 
                     btn.className =
                         "main-btn queued";
@@ -1926,41 +1369,46 @@
                 return;
             }
 
+            if (!isGameRunning && !hasBet) {
 
-            /* ============================
-               BEFORE TAKEOFF
-            ============================ */
+                const amt =
+                    parseFloat(
+                        document.getElementById("bet-input").value
+                    );
 
-            if (!hasBet) {
+                if (
+                    !Number.isFinite(amt) ||
+                    amt <= 0 ||
+                    amt > tonBalance
+                ) {
+                    return;
+                }
 
                 hasBet = true;
 
-                playerBetAmount = amt;
-
                 tonBalance -= amt;
 
-                updateBalanceUI();
+                document.getElementById(
+                    "ton-balance"
+                ).innerText =
+                    tonBalance.toFixed(2);
 
+                document.getElementById(
+                    "balance-label"
+                ).innerText =
+                    tonBalance.toFixed(2) +
+                    " TON";
 
                 livePlayers.unshift({
-
                     name: firstName,
-
                     bet: amt,
-
                     color: "#ff3366",
-
                     avatar: userPhoto,
-
                     state: "active",
-
                     finalMult: 1.00
-
                 });
 
-
                 updatePlayersUI();
-
 
                 btn.innerText =
                     "Waiting for Takeoff...";
@@ -1969,15 +1417,59 @@
             }
         }
 
+        function triggerCashoutSuccess() {
 
-        /* ================================
-           START
-        ================================= */
+            if (!hasBet) return;
 
-        updateBalanceUI();
+            hasBet = false;
+
+            const amt =
+                parseFloat(
+                    document.getElementById("bet-input").value
+                );
+
+            const winAmt =
+                amt * currentMultiplier;
+
+            tonBalance += winAmt;
+
+            document.getElementById(
+                "ton-balance"
+            ).innerText =
+                tonBalance.toFixed(2);
+
+            document.getElementById(
+                "balance-label"
+            ).innerText =
+                tonBalance.toFixed(2) +
+                " TON";
+
+            livePlayers.forEach((p) => {
+
+                if (p.name === firstName) {
+
+                    p.state = "win";
+                    p.finalMult =
+                        currentMultiplier;
+                }
+            });
+
+            updatePlayersUI();
+
+            const btn =
+                document.getElementById("action-btn");
+
+            btn.innerText =
+                "Bet for Next Round ⏳";
+
+            btn.className =
+                "main-btn";
+
+            btn.disabled = true;
+        }
+
         renderHistoryUI();
         runGlobalLoop();
-
     </script>
 
 </body>
