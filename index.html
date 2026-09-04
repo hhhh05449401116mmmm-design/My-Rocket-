@@ -1,189 +1,885 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rocket Cash Hub</title>
-    <script src="https://telegram.org"></script>
-    <link rel="stylesheet" href="https://cloudflare.com">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #07080c; color: #fff; margin: 0; padding: 0; overflow: hidden; user-select: none; text-align: center; }
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; direction: rtl; align-items: center; }
-        .profile-zone { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0066ff, #00ffcc); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #1f2544; box-shadow: 0 0 10px rgba(0,102,255,0.3); }
-        .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; direction: ltr; border: 1px solid #00ffcc33; }
-        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; box-shadow: 0 0 8px rgba(255,51,102,0.4); }
-        .player-badge { background: #0066ff; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-        
-        /* قسم العملات المتاحة المتطور */
-        .currencies-container { display: flex; justify-content: center; gap: 15px; padding: 10px; background: #0d101d; border-bottom: 1px solid #1f2544; direction: rtl; font-size: 13px; }
-        .crypto-item { display: flex; align-items: center; gap: 6px; background: #161b33; padding: 5px 12px; border-radius: 15px; border: 1px solid #ffffff10; }
-        .crypto-item.ton { color: #0088cc; font-weight: bold; }
-        .crypto-item.usdt { color: #26a17b; font-weight: bold; }
 
-        .game-container { padding: 20px; height: calc(100vh - 240px); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: radial-gradient(circle at center, #11152b 0%, #07080c 70%); }
-        .rocket-zone { font-size: 85px; margin-bottom: 20px; transition: transform 0.08s linear; filter: drop-shadow(0 0 15px rgba(255,102,0,0.5)); }
-        .multiplier { font-size: 60px; font-weight: bold; color: #fff; margin-bottom: 5px; font-family: monospace; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
-        .status-text { font-size: 16px; color: #8a92b2; height: 25px; font-weight: 500; }
-        
-        .controls { padding: 20px; background: #111424; position: absolute; bottom: 0; left: 0; right: 0; border-top: 1px solid #1f2544; }
-        .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); transition: all 0.2s ease; }
-        .btn.cashout { background: #00ffcc; color: #07080c; box-shadow: 0 4px 15px rgba(0,255,204,0.4); }
-        .btn:disabled { background: #3a3f58; color: #686d87; box-shadow: none; cursor: not-allowed; }
+    <title>Rocket Cash Hub Pro</title>
+
+    <!-- Telegram Mini App -->
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #07080c;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            user-select: none;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #111424;
+            border-bottom: 1px solid #1f2544;
+            align-items: center;
+            direction: rtl;
+        }
+
+        .profile-zone {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0066ff, #00ffcc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #1f2544;
+        }
+
+        .balances-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-end;
+        }
+
+        .balance-box {
+            background: #1a1f37;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            direction: ltr;
+            border: 1px solid #ffffff05;
+        }
+
+        .balance-box.ton {
+            color: #0088cc;
+            border-color: #0088cc33;
+        }
+
+        .balance-box.gems {
+            color: #00ffcc;
+            border-color: #00ffcc33;
+        }
+
+        .admin-badge {
+            background: #ff3366;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .player-badge {
+            background: #0066ff;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .game-container {
+            padding: 20px;
+            height: calc(100vh - 340px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at center, #11152b 0%, #07080c 70%);
+        }
+
+        .rocket-zone {
+            font-size: 85px;
+            margin-bottom: 15px;
+            transition: transform 0.08s linear;
+            filter: drop-shadow(0 0 15px rgba(255,102,0,0.4));
+        }
+
+        .multiplier {
+            font-size: 65px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+
+        .status-text {
+            font-size: 16px;
+            color: #8a92b2;
+            height: 25px;
+            font-weight: 500;
+        }
+
+        .countdown-text {
+            font-size: 24px;
+            color: #ffaa00;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #111424;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #1f2544;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .selector-row {
+            display: flex;
+            gap: 10px;
+            direction: rtl;
+        }
+
+        .selector-btn {
+            flex: 1;
+            background: #1a1f37;
+            border: 1px solid #252c4e;
+            color: #8a92b2;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .selector-btn.active.ton {
+            background: #0088cc;
+            color: #fff;
+            border-color: #0088cc;
+        }
+
+        .selector-btn.active.gems {
+            background: #00ffcc;
+            color: #07080c;
+            border-color: #00ffcc;
+        }
+
+        .auto-cashout-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #161b33;
+            padding: 8px 12px;
+            border-radius: 10px;
+            direction: rtl;
+            border: 1px solid #ffffff05;
+        }
+
+        .auto-input-zone {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            direction: ltr;
+        }
+
+        .auto-input {
+            background: #0d101d;
+            border: 1px solid #252c4e;
+            color: #fff;
+            width: 60px;
+            padding: 6px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .toggle-btn {
+            background: #3a3f58;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background: #26a17b;
+        }
+
+        .btn {
+            background: #0066ff;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,102,255,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn.cashout {
+            background: #00ffcc;
+            color: #07080c;
+            box-shadow: 0 4px 15px rgba(0,255,204,0.3);
+        }
+
+        .btn:disabled {
+            background: #3a3f58;
+            color: #686d87;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
     </style>
 </head>
+
 <body>
 
-    <!-- الهيدر والبروفايل الحقيقي للاعب -->
     <div class="header">
+
         <div class="profile-zone">
             <div id="user-avatar" class="avatar">⚙️</div>
+
             <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-                <span id="username" style="font-weight:bold; font-size:14px;">جاري التحميل...</span>
-                <span id="role-tag" class="player-badge">لاعب</span>
+                <span id="username" style="font-weight:bold; font-size:14px;">
+                    جاري التحميل...
+                </span>
+
+                <span id="role-tag" class="player-badge">
+                    لاعب
+                </span>
             </div>
         </div>
-        <div class="balance-box">
-            <i class="fas fa-gem"></i>
-            <span id="balance">1000.00</span>
+
+        <div class="balances-wrapper">
+
+            <div class="balance-box ton">
+                💎 <span id="ton-balance">100.00</span> TON
+            </div>
+
+            <div class="balance-box gems">
+                💠 <span id="gems-balance">1000.00</span>
+            </div>
+
         </div>
+
     </div>
 
-    <!-- قسم العملات المتاحة والمحافظ في شبكة TON البلوكشين -->
-    <div class="currencies-container">
-        <div class="crypto-item ton">
-            <i class="fas fa-wallet"></i>
-            <span>0.00 TON</span>
-        </div>
-        <div class="crypto-item usdt">
-            <i class="fas fa-dollar-sign"></i>
-            <span>0.00 USDT</span>
-        </div>
-        <div class="crypto-item" style="color: #ffaa00;">
-            <i class="fas fa-coins"></i>
-            <span>0 NOT</span>
-        </div>
-    </div>
-
-    <!-- منطقة الجيم والحركة الحية للصاروخ -->
     <div class="game-container">
-        <div id="rocket" class="rocket-zone">🚀</div>
-        <div id="multiplier" class="multiplier">1.00x</div>
-        <div id="status" class="status-text">بانتظار بدء الجولة...</div>
+
+        <div id="rocket" class="rocket-zone">
+            🚀
+        </div>
+
+        <div id="multiplier" class="multiplier">
+            1.00x
+        </div>
+
+        <div id="status" class="status-text">
+            بانتظار بدء الجولة...
+        </div>
+
+        <div id="countdown" class="countdown-text"></div>
+
     </div>
 
-    <!-- لوحة التحكم بأزرار الرهان والكاش أوت -->
     <div class="controls">
-        <button id="action-btn" class="btn" onclick="handleAction()">BET</button>
+
+        <div class="selector-row">
+
+            <button id="mode-ton"
+                    class="selector-btn active ton"
+                    onclick="switchMode('ton')">
+                💎 اللعب بالـ TON
+            </button>
+
+            <button id="mode-gems"
+                    class="selector-btn"
+                    onclick="switchMode('gems')">
+                💠 اللعب بالهدايا
+            </button>
+
+        </div>
+
+        <div class="auto-cashout-row">
+
+            <span style="font-size:13px;color:#8a92b2;font-weight:bold;">
+                السحب التلقائي:
+            </span>
+
+            <div class="auto-input-zone">
+
+                <button id="auto-toggle"
+                        class="toggle-btn"
+                        onclick="toggleAutoCashout()">
+                    مغلق
+                </button>
+
+                <input
+                    id="auto-multiplier"
+                    type="number"
+                    class="auto-input"
+                    value="2.00"
+                    step="0.1"
+                    min="1.1"
+                >
+
+                <span style="font-size:12px;color:#8a92b2;">
+                    x
+                </span>
+
+            </div>
+
+        </div>
+
+        <button id="action-btn"
+                class="btn"
+                onclick="handleAction()">
+            BET
+        </button>
+
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
+
+<script>
+
+    /* =========================
+       TELEGRAM
+    ========================= */
+
+    const tg = window.Telegram?.WebApp || null;
+
+    if (tg) {
+        tg.ready();
         tg.expand();
+    }
 
-        // سحب بيانات المستخدم الحقيقية من الـ SDK الموثق في تيليجرام
-        const telegramId = String(tg.initDataUnsafe?.user?.id || "7385640899"); 
-        const firstName = tg.initDataUnsafe?.user?.first_name || "المطور";
-        
-        document.getElementById('username').innerText = firstName;
-        document.getElementById('user-avatar').innerText = firstName.charAt(0).toUpperCase();
 
-        // التحقق من هوية المالك لتفعيل الشارة الحمراء الفخمة للأدمن
-        if (telegramId === "7385640899") {
-            const role = document.getElementById('role-tag');
-            role.innerText = "المالك";
-            role.className = "admin-badge";
+    /* =========================
+       USER
+    ========================= */
+
+    const telegramUser = tg?.initDataUnsafe?.user || null;
+
+    const telegramId = String(
+        telegramUser?.id || "7385640899"
+    );
+
+    const firstName =
+        telegramUser?.first_name || "المطور";
+
+
+    document.getElementById("username").innerText =
+        firstName;
+
+    document.getElementById("user-avatar").innerText =
+        firstName.charAt(0).toUpperCase();
+
+
+    /* المالك */
+    if (telegramId === "7385640899") {
+
+        const role =
+            document.getElementById("role-tag");
+
+        role.innerText = "المالك";
+        role.className = "admin-badge";
+    }
+
+
+    /* =========================
+       GAME VARIABLES
+    ========================= */
+
+    let tonBalance = 100.00;
+    let gemsBalance = 1000.00;
+
+    let currentMode = "ton";
+
+    let isGameRunning = false;
+    let hasBet = false;
+
+    let currentMultiplier = 1.00;
+
+    let loopInterval = null;
+    let countdownTimer = null;
+
+    let autoCashoutEnabled = false;
+
+
+    /* =========================
+       MODE
+    ========================= */
+
+    function switchMode(mode) {
+
+        if (isGameRunning || hasBet) {
+            return;
         }
 
-        let currentBalance = 1000.00;
-        let isGameRunning = false;
-        let hasBet = false;
-        let currentMultiplier = 1.00;
-        let loopInterval;
+        currentMode = mode;
 
-        // محرك الجولات الذاتي - لتشغيل حركة الصاروخ والعداد بشكل فوري ومستمر
-        function startLiveGameLoop() {
-            if (isGameRunning) return;
-            
-            const btn = document.getElementById('action-btn');
-            const rocket = document.getElementById('rocket');
-            const status = document.getElementById('status');
-            const multText = document.getElementById('multiplier');
+        const tonButton =
+            document.getElementById("mode-ton");
 
-            isGameRunning = true;
-            currentMultiplier = 1.00;
-            rocket.innerText = "🚀";
-            rocket.style.transform = "none";
-            status.innerText = "الصاروخ يحلّق الآن في الفضاء الحين...";
-            
-            if (hasBet) {
-                btn.innerText = "CASH OUT";
-                btn.className = "btn cashout";
-                btn.disabled = false;
-            } else {
-                btn.innerText = "جاري الطيران.. انتظر الجولة التالية";
-                btn.className = "btn";
-                btn.disabled = true;
+        const gemsButton =
+            document.getElementById("mode-gems");
+
+
+        tonButton.className =
+            "selector-btn" +
+            (mode === "ton" ? " active ton" : "");
+
+
+        gemsButton.className =
+            "selector-btn" +
+            (mode === "gems" ? " active gems" : "");
+    }
+
+
+    /* =========================
+       AUTO CASHOUT
+    ========================= */
+
+    function toggleAutoCashout() {
+
+        autoCashoutEnabled =
+            !autoCashoutEnabled;
+
+        const button =
+            document.getElementById("auto-toggle");
+
+
+        button.className =
+            "toggle-btn" +
+            (autoCashoutEnabled ? " active" : "");
+
+
+        button.innerText =
+            autoCashoutEnabled
+                ? "مفعّل"
+                : "مغلق";
+    }
+
+
+    /* =========================
+       COUNTDOWN
+    ========================= */
+
+    function runCountdown(seconds) {
+
+        clearTimeout(countdownTimer);
+
+        const countdown =
+            document.getElementById("countdown");
+
+        const status =
+            document.getElementById("status");
+
+        const button =
+            document.getElementById("action-btn");
+
+
+        if (seconds > 0) {
+
+            status.innerText =
+                "الجولة القادمة تبدأ خلال:";
+
+            countdown.innerText =
+                seconds + " ثوانٍ";
+
+
+            if (!hasBet) {
+
+                button.innerText = "BET";
+                button.className = "btn";
+                button.disabled = false;
             }
 
-            loopInterval = setInterval(() => {
-                currentMultiplier += 0.03;
-                multText.innerText = currentMultiplier.toFixed(2) + "x";
-                
-                // معادلة الحركة الرسومية الصاعدة للصاروخ ليعطيك تأثير الطيران الحقيقي
-                let yMove = (currentMultiplier - 1) * 45;
-                let scaleMove = 1 + (currentMultiplier - 1) * 0.03;
-                rocket.style.transform = `translateY(-${yMove}px) scale(${scaleMove}) rotate(-15deg)`;
 
-                // منطق الانفجار العشوائي المتغير غير المتوقع
-                if (currentMultiplier > 1.15 && Math.random() < 0.022) {
+            countdownTimer =
+                setTimeout(
+                    () => runCountdown(seconds - 1),
+                    1000
+                );
+
+        } else {
+
+            countdown.innerText = "";
+
+            startLiveGameLoop();
+        }
+    }
+
+
+    /* =========================
+       START GAME
+    ========================= */
+
+    function startLiveGameLoop() {
+
+        if (isGameRunning) {
+            return;
+        }
+
+        isGameRunning = true;
+
+        currentMultiplier = 1.00;
+
+
+        const button =
+            document.getElementById("action-btn");
+
+        const rocket =
+            document.getElementById("rocket");
+
+        const status =
+            document.getElementById("status");
+
+        const multiplier =
+            document.getElementById("multiplier");
+
+
+        rocket.innerText = "🚀";
+
+        rocket.style.transform =
+            "none";
+
+
+        status.innerText =
+            "الصاروخ يحلّق الآن...";
+
+
+        if (hasBet) {
+
+            button.innerText =
+                "CASH OUT";
+
+            button.className =
+                "btn cashout";
+
+            button.disabled = false;
+
+        } else {
+
+            button.innerText =
+                "جاري الطيران.. انتظر الجولة التالية";
+
+            button.disabled = true;
+        }
+
+
+        clearInterval(loopInterval);
+
+
+        loopInterval =
+            setInterval(() => {
+
+                currentMultiplier += 0.03;
+
+
+                multiplier.innerText =
+                    currentMultiplier.toFixed(2) + "x";
+
+
+                /* حركة الصاروخ */
+
+                const yMove =
+                    (currentMultiplier - 1) * 45;
+
+                const scaleMove =
+                    1 +
+                    (currentMultiplier - 1) * 0.025;
+
+
+                rocket.style.transform =
+                    `translateY(-${yMove}px)
+                     scale(${scaleMove})
+                     rotate(-15deg)`;
+
+
+                /* السحب التلقائي */
+
+                if (
+                    hasBet &&
+                    autoCashoutEnabled
+                ) {
+
+                    const target =
+                        parseFloat(
+                            document.getElementById(
+                                "auto-multiplier"
+                            ).value
+                        );
+
+
+                    if (
+                        Number.isFinite(target) &&
+                        target >= 1.1 &&
+                        currentMultiplier >= target
+                    ) {
+
+                        clearInterval(loopInterval);
+
+                        cashOut();
+
+                        return;
+                    }
+                }
+
+
+                /* الانفجار */
+
+                if (
+                    currentMultiplier > 1.12 &&
+                    Math.random() < 0.024
+                ) {
+
                     clearInterval(loopInterval);
+
                     explodeRocket();
                 }
-            }, 75);
-        }
 
-        function explodeRocket() {
-            isGameRunning = false;
-            hasBet = false;
-            document.getElementById('rocket').innerText = "💥";
-            document.getElementById('rocket').style.transform = "scale(1.5)";
-            document.getElementById('status').innerText = "انفجر الصاروخ! جولة جديدة ستبدأ...";
-            
-            const btn = document.getElementById('action-btn');
-            btn.innerText = "BET";
-            btn.className = "btn";
-            btn.disabled = false;
+            }, 80);
+    }
 
-            setTimeout(() => {
-                document.getElementById('multiplier').innerText = "1.00x";
-                document.getElementById('status').innerText = "بانتظار الإقلاع القادم تلقائياً...";
-                startLiveGameLoop();
-            }, 4000); // 4 ثوانٍ وقت انتظار بين الجولات
-        }
 
-        function handleAction() {
-            const btn = document.getElementById('action-btn');
-            if (!isGameRunning && !hasBet) {
-                hasBet = true;
-                currentBalance -= 100; // رهان افتراضي بـ 100 جوهرة
-                document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                btn.innerText = "تم قبول الرهان.. انتظر الإقلاع";
-                btn.disabled = true;
-            } else if (isGameRunning && hasBet) {
-                hasBet = false;
-                const winAmount = 100 * currentMultiplier;
-                currentBalance += winAmount;
-                document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                document.getElementById('status').innerText = `كاش أوت ناجح! فزت بـ +${winAmount.toFixed(1)} 💎`;
-                btn.innerText = "انتظر الجولة القادمة";
-                btn.className = "btn";
-                btn.disabled = true;
+    /* =========================
+       EXPLOSION
+    ========================= */
+
+    function explodeRocket() {
+
+        isGameRunning = false;
+
+        hasBet = false;
+
+
+        const rocket =
+            document.getElementById("rocket");
+
+        const status =
+            document.getElementById("status");
+
+        const button =
+            document.getElementById("action-btn");
+
+
+        rocket.innerText = "💥";
+
+        rocket.style.transform =
+            "scale(1.4)";
+
+
+        status.innerText =
+            "انفجر الصاروخ!";
+
+
+        button.innerText =
+            "BET";
+
+        button.className =
+            "btn";
+
+        button.disabled = false;
+
+
+        setTimeout(() => {
+
+            document.getElementById(
+                "multiplier"
+            ).innerText = "1.00x";
+
+            runCountdown(5);
+
+        }, 3000);
+    }
+
+
+    /* =========================
+       BET / CASH OUT
+    ========================= */
+
+    function handleAction() {
+
+        const button =
+            document.getElementById("action-btn");
+
+
+        /* وضع الرهان */
+
+        if (!isGameRunning && !hasBet) {
+
+            if (currentMode === "ton") {
+
+                if (tonBalance < 10) {
+
+                    alert("رصيد TON غير كافٍ.");
+
+                    return;
+                }
+
+                tonBalance -= 10;
+
+                document.getElementById(
+                    "ton-balance"
+                ).innerText =
+                    tonBalance.toFixed(2);
+
+            } else {
+
+                if (gemsBalance < 100) {
+
+                    alert("رصيد الهدايا غير كافٍ.");
+
+                    return;
+                }
+
+                gemsBalance -= 100;
+
+                document.getElementById(
+                    "gems-balance"
+                ).innerText =
+                    gemsBalance.toFixed(2);
             }
+
+
+            hasBet = true;
+
+
+            button.innerText =
+                "تم قبول الرهان..";
+
+            button.disabled = true;
+
+            return;
         }
 
-        // بدء تشغيل اللعبة والحركات تلقائياً فور دخول اللاعبين للشاشة
-        setTimeout(startLiveGameLoop, 2000);
-    </script>
+
+        /* Cash Out */
+
+        if (isGameRunning && hasBet) {
+
+            clearInterval(loopInterval);
+
+            cashOut();
+        }
+    }
+
+
+    /* =========================
+       CASH OUT
+    ========================= */
+
+    function cashOut() {
+
+        if (!hasBet) {
+            return;
+        }
+
+        isGameRunning = false;
+        hasBet = false;
+
+
+        const finalMultiplier =
+            currentMultiplier;
+
+
+        if (currentMode === "ton") {
+
+            const winAmount =
+                10 * finalMultiplier;
+
+
+            tonBalance += winAmount;
+
+
+            document.getElementById(
+                "ton-balance"
+            ).innerText =
+                tonBalance.toFixed(2);
+
+
+            document.getElementById(
+                "status"
+            ).innerText =
+                `كاش أوت آمن! فزت بـ +${winAmount.toFixed(2)} TON`;
+
+        } else {
+
+            const winAmount =
+                100 * finalMultiplier;
+
+
+            gemsBalance += winAmount;
+
+
+            document.getElementById(
+                "gems-balance"
+            ).innerText =
+                gemsBalance.toFixed(2);
+
+
+            document.getElementById(
+                "status"
+            ).innerText =
+                `فوز بالهدايا! كسبت +${winAmount.toFixed(0)} جوهرة 💎`;
+        }
+
+
+        const button =
+            document.getElementById("action-btn");
+
+
+        button.innerText = "BET";
+
+        button.className = "btn";
+
+        button.disabled = false;
+
+
+        setTimeout(() => {
+
+            document.getElementById(
+                "multiplier"
+            ).innerText = "1.00x";
+
+            runCountdown(5);
+
+        }, 3000);
+    }
+
+
+    /* =========================
+       START
+    ========================= */
+
+    runCountdown(5);
+
+</script>
+
 </body>
 </html>
