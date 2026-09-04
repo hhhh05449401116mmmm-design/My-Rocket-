@@ -3,31 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rocket Game</title>
+    <title>Rocket Cash Hub</title>
     <script src="https://telegram.org"></script>
     <link rel="stylesheet" href="https://cloudflare.com">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #07080c; color: #fff; margin: 0; padding: 0; overflow: hidden; user-select: none; text-align: center; }
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; direction: rtl; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #111424; border-bottom: 1px solid #1f2544; direction: rtl; align-items: center; }
+        .profile-zone { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; background: #0066ff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #1f2544; }
         .balance-box { background: #1a1f37; padding: 8px 15px; border-radius: 20px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 5px; direction: ltr; }
-        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 8px; }
+        .admin-badge { background: #ff3366; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .player-badge { background: #0066ff; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
         .game-container { padding: 20px; height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .rocket-zone { font-size: 80px; margin-bottom: 20px; transition: transform 0.1s linear; transform: translateY(0); }
-        .multiplier { font-size: 55px; font-weight: bold; color: #fff; margin-bottom: 10px; }
-        .status-text { font-size: 18px; color: #8a92b2; height: 25px; }
+        .rocket-zone { font-size: 80px; margin-bottom: 20px; transition: transform 0.05s linear; }
+        .multiplier { font-size: 55px; font-weight: bold; color: #fff; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .status-text { font-size: 16px; color: #8a92b2; height: 25px; font-weight: 500; }
         .controls { padding: 20px; background: #111424; position: absolute; bottom: 0; left: 0; right: 0; }
-        .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); }
+        .btn { background: #0066ff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,102,255,0.4); transition: all 0.2s; }
         .btn.cashout { background: #00ffcc; color: #07080c; box-shadow: 0 4px 15px rgba(0,255,204,0.4); }
-        .btn:disabled { background: #3a3f58; color: #686d87; box-shadow: none; }
+        .btn:disabled { background: #3a3f58; color: #686d87; box-shadow: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fas fa-user-astronaut" style="font-size:20px; color:#0066ff;"></i>
-            <span id="username">اللاعب</span>
-            <span id="admin-tag" class="admin-badge">المالك</span>
+        <div class="profile-zone">
+            <div id="user-avatar" class="avatar">⚙️</div>
+            <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+                <span id="username" style="font-weight:bold; font-size:14px;">جاري التحميل...</span>
+                <span id="role-tag" class="player-badge">لاعب</span>
+            </div>
         </div>
         <div class="balance-box">
             <i class="fas fa-gem"></i>
@@ -38,7 +43,7 @@
     <div class="game-container">
         <div id="rocket" class="rocket-zone">🚀</div>
         <div id="multiplier" class="multiplier">1.00x</div>
-        <div id="status" class="status-text">بانتظار بدء الجولة تلقائياً...</div>
+        <div id="status" class="status-text">بانتظار الجولة القادمة...</div>
     </div>
 
     <div class="controls">
@@ -49,9 +54,19 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const telegramId = tg.initDataUnsafe?.user?.id || "7385640899"; 
-        const firstName = tg.initDataUnsafe?.user?.first_name || "المدير";
+        // جلب البيانات الحقيقية من حساب التيليجرام الفعلي بالـ SDK الرسمي
+        const telegramId = String(tg.initDataUnsafe?.user?.id || "7385640899"); 
+        const firstName = tg.initDataUnsafe?.user?.first_name || "المطور";
+        
         document.getElementById('username').innerText = firstName;
+        document.getElementById('user-avatar').innerText = firstName.charAt(0).toUpperCase();
+
+        // شرط التحقق الحقيقي الصارم: المالك فقط من يظهر له شارة الأدمن
+        if (telegramId === "7385640899") {
+            const role = document.getElementById('role-tag');
+            role.innerText = "المالك";
+            role.className = "admin-badge";
+        }
 
         let currentBalance = 1000.00;
         let isGameRunning = false;
@@ -59,8 +74,7 @@
         let currentMultiplier = 1.00;
         let loopInterval;
 
-        // نظام المحاكاة التلقائية الفورية للجولات بدون توقف
-        function startAutoGameLoop() {
+        function startLiveGameLoop() {
             if (isGameRunning) return;
             
             const btn = document.getElementById('action-btn');
@@ -70,6 +84,7 @@
 
             isGameRunning = true;
             currentMultiplier = 1.00;
+            rocket.innerText = "🚀";
             rocket.style.transform = "none";
             status.innerText = "الصاروخ يحلّق الآن الحين...";
             
@@ -78,29 +93,30 @@
                 btn.className = "btn cashout";
                 btn.disabled = false;
             } else {
-                btn.innerText = "الجولة بدأت (فاتك الرهان)";
+                btn.innerText = "جاري الطيران أونلاين...";
                 btn.disabled = true;
             }
 
             loopInterval = setInterval(() => {
-                currentMultiplier += 0.04;
+                currentMultiplier += 0.03;
                 multText.innerText = currentMultiplier.toFixed(2) + "x";
-                rocket.style.transform = `translateY(-${(currentMultiplier-1)*25}px) scale(${1 + (currentMultiplier-1)*0.03})`;
+                // حركة حركية تفاعلية دقيقة للارتفاع
+                rocket.style.transform = `translateY(-${(currentMultiplier-1)*35}px) scale(${1 + (currentMultiplier-1)*0.02})`;
 
-                // تحديد نقطة الانفجار العشوائية للصاروخ أونلاين
-                if (currentMultiplier > 1.20 && Math.random() < 0.02) {
+                // نقطة انفجار ديناميكية عشوائية
+                if (currentMultiplier > 1.15 && Math.random() < 0.025) {
                     clearInterval(loopInterval);
                     explodeRocket();
                 }
-            }, 100);
+            }, 80);
         }
 
         function explodeRocket() {
             isGameRunning = false;
             hasBet = false;
-            document.getElementById('rocket').style.transform = "scale(1.5)";
             document.getElementById('rocket').innerText = "💥";
-            document.getElementById('status').innerText = "انفجر الصاروخ! جولة جديدة خلال ثوانٍ...";
+            document.getElementById('rocket').style.transform = "scale(1.4)";
+            document.getElementById('status').innerText = "انفجر الصاروخ! جولة جديدة ستبدأ...";
             
             const btn = document.getElementById('action-btn');
             btn.innerText = "BET";
@@ -108,37 +124,34 @@
             btn.disabled = false;
 
             setTimeout(() => {
-                document.getElementById('rocket').innerText = "🚀";
-                document.getElementById('rocket').style.transform = "none";
                 document.getElementById('multiplier').innerText = "1.00x";
-                startAutoGameLoop();
-            }, 4000); // 4 ثوانٍ بين كل جولة وجولة تلقائياً
+                document.getElementById('status').innerText = "بانتظار بدء الجولة تلقائياً...";
+                startLiveGameLoop();
+            }, 3500); 
         }
 
         function handleAction() {
             const btn = document.getElementById('action-btn');
             if (!isGameRunning && !hasBet) {
                 hasBet = true;
-                currentBalance -= 100; // خصم رهان تجريبي
+                currentBalance -= 100;
                 document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                btn.innerText = "تم قبول الرهان.. بانتظار الإقلاع";
+                btn.innerText = "تم قبول الرهان..";
                 btn.disabled = true;
             } else if (isGameRunning && hasBet) {
-                // عملية كاش أوت ناجحة
                 hasBet = false;
                 const winAmount = 100 * currentMultiplier;
                 currentBalance += winAmount;
                 document.getElementById('balance').innerText = currentBalance.toFixed(2);
-                document.getElementById('status').innerText = `كاش أوت ناجح! فزت بـ +${winAmount.toFixed(0)} 💎`;
-                
-                btn.innerText = "انتظر الجولة التالية";
+                document.getElementById('status').innerText = `فزت بـ +${winAmount.toFixed(1)} 💎`;
+                btn.innerText = "انتظر الجولة القادمة";
                 btn.className = "btn";
                 btn.disabled = true;
             }
         }
 
-        // إطلاق الحركة التلقائية فور فتح الشاشة
-        setTimeout(startAutoGameLoop, 2000);
+        // إطلاق فوري للحركة التلقائية والدوران عند الدخول
+        setTimeout(startLiveGameLoop, 1500);
     </script>
 </body>
 </html>
