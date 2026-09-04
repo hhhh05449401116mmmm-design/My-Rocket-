@@ -1,17 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <title>Rocket Cash Hub Pro</title>
+    <title>Rocket Cash Hub Ultra</title>
 
-    <!-- Telegram Mini App -->
     <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
 
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #07080c;
             color: #fff;
             margin: 0;
@@ -28,26 +27,33 @@
             background: #111424;
             border-bottom: 1px solid #1f2544;
             align-items: center;
-            direction: rtl;
         }
 
         .profile-zone {
             display: flex;
             align-items: center;
             gap: 10px;
+            order: 1;
+            text-align: left;
         }
 
-        .avatar {
+        .avatar-container {
             width: 38px;
             height: 38px;
             border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #1f2544;
             background: linear-gradient(135deg, #0066ff, #00ffcc);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
             font-weight: bold;
-            border: 2px solid #1f2544;
+        }
+
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .balances-wrapper {
@@ -55,6 +61,7 @@
             flex-direction: column;
             gap: 5px;
             align-items: flex-end;
+            order: 2;
         }
 
         .balance-box {
@@ -82,18 +89,24 @@
 
         .admin-badge {
             background: #ff3366;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
             font-weight: bold;
+            margin-top: 2px;
+            display: inline-block;
+            width: fit-content;
         }
 
         .player-badge {
             background: #0066ff;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
             font-weight: bold;
+            margin-top: 2px;
+            display: inline-block;
+            width: fit-content;
         }
 
         .game-container {
@@ -107,11 +120,30 @@
             background: radial-gradient(circle at center, #11152b 0%, #07080c 70%);
         }
 
+        .rocket-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.08s linear;
+        }
+
         .rocket-zone {
             font-size: 85px;
-            margin-bottom: 15px;
-            transition: transform 0.08s linear;
             filter: drop-shadow(0 0 15px rgba(255,102,0,0.4));
+            z-index: 2;
+        }
+
+        .jet-trail {
+            width: 8px;
+            height: 0px;
+            background: linear-gradient(to bottom, #ffaa00, #ff3300, transparent);
+            opacity: 0;
+            transition: height 0.08s linear, opacity 0.1s;
+            border-radius: 4px;
+            box-shadow: 0 0 12px #ff5500;
+            margin-top: -10px;
+            z-index: 1;
         }
 
         .multiplier {
@@ -261,37 +293,55 @@
     <div class="header">
 
         <div class="profile-zone">
-            <div id="user-avatar" class="avatar">⚙️</div>
 
-            <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-                <span id="username" style="font-weight:bold; font-size:14px;">
+            <div id="avatar-box" class="avatar-container">
+                ⚙️
+            </div>
+
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+
+                <span id="username"
+                      style="font-weight:bold; font-size:14px; color:#fff;">
                     جاري التحميل...
                 </span>
 
                 <span id="role-tag" class="player-badge">
                     لاعب
                 </span>
+
             </div>
+
         </div>
 
         <div class="balances-wrapper">
 
             <div class="balance-box ton">
-                💎 <span id="ton-balance">100.00</span> TON
+                <i class="fas fa-wallet"></i>
+                <span id="ton-balance">100.00</span>
+                TON
             </div>
 
             <div class="balance-box gems">
-                💠 <span id="gems-balance">1000.00</span>
+                <i class="fas fa-gem"></i>
+                <span id="gems-balance">1000.00</span>
+                💎
             </div>
 
         </div>
 
     </div>
 
+
     <div class="game-container">
 
-        <div id="rocket" class="rocket-zone">
-            🚀
+        <div id="rocket-container" class="rocket-wrapper">
+
+            <div id="rocket" class="rocket-zone">
+                🚀
+            </div>
+
+            <div id="trail" class="jet-trail"></div>
+
         </div>
 
         <div id="multiplier" class="multiplier">
@@ -306,35 +356,42 @@
 
     </div>
 
+
     <div class="controls">
 
         <div class="selector-row">
 
-            <button id="mode-ton"
-                    class="selector-btn active ton"
-                    onclick="switchMode('ton')">
-                💎 اللعب بالـ TON
+            <button
+                id="mode-ton"
+                class="selector-btn active ton"
+                onclick="switchMode('ton')">
+                <i class="fas fa-wallet"></i>
+                اللعب بالـ TON
             </button>
 
-            <button id="mode-gems"
-                    class="selector-btn"
-                    onclick="switchMode('gems')">
-                💠 اللعب بالهدايا
+            <button
+                id="mode-gems"
+                class="selector-btn gems"
+                onclick="switchMode('gems')">
+                <i class="fas fa-gem"></i>
+                اللعب بالهدايا 💎
             </button>
 
         </div>
 
+
         <div class="auto-cashout-row">
 
             <span style="font-size:13px;color:#8a92b2;font-weight:bold;">
-                السحب التلقائي:
+                سحب تلقائي:
             </span>
 
             <div class="auto-input-zone">
 
-                <button id="auto-toggle"
-                        class="toggle-btn"
-                        onclick="toggleAutoCashout()">
+                <button
+                    id="auto-toggle"
+                    class="toggle-btn"
+                    onclick="toggleAutoCashout()">
                     مغلق
                 </button>
 
@@ -344,8 +401,7 @@
                     class="auto-input"
                     value="2.00"
                     step="0.1"
-                    min="1.1"
-                >
+                    min="1.1">
 
                 <span style="font-size:12px;color:#8a92b2;">
                     x
@@ -355,9 +411,11 @@
 
         </div>
 
-        <button id="action-btn"
-                class="btn"
-                onclick="handleAction()">
+
+        <button
+            id="action-btn"
+            class="btn"
+            onclick="handleAction()">
             BET
         </button>
 
@@ -365,10 +423,6 @@
 
 
 <script>
-
-    /* =========================
-       TELEGRAM
-    ========================= */
 
     const tg = window.Telegram?.WebApp || null;
 
@@ -378,28 +432,37 @@
     }
 
 
-    /* =========================
-       USER
-    ========================= */
-
-    const telegramUser = tg?.initDataUnsafe?.user || null;
-
     const telegramId = String(
-        telegramUser?.id || "7385640899"
+        tg?.initDataUnsafe?.user?.id || "7385640899"
     );
 
     const firstName =
-        telegramUser?.first_name || "المطور";
+        tg?.initDataUnsafe?.user?.first_name || "المطور";
+
+    const userPhoto =
+        tg?.initDataUnsafe?.user?.photo_url;
 
 
     document.getElementById("username").innerText =
         firstName;
 
-    document.getElementById("user-avatar").innerText =
-        firstName.charAt(0).toUpperCase();
+
+    const avatarBox =
+        document.getElementById("avatar-box");
 
 
-    /* المالك */
+    if (userPhoto) {
+
+        avatarBox.innerHTML =
+            `<img src="${userPhoto}" alt="profile">`;
+
+    } else {
+
+        avatarBox.innerText =
+            firstName.charAt(0).toUpperCase();
+    }
+
+
     if (telegramId === "7385640899") {
 
         const role =
@@ -409,10 +472,6 @@
         role.className = "admin-badge";
     }
 
-
-    /* =========================
-       GAME VARIABLES
-    ========================= */
 
     let tonBalance = 100.00;
     let gemsBalance = 1000.00;
@@ -425,14 +484,9 @@
     let currentMultiplier = 1.00;
 
     let loopInterval = null;
-    let countdownTimer = null;
 
     let autoCashoutEnabled = false;
 
-
-    /* =========================
-       MODE
-    ========================= */
 
     function switchMode(mode) {
 
@@ -442,64 +496,44 @@
 
         currentMode = mode;
 
-        const tonButton =
-            document.getElementById("mode-ton");
-
-        const gemsButton =
-            document.getElementById("mode-gems");
-
-
-        tonButton.className =
+        document.getElementById("mode-ton").className =
             "selector-btn" +
             (mode === "ton" ? " active ton" : "");
 
-
-        gemsButton.className =
+        document.getElementById("mode-gems").className =
             "selector-btn" +
             (mode === "gems" ? " active gems" : "");
     }
 
-
-    /* =========================
-       AUTO CASHOUT
-    ========================= */
 
     function toggleAutoCashout() {
 
         autoCashoutEnabled =
             !autoCashoutEnabled;
 
-        const button =
+        const btn =
             document.getElementById("auto-toggle");
 
-
-        button.className =
+        btn.className =
             "toggle-btn" +
             (autoCashoutEnabled ? " active" : "");
 
-
-        button.innerText =
+        btn.innerText =
             autoCashoutEnabled
                 ? "مفعّل"
                 : "مغلق";
     }
 
 
-    /* =========================
-       COUNTDOWN
-    ========================= */
-
     function runCountdown(seconds) {
 
-        clearTimeout(countdownTimer);
-
-        const countdown =
+        const countdownText =
             document.getElementById("countdown");
 
         const status =
             document.getElementById("status");
 
-        const button =
+        const btn =
             document.getElementById("action-btn");
 
 
@@ -508,168 +542,167 @@
             status.innerText =
                 "الجولة القادمة تبدأ خلال:";
 
-            countdown.innerText =
+            countdownText.innerText =
                 seconds + " ثوانٍ";
 
 
             if (!hasBet) {
 
-                button.innerText = "BET";
-                button.className = "btn";
-                button.disabled = false;
+                btn.innerText = "BET";
+                btn.className = "btn";
+                btn.disabled = false;
             }
 
 
-            countdownTimer =
-                setTimeout(
-                    () => runCountdown(seconds - 1),
-                    1000
-                );
+            setTimeout(
+                () => runCountdown(seconds - 1),
+                1000
+            );
 
         } else {
 
-            countdown.innerText = "";
+            countdownText.innerText = "";
 
             startLiveGameLoop();
         }
     }
 
 
-    /* =========================
-       START GAME
-    ========================= */
-
     function startLiveGameLoop() {
-
-        if (isGameRunning) {
-            return;
-        }
 
         isGameRunning = true;
 
         currentMultiplier = 1.00;
 
 
-        const button =
+        const btn =
             document.getElementById("action-btn");
+
+        const rocketCont =
+            document.getElementById("rocket-container");
 
         const rocket =
             document.getElementById("rocket");
 
+        const trail =
+            document.getElementById("trail");
+
         const status =
             document.getElementById("status");
 
-        const multiplier =
+        const multText =
             document.getElementById("multiplier");
 
 
         rocket.innerText = "🚀";
 
-        rocket.style.transform =
-            "none";
+        rocketCont.style.transform = "none";
 
+        trail.style.opacity = "1";
 
         status.innerText =
-            "الصاروخ يحلّق الآن...";
+            "الصاروخ يحلّق الآن في الفضاء الحين...";
 
 
         if (hasBet) {
 
-            button.innerText =
-                "CASH OUT";
+            btn.innerText = "CASH OUT";
 
-            button.className =
-                "btn cashout";
+            btn.className = "btn cashout";
 
-            button.disabled = false;
+            btn.disabled = false;
 
         } else {
 
-            button.innerText =
+            btn.innerText =
                 "جاري الطيران.. انتظر الجولة التالية";
 
-            button.disabled = true;
+            btn.className = "btn";
+
+            btn.disabled = true;
         }
 
 
         clearInterval(loopInterval);
 
 
-        loopInterval =
-            setInterval(() => {
+        loopInterval = setInterval(() => {
 
-                currentMultiplier += 0.03;
-
-
-                multiplier.innerText =
-                    currentMultiplier.toFixed(2) + "x";
+            currentMultiplier += 0.03;
 
 
-                /* حركة الصاروخ */
-
-                const yMove =
-                    (currentMultiplier - 1) * 45;
-
-                const scaleMove =
-                    1 +
-                    (currentMultiplier - 1) * 0.025;
+            multText.innerText =
+                currentMultiplier.toFixed(2) + "x";
 
 
-                rocket.style.transform =
-                    `translateY(-${yMove}px)
-                     scale(${scaleMove})
-                     rotate(-15deg)`;
+            /* صعود ديناميكي للصاروخ */
+
+            const yMove =
+                (currentMultiplier - 1) * 45;
+
+            const scaleMove =
+                1 +
+                (currentMultiplier - 1) * 0.025;
 
 
-                /* السحب التلقائي */
+            rocketCont.style.transform =
+                `translateY(-${yMove}px)
+                 scale(${scaleMove})
+                 rotate(-15deg)`;
+
+
+            /* خط النار */
+
+            trail.style.height =
+                `${Math.min(
+                    30,
+                    (currentMultiplier - 1) * 20
+                )}px`;
+
+
+            /* السحب التلقائي */
+
+            if (
+                hasBet &&
+                autoCashoutEnabled
+            ) {
+
+                const targetTarget =
+                    parseFloat(
+                        document.getElementById(
+                            "auto-multiplier"
+                        ).value
+                    );
+
 
                 if (
-                    hasBet &&
-                    autoCashoutEnabled
-                ) {
-
-                    const target =
-                        parseFloat(
-                            document.getElementById(
-                                "auto-multiplier"
-                            ).value
-                        );
-
-
-                    if (
-                        Number.isFinite(target) &&
-                        target >= 1.1 &&
-                        currentMultiplier >= target
-                    ) {
-
-                        clearInterval(loopInterval);
-
-                        cashOut();
-
-                        return;
-                    }
-                }
-
-
-                /* الانفجار */
-
-                if (
-                    currentMultiplier > 1.12 &&
-                    Math.random() < 0.024
+                    currentMultiplier >= targetTarget
                 ) {
 
                     clearInterval(loopInterval);
 
-                    explodeRocket();
-                }
+                    cashOut();
 
-            }, 80);
+                    return;
+                }
+            }
+
+
+            /* الانفجار العشوائي */
+
+            if (
+                currentMultiplier > 1.12 &&
+                Math.random() < 0.024
+            ) {
+
+                clearInterval(loopInterval);
+
+                explodeRocket();
+            }
+
+        }, 80);
     }
 
-
-    /* =========================
-       EXPLOSION
-    ========================= */
 
     function explodeRocket() {
 
@@ -678,40 +711,54 @@
         hasBet = false;
 
 
-        const rocket =
-            document.getElementById("rocket");
+        document.getElementById(
+            "trail"
+        ).style.opacity = "0";
 
-        const status =
-            document.getElementById("status");
 
-        const button =
+        document.getElementById(
+            "rocket"
+        ).innerText = "💥";
+
+
+        document.getElementById(
+            "rocket-container"
+        ).style.transform = "scale(1.4)";
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "انفجر الصاروخ بربح ضائع!";
+
+
+        const btn =
             document.getElementById("action-btn");
 
 
-        rocket.innerText = "💥";
+        btn.innerText = "BET";
 
-        rocket.style.transform =
-            "scale(1.4)";
+        btn.className = "btn";
 
-
-        status.innerText =
-            "انفجر الصاروخ!";
-
-
-        button.innerText =
-            "BET";
-
-        button.className =
-            "btn";
-
-        button.disabled = false;
+        btn.disabled = false;
 
 
         setTimeout(() => {
 
             document.getElementById(
+                "rocket"
+            ).innerText = "🚀";
+
+
+            document.getElementById(
+                "rocket-container"
+            ).style.transform = "none";
+
+
+            document.getElementById(
                 "multiplier"
             ).innerText = "1.00x";
+
 
             runCountdown(5);
 
@@ -719,30 +766,21 @@
     }
 
 
-    /* =========================
-       BET / CASH OUT
-    ========================= */
-
     function handleAction() {
 
-        const button =
+        const btn =
             document.getElementById("action-btn");
 
 
-        /* وضع الرهان */
-
         if (!isGameRunning && !hasBet) {
+
+            hasBet = true;
+
 
             if (currentMode === "ton") {
 
-                if (tonBalance < 10) {
+                tonBalance -= 0.1;
 
-                    alert("رصيد TON غير كافٍ.");
-
-                    return;
-                }
-
-                tonBalance -= 10;
 
                 document.getElementById(
                     "ton-balance"
@@ -751,14 +789,8 @@
 
             } else {
 
-                if (gemsBalance < 100) {
-
-                    alert("رصيد الهدايا غير كافٍ.");
-
-                    return;
-                }
-
                 gemsBalance -= 100;
+
 
                 document.getElementById(
                     "gems-balance"
@@ -767,21 +799,16 @@
             }
 
 
-            hasBet = true;
-
-
-            button.innerText =
+            btn.innerText =
                 "تم قبول الرهان..";
 
-            button.disabled = true;
-
-            return;
-        }
+            btn.disabled = true;
 
 
-        /* Cash Out */
-
-        if (isGameRunning && hasBet) {
+        } else if (
+            isGameRunning &&
+            hasBet
+        ) {
 
             clearInterval(loopInterval);
 
@@ -790,28 +817,26 @@
     }
 
 
-    /* =========================
-       CASH OUT
-    ========================= */
-
     function cashOut() {
 
-        if (!hasBet) {
-            return;
-        }
-
         isGameRunning = false;
+
         hasBet = false;
 
 
-        const finalMultiplier =
+        document.getElementById(
+            "trail"
+        ).style.opacity = "0";
+
+
+        const finalMult =
             currentMultiplier;
 
 
         if (currentMode === "ton") {
 
             const winAmount =
-                10 * finalMultiplier;
+                0.1 * finalMult;
 
 
             tonBalance += winAmount;
@@ -826,12 +851,13 @@
             document.getElementById(
                 "status"
             ).innerText =
-                `كاش أوت آمن! فزت بـ +${winAmount.toFixed(2)} TON`;
+                `كاش أوت آمن! فزت بـ +${winAmount.toFixed(3)} TON 💎`;
+
 
         } else {
 
             const winAmount =
-                100 * finalMultiplier;
+                100 * finalMult;
 
 
             gemsBalance += winAmount;
@@ -850,15 +876,15 @@
         }
 
 
-        const button =
+        const btn =
             document.getElementById("action-btn");
 
 
-        button.innerText = "BET";
+        btn.innerText = "BET";
 
-        button.className = "btn";
+        btn.className = "btn";
 
-        button.disabled = false;
+        btn.disabled = false;
 
 
         setTimeout(() => {
@@ -867,15 +893,12 @@
                 "multiplier"
             ).innerText = "1.00x";
 
+
             runCountdown(5);
 
         }, 3000);
     }
 
-
-    /* =========================
-       START
-    ========================= */
 
     runCountdown(5);
 
