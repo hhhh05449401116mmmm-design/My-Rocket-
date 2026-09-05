@@ -1475,7 +1475,9 @@ Place bet
 </nav>
 
 
-<!-- BET MODAL -->
+<!-- =========================================
+BET MODAL
+========================================= -->
 
 <div
     id="bet-modal"
@@ -1554,11 +1556,12 @@ Bet Amount
 <input
     id="modal-amount-input"
     class="modal-amount-input"
-    type="text"
+    type="number"
     inputmode="decimal"
-    autocomplete="off"
-    value="0.10"
-    placeholder="0.10"
+    min="0.01"
+    step="0.01"
+    value="1.00"
+    placeholder="TON amount"
 >
 
 <span class="amount-ton-icon">
@@ -1605,9 +1608,10 @@ Auto cashout
 <input
     id="auto-target-input"
     class="auto-target-input"
-    type="text"
+    type="number"
     inputmode="decimal"
-    autocomplete="off"
+    min="1.01"
+    step="0.01"
     value="2.00"
 >
 
@@ -1644,7 +1648,9 @@ Place TON Bet 🚀
 </div>
 
 
-<!-- DEPOSIT MODAL -->
+<!-- =========================================
+DEPOSIT MODAL
+========================================= -->
 
 <div
     id="deposit-modal"
@@ -1714,11 +1720,12 @@ TON Wallet: غير متصلة
 <input
     id="deposit-amount-input"
     class="modal-amount-input"
-    type="text"
+    type="number"
     inputmode="decimal"
-    autocomplete="off"
-    value="0.10"
-    placeholder="0.10"
+    min="0.01"
+    step="0.01"
+    value="1.00"
+    placeholder="0.00"
 >
 
 <span class="amount-ton-icon">
@@ -1759,7 +1766,9 @@ TON Wallet: غير متصلة
 </div>
 
 
-<!-- PROFILE MODAL -->
+<!-- =========================================
+PROFILE MODAL
+========================================= -->
 
 <div
     id="profile-modal"
@@ -1821,7 +1830,9 @@ TON Wallet: غير متصلة
 </div>
 
 
-<!-- TOP MODAL -->
+<!-- =========================================
+TOP MODAL
+========================================= -->
 
 <div
     id="top-modal"
@@ -1863,7 +1874,9 @@ TON Wallet: غير متصلة
 </div>
 
 
-<!-- GIFTS MODAL -->
+<!-- =========================================
+GIFTS MODAL
+========================================= -->
 
 <div
     id="gifts-modal"
@@ -1905,6 +1918,7 @@ TON Wallet: غير متصلة
 
 
 <script>
+
 
 /* =========================================
 TELEGRAM
@@ -2004,13 +2018,9 @@ let autoCashoutEnabled = false;
 
 let autoCashoutTarget = 2.00;
 
-/*
-الاقتراح الافتراضي للرهان:
-0.10 TON
-وهو اقتراح فقط وليس حداً أدنى للرهان.
-*/
+let userBetAmount = 1.00;
 
-let userBetAmount = 0.10;
+let tonBalance = 0;
 
 let pendingNextBet = null;
 
@@ -2942,170 +2952,7 @@ function updateSelfState(self){
 
 
 /* =========================================
-AMOUNT PARSER
-========================================= */
-
-function parseDecimalAmount(value){
-
-    if(
-        value === null ||
-        typeof value === "undefined"
-    ){
-
-        return null;
-
-    }
-
-
-    let text =
-        String(value)
-            .trim()
-            .replace(/\s+/g,"")
-            .replace(/,/g,".");
-
-
-    /*
-    السماح بالأرقام والنقطة فقط
-    */
-
-    text =
-        text.replace(
-            /[^0-9.]/g,
-            ""
-        );
-
-
-    /*
-    منع وجود أكثر من نقطة
-    */
-
-    const firstDot =
-        text.indexOf(".");
-
-
-    if(firstDot !== -1){
-
-        text =
-            text.slice(
-                0,
-                firstDot + 1
-            ) +
-            text
-                .slice(
-                    firstDot + 1
-                )
-                .replace(
-                    /\./g,
-                    ""
-                );
-
-    }
-
-
-    if(!text){
-
-        return null;
-
-    }
-
-
-    const number =
-        Number(text);
-
-
-    if(
-        !Number.isFinite(number)
-    ){
-
-        return null;
-
-    }
-
-
-    return number;
-
-}
-
-
-/* =========================================
-NORMALIZE DECIMAL INPUT
-========================================= */
-
-function normalizeDecimalInput(input){
-
-    if(!input){
-        return;
-    }
-
-
-    let value =
-        String(
-            input.value || ""
-        );
-
-
-    /*
-    تحويل الفاصلة العربية/العادية
-    إلى نقطة عشرية.
-
-    مثال:
-    0,10 -> 0.10
-    1,5  -> 1.5
-    */
-
-    value =
-        value.replace(
-            /,/g,
-            "."
-        );
-
-
-    /*
-    السماح بالأرقام والنقطة فقط
-    */
-
-    value =
-        value.replace(
-            /[^0-9.]/g,
-            ""
-        );
-
-
-    /*
-    منع أكثر من نقطة
-    */
-
-    const dotIndex =
-        value.indexOf(".");
-
-
-    if(dotIndex !== -1){
-
-        value =
-            value.slice(
-                0,
-                dotIndex + 1
-            ) +
-            value
-                .slice(
-                    dotIndex + 1
-                )
-                .replace(
-                    /\./g,
-                    ""
-                );
-
-    }
-
-
-    input.value =
-        value;
-
-}
-
-
-/* =========================================
-SYNC AMOUNT INPUT
+AMOUNT INPUT
 ========================================= */
 
 function syncAmountInput(){
@@ -3118,19 +2965,10 @@ function syncAmountInput(){
 
     if(input){
 
-        const amount =
+        input.value =
             Number(
                 userBetAmount
-            );
-
-
-        input.value =
-            Number.isFinite(amount) &&
-            amount > 0
-
-                ? amount.toFixed(2)
-
-                : "0.10";
+            ).toFixed(2);
 
     }
 
@@ -4379,7 +4217,7 @@ function readAutoCashout(){
 
 
     const value =
-        parseDecimalAmount(
+        Number(
             input?.value
         );
 
@@ -4439,13 +4277,13 @@ function readBetAmount(){
 
 
     const value =
-        parseDecimalAmount(
+        Number(
             input?.value
         );
 
 
     if(
-        value === null ||
+        !Number.isFinite(value) ||
         value <= 0
     ){
 
@@ -5072,30 +4910,6 @@ function openDeposit(){
     }
 
 
-    /*
-    الاقتراح الافتراضي:
-    0.10 TON
-
-    اللاعب يستطيع تغييره.
-    */
-
-    const amountInput =
-        document.getElementById(
-            "deposit-amount-input"
-        );
-
-
-    if(
-        amountInput &&
-        !amountInput.value
-    ){
-
-        amountInput.value =
-            "0.10";
-
-    }
-
-
     updateDepositWalletUI();
 
 
@@ -5201,19 +5015,14 @@ function readDepositAmount(){
 
 
     const amount =
-        parseDecimalAmount(
+        Number(
             input?.value
         );
 
 
-    /*
-    الحد الأدنى للإيداع:
-    0.10 TON
-    */
-
     if(
-        amount === null ||
-        amount < 0.10
+        !Number.isFinite(amount) ||
+        amount < 0.01
     ){
 
         return null;
@@ -5221,14 +5030,7 @@ function readDepositAmount(){
     }
 
 
-    /*
-    الحد الأعلى:
-    100000 TON
-    */
-
-    if(
-        amount > 100000
-    ){
+    if(amount > 100000){
 
         return null;
 
@@ -5301,6 +5103,16 @@ function bytesToBase64(bytes){
 
 /* =========================================
 CREATE TON COMMENT CELL BOC
+=========================================
+
+TON comment cell:
+
+32 bits:
+0 opcode
+
+ثم UTF-8 comment
+
+النتيجة BOC Base64
 ========================================= */
 
 function createTonCommentPayload(
@@ -5313,15 +5125,39 @@ function createTonCommentPayload(
         );
 
 
+    /*
+    4 bytes opcode
+    + comment bytes
+    */
+
     const dataLength =
         4 +
         textBytes.length;
 
 
+    /*
+    One ordinary cell,
+    no refs,
+    byte-aligned data.
+    */
+
     const cellSize =
         2 +
         dataLength;
 
+
+    /*
+    BOC header:
+
+    magic
+    flags
+    offset bytes
+    cells
+    roots
+    absent
+    total cells size
+    root index
+    */
 
     const totalSize =
         cellSize;
@@ -5346,29 +5182,61 @@ function createTonCommentPayload(
         0x72;
 
 
+    /*
+    has_idx = 0
+    has_crc32c = 0
+    has_cache_bits = 0
+    flags = 0
+    size_bytes = 1
+    */
+
     header[4] =
         0x01;
 
+
+    /*
+    offset bytes
+    */
 
     header[5] =
         0x01;
 
 
+    /*
+    cells count
+    */
+
     header[6] =
         0x01;
 
+
+    /*
+    roots count
+    */
 
     header[7] =
         0x01;
 
 
+    /*
+    absent count
+    */
+
     header[8] =
         0x00;
 
 
+    /*
+    total cells size
+    */
+
     header[9] =
         totalSize;
 
+
+    /*
+    root index
+    */
 
     header[10] =
         0x00;
@@ -5380,13 +5248,27 @@ function createTonCommentPayload(
         );
 
 
+    /*
+    descriptor 1:
+    ordinary cell, no refs
+    */
+
     cell[0] =
         0x00;
 
 
+    /*
+    descriptor 2:
+    byte length * 2
+    */
+
     cell[1] =
         dataLength * 2;
 
+
+    /*
+    uint32(0)
+    */
 
     cell[2] =
         0x00;
@@ -5400,6 +5282,10 @@ function createTonCommentPayload(
     cell[5] =
         0x00;
 
+
+    /*
+    comment UTF-8
+    */
 
     cell.set(
         textBytes,
@@ -5567,7 +5453,7 @@ async function startTonDeposit(){
     if(amount === null){
 
         showToast(
-            "الحد الأدنى للإيداع هو 0.10 TON"
+            "أدخل مبلغاً بين 0.01 و 100000 TON"
         );
 
         return;
@@ -5602,7 +5488,10 @@ async function startTonDeposit(){
     try{
 
         /*
-        إنشاء طلب الإيداع في قاعدة البيانات
+        =========================================
+        STEP 1
+        CREATE DATABASE DEPOSIT
+        =========================================
         */
 
         const createData =
@@ -5612,7 +5501,9 @@ async function startTonDeposit(){
 
 
         /*
-        أخذ UUID الحقيقي للإيداع
+        Backend may return:
+        deposit.id
+        or depositId
         */
 
         const depositId =
@@ -5637,7 +5528,9 @@ async function startTonDeposit(){
 
 
         /*
-        عنوان الاستقبال
+        =========================================
+        RECEIVER
+        =========================================
         */
 
         const receiver =
@@ -5655,7 +5548,9 @@ async function startTonDeposit(){
 
 
         /*
-        المبلغ بالنانو
+        =========================================
+        AMOUNT
+        =========================================
         */
 
         const amountNano =
@@ -5667,7 +5562,13 @@ async function startTonDeposit(){
 
 
         /*
-        التعليق المرتبط بالإيداع
+        =========================================
+        COMMENT
+        =========================================
+
+        IMPORTANT:
+        The UUID must be exactly the
+        database deposit ID.
         */
 
         const comment =
@@ -5676,8 +5577,14 @@ async function startTonDeposit(){
 
 
         /*
-        Payload من السيرفر،
-        وإن لم يوجد نولده محلياً.
+        =========================================
+        PAYLOAD
+        =========================================
+
+        If backend already supplies a payload,
+        use it.
+
+        Otherwise generate it here.
         */
 
         const payload =
@@ -5696,6 +5603,12 @@ async function startTonDeposit(){
         }
 
 
+        /*
+        =========================================
+        SHOW USER
+        =========================================
+        */
+
         setDepositStatus(
             `تم تجهيز إيداع ${amount.toFixed(2)} TON. افتح محفظتك ووافق على المعاملة...`,
             "info"
@@ -5709,7 +5622,9 @@ async function startTonDeposit(){
 
 
         /*
-        معاملة TON Mainnet
+        =========================================
+        TRANSACTION
+        =========================================
         */
 
         const transaction = {
@@ -5783,6 +5698,13 @@ async function startTonDeposit(){
         depositTransactionSent =
             true;
 
+
+        /*
+        =========================================
+        STEP 3
+        WAIT FOR BACKEND DETECTION
+        =========================================
+        */
 
         setDepositStatus(
             "تم إرسال المعاملة بنجاح. جاري انتظار ظهورها على شبكة TON...",
@@ -6012,6 +5934,10 @@ async function pollDepositStatus(
                         "pending";
 
 
+                    /*
+                    PENDING
+                    */
+
                     if(
                         status ===
                         "pending"
@@ -6026,6 +5952,10 @@ async function pollDepositStatus(
 
                     }
 
+
+                    /*
+                    DETECTED
+                    */
 
                     if(
                         status ===
@@ -6042,6 +5972,10 @@ async function pollDepositStatus(
                     }
 
 
+                    /*
+                    CONFIRMED
+                    */
+
                     if(
                         status ===
                         "confirmed"
@@ -6056,6 +5990,10 @@ async function pollDepositStatus(
 
                     }
 
+
+                    /*
+                    CREDITED
+                    */
 
                     if(
                         status ===
@@ -6086,6 +6024,11 @@ async function pollDepositStatus(
                         );
 
 
+                        /*
+                        SSE BALANCE should update
+                        the actual balance.
+                        */
+
                         updateTonWalletUI();
 
 
@@ -6095,6 +6038,10 @@ async function pollDepositStatus(
 
                     }
 
+
+                    /*
+                    FAILED
+                    */
 
                     if(
                         status ===
@@ -6154,8 +6101,8 @@ async function pollDepositStatus(
 
 
                     /*
-                    خطأ مؤقت في الشبكة:
-                    لا نفشل الإيداع فوراً.
+                    Temporary network error:
+                    don't immediately fail the deposit.
                     */
 
                     if(
@@ -6640,61 +6587,21 @@ document
         "input",
         function(){
 
-            normalizeDecimalInput(
-                this
-            );
-
-
             const value =
-                parseDecimalAmount(
+                Number(
                     this.value
                 );
 
 
             if(
-                value !== null &&
+                Number.isFinite(
+                    value
+                ) &&
                 value > 0
             ){
 
                 userBetAmount =
                     value;
-
-            }
-
-        }
-    );
-
-
-/* =========================================
-DEPOSIT INPUT
-========================================= */
-
-document
-    .getElementById(
-        "deposit-amount-input"
-    )
-    ?.addEventListener(
-        "input",
-        function(){
-
-            normalizeDecimalInput(
-                this
-            );
-
-
-            const value =
-                parseDecimalAmount(
-                    this.value
-                );
-
-
-            if(
-                value !== null &&
-                value > 100000
-            ){
-
-                this.value =
-                    "100000";
 
             }
 
@@ -6714,11 +6621,6 @@ document
         "input",
         function(){
 
-            normalizeDecimalInput(
-                this
-            );
-
-
             if(playedThisRound){
 
                 this.value =
@@ -6732,13 +6634,15 @@ document
 
 
             const value =
-                parseDecimalAmount(
+                Number(
                     this.value
                 );
 
 
             if(
-                value !== null &&
+                Number.isFinite(
+                    value
+                ) &&
                 value >= 1.01
             ){
 
@@ -6747,6 +6651,40 @@ document
                         value,
                         1000
                     );
+
+            }
+
+        }
+    );
+
+
+/* =========================================
+DEPOSIT INPUT
+========================================= */
+
+document
+    .getElementById(
+        "deposit-amount-input"
+    )
+    ?.addEventListener(
+        "input",
+        function(){
+
+            let value =
+                Number(
+                    this.value
+                );
+
+
+            if(
+                Number.isFinite(
+                    value
+                ) &&
+                value > 100000
+            ){
+
+                this.value =
+                    "100000";
 
             }
 
