@@ -794,141 +794,6 @@ button:disabled{
         inset 0 1px 0 rgba(255,255,255,.10);
 
     backdrop-filter:blur(16px);
-.bottom-nav{
-    position:fixed;
-    z-index:30;
-    left:50%;
-    bottom:10px;
-    transform:translateX(-50%);
-
-    width:min(500px,calc(100% - 20px));
-    height:82px;
-
-    border-radius:26px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.08),
-            rgba(255,255,255,.025)
-        );
-
-    border:1px solid rgba(255,255,255,.14);
-
-    box-shadow:
-        0 12px 40px rgba(0,0,0,.45),
-        inset 0 1px 0 rgba(255,255,255,.08);
-
-    backdrop-filter:blur(22px);
-    -webkit-backdrop-filter:blur(22px);
-
-    display:grid;
-
-    grid-template-columns:repeat(4,1fr);
-
-    direction:rtl;
-
-    padding:7px;
-    gap:5px;
-}
-
-.nav-button{
-    position:relative;
-
-    border-radius:21px;
-
-    background:transparent;
-
-    border:1px solid transparent;
-
-    color:rgba(255,255,255,.58);
-
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-
-    gap:6px;
-
-    font-size:11px;
-    font-weight:700;
-
-    transition:
-        background .2s ease,
-        color .2s ease,
-        transform .2s ease,
-        border .2s ease,
-        box-shadow .2s ease;
-
-    overflow:hidden;
-}
-
-.nav-button::before{
-    content:"";
-
-    position:absolute;
-    inset:0;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.12),
-            rgba(255,255,255,0)
-        );
-
-    opacity:0;
-
-    transition:opacity .2s ease;
-}
-
-.nav-button:active{
-    transform:scale(.94);
-}
-
-.nav-button:active::before{
-    opacity:1;
-}
-
-.nav-icon{
-    position:relative;
-    z-index:1;
-
-    font-size:25px;
-    line-height:1;
-
-    filter:
-        drop-shadow(
-            0 2px 7px
-            rgba(255,255,255,.10)
-        );
-
-    transition:
-        transform .2s ease,
-        filter .2s ease;
-}
-
-.nav-button span:last-child{
-    position:relative;
-    z-index:1;
-}
-
-.nav-button.active{
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.16),
-            rgba(255,255,255,.045)
-        );
-
-    border:1px solid rgba(255,255,255,.20);
-
-    color:#fff;
-
-    box-shadow:
-        0 8px 24px rgba(0,0,0,.30),
-        inset 0 1px 0 rgba(255,255,255,.12);
-
-    backdrop-filter:blur(16px);
     -webkit-backdrop-filter:blur(16px);
 }
 
@@ -937,12 +802,12 @@ button:disabled{
 }
 
 .nav-button.active .nav-icon{
-    transform:translateY(-1px) scale(1.08);
+    transform:translateY(-1px) scale(1.05);
 
     filter:
         drop-shadow(
-            0 0 10px
-            rgba(255,255,255,.20)
+            0 0 9px
+            rgba(255,255,255,.16)
         );
 }
 
