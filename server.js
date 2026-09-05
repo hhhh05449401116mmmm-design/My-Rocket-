@@ -2896,42 +2896,108 @@ CRASH POINT
 */
 
 function generateCrashPoint() {
-    const r =
-        Math.random();
+    /*
+    ==============================================
+    FAIR RANDOM CRASH POINT
+    ==============================================
 
-    if (
-        r < 0.70
-    ) {
-        return Number(
-            (
-                1.01 +
-                Math.random() *
-                0.78
-            ).toFixed(2)
-        );
+    The result is generated independently from:
+    - players
+    - bets
+    - balances
+    - usernames
+    - Telegram IDs
+
+    Maximum crash point: 220x
+    */
+
+    const random =
+        crypto.randomInt(
+            0,
+            1_000_000_000
+        ) / 1_000_000_000;
+
+    let crashPoint;
+
+    if (random < 0.40) {
+
+        // 40% — 1.01x to 2.00x
+        const r =
+            crypto.randomInt(
+                0,
+                1_000_000
+            ) / 1_000_000;
+
+        crashPoint =
+            1.01 +
+            r * (2.00 - 1.01);
+
+    } else if (random < 0.75) {
+
+        // 35% — 2.01x to 5.00x
+        const r =
+            crypto.randomInt(
+                0,
+                1_000_000
+            ) / 1_000_000;
+
+        crashPoint =
+            2.01 +
+            r * (5.00 - 2.01);
+
+    } else if (random < 0.95) {
+
+        // 20% — 5.01x to 20.00x
+        const r =
+            crypto.randomInt(
+                0,
+                1_000_000
+            ) / 1_000_000;
+
+        crashPoint =
+            5.01 +
+            r * (20.00 - 5.01);
+
+    } else if (random < 0.99) {
+
+        // 4% — 20.01x to 80.00x
+        const r =
+            crypto.randomInt(
+                0,
+                1_000_000
+            ) / 1_000_000;
+
+        crashPoint =
+            20.01 +
+            r * (80.00 - 20.01);
+
+    } else {
+
+        // 1% — 80.01x to 220.00x
+        const r =
+            crypto.randomInt(
+                0,
+                1_000_000
+            ) / 1_000_000;
+
+        crashPoint =
+            80.01 +
+            r * (220.00 - 80.01);
     }
 
-    if (
-        r < 0.99
-    ) {
-        return Number(
-            (
-                1.80 +
-                Math.random() *
-                8.20
-            ).toFixed(2)
+    crashPoint =
+        Math.min(
+            220,
+            Math.max(
+                1.01,
+                crashPoint
+            )
         );
-    }
 
     return Number(
-        (
-            10.00 +
-            Math.random() *
-            25.00
-        ).toFixed(2)
+        crashPoint.toFixed(2)
     );
 }
-
 /*
 ==================================================
 COUNTDOWN
