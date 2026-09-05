@@ -1713,6 +1713,9 @@ let livePlayers = [];
 
 let hasBet = false;
 
+/* التعديل الوحيد للسحب التلقائي */
+let playedThisRound = false;
+
 let isQueuedForNextRound = false;
 
 let actionInProgress = false;
@@ -2128,10 +2131,27 @@ function handleServerMessage(data){
             "undefined"
         ){
 
-            currentRoundId =
+            const newRoundId =
                 Number(
                     data.roundId
                 );
+
+            /*
+             * التعديل الوحيد:
+             * عندما تبدأ جولة جديدة فقط
+             * يتم فتح Auto Cashout من جديد.
+             */
+            if(
+                newRoundId !==
+                currentRoundId
+            ){
+
+                currentRoundId =
+                    newRoundId;
+
+                playedThisRound =
+                    false;
+            }
         }
 
         if(
@@ -2209,6 +2229,8 @@ function handleServerMessage(data){
             trySubmitQueuedBet();
         }
 
+        updateAutoCashoutUI();
+
         return;
     }
 
@@ -2232,6 +2254,8 @@ function handleServerMessage(data){
         }
 
         renderPlayers();
+
+        updateAutoCashoutUI();
 
         return;
     }
@@ -2270,6 +2294,12 @@ function updateSelfState(self){
 
         hasBet = true;
 
+        /*
+         * اللاعب وضع رهاناً في هذه الجولة،
+         * لذلك يقفل Auto Cashout.
+         */
+        playedThisRound = true;
+
         isQueuedForNextRound =
             false;
 
@@ -2294,6 +2324,8 @@ function updateSelfState(self){
             syncAmountInput();
         }
 
+        updateAutoCashoutUI();
+
         return;
     }
 
@@ -2307,6 +2339,8 @@ function updateSelfState(self){
         isQueuedForNextRound =
             true;
 
+        updateAutoCashoutUI();
+
         return;
     }
 
@@ -2319,8 +2353,16 @@ function updateSelfState(self){
 
         hasBet = false;
 
+        /*
+         * Cash Out أو الخسارة تعني أن اللاعب
+         * لعب هذه الجولة بالفعل.
+         */
+        playedThisRound = true;
+
         isQueuedForNextRound =
             false;
+
+        updateAutoCashoutUI();
 
         return;
     }
@@ -2329,6 +2371,8 @@ function updateSelfState(self){
 
     isQueuedForNextRound =
         false;
+
+    updateAutoCashoutUI();
 }
 
 function syncAmountInput(){
@@ -2594,6 +2638,8 @@ function renderGame(){
     }
 
     updateMainBetButton();
+
+    updateAutoCashoutUI();
 }
 
 function historyClass(value){
@@ -3153,18 +3199,19 @@ function updateModalBetButton(){
     }
 }
 
+/* ================================
+   Auto Cashout - التعديل الوحيد
+   ================================ */
+
 function toggleAutoCashout(){
 
-    if(
-        gamePhase !==
-            "COUNTDOWN" &&
-        gamePhase !==
-            "CRASH"
-    ){
+    if(playedThisRound){
 
         showToast(
-            "يمكن تعديل Auto Cashout قبل أو بعد الجولة"
+            "لا يمكن تعديل Auto Cashout بعد وضع الرهان في هذه الجولة"
         );
+
+        updateAutoCashoutUI();
 
         return;
     }
@@ -3217,11 +3264,13 @@ function updateAutoCashoutUI(){
             "auto-plus"
         );
 
+    /*
+     * Auto Cashout يبقى قابلاً للتعديل
+     * ما دام اللاعب لم يضع رهاناً في الجولة.
+     */
     const editable =
-        gamePhase ===
-            "COUNTDOWN" ||
-        gamePhase ===
-            "CRASH";
+        !playedThisRound &&
+        !actionInProgress;
 
     if(switchButton){
 
@@ -3270,13 +3319,18 @@ function changeAutoTarget(
     amount
 ){
 
-    if(
-        gamePhase !==
-            "COUNTDOWN" &&
-        gamePhase !==
-            "CRASH"
-    ){
+    if(playedThisRound){
 
+        showToast(
+            "لا يمكن تعديل Auto Cashout بعد وضع الرهان في هذه الجولة"
+        );
+
+        updateAutoCashoutUI();
+
+        return;
+    }
+
+    if(actionInProgress){
         return;
     }
 
@@ -3316,6 +3370,8 @@ function changeAutoTarget(
         input.value =
             value.toFixed(2);
     }
+
+    updateAutoCashoutUI();
 }
 
 function readAutoCashout(){
@@ -3340,6 +3396,7 @@ function readAutoCashout(){
                 value,
                 1000
             );
+
     }else{
 
         autoCashoutTarget =
@@ -3602,6 +3659,14 @@ async function sendBet(
         hasBet =
             true;
 
+        /*
+         * بمجرد قبول الرهان:
+         * اللاعب لعب الجولة الحالية،
+         * لذلك Auto Cashout يقفل.
+         */
+        playedThisRound =
+            true;
+
         isQueuedForNextRound =
             false;
 
@@ -3612,6 +3677,8 @@ async function sendBet(
             false;
 
         updateMainBetButton();
+
+        updateAutoCashoutUI();
 
         showToast(
             "تم وضع الرهان"
@@ -3680,6 +3747,8 @@ async function sendBet(
             false;
 
         updateMainBetButton();
+
+        updateAutoCashoutUI();
     }
 }
 
@@ -3823,6 +3892,16 @@ async function cashout(){
         hasBet =
             false;
 
+        /*
+         * مهم جداً:
+         * لا نفتح Auto Cashout بعد Cash Out.
+         * يبقى مقفولاً حتى Round جديدة.
+         */
+        playedThisRound =
+            true;
+
+        updateAutoCashoutUI();
+
         showToast(
             "تم Cash Out بنجاح"
         );
@@ -3845,6 +3924,8 @@ async function cashout(){
             false;
 
         updateMainBetButton();
+
+        updateAutoCashoutUI();
     }
 }
 
@@ -4255,6 +4336,20 @@ document
     ?.addEventListener(
         "input",
         function(){
+
+            /*
+             * إذا كان اللاعب قد لعب الجولة،
+             * لا نسمح بتغيير الهدف.
+             */
+            if(playedThisRound){
+
+                this.value =
+                    Number(
+                        autoCashoutTarget
+                    ).toFixed(2);
+
+                return;
+            }
 
             const value =
                 Number(
