@@ -1029,6 +1029,19 @@ button:disabled{
         );
 }
 
+/* Bet Next Round يكون أزرق وواضح */
+.modal-place-button.next-round{
+    background:
+        linear-gradient(
+            110deg,
+            #16a9e9,
+            #2860e8
+        );
+    color:#fff;
+    box-shadow:
+        0 10px 25px rgba(27,104,226,.22);
+}
+
 .modal-place-button:active{
     transform:scale(.985);
 }
@@ -1713,7 +1726,6 @@ let livePlayers = [];
 
 let hasBet = false;
 
-/* التعديل الوحيد للسحب التلقائي */
 let playedThisRound = false;
 
 let isQueuedForNextRound = false;
@@ -2136,11 +2148,6 @@ function handleServerMessage(data){
                     data.roundId
                 );
 
-            /*
-             * التعديل الوحيد:
-             * عندما تبدأ جولة جديدة فقط
-             * يتم فتح Auto Cashout من جديد.
-             */
             if(
                 newRoundId !==
                 currentRoundId
@@ -2294,10 +2301,6 @@ function updateSelfState(self){
 
         hasBet = true;
 
-        /*
-         * اللاعب وضع رهاناً في هذه الجولة،
-         * لذلك يقفل Auto Cashout.
-         */
         playedThisRound = true;
 
         isQueuedForNextRound =
@@ -2353,10 +2356,6 @@ function updateSelfState(self){
 
         hasBet = false;
 
-        /*
-         * Cash Out أو الخسارة تعني أن اللاعب
-         * لعب هذه الجولة بالفعل.
-         */
         playedThisRound = true;
 
         isQueuedForNextRound =
@@ -3188,8 +3187,16 @@ function updateModalBetButton(){
             "FLIGHT"
         ){
 
+            /*
+             * أثناء الطيران اللاعب يستطيع
+             * حجز رهان للجولة القادمة.
+             * الزر يبقى ظاهر وأزرق.
+             */
+            button.className =
+                "modal-place-button next-round";
+
             button.textContent =
-                "Bet Next Round 🚀";
+                "🚀 Bet Next Round";
 
         }else{
 
@@ -3198,10 +3205,6 @@ function updateModalBetButton(){
         }
     }
 }
-
-/* ================================
-   Auto Cashout - التعديل الوحيد
-   ================================ */
 
 function toggleAutoCashout(){
 
@@ -3264,10 +3267,6 @@ function updateAutoCashoutUI(){
             "auto-plus"
         );
 
-    /*
-     * Auto Cashout يبقى قابلاً للتعديل
-     * ما دام اللاعب لم يضع رهاناً في الجولة.
-     */
     const editable =
         !playedThisRound &&
         !actionInProgress;
@@ -3659,11 +3658,6 @@ async function sendBet(
         hasBet =
             true;
 
-        /*
-         * بمجرد قبول الرهان:
-         * اللاعب لعب الجولة الحالية،
-         * لذلك Auto Cashout يقفل.
-         */
         playedThisRound =
             true;
 
@@ -3892,11 +3886,6 @@ async function cashout(){
         hasBet =
             false;
 
-        /*
-         * مهم جداً:
-         * لا نفتح Auto Cashout بعد Cash Out.
-         * يبقى مقفولاً حتى Round جديدة.
-         */
         playedThisRound =
             true;
 
@@ -4337,10 +4326,6 @@ document
         "input",
         function(){
 
-            /*
-             * إذا كان اللاعب قد لعب الجولة،
-             * لا نسمح بتغيير الهدف.
-             */
             if(playedThisRound){
 
                 this.value =
