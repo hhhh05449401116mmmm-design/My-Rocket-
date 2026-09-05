@@ -2165,7 +2165,7 @@ function initTonConnect(){
 OPEN TON WALLET
 ========================================= */
 
-function openTonWallet(){
+async function openTonWallet(){
 
     if(!tonConnectUI){
 
@@ -2174,23 +2174,79 @@ function openTonWallet(){
         );
 
         return;
+
     }
 
 
-    tonConnectUI
-        .openModal()
-        .catch(function(error){
+    try{
 
-            console.error(
-                "TON WALLET ERROR:",
-                error
-            );
+        if(tonConnectUI.connected){
 
             showToast(
-                "تعذر فتح المحفظة"
+                "جاري فصل المحفظة الحالية..."
             );
 
-        });
+            await tonConnectUI.disconnect();
+
+            tonWalletConnected =
+                false;
+
+            tonWalletAddress =
+                null;
+
+            updateTonWalletUI();
+            updateProfileWalletUI();
+            updateDepositWalletUI();
+
+            await new Promise(
+                function(resolve){
+
+                    setTimeout(
+                        resolve,
+                        500
+                    );
+
+                }
+            );
+
+        }
+
+        await tonConnectUI.openModal();
+
+    }catch(error){
+
+        console.error(
+            "TON WALLET CHANGE ERROR:",
+            error
+        );
+
+        try{
+
+            if(
+                tonConnectUI &&
+                !tonConnectUI.connected
+            ){
+
+                await tonConnectUI.openModal();
+
+                return;
+
+            }
+
+        }catch(openError){
+
+            console.error(
+                "TON WALLET OPEN ERROR:",
+                openError
+            );
+
+        }
+
+        showToast(
+            "تعذر تغيير المحفظة"
+        );
+
+    }
 
 }
 
