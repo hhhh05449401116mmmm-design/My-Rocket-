@@ -25,25 +25,24 @@ let countdownSeconds = 5;
 
 const clients = new Set();
 
-let history = [
-    1.24,
-    2.15,
-    6.40,
-    11.86,
-    27.50
-];
+let history = [1.24, 2.15, 6.40, 11.86, 27.50];
 
 /*
 ==================================================
-PLAYERS
+PLAYERS / BETS
 ==================================================
+*/
 
-Each player:
+const players = new Map();
+
+/*
+player structure:
 
 {
     telegramId,
     name,
     avatar,
+
     balance,
 
     currentBet: {
@@ -51,29 +50,10 @@ Each player:
         amount,
         autoCashout,
         autoTarget,
-        status,
-        payout,
-        cashoutMultiplier
-    },
-
-    pendingBet: {
-        roundId,
-        amount,
-        autoCashout,
-        autoTarget,
         status
     }
 }
-
-status:
-
-ACTIVE
-CASHED_OUT
-LOST
-PENDING
 */
-
-const players = new Map();
 
 /*
 ==================================================
@@ -81,49 +61,15 @@ HELPERS
 ==================================================
 */
 
-function safeNumber(value, fallback = 0) {
-
-    const n = Number(value);
-
-    if (!Number.isFinite(n)) {
-        return fallback;
-    }
-
-    return n;
-}
-
-function round4(value) {
-
-    return Number(
-        safeNumber(value).toFixed(4)
-    );
-}
-
 function send(client, data) {
-
     try {
-
         client.write(
             `data: ${JSON.stringify(data)}\n\n`
         );
-
     } catch {
-
         clients.delete(client);
     }
 }
-
-/*
-==================================================
-PUBLIC PLAYERS
-==================================================
-
-Only players who have a bet in the
-CURRENT round are displayed.
-
-This prevents old players from
-remaining in the current bettor list.
-*/
 
 function getPublicPlayers() {
 
@@ -131,36 +77,27 @@ function getPublicPlayers() {
 
     for (const player of players.values()) {
 
-        const bet = player.currentBet;
-
-        if (!bet) {
+        if (!player.currentBet) {
             continue;
         }
 
-        if (bet.roundId !== roundId) {
+        if (
+            player.currentBet.roundId !== roundId
+        ) {
             continue;
         }
 
         result.push({
             telegramId: player.telegramId,
-
-            name:
-                player.name ||
-                'اللاعب',
-
-            avatar:
-                player.avatar ||
-                '',
-
-            amount:
-                round4(bet.amount),
-
-            status:
-                bet.status,
-
+            name: player.name,
+            avatar: player.avatar || '',
+            amount: Number(
+                player.currentBet.amount.toFixed(4)
+            ),
+            status: player.currentBet.status,
             multiplier:
-                bet.status === 'CASHED_OUT'
-                    ? round4(bet.cashoutMultiplier)
+                player.currentBet.status === 'CASHED_OUT'
+                    ? player.currentBet.cashoutMultiplier
                     : null
         });
     }
@@ -168,147 +105,51 @@ function getPublicPlayers() {
     return result;
 }
 
-/*
-==================================================
-SELF STATE
-==================================================
-*/
-
 function getSelfState(telegramId) {
 
-    const id = String(telegramId || '');
+    const player = players.get(
+        String(telegramId)
+    );
 
-    const player =
-        players.get(id);
-
-    if (!player) {
-
+    if (!player || !player.currentBet) {
         return {
             state: 'none'
         };
     }
 
-    /*
-    ----------------------------------------------
-    ACTIVE CURRENT BET
-    ----------------------------------------------
-    */
+    const bet = player.currentBet;
 
-    if (
-        player.currentBet &&
-        player.currentBet.roundId === roundId
-    ) {
-
-        const bet =
-            player.currentBet;
-
-        if (bet.status === 'ACTIVE') {
-
-            return {
-                state: 'active',
-
-                amount:
-                    round4(bet.amount),
-
-                roundId:
-                    bet.roundId,
-
-                autoCashout:
-                    Boolean(
-                        bet.autoCashout
-                    ),
-
-                autoTarget:
-                    bet.autoTarget
-                        ? round4(bet.autoTarget)
-                        : null
-            };
-        }
-
-        /*
-        ------------------------------------------
-        CASHED OUT
-        ------------------------------------------
-        */
-
-        if (
-            bet.status === 'CASHED_OUT'
-        ) {
-
-            return {
-                state: 'win',
-
-                amount:
-                    round4(bet.amount),
-
-                payout:
-                    round4(bet.payout),
-
-                multiplier:
-                    round4(
-                        bet.cashoutMultiplier
-                    ),
-
-                roundId:
-                    bet.roundId
-            };
-        }
-
-        /*
-        ------------------------------------------
-        LOST
-        ------------------------------------------
-        */
-
-        if (
-            bet.status === 'LOST'
-        ) {
-
-            return {
-                state: 'lose',
-
-                amount:
-                    round4(bet.amount),
-
-                roundId:
-                    bet.roundId
-            };
-        }
+    if (bet.roundId !== roundId) {
+        return {
+            state: 'none'
+        };
     }
 
-    /*
-    ----------------------------------------------
-    PENDING NEXT ROUND
-    ----------------------------------------------
-    */
-
-    if (
-        player.pendingBet &&
-        player.pendingBet.roundId ===
-            roundId + 1
-    ) {
-
-        const bet =
-            player.pendingBet;
-
+    if (bet.status === 'ACTIVE') {
         return {
-            state: 'pending',
+            state: 'active',
+            amount: bet.amount,
+            roundId: bet.roundId,
+            autoCashout: bet.autoCashout,
+            autoTarget: bet.autoTarget
+        };
+    }
 
-            amount:
-                round4(bet.amount),
+    if (bet.status === 'CASHED_OUT') {
+        return {
+            state: 'win',
+            amount: bet.amount,
+            payout: bet.payout,
+            multiplier: bet.cashoutMultiplier,
+            roundId: bet.roundId
+        };
+    }
 
-            roundId:
-                bet.roundId,
-
-            autoCashout:
-                Boolean(
-                    bet.autoCashout
-                ),
-
-            autoTarget:
-                bet.autoTarget
-                    ? round4(bet.autoTarget)
-                    : null
+    if (bet.status === 'LOST') {
+        return {
+            state: 'lose',
+            amount: bet.amount,
+            roundId: bet.roundId
         };
     }
 
@@ -317,32 +158,19 @@ function getSelfState(telegramId) {
     };
 }
 
-/*
-==================================================
-GAME STATE
-==================================================
-*/
-
-function getState(
-    type = gameState,
-    telegramId = null
-) {
+function getState(type = gameState, telegramId = null) {
 
     return {
-
         type,
-
-        phase:
-            gameState,
+        phase: gameState,
 
         roundId,
 
-        seconds:
-            countdownSeconds,
+        seconds: countdownSeconds,
 
         multiplier:
-            round4(
-                currentMultiplier
+            Number(
+                currentMultiplier.toFixed(4)
             ),
 
         history,
@@ -352,21 +180,12 @@ function getState(
 
         self:
             telegramId
-                ? getSelfState(
-                    telegramId
-                )
+                ? getSelfState(telegramId)
                 : null,
 
-        serverTime:
-            Date.now()
+        serverTime: Date.now()
     };
 }
-
-/*
-==================================================
-BROADCAST GAME STATE
-==================================================
-*/
 
 function broadcast(
     type = gameState
@@ -376,7 +195,6 @@ function broadcast(
 
         send(
             client,
-
             getState(
                 type,
                 client.telegramId
@@ -385,16 +203,7 @@ function broadcast(
     }
 }
 
-/*
-==================================================
-BROADCAST PLAYERS
-==================================================
-*/
-
 function broadcastPlayers() {
-
-    const publicPlayers =
-        getPublicPlayers();
 
     for (const client of clients) {
 
@@ -402,147 +211,42 @@ function broadcastPlayers() {
             client,
             {
                 type: 'PLAYERS',
-
-                players:
-                    publicPlayers,
-
-                self:
-                    getSelfState(
-                        client.telegramId
-                    ),
-
-                serverTime:
-                    Date.now()
+                players: getPublicPlayers(),
+                self: getSelfState(
+                    client.telegramId
+                ),
+                serverTime: Date.now()
             }
         );
     }
 }
 
-/*
-==================================================
-SEND BALANCE
-==================================================
-*/
-
 function sendBalance(client) {
 
     const player =
         players.get(
-            String(
-                client.telegramId
-            )
+            String(client.telegramId)
         );
 
     if (!player) {
         return;
     }
 
-    send(
-        client,
-        {
-            type: 'BALANCE',
+    send(client, {
+        type: 'BALANCE',
 
-            balance:
-                round4(
-                    player.balance
-                ),
+        /*
+        Temporary internal balance.
+        This is NOT blockchain money.
+        */
 
-            serverTime:
-                Date.now()
-        }
-    );
-}
+        balance:
+            Number(
+                player.balance.toFixed(4)
+            ),
 
-/*
-==================================================
-SEND BALANCE TO PLAYER
-==================================================
-*/
-
-function sendBalanceToPlayer(
-    telegramId
-) {
-
-    const id =
-        String(telegramId);
-
-    for (const client of clients) {
-
-        if (
-            String(
-                client.telegramId
-            ) === id
-        ) {
-
-            sendBalance(client);
-        }
-    }
-}
-
-/*
-==================================================
-CREATE PLAYER
-==================================================
-*/
-
-function getOrCreatePlayer({
-    telegramId,
-    name,
-    avatar
-}) {
-
-    const id =
-        String(
-            telegramId
-        );
-
-    if (!players.has(id)) {
-
-        players.set(
-            id,
-            {
-                telegramId: id,
-
-                name:
-                    name ||
-                    'اللاعب',
-
-                avatar:
-                    avatar ||
-                    '',
-
-                /*
-                ----------------------------------
-                TEMPORARY DEMO BALANCE
-                ----------------------------------
-
-                NOT blockchain money.
-                NOT Supabase money.
-                */
-
-                balance: 126.04,
-
-                currentBet: null,
-
-                pendingBet: null
-            }
-        );
-
-    } else {
-
-        const player =
-            players.get(id);
-
-        if (name) {
-            player.name = name;
-        }
-
-        if (avatar) {
-            player.avatar = avatar;
-        }
-    }
-
-    return players.get(id);
+        serverTime: Date.now()
+    });
 }
 
 /*
@@ -551,31 +255,24 @@ HOME
 ==================================================
 */
 
-app.get(
-    '/',
-    (req, res) => {
+app.get('/', (req, res) => {
 
-        res.json({
-            ok: true,
+    res.json({
+        ok: true,
+        service:
+            'Epic Gift Rocket Multiplayer',
 
-            service:
-                'Epic Gift Rocket Multiplayer',
+        gameState,
 
-            gameState,
+        roundId,
 
-            roundId,
+        multiplier:
+            currentMultiplier,
 
-            multiplier:
-                currentMultiplier,
-
-            players:
-                players.size,
-
-            connected:
-                clients.size
-        });
-    }
-);
+        players:
+            players.size
+    });
+});
 
 /*
 ==================================================
@@ -583,28 +280,25 @@ HEALTH
 ==================================================
 */
 
-app.get(
-    '/health',
-    (req, res) => {
+app.get('/health', (req, res) => {
 
-        res.json({
-            ok: true,
+    res.json({
+        ok: true,
 
-            gameState,
+        gameState,
 
-            roundId,
+        roundId,
 
-            multiplier:
-                currentMultiplier,
+        multiplier:
+            currentMultiplier,
 
-            clients:
-                clients.size,
+        clients:
+            clients.size,
 
-            players:
-                players.size
-        });
-    }
-);
+        players:
+            players.size
+    });
+});
 
 /*
 ==================================================
@@ -634,24 +328,6 @@ app.get(
                 ''
             );
 
-        /*
-        ------------------------------------------
-        CREATE / UPDATE PLAYER
-        ------------------------------------------
-        */
-
-        getOrCreatePlayer({
-            telegramId,
-            name,
-            avatar
-        });
-
-        /*
-        ------------------------------------------
-        SSE HEADERS
-        ------------------------------------------
-        */
-
         res.status(200);
 
         res.setHeader(
@@ -674,29 +350,55 @@ app.get(
             'no'
         );
 
-        if (
-            res.flushHeaders
-        ) {
-
+        if (res.flushHeaders) {
             res.flushHeaders();
         }
 
         /*
-        ------------------------------------------
-        ATTACH USER TO CONNECTION
-        ------------------------------------------
+        Create player if necessary
         */
 
-        res.telegramId =
-            telegramId;
+        if (!players.has(telegramId)) {
 
-        clients.add(res);
+            players.set(
+                telegramId,
+                {
+                    telegramId,
+
+                    name,
+
+                    avatar,
+
+                    /*
+                    Temporary testing balance.
+                    We will remove this when
+                    real Supabase balance is enabled.
+                    */
+
+                    balance: 126.04,
+
+                    currentBet: null
+                }
+            );
+
+        } else {
+
+            const player =
+                players.get(
+                    telegramId
+                );
+
+            player.name = name || player.name;
+            player.avatar = avatar || player.avatar;
+        }
 
         /*
-        ------------------------------------------
-        INITIAL SYNC
-        ------------------------------------------
+        Attach telegramId to SSE client
         */
+
+        res.telegramId = telegramId;
+
+        clients.add(res);
 
         send(
             res,
@@ -708,16 +410,9 @@ app.get(
 
         sendBalance(res);
 
-        /*
-        ------------------------------------------
-        CLOSE
-        ------------------------------------------
-        */
-
         req.on(
             'close',
             () => {
-
                 clients.delete(res);
             }
         );
@@ -736,84 +431,69 @@ app.post(
 
         try {
 
-            const body =
-                req.body || {};
+            const {
+                type,
+                telegramId,
+                name,
+                avatar,
+                amount,
+                roundId: requestedRoundId,
+                autoCashout,
+                autoTarget
+            } = req.body || {};
 
-            const type =
+            const id =
                 String(
-                    body.type ||
-                    ''
-                ).toUpperCase();
-
-            const telegramId =
-                String(
-                    body.telegramId ||
-                    ''
+                    telegramId || ''
                 );
 
-            const name =
-                body.name
-                    ? String(body.name)
-                    : '';
+            if (!id) {
 
-            const avatar =
-                body.avatar
-                    ? String(body.avatar)
-                    : '';
+                return res.status(400).json({
+                    ok: false,
+                    error:
+                        'telegramId is required'
+                });
 
-            const requestedRoundId =
-                safeNumber(
-                    body.roundId,
-                    -1
-                );
-
-            const amount =
-                safeNumber(
-                    body.amount,
-                    0
-                );
-
-            const autoCashout =
-                Boolean(
-                    body.autoCashout
-                );
-
-            const autoTarget =
-                safeNumber(
-                    body.autoTarget,
-                    0
-                );
-
-            /*
-            --------------------------------------
-            VALIDATE USER
-            --------------------------------------
-            */
-
-            if (!telegramId) {
-
-                return res
-                    .status(400)
-                    .json({
-                        ok: false,
-
-                        error:
-                            'telegramId is required'
-                    });
             }
 
             /*
-            --------------------------------------
-            GET / CREATE PLAYER
-            --------------------------------------
+            Create player if not already connected
             */
 
+            if (!players.has(id)) {
+
+                players.set(
+                    id,
+                    {
+                        telegramId: id,
+
+                        name:
+                            name ||
+                            'اللاعب',
+
+                        avatar:
+                            avatar ||
+                            '',
+
+                        balance: 126.04,
+
+                        currentBet: null
+                    }
+                );
+
+            }
+
             const player =
-                getOrCreatePlayer({
-                    telegramId,
-                    name,
-                    avatar
-                });
+                players.get(id);
+
+            if (name) {
+                player.name = name;
+            }
+
+            if (avatar) {
+                player.avatar = avatar;
+            }
 
             /*
             ======================================
@@ -823,440 +503,148 @@ app.post(
 
             if (type === 'BET') {
 
-                /*
-                ----------------------------------
-                VALIDATE AMOUNT
-                ----------------------------------
-                */
-
                 if (
-                    !Number.isFinite(amount) ||
-                    amount <= 0
-                ) {
-
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
-
-                            error:
-                                'Invalid bet amount'
-                        });
-                }
-
-                /*
-                ----------------------------------
-                MINIMUM BET
-                ----------------------------------
-                */
-
-                if (amount < 0.01) {
-
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
-
-                            error:
-                                'Minimum bet is 0.01 TON'
-                        });
-                }
-
-                /*
-                ----------------------------------
-                ONE BET / ROUND
-                ----------------------------------
-
-                If already active or pending,
-                reject duplicate bet.
-                */
-
-                if (
-                    player.currentBet &&
-                    player.currentBet.roundId ===
-                        roundId &&
-                    (
-                        player.currentBet.status ===
-                            'ACTIVE' ||
-                        player.currentBet.status ===
-                            'CASHED_OUT'
-                    )
-                ) {
-
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
-
-                            error:
-                                'You already have a bet this round'
-                        });
-                }
-
-                if (
-                    player.pendingBet &&
-                    player.pendingBet.roundId ===
-                        roundId + 1
-                ) {
-
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
-
-                            error:
-                                'You already have a queued bet'
-                        });
-                }
-
-                /*
-                ==================================
-                BET DURING COUNTDOWN
-                ==================================
-                */
-
-                if (
-                    gameState ===
+                    gameState !==
                     'COUNTDOWN'
                 ) {
 
-                    if (
-                        requestedRoundId !==
-                        roundId
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Round has changed'
-                            });
-                    }
-
-                    /*
-                    Balance check
-                    */
-
-                    if (
-                        amount >
-                        player.balance
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Insufficient balance'
-                            });
-                    }
-
-                    /*
-                    Deduct balance
-                    */
-
-                    player.balance =
-                        round4(
-                            player.balance -
-                            amount
-                        );
-
-                    /*
-                    Create current bet
-                    */
-
-                    player.currentBet = {
-
-                        roundId,
-
-                        amount:
-                            round4(amount),
-
-                        autoCashout,
-
-                        autoTarget:
-                            autoCashout &&
-                            autoTarget > 1
-                                ? round4(
-                                    autoTarget
-                                )
-                                : null,
-
-                        status:
-                            'ACTIVE',
-
-                        payout: 0,
-
-                        cashoutMultiplier:
-                            null
-                    };
-
-                    /*
-                    Clear any old pending bet
-                    */
-
-                    player.pendingBet =
-                        null;
-
-                    broadcastPlayers();
-
-                    sendBalanceToPlayer(
-                        telegramId
-                    );
-
-                    return res.json({
-                        ok: true,
-
-                        action:
-                            'BET',
-
-                        status:
-                            'ACTIVE',
-
-                        roundId,
-
-                        amount:
-                            round4(amount),
-
-                        balance:
-                            round4(
-                                player.balance
-                            )
-                    });
-                }
-
-                /*
-                ==================================
-                BET DURING FLIGHT
-                ==================================
-
-                Queue for NEXT round.
-
-                This matches the frontend
-                isQueuedForNextRound behavior.
-                */
-
-                if (
-                    gameState ===
-                    'FLIGHT'
-                ) {
-
-                    /*
-                    The requested round should
-                    normally be the current round.
-                    */
-
-                    if (
-                        requestedRoundId !==
-                        roundId
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Round has changed'
-                            });
-                    }
-
-                    /*
-                    Balance check
-                    */
-
-                    if (
-                        amount >
-                        player.balance
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Insufficient balance'
-                            });
-                    }
-
-                    /*
-                    Deduct now and reserve
-                    the money for next round.
-                    */
-
-                    player.balance =
-                        round4(
-                            player.balance -
-                            amount
-                        );
-
-                    player.pendingBet = {
-
-                        roundId:
-                            roundId + 1,
-
-                        amount:
-                            round4(amount),
-
-                        autoCashout,
-
-                        autoTarget:
-                            autoCashout &&
-                            autoTarget > 1
-                                ? round4(
-                                    autoTarget
-                                )
-                                : null,
-
-                        status:
-                            'PENDING'
-                    };
-
-                    /*
-                    Tell user that bet is queued.
-                    */
-
-                    broadcastPlayers();
-
-                    sendBalanceToPlayer(
-                        telegramId
-                    );
-
-                    return res.json({
-                        ok: true,
-
-                        action:
-                            'BET',
-
-                        status:
-                            'PENDING',
-
-                        roundId:
-                            roundId + 1,
-
-                        amount:
-                            round4(amount),
-
-                        balance:
-                            round4(
-                                player.balance
-                            )
-                    });
-                }
-
-                /*
-                ==================================
-                BET DURING CRASH
-                ==================================
-                */
-
-                if (
-                    gameState ===
-                    'CRASH'
-                ) {
-
-                    /*
-                    Queue for next round.
-                    */
-
-                    if (
-                        requestedRoundId !==
-                        roundId
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Round has changed'
-                            });
-                    }
-
-                    if (
-                        amount >
-                        player.balance
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                ok: false,
-
-                                error:
-                                    'Insufficient balance'
-                            });
-                    }
-
-                    player.balance =
-                        round4(
-                            player.balance -
-                            amount
-                        );
-
-                    player.pendingBet = {
-
-                        roundId:
-                            roundId + 1,
-
-                        amount:
-                            round4(amount),
-
-                        autoCashout,
-
-                        autoTarget:
-                            autoCashout &&
-                            autoTarget > 1
-                                ? round4(
-                                    autoTarget
-                                )
-                                : null,
-
-                        status:
-                            'PENDING'
-                    };
-
-                    broadcastPlayers();
-
-                    sendBalanceToPlayer(
-                        telegramId
-                    );
-
-                    return res.json({
-                        ok: true,
-
-                        action:
-                            'BET',
-
-                        status:
-                            'PENDING',
-
-                        roundId:
-                            roundId + 1,
-
-                        amount:
-                            round4(amount),
-
-                        balance:
-                            round4(
-                                player.balance
-                            )
-                    });
-                }
-
-                return res
-                    .status(400)
-                    .json({
+                    return res.status(400).json({
                         ok: false,
-
                         error:
-                            'Betting is not available'
+                            'Betting is closed for this round'
                     });
+
+                }
+
+                if (
+                    Number(
+                        requestedRoundId
+                    ) !== roundId
+                ) {
+
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'Round has changed'
+                    });
+
+                }
+
+                const betAmount =
+                    Number(amount);
+
+                if (
+                    !Number.isFinite(
+                        betAmount
+                    ) ||
+                    betAmount <= 0
+                ) {
+
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'Invalid bet amount'
+                    });
+
+                }
+
+                if (
+                    player.currentBet &&
+                    player.currentBet.roundId === roundId &&
+                    (
+                        player.currentBet.status === 'ACTIVE' ||
+                        player.currentBet.status === 'CASHED_OUT'
+                    )
+                ) {
+
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'You already have a bet this round'
+                    });
+
+                }
+
+                if (
+                    betAmount >
+                    player.balance
+                ) {
+
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'Insufficient balance'
+                    });
+
+                }
+
+                /*
+                Deduct temporary balance
+                */
+
+                player.balance =
+                    Number(
+                        (
+                            player.balance -
+                            betAmount
+                        ).toFixed(4)
+                    );
+
+                player.currentBet = {
+
+                    roundId,
+
+                    amount:
+                        betAmount,
+
+                    autoCashout:
+                        Boolean(
+                            autoCashout
+                        ),
+
+                    autoTarget:
+                        Number(
+                            autoTarget
+                        ) || null,
+
+                    status:
+                        'ACTIVE',
+
+                    payout: 0,
+
+                    cashoutMultiplier: null
+                };
+
+                broadcastPlayers();
+
+                /*
+                Update the bettor's balance
+                */
+
+                for (const client of clients) {
+
+                    if (
+                        String(
+                            client.telegramId
+                        ) === id
+                    ) {
+
+                        sendBalance(client);
+                    }
+                }
+
+                return res.json({
+                    ok: true,
+
+                    action: 'BET',
+
+                    roundId,
+
+                    amount: betAmount,
+
+                    balance:
+                        player.balance
+                });
             }
 
             /*
@@ -1267,42 +655,31 @@ app.post(
 
             if (type === 'CASHOUT') {
 
-                /*
-                Cashout only during flight.
-                */
-
                 if (
                     gameState !==
                     'FLIGHT'
                 ) {
 
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'Cashout is not available'
+                    });
 
-                            error:
-                                'Cashout is not available'
-                        });
                 }
 
-                /*
-                Validate round.
-                */
-
                 if (
-                    requestedRoundId !==
-                    roundId
+                    Number(
+                        requestedRoundId
+                    ) !== roundId
                 ) {
 
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'Round has changed'
+                    });
 
-                            error:
-                                'Round has changed'
-                        });
                 }
 
                 const bet =
@@ -1310,62 +687,38 @@ app.post(
 
                 if (
                     !bet ||
-                    bet.roundId !==
-                        roundId ||
-                    bet.status !==
-                        'ACTIVE'
+                    bet.roundId !== roundId ||
+                    bet.status !== 'ACTIVE'
                 ) {
 
-                    return res
-                        .status(400)
-                        .json({
-                            ok: false,
+                    return res.status(400).json({
+                        ok: false,
+                        error:
+                            'No active bet'
+                    });
 
-                            error:
-                                'No active bet'
-                        });
                 }
 
-                /*
-                ----------------------------------
-                CASHOUT MULTIPLIER
-                ----------------------------------
-                */
-
                 const cashoutMultiplier =
-                    round4(
-                        currentMultiplier
+                    Number(
+                        currentMultiplier.toFixed(4)
                     );
-
-                /*
-                ----------------------------------
-                PAYOUT
-                ----------------------------------
-                */
 
                 const payout =
-                    round4(
-                        bet.amount *
-                        cashoutMultiplier
+                    Number(
+                        (
+                            bet.amount *
+                            cashoutMultiplier
+                        ).toFixed(4)
                     );
-
-                /*
-                ----------------------------------
-                CREDIT BALANCE
-                ----------------------------------
-                */
 
                 player.balance =
-                    round4(
-                        player.balance +
-                        payout
+                    Number(
+                        (
+                            player.balance +
+                            payout
+                        ).toFixed(4)
                     );
-
-                /*
-                ----------------------------------
-                UPDATE BET
-                ----------------------------------
-                */
 
                 bet.status =
                     'CASHED_OUT';
@@ -1376,26 +729,24 @@ app.post(
                 bet.payout =
                     payout;
 
-                /*
-                ----------------------------------
-                BROADCAST
-                ----------------------------------
-                */
-
                 broadcastPlayers();
 
-                sendBalanceToPlayer(
-                    telegramId
-                );
+                for (const client of clients) {
+
+                    if (
+                        String(
+                            client.telegramId
+                        ) === id
+                    ) {
+
+                        sendBalance(client);
+                    }
+                }
 
                 return res.json({
                     ok: true,
 
-                    action:
-                        'CASHOUT',
-
-                    status:
-                        'CASHED_OUT',
+                    action: 'CASHOUT',
 
                     roundId,
 
@@ -1405,26 +756,15 @@ app.post(
                     payout,
 
                     balance:
-                        round4(
-                            player.balance
-                        )
+                        player.balance
                 });
             }
 
-            /*
-            ======================================
-            UNKNOWN ACTION
-            ======================================
-            */
-
-            return res
-                .status(400)
-                .json({
-                    ok: false,
-
-                    error:
-                        'Unknown action'
-                });
+            return res.status(400).json({
+                ok: false,
+                error:
+                    'Unknown action'
+            });
 
         } catch (error) {
 
@@ -1433,14 +773,11 @@ app.post(
                 error
             );
 
-            return res
-                .status(500)
-                .json({
-                    ok: false,
-
-                    error:
-                        'Internal server error'
-                });
+            return res.status(500).json({
+                ok: false,
+                error:
+                    'Internal server error'
+            });
         }
     }
 );
@@ -1451,42 +788,33 @@ HEARTBEAT
 ==================================================
 */
 
-setInterval(
-    () => {
+setInterval(() => {
 
-        for (
-            const client
-            of clients
-        ) {
+    for (const client of clients) {
 
-            try {
+        try {
 
-                client.write(
-                    `: heartbeat ${Date.now()}\n\n`
-                );
+            client.write(
+                `: heartbeat ${Date.now()}\n\n`
+            );
 
-            } catch {
+        } catch {
 
-                clients.delete(client);
-            }
+            clients.delete(client);
         }
+    }
 
-    },
-    15000
-);
+}, 15000);
 
 /*
 ==================================================
 CRASH POINT
 ==================================================
+*/
 
+/*
 DEMO ONLY.
-
-This is NOT suitable for real-money
-production.
-
-Do not use Math.random() for a
-real-money gambling engine.
+Do NOT use this distribution for real money.
 */
 
 function generateCrashPoint() {
@@ -1527,114 +855,6 @@ function generateCrashPoint() {
 
 /*
 ==================================================
-PROMOTE PENDING BETS
-==================================================
-
-Called when a new round starts.
-
-Pending bets were already deducted
-from balance when they were queued.
-
-They now become ACTIVE.
-*/
-
-function promotePendingBets() {
-
-    for (
-        const player
-        of players.values()
-    ) {
-
-        const pending =
-            player.pendingBet;
-
-        if (
-            !pending ||
-            pending.roundId !==
-                roundId
-        ) {
-
-            continue;
-        }
-
-        player.currentBet = {
-
-            roundId,
-
-            amount:
-                round4(
-                    pending.amount
-                ),
-
-            autoCashout:
-                Boolean(
-                    pending.autoCashout
-                ),
-
-            autoTarget:
-                pending.autoTarget
-                    ? round4(
-                        pending.autoTarget
-                    )
-                    : null,
-
-            status:
-                'ACTIVE',
-
-            payout: 0,
-
-            cashoutMultiplier:
-                null
-        };
-
-        player.pendingBet =
-            null;
-    }
-}
-
-/*
-==================================================
-CLEAN OLD BETS
-==================================================
-
-Only remove data that belongs to
-rounds older than the previous/current
-round.
-
-Current and pending bets are preserved.
-*/
-
-function cleanOldBets() {
-
-    for (
-        const player
-        of players.values()
-    ) {
-
-        if (
-            player.currentBet &&
-            player.currentBet.roundId <
-                roundId
-        ) {
-
-            player.currentBet =
-                null;
-        }
-
-        if (
-            player.pendingBet &&
-            player.pendingBet.roundId <
-                roundId
-        ) {
-
-            player.pendingBet =
-                null;
-        }
-    }
-}
-
-/*
-==================================================
 COUNTDOWN
 ==================================================
 */
@@ -1646,45 +866,32 @@ function runCountdown() {
     gameState =
         'COUNTDOWN';
 
-    countdownSeconds =
-        5;
+    countdownSeconds = 5;
 
     currentMultiplier =
         1.00;
 
     /*
-    ----------------------------------------------
-    Promote queued bets
-    ----------------------------------------------
+    Clear old round bets.
+    Bets from previous round remain
+    recorded in memory but are no
+    longer active.
     */
 
-    promotePendingBets();
+    for (const player of players.values()) {
 
-    /*
-    ----------------------------------------------
-    Clean old bets
-    ----------------------------------------------
-    */
+        if (
+            player.currentBet &&
+            player.currentBet.roundId !== roundId
+        ) {
 
-    cleanOldBets();
-
-    /*
-    ----------------------------------------------
-    Send initial countdown
-    ----------------------------------------------
-    */
+            player.currentBet = null;
+        }
+    }
 
     broadcast(
         'COUNTDOWN'
     );
-
-    broadcastPlayers();
-
-    /*
-    ----------------------------------------------
-    Countdown timer
-    ----------------------------------------------
-    */
 
     const timer =
         setInterval(
@@ -1699,8 +906,6 @@ function runCountdown() {
                     broadcast(
                         'COUNTDOWN'
                     );
-
-                    broadcastPlayers();
 
                     return;
                 }
@@ -1734,27 +939,9 @@ function startFlight() {
     const startedAt =
         Date.now();
 
-    console.log(
-        `🚀 Round ${roundId} started | Crash: ${crashPoint}x`
-    );
-
-    /*
-    ----------------------------------------------
-    INITIAL FLIGHT STATE
-    ----------------------------------------------
-    */
-
     broadcast(
         'FLIGHT'
     );
-
-    broadcastPlayers();
-
-    /*
-    ----------------------------------------------
-    FLIGHT TIMER
-    ----------------------------------------------
-    */
 
     const timer =
         setInterval(
@@ -1767,11 +954,11 @@ function startFlight() {
                     ) / 1000;
 
                 currentMultiplier =
-                    round4(
+                    Number(
                         Math.exp(
                             elapsed *
                             0.16
-                        )
+                        ).toFixed(4)
                     );
 
                 /*
@@ -1779,9 +966,6 @@ function startFlight() {
                 AUTO CASHOUT
                 ==================================
                 */
-
-                let playersChanged =
-                    false;
 
                 for (
                     const player
@@ -1793,10 +977,8 @@ function startFlight() {
 
                     if (
                         !bet ||
-                        bet.roundId !==
-                            roundId ||
-                        bet.status !==
-                            'ACTIVE'
+                        bet.roundId !== roundId ||
+                        bet.status !== 'ACTIVE'
                     ) {
 
                         continue;
@@ -1807,26 +989,29 @@ function startFlight() {
                         Number.isFinite(
                             bet.autoTarget
                         ) &&
-                        bet.autoTarget > 1 &&
                         currentMultiplier >=
-                            bet.autoTarget
+                        bet.autoTarget
                     ) {
 
                         const multiplier =
-                            round4(
-                                bet.autoTarget
+                            Number(
+                                bet.autoTarget.toFixed(4)
                             );
 
                         const payout =
-                            round4(
-                                bet.amount *
-                                multiplier
+                            Number(
+                                (
+                                    bet.amount *
+                                    multiplier
+                                ).toFixed(4)
                             );
 
                         player.balance =
-                            round4(
-                                player.balance +
-                                payout
+                            Number(
+                                (
+                                    player.balance +
+                                    payout
+                                ).toFixed(4)
                             );
 
                         bet.status =
@@ -1837,28 +1022,8 @@ function startFlight() {
 
                         bet.payout =
                             payout;
-
-                        playersChanged =
-                            true;
-
-                        sendBalanceToPlayer(
-                            player.telegramId
-                        );
                     }
                 }
-
-                if (
-                    playersChanged
-                ) {
-
-                    broadcastPlayers();
-                }
-
-                /*
-                ==================================
-                CRASH
-                ==================================
-                */
 
                 if (
                     currentMultiplier >=
@@ -1874,9 +1039,7 @@ function startFlight() {
                         'CRASH';
 
                     /*
-                    --------------------------------
-                    LOSE ACTIVE BETS
-                    --------------------------------
+                    Lose all remaining active bets
                     */
 
                     for (
@@ -1889,22 +1052,14 @@ function startFlight() {
 
                         if (
                             bet &&
-                            bet.roundId ===
-                                roundId &&
-                            bet.status ===
-                                'ACTIVE'
+                            bet.roundId === roundId &&
+                            bet.status === 'ACTIVE'
                         ) {
 
                             bet.status =
                                 'LOST';
                         }
                     }
-
-                    /*
-                    --------------------------------
-                    UPDATE HISTORY
-                    --------------------------------
-                    */
 
                     history.unshift(
                         crashPoint
@@ -1921,61 +1076,29 @@ function startFlight() {
                             );
                     }
 
-                    console.log(
-                        `💥 Round ${roundId} crashed at ${crashPoint}x`
-                    );
-
-                    /*
-                    --------------------------------
-                    BROADCAST CRASH
-                    --------------------------------
-                    */
-
                     broadcast(
                         'CRASH'
                     );
 
                     broadcastPlayers();
 
-                    /*
-                    --------------------------------
-                    SEND BALANCES
-                    --------------------------------
-                    */
-
                     for (
                         const client
                         of clients
                     ) {
 
-                        sendBalance(
-                            client
-                        );
+                        sendBalance(client);
                     }
-
-                    /*
-                    --------------------------------
-                    NEXT ROUND
-                    --------------------------------
-                    */
 
                     setTimeout(
                         () => {
-
                             runCountdown();
-
                         },
                         3500
                     );
 
                     return;
                 }
-
-                /*
-                ==================================
-                NORMAL FLIGHT BROADCAST
-                ==================================
-                */
 
                 broadcast(
                     'FLIGHT'
@@ -2003,10 +1126,6 @@ app.listen(
 
         console.log(
             `🌐 Port: ${PORT}`
-        );
-
-        console.log(
-            `🎮 Multiplayer engine ready`
         );
 
         runCountdown();
