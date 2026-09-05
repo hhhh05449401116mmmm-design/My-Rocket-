@@ -2364,7 +2364,87 @@ onclick="openDeposit()"
 > 
 
 
-</button>  </div>  </header>  <main>  <section class="game-card">  <div class="stars"></div>  <div class="game-top">  <div  
+</button>  </div>  </header> <section id="profile-page" class="app-page profile-page" style="display:none;">
+
+    <div class="profile-hero">
+        <img
+            id="profile-page-avatar"
+            class="profile-page-avatar"
+            src=""
+            alt=""
+        >
+
+        <div
+            id="profile-page-name"
+            class="profile-page-name"
+        >
+            اللاعب
+        </div>
+
+        <div class="profile-page-sub">
+            Telegram Player
+        </div>
+    </div>
+
+    <div class="profile-balance-card">
+
+        <div class="profile-balance-label">
+            الرصيد
+        </div>
+
+        <div class="profile-balance-value">
+            <span id="profile-page-balance">0.00</span>
+            <span>TON</span>
+        </div>
+
+        <button
+            class="profile-deposit-btn"
+            type="button"
+            onclick="openDeposit()"
+        >
+            + إيداع TON
+        </button>
+
+    </div>
+
+    <div class="profile-stats">
+
+        <div class="profile-stat">
+            <strong id="profile-page-rounds">0</strong>
+            <span>الجولات</span>
+        </div>
+
+        <div class="profile-stat">
+            <strong id="profile-page-wins">0</strong>
+            <span>الانتصارات</span>
+        </div>
+
+        <div class="profile-stat">
+            <strong id="profile-page-wallet">غير متصلة</strong>
+            <span>المحفظة</span>
+        </div>
+
+    </div>
+
+    <div class="profile-actions">
+
+        <button
+            type="button"
+            onclick="openTonWallet()"
+        >
+            💎 ربط / تغيير TON Wallet
+        </button>
+
+        <button
+            type="button"
+            onclick="openDeposit()"
+        >
+            💰 إيداع TON
+        </button>
+
+    </div>
+
+</section> <main>  <section class="game-card">  <div class="stars"></div>  <div class="game-top">  <div  
     id="round-label"  
     class="round-label"  
 >  
