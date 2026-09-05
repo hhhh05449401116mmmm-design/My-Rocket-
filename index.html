@@ -1,184 +1,3423 @@
-const express = require('express');
-const cors = require('cors');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-const app = express();
+    <title>Epic Gift Rocket</title>
 
-const PORT = process.env.PORT || 8080;
+    <meta name="theme-color" content="#070b16">
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS']
-}));
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-app.use(express.json());
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
-let roundId = 0;
-let currentMultiplier = 1.00;
-let gameState = 'COUNTDOWN';
-let countdownSeconds = 5;
-
-const clients = new Set();
-
-let history = [1.24, 2.15, 6.40, 11.86, 27.50];
-
-function send(client, data) {
-    try {
-        client.write(`data: ${JSON.stringify(data)}\n\n`);
-    } catch {
-        clients.delete(client);
-    }
-}
-
-function getState(type = gameState) {
-    return {
-        type,
-        phase: gameState,
-        roundId,
-        seconds: countdownSeconds,
-        multiplier: Number(currentMultiplier.toFixed(4)),
-        history,
-        serverTime: Date.now()
-    };
-}
-
-function broadcast(type = gameState) {
-    for (const client of clients) {
-        send(client, getState(type));
-    }
-}
-
-app.get('/', (req, res) => {
-    res.json({
-        ok: true,
-        service: 'Epic Gift Rocket Multiplayer',
-        gameState,
-        roundId,
-        multiplier: currentMultiplier
-    });
-});
-
-app.get('/health', (req, res) => {
-    res.json({
-        ok: true,
-        gameState,
-        roundId,
-        multiplier: currentMultiplier,
-        clients: clients.size
-    });
-});
-
-app.get('/api/game-stream', (req, res) => {
-    res.status(200);
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-
-    if (res.flushHeaders) {
-        res.flushHeaders();
-    }
-
-    clients.add(res);
-
-    send(res, getState('SYNC'));
-
-    req.on('close', () => {
-        clients.delete(res);
-    });
-});
-
-setInterval(() => {
-    for (const client of clients) {
-        try {
-            client.write(`: heartbeat ${Date.now()}\n\n`);
-        } catch {
-            clients.delete(client);
-        }
-    }
-}, 15000);
-
-function generateCrashPoint() {
-    const r = Math.random();
-
-    if (r < 0.70) {
-        return Number((1.01 + Math.random() * 0.78).toFixed(2));
-    }
-
-    if (r < 0.99) {
-        return Number((1.80 + Math.random() * 8.20).toFixed(2));
-    }
-
-    return Number((10.00 + Math.random() * 25.00).toFixed(2));
-}
-
-function runCountdown() {
-    roundId++;
-
-    gameState = 'COUNTDOWN';
-    countdownSeconds = 5;
-    currentMultiplier = 1.00;
-
-    broadcast('COUNTDOWN');
-
-    const timer = setInterval(() => {
-        countdownSeconds--;
-
-        if (countdownSeconds > 0) {
-            broadcast('COUNTDOWN');
-            return;
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        clearInterval(timer);
-        startFlight();
-    }, 1000);
-}
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100%;
+            background: #070b16;
+            color: #ffffff;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
 
-function startFlight() {
-    gameState = 'FLIGHT';
-    currentMultiplier = 1.00;
+        body {
+            overflow-x: hidden;
+        }
 
-    const crashPoint = generateCrashPoint();
-    const startedAt = Date.now();
+        button,
+        input {
+            font: inherit;
+        }
 
-    broadcast('FLIGHT');
+        button {
+            border: 0;
+            cursor: pointer;
+        }
 
-    const timer = setInterval(() => {
-        const elapsed = (Date.now() - startedAt) / 1000;
+        .app {
+            width: 100%;
+            max-width: 520px;
+            min-height: 100vh;
+            margin: 0 auto;
+            padding-bottom: 90px;
+            position: relative;
+        }
 
-        currentMultiplier = Number(
-            Math.exp(elapsed * 0.16).toFixed(4)
-        );
+        /* ================= HEADER ================= */
 
-        if (currentMultiplier >= crashPoint) {
-            clearInterval(timer);
+        .header {
+            height: 70px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            direction: ltr;
+        }
 
-            currentMultiplier = crashPoint;
-            gameState = 'CRASH';
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            direction: ltr;
+            min-width: 0;
+        }
 
-            history.unshift(crashPoint);
+        .avatar {
+            width: 43px;
+            height: 43px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #171d2d;
+            border: 1px solid rgba(255,255,255,.10);
+        }
 
-            if (history.length > 5) {
-                history = history.slice(0, 5);
+        .profile-info {
+            direction: rtl;
+            text-align: left;
+            min-width: 0;
+        }
+
+        .profile-name {
+            max-width: 130px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .profile-id {
+            color: #79839b;
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .admin-badge {
+            display: none;
+            margin-top: 3px;
+            font-size: 9px;
+            color: #ffd75a;
+        }
+
+        .wallet-area {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            direction: ltr;
+        }
+
+        .wallet-balance {
+            min-width: 82px;
+            height: 38px;
+            border-radius: 12px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #11182a;
+            border: 1px solid #202a41;
+            color: #f5f7ff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .deposit-button {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: #1c273e;
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .deposit-button:active {
+            transform: scale(.95);
+        }
+
+        /* ================= GAME ================= */
+
+        .game-card {
+            margin: 4px 12px 0;
+            height: 390px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            background:
+                radial-gradient(
+                    circle at 50% 45%,
+                    #17233d 0%,
+                    #0d1425 42%,
+                    #090e1b 72%,
+                    #070b16 100%
+                );
+            border: 1px solid rgba(255,255,255,.055);
+        }
+
+        .stars {
+            position: absolute;
+            inset: 0;
+            opacity: .65;
+            pointer-events: none;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,.75) 1px, transparent 1px),
+                radial-gradient(circle, rgba(255,255,255,.35) 1px, transparent 1px);
+            background-size: 71px 67px, 113px 101px;
+            background-position: 8px 11px, 37px 31px;
+        }
+
+        .game-top {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            z-index: 4;
+            display: flex;
+            justify-content: center;
+        }
+
+        .round-label {
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: rgba(7,11,22,.68);
+            border: 1px solid rgba(255,255,255,.06);
+            color: #7d879f;
+            font-size: 10px;
+        }
+
+        .multiplier {
+            position: absolute;
+            top: 55px;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            text-align: center;
+            font-size: 51px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -2px;
+            text-shadow: 0 5px 22px rgba(0,0,0,.5);
+        }
+
+        .multiplier.crashed {
+            color: #ff4f67;
+        }
+
+        .multiplier.flying {
+            color: #ffffff;
+        }
+
+        .multiplier.waiting {
+            color: #909ab1;
+        }
+
+        .countdown {
+            position: absolute;
+            top: 116px;
+            left: 0;
+            right: 0;
+            z-index: 6;
+            text-align: center;
+            color: #8993aa;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .rocket-area {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .rocket {
+            position: absolute;
+            left: 15%;
+            bottom: 74px;
+            font-size: 48px;
+            transform: rotate(-12deg);
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,.55));
+            transition:
+                left .15s linear,
+                bottom .15s linear,
+                transform .15s linear;
+            z-index: 5;
+        }
+
+        .rocket.hidden {
+            opacity: 0;
+        }
+
+        .rocket.crashed {
+            animation: crashRocket .45s ease forwards;
+        }
+
+        @keyframes crashRocket {
+            0% {
+                opacity: 1;
+                transform: rotate(-12deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(60px, 70px) rotate(35deg) scale(.7);
+            }
+        }
+
+        .flame {
+            position: absolute;
+            left: calc(15% - 5px);
+            bottom: 64px;
+            width: 19px;
+            height: 33px;
+            border-radius: 50% 50% 65% 65%;
+            background: #ffad33;
+            filter: blur(2px);
+            opacity: .85;
+            transform: rotate(-12deg);
+            z-index: 4;
+        }
+
+        .flight-line {
+            position: absolute;
+            left: 9%;
+            right: 8%;
+            bottom: 63px;
+            height: 2px;
+            transform: rotate(-9deg);
+            transform-origin: left center;
+            background: linear-gradient(
+                90deg,
+                rgba(53,126,255,0),
+                rgba(53,126,255,.8),
+                rgba(255,92,142,.7)
+            );
+            opacity: .65;
+        }
+
+        .status-message {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 27px;
+            text-align: center;
+            color: #6f7890;
+            font-size: 11px;
+        }
+
+        /* ================= HISTORY ================= */
+
+        .history {
+            margin: 12px 12px 0;
+            display: flex;
+            gap: 7px;
+            overflow: hidden;
+            direction: ltr;
+        }
+
+        .history-item {
+            flex: 1;
+            min-width: 51px;
+            height: 29px;
+            border-radius: 9px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 800;
+            background: #131a2b;
+            color: #d7dbea;
+        }
+
+        .history-item.red {
+            background: rgba(255,67,88,.16);
+            color: #ff5d70;
+        }
+
+        .history-item.green {
+            background: rgba(56,210,123,.14);
+            color: #4de18a;
+        }
+
+        .history-item.blue {
+            background: rgba(68,143,255,.16);
+            color: #63a1ff;
+        }
+
+        .history-item.purple {
+            background: rgba(163,86,255,.17);
+            color: #b986ff;
+        }
+
+        .history-item.gold {
+            background: rgba(255,194,56,.16);
+            color: #ffd15a;
+        }
+
+        .history-item.fire {
+            background: rgba(255,91,45,.18);
+            color: #ff875f;
+        }
+
+        /* ================= BET ================= */
+
+        .bet-panel {
+            margin: 12px;
+            padding: 13px;
+            border-radius: 20px;
+            background: #0d1424;
+            border: 1px solid #172139;
+        }
+
+        .bet-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .bet-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .bet-state {
+            color: #6e7890;
+            font-size: 10px;
+        }
+
+        .amount-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .amount-control {
+            width: 39px;
+            height: 44px;
+            border-radius: 12px;
+            background: #171f33;
+            color: #ffffff;
+            font-size: 20px;
+        }
+
+        .amount-input {
+            flex: 1;
+            min-width: 0;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #222d46;
+            background: #10182a;
+            color: #ffffff;
+            text-align: center;
+            outline: none;
+            font-weight: 800;
+        }
+
+        .amount-input:focus {
+            border-color: #3d5b91;
+        }
+
+        .auto-row {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auto-label {
+            color: #8c96aa;
+            font-size: 11px;
+        }
+
+        .auto-controls {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .auto-target {
+            width: 68px;
+            height: 30px;
+            border-radius: 9px;
+            background: #111a2d;
+            border: 1px solid #202c46;
+            color: #fff;
+            text-align: center;
+            outline: none;
+            font-size: 11px;
+        }
+
+        .switch {
+            width: 39px;
+            height: 23px;
+            border-radius: 20px;
+            padding: 3px;
+            background: #252d3e;
+            transition: .2s;
+        }
+
+        .switch span {
+            display: block;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #929bad;
+            transition: .2s;
+        }
+
+        .switch.on {
+            background: #305cbb;
+        }
+
+        .switch.on span {
+            transform: translateX(-16px);
+            background: #ffffff;
+        }
+
+        .action-button {
+            width: 100%;
+            height: 50px;
+            margin-top: 12px;
+            border-radius: 14px;
+            background: #285bc2;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 900;
+            box-shadow: 0 7px 20px rgba(27,78,177,.25);
+        }
+
+        .action-button.cashout {
+            background: #e1485e;
+        }
+
+        .action-button.wait {
+            background: #252d3d;
+            color: #8d96a8;
+        }
+
+        .action-button:disabled {
+            cursor: not-allowed;
+            opacity: .75;
+        }
+
+        /* ================= PLAYERS ================= */
+
+        .players-panel {
+            margin: 12px;
+            padding: 13px;
+            border-radius: 20px;
+            background: #0d1424;
+            border: 1px solid #172139;
+        }
+
+        .players-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .players-title strong {
+            font-size: 13px;
+        }
+
+        .players-count {
+            color: #68748c;
+            font-size: 10px;
+        }
+
+        .players-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .player-row {
+            height: 43px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 9px;
+            border-radius: 12px;
+            background: #10182a;
+        }
+
+        .player-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .player-avatar {
+            width: 29px;
+            height: 29px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #1c2538;
+        }
+
+        .player-name {
+            max-width: 125px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .player-status {
+            font-size: 9px;
+            color: #737e95;
+            margin-top: 2px;
+        }
+
+        .player-amount {
+            font-size: 11px;
+            font-weight: 800;
+            direction: ltr;
+        }
+
+        .empty-players {
+            padding: 17px 0;
+            text-align: center;
+            color: #5e687e;
+            font-size: 11px;
+        }
+
+        /* ================= BOTTOM NAV ================= */
+
+        .bottom-nav {
+            position: fixed;
+            z-index: 30;
+            left: 50%;
+            bottom: 9px;
+            transform: translateX(-50%);
+            width: min(496px, calc(100% - 18px));
+            height: 65px;
+            border-radius: 20px;
+            background: rgba(13,20,36,.96);
+            border: 1px solid #1c2740;
+            backdrop-filter: blur(12px);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            direction: rtl;
+            padding: 5px;
+        }
+
+        .nav-button {
+            border-radius: 15px;
+            background: transparent;
+            color: #68748b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 9px;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .nav-button.active {
+            background: #151f34;
+            color: #ffffff;
+        }
+
+        /* ================= MODALS ================= */
+
+        .modal {
+            position: fixed;
+            z-index: 100;
+            inset: 0;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0,0,0,.63);
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(520px, 100%);
+            padding: 18px;
+            border-radius: 25px 25px 0 0;
+            background: #0c1322;
+            border-top: 1px solid #202c45;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .close-button {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #182137;
+            color: #ffffff;
+        }
+
+        .wallet-connect {
+            width: 100%;
+            min-height: 50px;
+            border-radius: 14px;
+            background: #285bc2;
+            color: #fff;
+            font-weight: 900;
+            margin-top: 8px;
+        }
+
+        .modal-info {
+            color: #7e899f;
+            font-size: 11px;
+            line-height: 1.8;
+            margin: 5px 0 12px;
+        }
+
+        .wallet-address {
+            padding: 12px;
+            border-radius: 12px;
+            background: #10182a;
+            color: #aeb8ca;
+            font-size: 10px;
+            word-break: break-all;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .gift-box {
+            padding: 30px 15px;
+            text-align: center;
+            color: #758097;
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            z-index: 200;
+            left: 50%;
+            bottom: 84px;
+            transform: translateX(-50%) translateY(15px);
+            min-width: 180px;
+            max-width: calc(100% - 40px);
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: #1a2438;
+            color: #ffffff;
+            text-align: center;
+            font-size: 11px;
+            opacity: 0;
+            pointer-events: none;
+            transition: .25s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 360px) {
+            .multiplier {
+                font-size: 44px;
             }
 
-            broadcast('CRASH');
-
-            setTimeout(() => {
-                runCountdown();
-            }, 3500);
-
-            return;
+            .game-card {
+                height: 365px;
+            }
         }
+    </style>
+</head>
 
-        broadcast('FLIGHT');
+<body>
 
-    }, 50);
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+
+        <div class="profile-box">
+
+            <img
+                id="user-avatar"
+                class="avatar"
+                src=""
+                alt=""
+            >
+
+            <div class="profile-info">
+
+                <div
+                    id="profile-name"
+                    class="profile-name"
+                >
+                    اللاعب
+                </div>
+
+                <div
+                    id="profile-id"
+                    class="profile-id"
+                >
+                    Telegram
+                </div>
+
+                <div
+                    id="admin-badge"
+                    class="admin-badge"
+                >
+                    ADMIN
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="wallet-area">
+
+            <button
+                id="ton-wallet-box"
+                class="wallet-balance"
+                type="button"
+                onclick="openTonWallet()"
+                title="Connect TON Wallet"
+            >
+                <span id="ton-balance">0.00</span>
+                TON
+            </button>
+
+            <button
+                class="deposit-button"
+                type="button"
+                onclick="openDeposit()"
+            >
+                +
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- GAME -->
+    <main>
+
+        <section class="game-card">
+
+            <div class="stars"></div>
+
+            <div class="game-top">
+                <div
+                    id="round-label"
+                    class="round-label"
+                >
+                    ROUND #—
+                </div>
+            </div>
+
+            <div
+                id="multiplier"
+                class="multiplier waiting"
+            >
+                1.00x
+            </div>
+
+            <div
+                id="countdown"
+                class="countdown"
+            >
+                جاري الاتصال...
+            </div>
+
+            <div class="rocket-area">
+
+                <div
+                    id="flight-line"
+                    class="flight-line"
+                ></div>
+
+                <div
+                    id="flame"
+                    class="flame"
+                ></div>
+
+                <div
+                    id="rocket"
+                    class="rocket"
+                >
+                    🚀
+                </div>
+
+            </div>
+
+            <div
+                id="status-message"
+                class="status-message"
+            >
+                الاتصال بالسيرفر...
+            </div>
+
+        </section>
+
+
+        <!-- HISTORY -->
+        <section
+            id="history"
+            class="history"
+        ></section>
+
+
+        <!-- BET PANEL -->
+        <section class="bet-panel">
+
+            <div class="bet-head">
+
+                <div class="bet-title">
+                    الرهان
+                </div>
+
+                <div
+                    id="bet-state"
+                    class="bet-state"
+                >
+                    جاهز
+                </div>
+
+            </div>
+
+            <div class="amount-row">
+
+                <button
+                    class="amount-control"
+                    onclick="changeAmount(-1)"
+                >
+                    −
+                </button>
+
+                <input
+                    id="amount-input"
+                    class="amount-input"
+                    type="number"
+                    inputmode="decimal"
+                    min="0.01"
+                    step="0.01"
+                    value="1.00"
+                >
+
+                <button
+                    class="amount-control"
+                    onclick="changeAmount(1)"
+                >
+                    +
+                </button>
+
+            </div>
+
+            <div class="auto-row">
+
+                <div class="auto-label">
+                    Auto Cashout
+                </div>
+
+                <div class="auto-controls">
+
+                    <input
+                        id="auto-target"
+                        class="auto-target"
+                        type="number"
+                        min="1.01"
+                        step="0.01"
+                        value="2.00"
+                    >
+
+                    <button
+                        id="auto-switch"
+                        class="switch"
+                        type="button"
+                        onclick="toggleAutoCashout()"
+                    >
+                        <span></span>
+                    </button>
+
+                </div>
+
+            </div>
+
+            <button
+                id="action-button"
+                class="action-button"
+                onclick="handleAction()"
+            >
+                BET
+            </button>
+
+        </section>
+
+
+        <!-- PLAYERS -->
+        <section class="players-panel">
+
+            <div class="players-title">
+
+                <strong>
+                    اللاعبين
+                </strong>
+
+                <span
+                    id="players-count"
+                    class="players-count"
+                >
+                    0
+                </span>
+
+            </div>
+
+            <div
+                id="players-list"
+                class="players-list"
+            ></div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+
+    <button
+        id="nav-home"
+        class="nav-button active"
+        onclick="showPage('home')"
+    >
+        <span class="nav-icon">⌂</span>
+        <span>الرئيسية</span>
+    </button>
+
+    <button
+        id="nav-top"
+        class="nav-button"
+        onclick="showPage('top')"
+    >
+        <span class="nav-icon">🏆</span>
+        <span>المتصدرون</span>
+    </button>
+
+    <button
+        id="nav-profile"
+        class="nav-button"
+        onclick="showPage('profile')"
+    >
+        <span class="nav-icon">👤</span>
+        <span>الملف</span>
+    </button>
+
+    <button
+        id="nav-gifts"
+        class="nav-button"
+        onclick="showPage('gifts')"
+    >
+        <span class="nav-icon">🎁</span>
+        <span>الهدايا</span>
+    </button>
+
+</nav>
+
+
+<!-- DEPOSIT MODAL -->
+<div
+    id="deposit-modal"
+    class="modal"
+    onclick="closeModalOutside(event, 'deposit-modal')"
+>
+
+    <div class="modal-card">
+
+        <div class="modal-head">
+
+            <div class="modal-title">
+                إيداع TON
+            </div>
+
+            <button
+                class="close-button"
+                onclick="closeModal('deposit-modal')"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div class="modal-info">
+            اربط محفظة TON أولاً. عملية الإيداع الحقيقية تحتاج
+            تحققاً من المعاملة على شبكة TON من الخادم قبل إضافة
+            الرصيد.
+        </div>
+
+        <button
+            class="wallet-connect"
+            onclick="openTonWallet()"
+        >
+            ربط TON Wallet
+        </button>
+
+        <div
+            id="deposit-address"
+            class="wallet-address"
+            style="margin-top:10px;display:none;"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- PROFILE MODAL -->
+<div
+    id="profile-modal"
+    class="modal"
+    onclick="closeModalOutside(event, 'profile-modal')"
+>
+
+    <div class="modal-card">
+
+        <div class="modal-head">
+
+            <div class="modal-title">
+                الملف الشخصي
+            </div>
+
+            <button
+                class="close-button"
+                onclick="closeModal('profile-modal')"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div class="modal-info">
+            حساب Telegram
+        </div>
+
+        <div
+            id="profile-modal-name"
+            class="wallet-address"
+            style="direction:rtl;text-align:right;"
+        >
+            اللاعب
+        </div>
+
+        <div
+            id="profile-wallet-status"
+            class="wallet-address"
+            style="margin-top:8px;"
+        >
+            TON Wallet: غير متصلة
+        </div>
+
+        <button
+            class="wallet-connect"
+            onclick="openTonWallet()"
+        >
+            ربط / تغيير المحفظة
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- TOP MODAL -->
+<div
+    id="top-modal"
+    class="modal"
+    onclick="closeModalOutside(event, 'top-modal')"
+>
+
+    <div class="modal-card">
+
+        <div class="modal-head">
+
+            <div class="modal-title">
+                المتصدرون
+            </div>
+
+            <button
+                class="close-button"
+                onclick="closeModal('top-modal')"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div
+            id="top-list"
+            class="players-list"
+        >
+            <div class="empty-players">
+                لا توجد بيانات بعد
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- GIFTS MODAL -->
+<div
+    id="gifts-modal"
+    class="modal"
+    onclick="closeModalOutside(event, 'gifts-modal')"
+>
+
+    <div class="modal-card">
+
+        <div class="modal-head">
+
+            <div class="modal-title">
+                🎁 الهدايا
+            </div>
+
+            <button
+                class="close-button"
+                onclick="closeModal('gifts-modal')"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div class="gift-box">
+            صندوق الهدايا سيعرض الهدايا التي تصل إلى البوت
+            بعد ربط Telegram Bot API بالـ Railway backend.
+        </div>
+
+    </div>
+
+</div>
+
+
+<div
+    id="toast"
+    class="toast"
+></div>
+
+
+<script>
+/* =========================================================
+   TELEGRAM
+========================================================= */
+
+const tg = window.Telegram?.WebApp;
+
+if (tg) {
+    try {
+        tg.expand();
+        tg.ready();
+    } catch (error) {
+        console.error("Telegram WebApp error:", error);
+    }
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Rocket Server running on port ${PORT}`);
-    console.log(`🌐 Port: ${PORT}`);
+const telegramUser =
+    tg?.initDataUnsafe?.user || {};
 
-    runCountdown();
-});
+const telegramId = String(
+    telegramUser.id ||
+    "guest-" +
+    Math.random()
+        .toString(36)
+        .slice(2)
+);
+
+const firstName =
+    telegramUser.first_name ||
+    "اللاعب";
+
+const lastName =
+    telegramUser.last_name ||
+    "";
+
+const fullName =
+    `${firstName} ${lastName}`.trim();
+
+const userPhoto =
+    telegramUser.photo_url || "";
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+const ADMIN_TELEGRAM_ID = "7385640899";
+
+
+/* =========================================================
+   BACKEND
+========================================================= */
+
+const BACKEND_URL =
+    "https://my-rocket-production.up.railway.app";
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let eventSource = null;
+
+let serverConnected = false;
+
+let currentRoundId = 0;
+
+let currentMultiplier = 1.00;
+
+let gamePhase = "COUNTDOWN";
+
+let countdownSeconds = 5;
+
+let globalHistory = [];
+
+let livePlayers = [];
+
+let hasBet = false;
+
+let isQueuedForNextRound = false;
+
+let actionInProgress = false;
+
+let autoCashoutEnabled = false;
+
+let autoCashoutTarget = 2.00;
+
+let userBetAmount = 1.00;
+
+let tonBalance = 0;
+
+
+/* =========================================================
+   TON CONNECT
+========================================================= */
+
+let tonConnectUI = null;
+
+let tonWalletAddress = null;
+
+let tonWalletConnected = false;
+
+
+function initTonConnect() {
+
+    if (
+        typeof TON_CONNECT_UI === "undefined"
+    ) {
+
+        console.error(
+            "TON Connect UI library failed to load."
+        );
+
+        return;
+    }
+
+    try {
+
+        tonConnectUI =
+            new TON_CONNECT_UI.TonConnectUI({
+                manifestUrl:
+                    "https://my-rocket.vercel.app/tonconnect-manifest.json",
+
+                restoreConnection:
+                    true,
+
+                language:
+                    "en"
+            });
+
+        tonConnectUI.onStatusChange(
+            function(wallet) {
+
+                if (wallet) {
+
+                    tonWalletConnected = true;
+
+                    tonWalletAddress =
+                        wallet.account?.address ||
+                        null;
+
+                    console.log(
+                        "TON Wallet connected:",
+                        tonWalletAddress
+                    );
+
+                    updateTonWalletUI();
+
+                    updateProfileWalletUI();
+
+                } else {
+
+                    tonWalletConnected = false;
+
+                    tonWalletAddress = null;
+
+                    updateTonWalletUI();
+
+                    updateProfileWalletUI();
+                }
+            }
+        );
+
+        if (tonConnectUI.wallet) {
+
+            tonWalletConnected = true;
+
+            tonWalletAddress =
+                tonConnectUI.wallet.account?.address ||
+                null;
+
+            updateTonWalletUI();
+
+            updateProfileWalletUI();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "TON Connect initialization error:",
+            error
+        );
+    }
+}
+
+
+function openTonWallet() {
+
+    if (!tonConnectUI) {
+
+        showToast(
+            "TON Connect غير جاهز"
+        );
+
+        return;
+    }
+
+    tonConnectUI
+        .openModal()
+        .catch(function(error) {
+
+            console.error(
+                "Unable to open TON wallet modal:",
+                error
+            );
+
+            showToast(
+                "تعذر فتح المحفظة"
+            );
+        });
+}
+
+
+function updateTonWalletUI() {
+
+    const box =
+        document.getElementById(
+            "ton-wallet-box"
+        );
+
+    if (!box) {
+        return;
+    }
+
+    box.innerHTML = `
+        <span id="ton-balance">
+            ${Number(tonBalance).toFixed(2)}
+        </span>
+        TON
+    `;
+
+    if (
+        tonWalletConnected &&
+        tonWalletAddress
+    ) {
+
+        box.title =
+            "TON Wallet: " +
+            tonWalletAddress;
+
+    } else {
+
+        box.title =
+            "Connect TON Wallet";
+    }
+}
+
+
+function updateProfileWalletUI() {
+
+    const box =
+        document.getElementById(
+            "profile-wallet-status"
+        );
+
+    if (!box) {
+        return;
+    }
+
+    if (
+        tonWalletConnected &&
+        tonWalletAddress
+    ) {
+
+        box.textContent =
+            "TON Wallet: متصلة\n" +
+            tonWalletAddress;
+
+    } else {
+
+        box.textContent =
+            "TON Wallet: غير متصلة";
+    }
+}
+
+
+/* =========================================================
+   USER UI
+========================================================= */
+
+function initUserUI() {
+
+    const nameElement =
+        document.getElementById(
+            "profile-name"
+        );
+
+    const idElement =
+        document.getElementById(
+            "profile-id"
+        );
+
+    const avatar =
+        document.getElementById(
+            "user-avatar"
+        );
+
+    const modalName =
+        document.getElementById(
+            "profile-modal-name"
+        );
+
+    if (nameElement) {
+        nameElement.textContent =
+            fullName || "اللاعب";
+    }
+
+    if (idElement) {
+
+        if (
+            telegramUser.id
+        ) {
+
+            idElement.textContent =
+                "Telegram";
+
+        } else {
+
+            idElement.textContent =
+                "Guest";
+        }
+    }
+
+    if (modalName) {
+        modalName.textContent =
+            fullName || "اللاعب";
+    }
+
+    if (avatar) {
+
+        if (userPhoto) {
+
+            avatar.src =
+                userPhoto;
+
+        } else {
+
+            avatar.src =
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(`
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="100"
+                        height="100"
+                    >
+                        <rect
+                            width="100"
+                            height="100"
+                            rx="50"
+                            fill="#182137"
+                        />
+                        <text
+                            x="50"
+                            y="58"
+                            text-anchor="middle"
+                            fill="#ffffff"
+                            font-size="42"
+                        >
+                            ${(
+                                firstName ||
+                                "ل"
+                            ).charAt(0)}
+                        </text>
+                    </svg>
+                `);
+        }
+    }
+
+    const admin =
+        document.getElementById(
+            "admin-badge"
+        );
+
+    if (
+        admin &&
+        telegramId === ADMIN_TELEGRAM_ID
+    ) {
+        admin.style.display =
+            "block";
+    }
+}
+
+
+/* =========================================================
+   SERVER CONNECTION
+========================================================= */
+
+function connectToServer() {
+
+    if (eventSource) {
+
+        try {
+            eventSource.close();
+        } catch {}
+    }
+
+    const params =
+        new URLSearchParams({
+
+            telegramId:
+                telegramId,
+
+            name:
+                fullName ||
+                firstName ||
+                "اللاعب",
+
+            avatar:
+                userPhoto
+        });
+
+    const url =
+        `${BACKEND_URL}/api/game-stream?${params.toString()}`;
+
+    try {
+
+        eventSource =
+            new EventSource(url);
+
+    } catch (error) {
+
+        console.error(
+            "SSE connection error:",
+            error
+        );
+
+        serverConnected = false;
+
+        updateConnectionUI();
+
+        return;
+    }
+
+
+    eventSource.onopen =
+        function() {
+
+            serverConnected = true;
+
+            updateConnectionUI();
+        };
+
+
+    eventSource.onmessage =
+        function(event) {
+
+            try {
+
+                const data =
+                    JSON.parse(
+                        event.data
+                    );
+
+                handleServerMessage(
+                    data
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Invalid server message:",
+                    error
+                );
+            }
+        };
+
+
+    eventSource.onerror =
+        function() {
+
+            serverConnected = false;
+
+            updateConnectionUI();
+
+            if (eventSource) {
+
+                try {
+                    eventSource.close();
+                } catch {}
+            }
+
+            setTimeout(
+                connectToServer,
+                2500
+            );
+        };
+}
+
+
+/* =========================================================
+   SERVER MESSAGES
+========================================================= */
+
+function handleServerMessage(data) {
+
+    if (!data) {
+        return;
+    }
+
+
+    if (
+        data.type === "SYNC" ||
+        data.type === "COUNTDOWN" ||
+        data.type === "FLIGHT" ||
+        data.type === "CRASH"
+    ) {
+
+        if (
+            typeof data.roundId !==
+            "undefined"
+        ) {
+
+            currentRoundId =
+                Number(
+                    data.roundId
+                );
+        }
+
+        if (
+            typeof data.multiplier !==
+            "undefined"
+        ) {
+
+            currentMultiplier =
+                Number(
+                    data.multiplier
+                ) || 1;
+        }
+
+        if (
+            typeof data.phase ===
+            "string"
+        ) {
+
+            gamePhase =
+                data.phase;
+        }
+
+        if (
+            typeof data.seconds !==
+            "undefined"
+        ) {
+
+            countdownSeconds =
+                Number(
+                    data.seconds
+                ) || 0;
+        }
+
+        if (
+            Array.isArray(
+                data.history
+            )
+        ) {
+
+            globalHistory =
+                data.history;
+        }
+
+        if (
+            Array.isArray(
+                data.players
+            )
+        ) {
+
+            livePlayers =
+                data.players;
+        }
+
+        if (data.self) {
+
+            updateSelfState(
+                data.self
+            );
+        }
+
+        renderGame();
+        renderHistory();
+        renderPlayers();
+
+        return;
+    }
+
+
+    if (
+        data.type === "PLAYERS"
+    ) {
+
+        if (
+            Array.isArray(
+                data.players
+            )
+        ) {
+
+            livePlayers =
+                data.players;
+        }
+
+        if (data.self) {
+
+            updateSelfState(
+                data.self
+            );
+        }
+
+        renderPlayers();
+
+        return;
+    }
+
+
+    if (
+        data.type === "BALANCE"
+    ) {
+
+        const balance =
+            Number(
+                data.balance
+            );
+
+        if (
+            Number.isFinite(
+                balance
+            )
+        ) {
+
+            tonBalance =
+                balance;
+
+            updateTonWalletUI();
+        }
+
+        return;
+    }
+}
+
+
+/* =========================================================
+   SELF STATE
+========================================================= */
+
+function updateSelfState(self) {
+
+    if (!self) {
+        return;
+    }
+
+    if (
+        self.state === "active"
+    ) {
+
+        hasBet = true;
+
+        isQueuedForNextRound =
+            false;
+
+        if (
+            Number.isFinite(
+                Number(self.amount)
+            )
+        ) {
+
+            userBetAmount =
+                Number(
+                    self.amount
+                );
+
+            const input =
+                document.getElementById(
+                    "amount-input"
+                );
+
+            if (input) {
+
+                input.value =
+                    userBetAmount.toFixed(2);
+            }
+        }
+
+        setBetState(
+            "الرهان نشط"
+        );
+
+        return;
+    }
+
+
+    if (
+        self.state === "pending"
+    ) {
+
+        hasBet = false;
+
+        isQueuedForNextRound =
+            true;
+
+        setBetState(
+            "محجوز للجولة القادمة"
+        );
+
+        return;
+    }
+
+
+    if (
+        self.state === "win"
+    ) {
+
+        hasBet = false;
+
+        isQueuedForNextRound =
+            false;
+
+        setBetState(
+            "ربح " +
+            Number(
+                self.payout || 0
+            ).toFixed(2) +
+            " TON"
+        );
+
+        return;
+    }
+
+
+    if (
+        self.state === "lose"
+    ) {
+
+        hasBet = false;
+
+        isQueuedForNextRound =
+            false;
+
+        setBetState(
+            "خسارة"
+        );
+
+        return;
+    }
+
+
+    hasBet = false;
+
+    isQueuedForNextRound =
+        false;
+
+    setBetState(
+        "جاهز"
+    );
+}
+
+
+/* =========================================================
+   GAME RENDER
+========================================================= */
+
+function renderGame() {
+
+    const multiplier =
+        document.getElementById(
+            "multiplier"
+        );
+
+    const countdown =
+        document.getElementById(
+            "countdown"
+        );
+
+    const roundLabel =
+        document.getElementById(
+            "round-label"
+        );
+
+    const status =
+        document.getElementById(
+            "status-message"
+        );
+
+    const rocket =
+        document.getElementById(
+            "rocket"
+        );
+
+    const flame =
+        document.getElementById(
+            "flame"
+        );
+
+
+    if (roundLabel) {
+
+        roundLabel.textContent =
+            `ROUND #${currentRoundId || "—"}`;
+    }
+
+
+    if (multiplier) {
+
+        multiplier.textContent =
+            Number(
+                currentMultiplier
+            ).toFixed(2) +
+            "x";
+
+        multiplier.className =
+            "multiplier";
+
+        if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            multiplier.classList.add(
+                "flying"
+            );
+
+        } else if (
+            gamePhase ===
+            "CRASH"
+        ) {
+
+            multiplier.classList.add(
+                "crashed"
+            );
+
+        } else {
+
+            multiplier.classList.add(
+                "waiting"
+            );
+        }
+    }
+
+
+    if (countdown) {
+
+        if (
+            gamePhase ===
+            "COUNTDOWN"
+        ) {
+
+            countdown.textContent =
+                countdownSeconds > 0
+                    ? `تبدأ الجولة خلال ${countdownSeconds}`
+                    : "انطلاق...";
+
+        } else if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            countdown.textContent =
+                "الجولة مستمرة";
+
+        } else if (
+            gamePhase ===
+            "CRASH"
+        ) {
+
+            countdown.textContent =
+                "🚀 انتهت الجولة";
+
+        } else {
+
+            countdown.textContent =
+                "جاري الاتصال...";
+        }
+    }
+
+
+    if (status) {
+
+        if (!serverConnected) {
+
+            status.textContent =
+                "جاري الاتصال بالسيرفر...";
+
+        } else if (
+            gamePhase ===
+            "COUNTDOWN"
+        ) {
+
+            status.textContent =
+                isQueuedForNextRound
+                    ? "تم حجز رهانك"
+                    : "الرهان مفتوح";
+
+        } else if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            status.textContent =
+                hasBet
+                    ? "راقب المضاعف واضغط Cash Out"
+                    : "الجولة مستمرة";
+
+        } else if (
+            gamePhase ===
+            "CRASH"
+        ) {
+
+            status.textContent =
+                "بانتظار الجولة التالية";
+        }
+    }
+
+
+    if (rocket) {
+
+        if (
+            gamePhase ===
+            "CRASH"
+        ) {
+
+            rocket.classList.add(
+                "crashed"
+            );
+
+        } else {
+
+            rocket.classList.remove(
+                "crashed"
+            );
+
+            rocket.classList.remove(
+                "hidden"
+            );
+
+            const progress =
+                Math.min(
+                    Math.max(
+                        (currentMultiplier - 1) /
+                        8,
+                        0
+                    ),
+                    1
+                );
+
+            rocket.style.left =
+                `${15 + progress * 58}%`;
+
+            rocket.style.bottom =
+                `${74 + progress * 120}px`;
+
+            rocket.style.transform =
+                `rotate(${
+                    -12 - progress * 15
+                }deg)`;
+        }
+    }
+
+
+    if (flame) {
+
+        if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            flame.style.display =
+                "block";
+
+        } else {
+
+            flame.style.display =
+                "none";
+        }
+    }
+
+
+    updateActionButton();
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function historyClass(value) {
+
+    const n =
+        Number(value);
+
+    if (n < 1.3) {
+        return "red";
+    }
+
+    if (n < 2) {
+        return "green";
+    }
+
+    if (n < 5) {
+        return "blue";
+    }
+
+    if (n < 9) {
+        return "purple";
+    }
+
+    if (n < 25) {
+        return "gold";
+    }
+
+    return "fire";
+}
+
+
+function renderHistory() {
+
+    const container =
+        document.getElementById(
+            "history"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    globalHistory
+        .slice(0, 5)
+        .forEach(function(value) {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+            item.className =
+                "history-item " +
+                historyClass(value);
+
+            item.textContent =
+                Number(value).toFixed(2) +
+                "x";
+
+            container.appendChild(
+                item
+            );
+        });
+}
+
+
+/* =========================================================
+   PLAYERS
+========================================================= */
+
+function renderPlayers() {
+
+    const list =
+        document.getElementById(
+            "players-list"
+        );
+
+    const count =
+        document.getElementById(
+            "players-count"
+        );
+
+    if (!list) {
+        return;
+    }
+
+    if (count) {
+
+        count.textContent =
+            String(
+                livePlayers.length
+            );
+    }
+
+    if (
+        !livePlayers.length
+    ) {
+
+        list.innerHTML = `
+            <div class="empty-players">
+                لا يوجد رهانات حالياً
+            </div>
+        `;
+
+        return;
+    }
+
+    list.innerHTML = "";
+
+    livePlayers
+        .slice(0, 12)
+        .forEach(function(player) {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+            row.className =
+                "player-row";
+
+            const amount =
+                Number(
+                    player.amount || 0
+                ).toFixed(2);
+
+            let statusText =
+                "نشط";
+
+            if (
+                player.status ===
+                "CASHED_OUT"
+            ) {
+
+                statusText =
+                    Number(
+                        player.multiplier ||
+                        0
+                    ).toFixed(2) +
+                    "x";
+
+            } else if (
+                player.status ===
+                "LOST"
+            ) {
+
+                statusText =
+                    "خسر";
+            }
+
+            const avatar =
+                player.avatar ||
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(`
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="60"
+                        height="60"
+                    >
+                        <rect
+                            width="60"
+                            height="60"
+                            rx="30"
+                            fill="#182137"
+                        />
+                        <text
+                            x="30"
+                            y="38"
+                            text-anchor="middle"
+                            fill="#ffffff"
+                            font-size="25"
+                        >
+                            👤
+                        </text>
+                    </svg>
+                `);
+
+            row.innerHTML = `
+                <div class="player-left">
+
+                    <img
+                        class="player-avatar"
+                        src="${escapeHtmlAttribute(avatar)}"
+                        alt=""
+                    >
+
+                    <div>
+
+                        <div class="player-name">
+                            ${escapeHtml(
+                                player.name ||
+                                "اللاعب"
+                            )}
+                        </div>
+
+                        <div class="player-status">
+                            ${statusText}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="player-amount">
+                    ${amount} TON
+                </div>
+            `;
+
+            list.appendChild(
+                row
+            );
+        });
+}
+
+
+/* =========================================================
+   BET BUTTON
+========================================================= */
+
+function updateActionButton() {
+
+    const button =
+        document.getElementById(
+            "action-button"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    button.className =
+        "action-button";
+
+
+    if (actionInProgress) {
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            "انتظر...";
+
+        return;
+    }
+
+
+    button.disabled =
+        false;
+
+
+    if (hasBet) {
+
+        if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            button.classList.add(
+                "cashout"
+            );
+
+            button.textContent =
+                "CASH OUT";
+
+        } else {
+
+            button.classList.add(
+                "wait"
+            );
+
+            button.textContent =
+                "BET ACTIVE";
+
+            button.disabled =
+                true;
+        }
+
+        return;
+    }
+
+
+    if (
+        isQueuedForNextRound
+    ) {
+
+        button.classList.add(
+            "wait"
+        );
+
+        button.textContent =
+            "QUEUED";
+
+        button.disabled =
+            true;
+
+        return;
+    }
+
+
+    if (
+        gamePhase ===
+        "COUNTDOWN"
+    ) {
+
+        button.textContent =
+            "BET";
+
+        return;
+    }
+
+
+    if (
+        gamePhase ===
+        "FLIGHT"
+    ) {
+
+        button.textContent =
+            "BET NEXT ROUND";
+
+        return;
+    }
+
+
+    button.classList.add(
+        "wait"
+    );
+
+    button.textContent =
+        "WAIT...";
+}
+
+
+/* =========================================================
+   ACTION
+========================================================= */
+
+async function handleAction() {
+
+    if (actionInProgress) {
+        return;
+    }
+
+
+    if (hasBet) {
+
+        if (
+            gamePhase ===
+            "FLIGHT"
+        ) {
+
+            await cashout();
+
+        }
+
+        return;
+    }
+
+
+    await placeBet();
+}
+
+
+/* =========================================================
+   PLACE BET
+========================================================= */
+
+async function placeBet() {
+
+    const input =
+        document.getElementById(
+            "amount-input"
+        );
+
+    const amount =
+        Number(
+            input?.value
+        );
+
+
+    if (
+        !Number.isFinite(
+            amount
+        ) ||
+        amount <= 0
+    ) {
+
+        showToast(
+            "أدخل مبلغ رهان صحيح"
+        );
+
+        return;
+    }
+
+
+    if (
+        amount >
+        Number(tonBalance)
+    ) {
+
+        showToast(
+            "الرصيد غير كافٍ"
+        );
+
+        return;
+    }
+
+
+    if (
+        !serverConnected
+    ) {
+
+        showToast(
+            "السيرفر غير متصل"
+        );
+
+        return;
+    }
+
+
+    autoCashoutEnabled =
+        document
+            .getElementById(
+                "auto-switch"
+            )
+            ?.classList
+            .contains("on") ||
+        false;
+
+
+    autoCashoutTarget =
+        Number(
+            document
+                .getElementById(
+                    "auto-target"
+                )
+                ?.value
+        ) || 2;
+
+
+    actionInProgress =
+        true;
+
+    updateActionButton();
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${BACKEND_URL}/api/game-action`,
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            type:
+                                "BET",
+
+                            telegramId:
+                                telegramId,
+
+                            name:
+                                fullName ||
+                                firstName ||
+                                "اللاعب",
+
+                            avatar:
+                                userPhoto,
+
+                            amount:
+                                amount,
+
+                            roundId:
+                                currentRoundId,
+
+                            autoCashout:
+                                autoCashoutEnabled,
+
+                            autoTarget:
+                                autoCashoutTarget
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
+
+
+        if (
+            !response.ok ||
+            !data.ok
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Bet failed"
+            );
+        }
+
+
+        userBetAmount =
+            amount;
+
+        hasBet =
+            true;
+
+        isQueuedForNextRound =
+            false;
+
+        setBetState(
+            "الرهان نشط"
+        );
+
+        showToast(
+            "تم وضع الرهان"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "BET ERROR:",
+            error
+        );
+
+        showToast(
+            error.message ||
+            "تعذر وضع الرهان"
+        );
+
+    } finally {
+
+        actionInProgress =
+            false;
+
+        updateActionButton();
+    }
+}
+
+
+/* =========================================================
+   CASHOUT
+========================================================= */
+
+async function cashout() {
+
+    if (
+        !hasBet ||
+        gamePhase !==
+        "FLIGHT"
+    ) {
+
+        return;
+    }
+
+
+    if (
+        !serverConnected
+    ) {
+
+        showToast(
+            "السيرفر غير متصل"
+        );
+
+        return;
+    }
+
+
+    actionInProgress =
+        true;
+
+    updateActionButton();
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${BACKEND_URL}/api/game-action`,
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            type:
+                                "CASHOUT",
+
+                            telegramId:
+                                telegramId,
+
+                            roundId:
+                                currentRoundId
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
+
+
+        if (
+            !response.ok ||
+            !data.ok
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Cashout failed"
+            );
+        }
+
+
+        hasBet =
+            false;
+
+        setBetState(
+            "تم السحب عند " +
+            Number(
+                data.multiplier ||
+                currentMultiplier
+            ).toFixed(2) +
+            "x"
+        );
+
+        showToast(
+            "تم Cash Out بنجاح"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "CASHOUT ERROR:",
+            error
+        );
+
+        showToast(
+            error.message ||
+            "تعذر السحب"
+        );
+
+    } finally {
+
+        actionInProgress =
+            false;
+
+        updateActionButton();
+    }
+}
+
+
+/* =========================================================
+   AUTO CASHOUT
+========================================================= */
+
+function toggleAutoCashout() {
+
+    const switchButton =
+        document.getElementById(
+            "auto-switch"
+        );
+
+    if (!switchButton) {
+        return;
+    }
+
+    switchButton.classList.toggle(
+        "on"
+    );
+
+    autoCashoutEnabled =
+        switchButton.classList.contains(
+            "on"
+        );
+}
+
+
+/* =========================================================
+   AMOUNT
+========================================================= */
+
+function changeAmount(delta) {
+
+    const input =
+        document.getElementById(
+            "amount-input"
+        );
+
+    if (!input) {
+        return;
+    }
+
+    let value =
+        Number(
+            input.value
+        ) || 1;
+
+    value +=
+        delta;
+
+    if (
+        value <
+        0.01
+    ) {
+
+        value =
+            0.01;
+    }
+
+    input.value =
+        value.toFixed(2);
+}
+
+
+/* =========================================================
+   BET STATE
+========================================================= */
+
+function setBetState(text) {
+
+    const element =
+        document.getElementById(
+            "bet-state"
+        );
+
+    if (element) {
+
+        element.textContent =
+            text;
+    }
+}
+
+
+/* =========================================================
+   CONNECTION UI
+========================================================= */
+
+function updateConnectionUI() {
+
+    const status =
+        document.getElementById(
+            "status-message"
+        );
+
+    if (!status) {
+        return;
+    }
+
+    if (
+        !serverConnected
+    ) {
+
+        status.textContent =
+            "جاري الاتصال بالسيرفر...";
+
+    } else {
+
+        renderGame();
+    }
+}
+
+
+/* =========================================================
+   MODALS / NAV
+========================================================= */
+
+function openDeposit() {
+
+    document
+        .getElementById(
+            "deposit-modal"
+        )
+        ?.classList.add(
+            "show"
+        );
+
+    if (
+        tonWalletConnected &&
+        tonWalletAddress
+    ) {
+
+        const address =
+            document.getElementById(
+                "deposit-address"
+            );
+
+        if (address) {
+
+            address.style.display =
+                "block";
+
+            address.textContent =
+                tonWalletAddress;
+        }
+    }
+}
+
+
+function closeModal(id) {
+
+    document
+        .getElementById(id)
+        ?.classList.remove(
+            "show"
+        );
+}
+
+
+function closeModalOutside(
+    event,
+    id
+) {
+
+    if (
+        event.target.id ===
+        id
+    ) {
+
+        closeModal(id);
+    }
+}
+
+
+function showPage(page) {
+
+    document
+        .querySelectorAll(
+            ".nav-button"
+        )
+        .forEach(
+            function(button) {
+
+                button.classList.remove(
+                    "active"
+                );
+            }
+        );
+
+
+    if (
+        page ===
+        "home"
+    ) {
+
+        document
+            .getElementById(
+                "nav-home"
+            )
+            ?.classList.add(
+                "active"
+            );
+
+        return;
+    }
+
+
+    if (
+        page ===
+        "top"
+    ) {
+
+        document
+            .getElementById(
+                "nav-top"
+            )
+            ?.classList.add(
+                "active"
+            );
+
+        renderTopList();
+
+        document
+            .getElementById(
+                "top-modal"
+            )
+            ?.classList.add(
+                "show"
+            );
+
+        return;
+    }
+
+
+    if (
+        page ===
+        "profile"
+    ) {
+
+        document
+            .getElementById(
+                "nav-profile"
+            )
+            ?.classList.add(
+                "active"
+            );
+
+        updateProfileWalletUI();
+
+        document
+            .getElementById(
+                "profile-modal"
+            )
+            ?.classList.add(
+                "show"
+            );
+
+        return;
+    }
+
+
+    if (
+        page ===
+        "gifts"
+    ) {
+
+        document
+            .getElementById(
+                "nav-gifts"
+            )
+            ?.classList.add(
+                "active"
+            );
+
+        document
+            .getElementById(
+                "gifts-modal"
+            )
+            ?.classList.add(
+                "show"
+            );
+
+        return;
+    }
+}
+
+
+/* =========================================================
+   TOP LIST
+========================================================= */
+
+function renderTopList() {
+
+    const list =
+        document.getElementById(
+            "top-list"
+        );
+
+    if (!list) {
+        return;
+    }
+
+
+    if (
+        !livePlayers.length
+    ) {
+
+        list.innerHTML = `
+            <div class="empty-players">
+                لا توجد بيانات للمتصدرين حالياً
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const sorted =
+        [...livePlayers]
+            .sort(
+                function(a, b) {
+
+                    return (
+                        Number(
+                            b.multiplier || 0
+                        ) -
+                        Number(
+                            a.multiplier || 0
+                        )
+                    );
+                }
+            );
+
+
+    list.innerHTML = "";
+
+
+    sorted
+        .slice(0, 10)
+        .forEach(
+            function(player, index) {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+                row.className =
+                    "player-row";
+
+                row.innerHTML = `
+                    <div class="player-left">
+
+                        <div
+                            style="
+                                width:29px;
+                                text-align:center;
+                                font-size:11px;
+                                font-weight:900;
+                            "
+                        >
+                            #${index + 1}
+                        </div>
+
+                        <div>
+                            <div class="player-name">
+                                ${escapeHtml(
+                                    player.name ||
+                                    "اللاعب"
+                                )}
+                            </div>
+
+                            <div class="player-status">
+                                ${
+                                    player.status ===
+                                    "CASHED_OUT"
+                                        ? "Cashed Out"
+                                        : "Active"
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="player-amount">
+                        ${
+                            Number(
+                                player.multiplier || 0
+                            ).toFixed(2)
+                        }x
+                    </div>
+                `;
+
+                list.appendChild(
+                    row
+                );
+            }
+        );
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer = null;
+
+function showToast(message) {
+
+    const toast =
+        document.getElementById(
+            "toast"
+        );
+
+    if (!toast) {
+        return;
+    }
+
+    toast.textContent =
+        message;
+
+    toast.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        toastTimer
+    );
+
+    toastTimer =
+        setTimeout(
+            function() {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            2200
+        );
+}
+
+
+/* =========================================================
+   ESCAPE
+========================================================= */
+
+function escapeHtml(value) {
+
+    return String(
+        value
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
+
+
+function escapeHtmlAttribute(value) {
+
+    return escapeHtml(
+        value
+    );
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        initUserUI();
+
+        initTonConnect();
+
+        renderHistory();
+
+        renderPlayers();
+
+        updateTonWalletUI();
+
+        updateProfileWalletUI();
+
+        updateActionButton();
+
+        connectToServer();
+
+    }
+);
+
+
+/* =========================================================
+   KEEP CONNECTION ALIVE
+========================================================= */
+
+window.addEventListener(
+    "beforeunload",
+    function() {
+
+        if (eventSource) {
+
+            try {
+                eventSource.close();
+            } catch {}
+        }
+    }
+);
+</script>
+
+</body>
+</html>
