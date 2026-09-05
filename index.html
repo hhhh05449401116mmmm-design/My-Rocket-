@@ -1340,7 +1340,988 @@ button:disabled{
   
 }  
   
-</style>  </head>  <body>  <div class="app">  <header class="header">  <div class="profile-box">  <img
+/* =========================================================
+   PREMIUM BUTTON UI
+   CSS ONLY — NO JAVASCRIPT / NO CONNECTION CHANGES
+========================================================= */
+
+/* =========================
+   GLOBAL BUTTON FEEL
+========================= */
+
+button{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    outline:none;
+    position:relative;
+    overflow:hidden;
+    transition:
+        transform .16s cubic-bezier(.2,.8,.2,1),
+        filter .16s ease,
+        opacity .2s ease,
+        box-shadow .2s ease,
+        background .2s ease,
+        border-color .2s ease;
+}
+
+button::after{
+    content:"";
+    position:absolute;
+    top:-120%;
+    left:-80%;
+    width:55%;
+    height:320%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.16),
+            transparent
+        );
+    transform:rotate(22deg);
+    opacity:0;
+    pointer-events:none;
+}
+
+button:active::after{
+    animation:buttonShine .42s ease;
+}
+
+@keyframes buttonShine{
+
+    0%{
+        left:-80%;
+        opacity:0;
+    }
+
+    25%{
+        opacity:1;
+    }
+
+    100%{
+        left:150%;
+        opacity:0;
+    }
+
+}
+
+
+/* =========================================================
+   MAIN BET BUTTON
+========================================================= */
+
+.place-bet-main{
+
+    width:100%;
+    height:72px;
+
+    border-radius:22px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #19b9ff 0%,
+            #2679f4 48%,
+            #4054e9 100%
+        );
+
+    color:#fff;
+
+    font-size:24px;
+    font-weight:900;
+
+    letter-spacing:.1px;
+
+    border:1px solid
+        rgba(255,255,255,.16);
+
+    box-shadow:
+        0 12px 30px
+        rgba(25,130,255,.24),
+
+        inset 0 1px 0
+        rgba(255,255,255,.28),
+
+        inset 0 -8px 18px
+        rgba(0,0,0,.08);
+
+    text-shadow:
+        0 2px 8px
+        rgba(0,0,0,.18);
+
+    transform:translateZ(0);
+}
+
+.place-bet-main:hover{
+    filter:brightness(1.06);
+    box-shadow:
+        0 15px 34px
+        rgba(25,130,255,.30),
+
+        inset 0 1px 0
+        rgba(255,255,255,.30);
+}
+
+.place-bet-main:active{
+
+    transform:
+        translateY(2px)
+        scale(.975);
+
+    filter:brightness(.96);
+
+    box-shadow:
+        0 6px 16px
+        rgba(25,130,255,.18),
+
+        inset 0 2px 8px
+        rgba(0,0,0,.15);
+}
+
+
+/* =========================
+   CASH OUT
+========================= */
+
+.place-bet-main.cashout-main{
+
+    background:
+        linear-gradient(
+            135deg,
+            #ff5369 0%,
+            #e33d58 48%,
+            #c92d4c 100%
+        );
+
+    border-color:
+        rgba(255,255,255,.18);
+
+    box-shadow:
+        0 12px 32px
+        rgba(229,52,82,.30),
+
+        inset 0 1px 0
+        rgba(255,255,255,.27),
+
+        inset 0 -8px 18px
+        rgba(0,0,0,.10);
+
+    animation:
+        cashoutPulse 1.35s ease-in-out infinite;
+}
+
+@keyframes cashoutPulse{
+
+    0%,
+    100%{
+        box-shadow:
+            0 12px 32px
+            rgba(229,52,82,.25),
+
+            inset 0 1px 0
+            rgba(255,255,255,.25);
+    }
+
+    50%{
+        box-shadow:
+            0 14px 38px
+            rgba(229,52,82,.42),
+
+            inset 0 1px 0
+            rgba(255,255,255,.30);
+    }
+
+}
+
+.place-bet-main.cashout-main:active{
+    animation:none;
+
+    transform:
+        translateY(2px)
+        scale(.975);
+}
+
+
+/* =========================
+   WAITING / ACTIVE
+========================= */
+
+.place-bet-main.wait-main,
+.place-bet-main.queued-main{
+
+    background:
+        linear-gradient(
+            135deg,
+            #30394d,
+            #252d3d
+        );
+
+    color:#aab3c4;
+
+    border-color:
+        rgba(255,255,255,.07);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.06),
+
+        0 6px 18px
+        rgba(0,0,0,.16);
+}
+
+
+/* =========================================================
+   MODAL MAIN BUTTON
+========================================================= */
+
+.modal-place-button{
+
+    width:100%;
+
+    height:62px;
+
+    margin-top:24px;
+
+    border-radius:19px;
+
+    font-size:19px;
+    font-weight:900;
+
+    letter-spacing:.1px;
+
+    border:1px solid
+        rgba(255,255,255,.13);
+
+    color:#fff;
+
+    box-shadow:
+        0 9px 25px
+        rgba(0,0,0,.22),
+
+        inset 0 1px 0
+        rgba(255,255,255,.20);
+
+    text-shadow:
+        0 2px 7px
+        rgba(0,0,0,.20);
+}
+
+.modal-place-button:hover{
+    filter:brightness(1.07);
+}
+
+.modal-place-button:active{
+
+    transform:
+        translateY(2px)
+        scale(.975);
+
+    filter:brightness(.96);
+}
+
+
+/* =========================
+   TON BET
+========================= */
+
+.modal-place-button.ton{
+
+    background:
+        linear-gradient(
+            135deg,
+            #20b8f2 0%,
+            #287ef0 48%,
+            #4654e8 100%
+        );
+
+    border-color:
+        rgba(104,215,255,.22);
+
+    box-shadow:
+        0 10px 28px
+        rgba(32,139,240,.28),
+
+        inset 0 1px 0
+        rgba(255,255,255,.27);
+}
+
+
+/* =========================
+   GIFT BET
+========================= */
+
+.modal-place-button.gift{
+
+    background:
+        linear-gradient(
+            135deg,
+            #c15cff 0%,
+            #a743ed 50%,
+            #7f32d1 100%
+        );
+
+    border-color:
+        rgba(222,169,255,.22);
+
+    box-shadow:
+        0 10px 28px
+        rgba(157,64,232,.30),
+
+        inset 0 1px 0
+        rgba(255,255,255,.25);
+}
+
+
+/* =========================
+   NEXT ROUND
+========================= */
+
+.modal-place-button.next-round{
+
+    background:
+        linear-gradient(
+            135deg,
+            #21b7f1,
+            #287bed 52%,
+            #4057e8
+        );
+
+    border-color:
+        rgba(108,217,255,.22);
+
+    box-shadow:
+        0 10px 28px
+        rgba(31,130,239,.30),
+
+        inset 0 1px 0
+        rgba(255,255,255,.27);
+}
+
+
+/* =========================
+   DISABLED MODAL BUTTON
+========================= */
+
+.modal-place-button:disabled{
+
+    opacity:.42;
+
+    filter:
+        saturate(.45);
+
+    box-shadow:
+        none;
+
+    transform:none;
+}
+
+
+/* =========================================================
+   WALLET / DEPOSIT BUTTONS
+========================================================= */
+
+.wallet-connect{
+
+    width:100%;
+
+    min-height:54px;
+
+    margin-top:9px;
+
+    border-radius:17px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #3474e8,
+            #2857c6
+        );
+
+    color:#fff;
+
+    font-size:15px;
+
+    font-weight:900;
+
+    border:1px solid
+        rgba(255,255,255,.13);
+
+    box-shadow:
+        0 8px 22px
+        rgba(39,91,198,.23),
+
+        inset 0 1px 0
+        rgba(255,255,255,.20);
+
+    text-shadow:
+        0 2px 6px
+        rgba(0,0,0,.18);
+}
+
+.wallet-connect:hover{
+    filter:brightness(1.07);
+
+    box-shadow:
+        0 10px 25px
+        rgba(39,91,198,.30),
+
+        inset 0 1px 0
+        rgba(255,255,255,.23);
+}
+
+.wallet-connect:active{
+
+    transform:
+        translateY(2px)
+        scale(.975);
+
+    filter:brightness(.95);
+}
+
+.wallet-connect:disabled{
+
+    opacity:.42;
+
+    filter:
+        saturate(.5);
+
+    box-shadow:none;
+}
+
+
+/* =========================================================
+   TOP WALLET BALANCE
+========================================================= */
+
+.wallet-balance{
+
+    min-width:82px;
+    height:40px;
+
+    border-radius:13px;
+
+    padding:0 11px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    gap:5px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #141e34,
+            #10182a
+        );
+
+    border:1px solid
+        rgba(95,146,255,.16);
+
+    color:#f5f7ff;
+
+    font-size:13px;
+    font-weight:800;
+
+    box-shadow:
+        0 5px 15px
+        rgba(0,0,0,.18),
+
+        inset 0 1px 0
+        rgba(255,255,255,.06);
+}
+
+.wallet-balance:hover{
+    background:
+        linear-gradient(
+            135deg,
+            #182642,
+            #111b30
+        );
+
+    border-color:
+        rgba(95,146,255,.27);
+}
+
+.wallet-balance:active{
+
+    transform:
+        scale(.95);
+
+}
+
+
+/* =========================================================
+   DEPOSIT SMALL BUTTON
+========================================================= */
+
+.deposit-button{
+
+    width:40px;
+    height:40px;
+
+    border-radius:13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #263858,
+            #1b2943
+        );
+
+    color:#fff;
+
+    font-size:22px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border:1px solid
+        rgba(255,255,255,.10);
+
+    box-shadow:
+        0 6px 16px
+        rgba(0,0,0,.18),
+
+        inset 0 1px 0
+        rgba(255,255,255,.08);
+}
+
+.deposit-button:hover{
+    filter:brightness(1.10);
+}
+
+.deposit-button:active{
+
+    transform:
+        scale(.91);
+
+}
+
+
+/* =========================================================
+   AUTO CASHOUT SWITCH
+========================================================= */
+
+.auto-switch-modal{
+
+    width:82px;
+    height:43px;
+
+    border-radius:30px;
+
+    padding:4px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #454545,
+            #303030
+        );
+
+    border:1px solid
+        rgba(255,255,255,.08);
+
+    transition:
+        background .2s ease,
+        box-shadow .2s ease,
+        transform .15s ease;
+
+    position:relative;
+
+    box-shadow:
+        inset 0 2px 5px
+        rgba(0,0,0,.22),
+
+        0 3px 9px
+        rgba(0,0,0,.15);
+}
+
+.auto-switch-modal span{
+
+    display:block;
+
+    width:35px;
+    height:35px;
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #e4e7ec
+        );
+
+    transition:
+        transform .2s cubic-bezier(.2,.8,.2,1);
+
+    box-shadow:
+        0 3px 8px
+        rgba(0,0,0,.28),
+
+        inset 0 1px 0
+        rgba(255,255,255,.85);
+}
+
+.auto-switch-modal.on{
+
+    background:
+        linear-gradient(
+            135deg,
+            #20b8ee,
+            #168bd7
+        );
+
+    box-shadow:
+        0 5px 16px
+        rgba(25,164,231,.28),
+
+        inset 0 1px 0
+        rgba(255,255,255,.20);
+}
+
+.auto-switch-modal.on span{
+
+    transform:
+        translateX(-39px);
+}
+
+.auto-switch-modal:active{
+
+    transform:
+        scale(.95);
+}
+
+
+/* =========================================================
+   AUTO + / -
+========================================================= */
+
+.auto-number-control{
+
+    width:88px;
+    height:76px;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #3d3d3d,
+            #303030
+        );
+
+    color:#fff;
+
+    font-size:31px;
+    font-weight:900;
+
+    border:1px solid
+        rgba(255,255,255,.08);
+
+    box-shadow:
+        0 7px 18px
+        rgba(0,0,0,.20),
+
+        inset 0 1px 0
+        rgba(255,255,255,.07);
+}
+
+.auto-number-control:hover{
+    background:
+        linear-gradient(
+            145deg,
+            #464646,
+            #343434
+        );
+}
+
+.auto-number-control:active{
+
+    transform:
+        scale(.93);
+
+    box-shadow:
+        inset 0 3px 8px
+        rgba(0,0,0,.20);
+}
+
+.auto-number-control:disabled{
+
+    opacity:.38;
+}
+
+
+/* =========================================================
+   MODAL TABS
+========================================================= */
+
+.modal-tab{
+
+    flex:1;
+
+    border-radius:18px;
+
+    background:
+        transparent;
+
+    color:#aaa;
+
+    font-size:18px;
+    font-weight:900;
+
+    border:1px solid
+        transparent;
+}
+
+.modal-tab:hover{
+
+    color:#fff;
+
+    background:
+        rgba(255,255,255,.045);
+}
+
+.modal-tab:active{
+
+    transform:
+        scale(.97);
+}
+
+.modal-tab.active{
+
+    background:
+        linear-gradient(
+            135deg,
+            #b957f5,
+            #9440e0
+        );
+
+    color:#fff;
+
+    border-color:
+        rgba(255,255,255,.12);
+
+    box-shadow:
+        0 7px 18px
+        rgba(168,76,240,.25),
+
+        inset 0 1px 0
+        rgba(255,255,255,.20);
+}
+
+.modal-tab.ton.active{
+
+    background:
+        linear-gradient(
+            135deg,
+            #20b8ef,
+            #2878e9
+        );
+
+    box-shadow:
+        0 7px 18px
+        rgba(32,147,239,.24),
+
+        inset 0 1px 0
+        rgba(255,255,255,.20);
+}
+
+
+/* =========================================================
+   CLOSE BUTTON
+========================================================= */
+
+.close-button{
+
+    width:46px;
+    height:46px;
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            145deg,
+            #414141,
+            #303030
+        );
+
+    color:#fff;
+
+    font-size:28px;
+    line-height:1;
+
+    border:1px solid
+        rgba(255,255,255,.09);
+
+    box-shadow:
+        0 6px 15px
+        rgba(0,0,0,.18),
+
+        inset 0 1px 0
+        rgba(255,255,255,.08);
+}
+
+.close-button:hover{
+    background:
+        linear-gradient(
+            145deg,
+            #4a4a4a,
+            #363636
+        );
+}
+
+.close-button:active{
+
+    transform:
+        scale(.90)
+        rotate(4deg);
+}
+
+
+/* =========================================================
+   EXTRA PREMIUM INPUT FOCUS
+========================================================= */
+
+.modal-amount-box:focus-within{
+
+    border-color:
+        rgba(50,168,239,.55);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(40,145,239,.10),
+
+        0 8px 22px
+        rgba(0,0,0,.12);
+}
+
+.auto-target-box:focus-within{
+
+    border-color:
+        rgba(50,168,239,.55);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(40,145,239,.10);
+}
+
+
+/* =========================================================
+   NAV BUTTONS PREMIUM TOUCH
+========================================================= */
+
+.nav-button{
+
+    border:1px solid transparent;
+
+    color:
+        rgba(255,255,255,.58);
+
+    box-shadow:none;
+}
+
+.nav-button:hover{
+
+    color:#fff;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border-color:
+        rgba(255,255,255,.07);
+}
+
+.nav-button.active{
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.15),
+            rgba(255,255,255,.045)
+        );
+
+    border:
+        1px solid
+        rgba(255,255,255,.18);
+
+    color:#fff;
+
+    box-shadow:
+        0 8px 24px
+        rgba(0,0,0,.28),
+
+        inset 0 1px 0
+        rgba(255,255,255,.12);
+}
+
+.nav-button:active{
+
+    transform:
+        scale(.93);
+}
+
+
+/* =========================================================
+   MOBILE BUTTON ADJUSTMENTS
+========================================================= */
+
+@media(max-width:360px){
+
+    .place-bet-main{
+
+        height:68px;
+
+        border-radius:20px;
+
+        font-size:22px;
+    }
+
+    .modal-place-button{
+
+        height:58px;
+
+        border-radius:17px;
+
+        font-size:18px;
+    }
+
+    .wallet-connect{
+
+        min-height:51px;
+
+        border-radius:16px;
+    }
+
+    .auto-number-control{
+
+        width:70px;
+        height:72px;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCE MOTION SUPPORT
+========================================================= */
+
+@media(prefers-reduced-motion:reduce){
+
+    button,
+    .place-bet-main,
+    .modal-place-button,
+    .auto-switch-modal,
+    .auto-switch-modal span{
+
+        transition:none !important;
+        animation:none !important;
+    }
+
+}</style>  </head>  <body>  <div class="app">  <header class="header">  <div class="profile-box">  <img
 id="user-avatar"
 class="avatar"
 src=""
