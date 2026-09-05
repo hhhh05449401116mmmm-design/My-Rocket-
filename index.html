@@ -3296,32 +3296,22 @@ function renderPlayers(){
                 }  
   
   
-                let multiplierValue =  
-                    1;  
-  
-  
-                if(  
-                    Number.isFinite(  
-                        Number(  
-                            player.multiplier  
-                        )  
-                    )  
-                ){  
-  
-                    multiplierValue =  
-                        Number(  
-                            player.multiplier  
-                        );  
-  
-                }else{  
-  
-                    multiplierValue =  
-                        Number(  
-                            currentMultiplier  
-                        ) || 1;  
-  
-                }  
-  
+  let multiplierValue =
+    Number(currentMultiplier) || 1;
+
+
+if(
+    status === "CASHED_OUT" &&
+    Number.isFinite(
+        Number(player.multiplier)
+    ) &&
+    Number(player.multiplier) > 0
+){
+
+    multiplierValue =
+        Number(player.multiplier);
+
+}
   
                 const amount =  
                     Number(  
