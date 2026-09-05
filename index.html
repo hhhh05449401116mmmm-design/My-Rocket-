@@ -1014,10 +1014,13 @@ button:disabled{
 .modal-place-button.ton{
     background:
         linear-gradient(
-            100deg,
-            #536075,
-            #435168
+            110deg,
+            #16a9e9,
+            #2860e8
         );
+    color:#fff;
+    box-shadow:
+        0 10px 25px rgba(27,104,226,.22);
 }
 
 .modal-place-button.gift{
@@ -1029,7 +1032,6 @@ button:disabled{
         );
 }
 
-/* Bet Next Round يكون أزرق وواضح */
 .modal-place-button.next-round{
     background:
         linear-gradient(
@@ -3187,11 +3189,6 @@ function updateModalBetButton(){
             "FLIGHT"
         ){
 
-            /*
-             * أثناء الطيران اللاعب يستطيع
-             * حجز رهان للجولة القادمة.
-             * الزر يبقى ظاهر وأزرق.
-             */
             button.className =
                 "modal-place-button next-round";
 
