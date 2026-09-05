@@ -48,14 +48,12 @@ const TONCENTER_BASE_URL =
     'https://toncenter.com/api/v2';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-
     console.error(
         '❌ Missing SUPABASE_URL or SUPABASE_SECRET_KEY/SUPABASE_KEY'
     );
 }
 
 if (!TON_RECEIVER_ADDRESS) {
-
     console.error(
         '❌ Missing TON_RECEIVER_ADDRESS'
     );
@@ -78,17 +76,13 @@ const supabase =
 let normalizedReceiverAddress = null;
 
 try {
-
     if (TON_RECEIVER_ADDRESS) {
-
         normalizedReceiverAddress =
             Address.parse(
                 TON_RECEIVER_ADDRESS
             ).toRawString();
     }
-
 } catch (error) {
-
     console.error(
         '❌ Invalid TON_RECEIVER_ADDRESS:',
         error.message
@@ -161,15 +155,11 @@ function send(
     client,
     data
 ) {
-
     try {
-
         client.write(
             `data: ${JSON.stringify(data)}\n\n`
         );
-
     } catch {
-
         clients.delete(client);
     }
 }
@@ -177,13 +167,10 @@ function send(
 function roundMoney(
     value
 ) {
-
     const n =
         Number(value);
 
-    if (
-        !Number.isFinite(n)
-    ) {
+    if (!Number.isFinite(n)) {
         return 0;
     }
 
@@ -195,15 +182,11 @@ function roundMoney(
 function normalizeTonAddress(
     address
 ) {
-
     try {
-
         return Address.parse(
             String(address || '').trim()
         ).toRawString();
-
     } catch {
-
         return null;
     }
 }
@@ -211,7 +194,6 @@ function normalizeTonAddress(
 function isNumericTelegramId(
     id
 ) {
-
     return /^\d+$/.test(
         String(id || '')
     );
@@ -228,7 +210,6 @@ async function loadPlayerFromDatabase(
     name = 'اللاعب',
     avatar = ''
 ) {
-
     const id =
         String(telegramId);
 
@@ -258,7 +239,6 @@ async function loadPlayerFromDatabase(
             .maybeSingle();
 
     if (error) {
-
         console.error(
             'SUPABASE LOAD PLAYER ERROR:',
             error
@@ -268,7 +248,6 @@ async function loadPlayerFromDatabase(
     }
 
     if (!data) {
-
         const {
             data: created,
             error: createError
@@ -291,7 +270,6 @@ async function loadPlayerFromDatabase(
                 .single();
 
         if (createError) {
-
             console.error(
                 'SUPABASE CREATE PLAYER ERROR:',
                 createError
@@ -301,7 +279,6 @@ async function loadPlayerFromDatabase(
         }
 
         return {
-
             telegramId: id,
 
             name:
@@ -324,7 +301,6 @@ async function loadPlayerFromDatabase(
     }
 
     return {
-
         telegramId: id,
 
         name:
@@ -351,7 +327,6 @@ async function savePlayerBalance(
     balance,
     username = null
 ) {
-
     if (
         !supabase ||
         !isNumericTelegramId(
@@ -365,7 +340,6 @@ async function savePlayerBalance(
         Number(telegramId);
 
     const payload = {
-
         telegram_id:
             numericId,
 
@@ -374,7 +348,6 @@ async function savePlayerBalance(
     };
 
     if (username) {
-
         payload.username =
             String(username)
                 .slice(0, 100);
@@ -394,7 +367,6 @@ async function savePlayerBalance(
             );
 
     if (error) {
-
         console.error(
             'SUPABASE SAVE BALANCE ERROR:',
             error
@@ -411,14 +383,12 @@ async function ensurePlayer(
     name = 'اللاعب',
     avatar = ''
 ) {
-
     const id =
         String(telegramId);
 
     if (
         players.has(id)
     ) {
-
         const player =
             players.get(id);
 
@@ -441,7 +411,6 @@ async function ensurePlayer(
         );
 
     if (dbPlayer) {
-
         players.set(
             id,
             dbPlayer
@@ -450,13 +419,7 @@ async function ensurePlayer(
         return dbPlayer;
     }
 
-    /*
-    Guest is view-only.
-    Real Telegram players must have a numeric ID.
-    */
-
     const guestPlayer = {
-
         telegramId: id,
 
         name:
@@ -484,7 +447,6 @@ async function ensurePlayer(
 async function refreshPlayerBalance(
     player
 ) {
-
     if (
         !supabase ||
         !isNumericTelegramId(
@@ -515,7 +477,6 @@ async function refreshPlayerBalance(
         !error &&
         data
     ) {
-
         player.balance =
             roundMoney(
                 data.balance
@@ -525,7 +486,6 @@ async function refreshPlayerBalance(
             data.username &&
             !player.name
         ) {
-
             player.name =
                 data.username;
         }
@@ -541,14 +501,12 @@ GAME HELPERS
 */
 
 function getPublicPlayers() {
-
     const result = [];
 
     for (
         const player
         of players.values()
     ) {
-
         if (
             !player.currentBet
         ) {
@@ -563,7 +521,6 @@ function getPublicPlayers() {
         }
 
         result.push({
-
             telegramId:
                 player.telegramId,
 
@@ -596,7 +553,6 @@ function getPublicPlayers() {
 function getSelfState(
     telegramId
 ) {
-
     const player =
         players.get(
             String(telegramId)
@@ -606,7 +562,6 @@ function getSelfState(
         !player ||
         !player.currentBet
     ) {
-
         return {
             state: 'none'
         };
@@ -619,7 +574,6 @@ function getSelfState(
         bet.roundId !==
         roundId
     ) {
-
         return {
             state: 'none'
         };
@@ -629,9 +583,7 @@ function getSelfState(
         bet.status ===
         'ACTIVE'
     ) {
-
         return {
-
             state: 'active',
 
             amount:
@@ -652,9 +604,7 @@ function getSelfState(
         bet.status ===
         'CASHED_OUT'
     ) {
-
         return {
-
             state: 'win',
 
             amount:
@@ -675,9 +625,7 @@ function getSelfState(
         bet.status ===
         'LOST'
     ) {
-
         return {
-
             state: 'lose',
 
             amount:
@@ -697,9 +645,7 @@ function getState(
     type = gameState,
     telegramId = null
 ) {
-
     return {
-
         type,
 
         phase:
@@ -735,12 +681,10 @@ function getState(
 function broadcast(
     type = gameState
 ) {
-
     for (
         const client
         of clients
     ) {
-
         send(
             client,
             getState(
@@ -752,16 +696,13 @@ function broadcast(
 }
 
 function broadcastPlayers() {
-
     for (
         const client
         of clients
     ) {
-
         send(
             client,
             {
-
                 type:
                     'PLAYERS',
 
@@ -783,7 +724,6 @@ function broadcastPlayers() {
 function sendBalance(
     client
 ) {
-
     const player =
         players.get(
             String(
@@ -798,7 +738,6 @@ function sendBalance(
     send(
         client,
         {
-
             type:
                 'BALANCE',
 
@@ -816,19 +755,16 @@ function sendBalance(
 function sendBalanceToPlayer(
     telegramId
 ) {
-
     for (
         const client
         of clients
     ) {
-
         if (
             String(
                 client.telegramId
             ) ===
             String(telegramId)
         ) {
-
             sendBalance(client);
         }
     }
@@ -841,15 +777,14 @@ TON DEPOSIT HELPERS
 */
 
 /*
-TON comment:
+The TON transaction comment will be:
 
-rocket-deposit:UUID
+rocket-deposit:<SUPABASE UUID>
 */
 
 function createCommentPayload(
     commentText
 ) {
-
     return beginCell()
         .storeUint(
             0,
@@ -870,7 +805,6 @@ function extractCommentFromCell(
     cell,
     maxDepth = 16
 ) {
-
     if (
         !cell ||
         maxDepth < 0
@@ -879,7 +813,6 @@ function extractCommentFromCell(
     }
 
     try {
-
         const slice =
             cell.beginParse();
 
@@ -905,7 +838,6 @@ function extractCommentFromCell(
             currentSlice,
             depth
         ) {
-
             if (
                 !currentSlice ||
                 depth > maxDepth
@@ -919,7 +851,6 @@ function extractCommentFromCell(
             if (
                 bits > 0
             ) {
-
                 const byteLength =
                     Math.floor(
                         bits / 8
@@ -928,7 +859,6 @@ function extractCommentFromCell(
                 if (
                     byteLength > 0
                 ) {
-
                     const buffer =
                         currentSlice
                             .loadBuffer(
@@ -946,7 +876,6 @@ function extractCommentFromCell(
                 currentSlice.remainingRefs >
                 0
             ) {
-
                 const nextCell =
                     currentSlice.loadRef();
 
@@ -968,7 +897,6 @@ function extractCommentFromCell(
         );
 
     } catch {
-
         return null;
     }
 }
@@ -976,7 +904,6 @@ function extractCommentFromCell(
 function extractCommentFromMessage(
     message
 ) {
-
     if (!message) {
         return null;
     }
@@ -986,7 +913,6 @@ function extractCommentFromMessage(
         'string' &&
         message.message.trim()
     ) {
-
         return message.message.trim();
     }
 
@@ -996,9 +922,7 @@ function extractCommentFromMessage(
             ?.body ===
         'string'
     ) {
-
         try {
-
             const cell =
                 Cell.fromBase64(
                     message
@@ -1021,9 +945,7 @@ function extractCommentFromMessage(
             ?.body ===
         'string'
     ) {
-
         try {
-
             const cell =
                 Cell.fromBase64(
                     message
@@ -1046,7 +968,6 @@ function extractCommentFromMessage(
 function toNanotons(
     tonAmount
 ) {
-
     const value =
         Number(tonAmount);
 
@@ -1075,7 +996,6 @@ function toNanotons(
 function transactionHash(
     tx
 ) {
-
     return (
         tx?.transaction_id?.hash ||
         tx?.hash ||
@@ -1087,7 +1007,6 @@ function transactionHash(
 function transactionSucceeded(
     tx
 ) {
-
     if (
         tx?.description?.aborted ===
         true
@@ -1113,7 +1032,6 @@ function transactionSucceeded(
 }
 
 async function fetchReceiverTransactions() {
-
     if (
         !TON_RECEIVER_ADDRESS
     ) {
@@ -1140,7 +1058,6 @@ async function fetchReceiverTransactions() {
     if (
         TONCENTER_API_KEY
     ) {
-
         headers['X-API-Key'] =
             TONCENTER_API_KEY;
     }
@@ -1159,7 +1076,6 @@ async function fetchReceiverTransactions() {
     if (
         !response.ok
     ) {
-
         throw new Error(
             `TON Center HTTP ${response.status}`
         );
@@ -1171,7 +1087,6 @@ async function fetchReceiverTransactions() {
     if (
         !json.ok
     ) {
-
         throw new Error(
             json.error ||
             'TON Center returned ok=false'
@@ -1189,7 +1104,6 @@ async function markDepositFailed(
     depositId,
     reason
 ) {
-
     if (!supabase) {
         return;
     }
@@ -1197,14 +1111,12 @@ async function markDepositFailed(
     await supabase
         .from('deposits')
         .update({
-
             status:
                 'failed',
 
             failure_reason:
                 String(reason)
                     .slice(0, 500)
-
         })
         .eq(
             'id',
@@ -1225,9 +1137,7 @@ DEPOSIT CREDIT
 async function creditConfirmedDeposit(
     deposit
 ) {
-
     if (!supabase) {
-
         throw new Error(
             'Supabase is not configured'
         );
@@ -1248,7 +1158,6 @@ async function creditConfirmedDeposit(
             telegramId
         )
     ) {
-
         throw new Error(
             'Invalid telegram_id'
         );
@@ -1258,7 +1167,6 @@ async function creditConfirmedDeposit(
         !Number.isFinite(amount) ||
         amount <= 0
     ) {
-
         throw new Error(
             'Invalid deposit amount'
         );
@@ -1317,7 +1225,6 @@ async function creditConfirmedDeposit(
     let newBalance;
 
     if (!player) {
-
         newBalance =
             roundMoney(amount);
 
@@ -1327,7 +1234,6 @@ async function creditConfirmedDeposit(
             await supabase
                 .from('players')
                 .insert({
-
                     telegram_id:
                         telegramId,
 
@@ -1343,7 +1249,6 @@ async function creditConfirmedDeposit(
         }
 
     } else {
-
         newBalance =
             roundMoney(
                 Number(
@@ -1358,10 +1263,8 @@ async function creditConfirmedDeposit(
             await supabase
                 .from('players')
                 .update({
-
                     balance:
                         newBalance
-
                 })
                 .eq(
                     'telegram_id',
@@ -1383,14 +1286,12 @@ async function creditConfirmedDeposit(
         await supabase
             .from('deposits')
             .update({
-
                 status:
                     'credited',
 
                 credited_at:
                     new Date()
                         .toISOString()
-
             })
             .eq(
                 'id',
@@ -1425,7 +1326,6 @@ async function creditConfirmedDeposit(
         );
 
     if (localPlayer) {
-
         localPlayer.balance =
             newBalance;
 
@@ -1447,7 +1347,6 @@ async function verifyOneDeposit(
     deposit,
     transactions
 ) {
-
     const expectedAmount =
         toNanotons(
             deposit.amount
@@ -1459,7 +1358,6 @@ async function verifyOneDeposit(
         );
 
     if (!expectedAmount) {
-
         await markDepositFailed(
             deposit.id,
             'Invalid deposit amount'
@@ -1469,7 +1367,6 @@ async function verifyOneDeposit(
     }
 
     if (!expectedWallet) {
-
         await markDepositFailed(
             deposit.id,
             'Invalid wallet address'
@@ -1486,9 +1383,7 @@ async function verifyOneDeposit(
     }
 
     /*
-    IMPORTANT:
-    deposits table uses "id".
-    The blockchain comment is:
+    The blockchain comment must contain:
     rocket-deposit:<database UUID>
     */
     const expectedComment =
@@ -1498,7 +1393,6 @@ async function verifyOneDeposit(
         const tx
         of transactions
     ) {
-
         const txHash =
             transactionHash(tx);
 
@@ -1543,7 +1437,6 @@ async function verifyOneDeposit(
         let value;
 
         try {
-
             value =
                 BigInt(
                     String(
@@ -1551,9 +1444,7 @@ async function verifyOneDeposit(
                         '0'
                     )
                 );
-
         } catch {
-
             continue;
         }
 
@@ -1605,7 +1496,6 @@ async function verifyOneDeposit(
             existingTx.id !==
                 deposit.id
         ) {
-
             await markDepositFailed(
                 deposit.id,
                 'Transaction already used'
@@ -1623,7 +1513,6 @@ async function verifyOneDeposit(
             await supabase
                 .from('deposits')
                 .update({
-
                     tx_hash:
                         txHash,
 
@@ -1633,7 +1522,6 @@ async function verifyOneDeposit(
                     detected_at:
                         new Date()
                             .toISOString()
-
                 })
                 .eq(
                     'id',
@@ -1645,7 +1533,6 @@ async function verifyOneDeposit(
                 );
 
         if (error) {
-
             console.error(
                 'DEPOSIT DETECT UPDATE ERROR:',
                 error
@@ -1663,7 +1550,6 @@ CONFIRM DETECTED DEPOSITS
 */
 
 async function confirmDetectedDeposits() {
-
     if (!supabase) {
         return;
     }
@@ -1694,7 +1580,6 @@ async function confirmDetectedDeposits() {
             .limit(20);
 
     if (error) {
-
         console.error(
             'LOAD DETECTED DEPOSITS ERROR:',
             error
@@ -1717,7 +1602,6 @@ async function confirmDetectedDeposits() {
         const deposit
         of deposits
     ) {
-
         const tx =
             transactions.find(
                 item =>
@@ -1734,17 +1618,14 @@ async function confirmDetectedDeposits() {
         if (
             !transactionSucceeded(tx)
         ) {
-
             await supabase
                 .from('deposits')
                 .update({
-
                     status:
                         'failed',
 
                     failure_reason:
                         'Transaction is aborted'
-
                 })
                 .eq(
                     'id',
@@ -1785,11 +1666,9 @@ async function confirmDetectedDeposits() {
         let value = null;
 
         try {
-
             if (
                 inMsg?.value != null
             ) {
-
                 value =
                     BigInt(
                         String(
@@ -1797,9 +1676,7 @@ async function confirmDetectedDeposits() {
                         )
                     );
             }
-
         } catch {
-
             value = null;
         }
 
@@ -1824,7 +1701,6 @@ async function confirmDetectedDeposits() {
             comment !==
                 expectedComment
         ) {
-
             continue;
         }
 
@@ -1835,14 +1711,12 @@ async function confirmDetectedDeposits() {
             await supabase
                 .from('deposits')
                 .update({
-
                     status:
                         'confirmed',
 
                     confirmed_at:
                         new Date()
                             .toISOString()
-
                 })
                 .eq(
                     'id',
@@ -1854,7 +1728,6 @@ async function confirmDetectedDeposits() {
                 );
 
         if (confirmError) {
-
             console.error(
                 'CONFIRM DEPOSIT ERROR:',
                 confirmError
@@ -1870,7 +1743,6 @@ CREDIT CONFIRMED DEPOSITS
 */
 
 async function creditConfirmedDeposits() {
-
     if (!supabase) {
         return;
     }
@@ -1901,7 +1773,6 @@ async function creditConfirmedDeposits() {
             .limit(20);
 
     if (error) {
-
         console.error(
             'LOAD CONFIRMED DEPOSITS ERROR:',
             error
@@ -1924,9 +1795,7 @@ async function creditConfirmedDeposits() {
         const deposit
         of deposits
     ) {
-
         try {
-
             const tx =
                 transactions.find(
                     item =>
@@ -1967,11 +1836,9 @@ async function creditConfirmedDeposits() {
             let value = null;
 
             try {
-
                 if (
                     inMsg?.value != null
                 ) {
-
                     value =
                         BigInt(
                             String(
@@ -1979,9 +1846,7 @@ async function creditConfirmedDeposits() {
                             )
                         );
                 }
-
             } catch {
-
                 value = null;
             }
 
@@ -2008,7 +1873,6 @@ async function creditConfirmedDeposits() {
 
                 !transactionSucceeded(tx)
             ) {
-
                 continue;
             }
 
@@ -2017,7 +1881,6 @@ async function creditConfirmedDeposits() {
             );
 
         } catch (error) {
-
             console.error(
                 'CREDIT DEPOSIT ERROR:',
                 error
@@ -2033,7 +1896,6 @@ DEPOSIT SCANNER
 */
 
 async function scanAndVerifyDeposits() {
-
     if (
         !supabase ||
         !normalizedReceiverAddress
@@ -2042,7 +1904,6 @@ async function scanAndVerifyDeposits() {
     }
 
     try {
-
         const {
             data: pending,
             error
@@ -2064,7 +1925,6 @@ async function scanAndVerifyDeposits() {
                 .limit(50);
 
         if (error) {
-
             console.error(
                 'LOAD PENDING DEPOSITS ERROR:',
                 error
@@ -2077,7 +1937,6 @@ async function scanAndVerifyDeposits() {
             pending &&
             pending.length > 0
         ) {
-
             const transactions =
                 await fetchReceiverTransactions();
 
@@ -2085,16 +1944,12 @@ async function scanAndVerifyDeposits() {
                 const deposit
                 of pending
             ) {
-
                 try {
-
                     await verifyOneDeposit(
                         deposit,
                         transactions
                     );
-
                 } catch (error) {
-
                     console.error(
                         'VERIFY DEPOSIT ERROR:',
                         error
@@ -2108,7 +1963,6 @@ async function scanAndVerifyDeposits() {
         await creditConfirmedDeposits();
 
     } catch (error) {
-
         console.error(
             'DEPOSIT SCANNER ERROR:',
             error
@@ -2125,11 +1979,8 @@ DEPOSIT API
 app.post(
     '/api/deposit/create',
     async (req, res) => {
-
         try {
-
             if (!supabase) {
-
                 return res.status(500).json({
                     ok: false,
                     error:
@@ -2140,7 +1991,6 @@ app.post(
             if (
                 !normalizedReceiverAddress
             ) {
-
                 return res.status(500).json({
                     ok: false,
                     error:
@@ -2163,7 +2013,6 @@ app.post(
             if (
                 !isNumericTelegramId(id)
             ) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2179,7 +2028,6 @@ app.post(
             if (
                 !normalizedWallet
             ) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2196,7 +2044,6 @@ app.post(
                 ) ||
                 tonAmount <= 0
             ) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2204,6 +2051,9 @@ app.post(
                 });
             }
 
+            /*
+            Keep deposit precision to 9 decimals.
+            */
             const amountString =
                 tonAmount
                     .toFixed(9)
@@ -2218,7 +2068,6 @@ app.post(
                 );
 
             if (!nano) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2227,7 +2076,9 @@ app.post(
             }
 
             /*
-            Database creates the UUID.
+            ======================================
+            CREATE DATABASE DEPOSIT
+            ======================================
             */
 
             const {
@@ -2237,7 +2088,6 @@ app.post(
                 await supabase
                     .from('deposits')
                     .insert({
-
                         telegram_id:
                             Number(id),
 
@@ -2249,7 +2099,6 @@ app.post(
 
                         status:
                             'pending'
-
                     })
                     .select(
                         'id, telegram_id, wallet_address, amount, status, created_at'
@@ -2257,7 +2106,6 @@ app.post(
                     .single();
 
             if (error) {
-
                 console.error(
                     'CREATE DEPOSIT ERROR:',
                     error
@@ -2271,40 +2119,90 @@ app.post(
             }
 
             /*
-            IMPORTANT:
-            The blockchain comment must contain
-            the actual database UUID.
+            ======================================
+            IMPORTANT TON COMMENT
+            ======================================
+
+            The comment contains the ACTUAL
+            Supabase deposit UUID.
+
+            Example:
+
+            rocket-deposit:
+            550e8400-e29b-41d4-a716-446655440000
             */
 
             const comment =
                 `rocket-deposit:${data.id}`;
 
-            return res.json({
+            /*
+            Create the canonical TON comment
+            payload on the SERVER.
 
+            The frontend will send this exact
+            payload through TON Connect.
+            */
+
+            const payload =
+                createCommentPayload(
+                    comment
+                );
+
+            /*
+            ======================================
+            RETURN DEPOSIT REQUEST
+            ======================================
+            */
+
+            return res.json({
                 ok: true,
 
+                /*
+                Full database deposit.
+                */
                 deposit:
                     data,
 
+                /*
+                IMPORTANT:
+                This must be the real UUID,
+                NOT the comment string.
+                */
                 depositId:
-                    comment,
+                    data.id,
 
+                /*
+                Receiver wallet.
+                */
                 receiver:
                     TON_RECEIVER_ADDRESS,
 
+                /*
+                Human-readable amount.
+                */
                 amount:
                     amountString,
 
+                /*
+                Exact blockchain amount.
+                */
                 amountNano:
                     nano.toString(),
 
+                /*
+                Blockchain comment.
+                */
                 comment:
-                    comment
+                    comment,
 
+                /*
+                Canonical TON BOC payload.
+                */
+                payload:
+                    payload
             });
 
         } catch (error) {
-
             console.error(
                 'DEPOSIT CREATE ERROR:',
                 error
@@ -2320,17 +2218,16 @@ app.post(
 );
 
 /*
-Get deposit status.
+==================================================
+DEPOSIT STATUS
+==================================================
 */
 
 app.get(
     '/api/deposit/status',
     async (req, res) => {
-
         try {
-
             if (!supabase) {
-
                 return res.status(500).json({
                     ok: false,
                     error:
@@ -2356,7 +2253,6 @@ app.get(
                 ) ||
                 !depositId
             ) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2386,7 +2282,6 @@ app.get(
                     .maybeSingle();
 
             if (error) {
-
                 console.error(
                     'DEPOSIT STATUS ERROR:',
                     error
@@ -2400,7 +2295,6 @@ app.get(
             }
 
             if (!data) {
-
                 return res.status(404).json({
                     ok: false,
                     error:
@@ -2409,7 +2303,6 @@ app.get(
             }
 
             return res.json({
-
                 ok: true,
 
                 deposit:
@@ -2417,7 +2310,6 @@ app.get(
             });
 
         } catch (error) {
-
             console.error(
                 'DEPOSIT STATUS EXCEPTION:',
                 error
@@ -2441,9 +2333,7 @@ HOME
 app.get(
     '/',
     (req, res) => {
-
         res.json({
-
             ok: true,
 
             service:
@@ -2481,9 +2371,7 @@ HEALTH
 app.get(
     '/health',
     (req, res) => {
-
         res.json({
-
             ok: true,
 
             gameState,
@@ -2521,7 +2409,6 @@ GAME STREAM
 app.get(
     '/api/game-stream',
     async (req, res) => {
-
         const telegramId =
             String(
                 req.query.telegramId ||
@@ -2565,7 +2452,6 @@ app.get(
         if (
             res.flushHeaders
         ) {
-
             res.flushHeaders();
         }
 
@@ -2581,7 +2467,6 @@ app.get(
                 telegramId
             )
         ) {
-
             await refreshPlayerBalance(
                 player
             );
@@ -2605,7 +2490,6 @@ app.get(
         req.on(
             'close',
             () => {
-
                 clients.delete(
                     res
                 );
@@ -2623,9 +2507,7 @@ GAME ACTION
 app.post(
     '/api/game-action',
     async (req, res) => {
-
         try {
-
             const {
                 type,
                 telegramId,
@@ -2645,7 +2527,6 @@ app.post(
                 );
 
             if (!id) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2656,7 +2537,6 @@ app.post(
             if (
                 !isNumericTelegramId(id)
             ) {
-
                 return res.status(400).json({
                     ok: false,
                     error:
@@ -2695,12 +2575,10 @@ app.post(
                 type ===
                 'BET'
             ) {
-
                 if (
                     gameState !==
                     'COUNTDOWN'
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2714,7 +2592,6 @@ app.post(
                     ) !==
                     roundId
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2731,7 +2608,6 @@ app.post(
                     ) ||
                     betAmount <= 0
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2750,7 +2626,6 @@ app.post(
                             'CASHED_OUT'
                     )
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2762,7 +2637,6 @@ app.post(
                     betAmount >
                     player.balance
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2784,7 +2658,6 @@ app.post(
                     );
 
                 if (!saved) {
-
                     return res.status(500).json({
                         ok: false,
                         error:
@@ -2796,7 +2669,6 @@ app.post(
                     newBalance;
 
                 player.currentBet = {
-
                     roundId,
 
                     amount:
@@ -2832,7 +2704,6 @@ app.post(
                 );
 
                 return res.json({
-
                     ok: true,
 
                     action:
@@ -2860,12 +2731,10 @@ app.post(
                 type ===
                 'CASHOUT'
             ) {
-
                 if (
                     gameState !==
                     'FLIGHT'
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2879,7 +2748,6 @@ app.post(
                     ) !==
                     roundId
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2897,7 +2765,6 @@ app.post(
                     bet.status !==
                         'ACTIVE'
                 ) {
-
                     return res.status(400).json({
                         ok: false,
                         error:
@@ -2932,7 +2799,6 @@ app.post(
                     );
 
                 if (!saved) {
-
                     return res.status(500).json({
                         ok: false,
                         error:
@@ -2959,7 +2825,6 @@ app.post(
                 );
 
                 return res.json({
-
                     ok: true,
 
                     action:
@@ -2978,7 +2843,6 @@ app.post(
             }
 
             return res.status(400).json({
-
                 ok: false,
 
                 error:
@@ -2986,14 +2850,12 @@ app.post(
             });
 
         } catch (error) {
-
             console.error(
                 'GAME ACTION ERROR:',
                 error
             );
 
             return res.status(500).json({
-
                 ok: false,
 
                 error:
@@ -3011,26 +2873,18 @@ HEARTBEAT
 
 setInterval(
     () => {
-
         for (
             const client
             of clients
         ) {
-
             try {
-
                 client.write(
                     `: heartbeat ${Date.now()}\n\n`
                 );
-
             } catch {
-
-                clients.delete(
-                    client
-                );
+                clients.delete(client);
             }
         }
-
     },
     15000
 );
@@ -3042,14 +2896,12 @@ CRASH POINT
 */
 
 function generateCrashPoint() {
-
     const r =
         Math.random();
 
     if (
         r < 0.70
     ) {
-
         return Number(
             (
                 1.01 +
@@ -3062,7 +2914,6 @@ function generateCrashPoint() {
     if (
         r < 0.99
     ) {
-
         return Number(
             (
                 1.80 +
@@ -3088,7 +2939,6 @@ COUNTDOWN
 */
 
 function runCountdown() {
-
     roundId++;
 
     gameState =
@@ -3104,13 +2954,11 @@ function runCountdown() {
         const player
         of players.values()
     ) {
-
         if (
             player.currentBet &&
             player.currentBet.roundId !==
                 roundId
         ) {
-
             player.currentBet =
                 null;
         }
@@ -3123,14 +2971,12 @@ function runCountdown() {
     const timer =
         setInterval(
             () => {
-
                 countdownSeconds--;
 
                 if (
                     countdownSeconds >
                     0
                 ) {
-
                     broadcast(
                         'COUNTDOWN'
                     );
@@ -3143,7 +2989,6 @@ function runCountdown() {
                 );
 
                 startFlight();
-
             },
             1000
         );
@@ -3156,7 +3001,6 @@ FLIGHT
 */
 
 function startFlight() {
-
     gameState =
         'FLIGHT';
 
@@ -3176,7 +3020,6 @@ function startFlight() {
     const timer =
         setInterval(
             async () => {
-
                 const elapsed =
                     (
                         Date.now() -
@@ -3201,7 +3044,6 @@ function startFlight() {
                     const player
                     of players.values()
                 ) {
-
                     const bet =
                         player.currentBet;
 
@@ -3212,7 +3054,6 @@ function startFlight() {
                         bet.status !==
                             'ACTIVE'
                     ) {
-
                         continue;
                     }
 
@@ -3224,7 +3065,6 @@ function startFlight() {
                         currentMultiplier >=
                             bet.autoTarget
                     ) {
-
                         const multiplier =
                             Number(
                                 bet.autoTarget.toFixed(
@@ -3252,7 +3092,6 @@ function startFlight() {
                             );
 
                         if (!saved) {
-
                             console.error(
                                 'AUTO CASHOUT BALANCE SAVE FAILED:',
                                 player.telegramId
@@ -3291,7 +3130,6 @@ function startFlight() {
                     currentMultiplier >=
                     crashPoint
                 ) {
-
                     clearInterval(
                         timer
                     );
@@ -3304,15 +3142,12 @@ function startFlight() {
 
                     /*
                     Remaining active bets lose.
-                    The stake was already deducted
-                    when BET was accepted.
                     */
 
                     for (
                         const player
                         of players.values()
                     ) {
-
                         const bet =
                             player.currentBet;
 
@@ -3323,7 +3158,6 @@ function startFlight() {
                             bet.status ===
                                 'ACTIVE'
                         ) {
-
                             bet.status =
                                 'LOST';
                         }
@@ -3337,7 +3171,6 @@ function startFlight() {
                         history.length >
                         5
                     ) {
-
                         history =
                             history.slice(
                                 0,
@@ -3355,7 +3188,6 @@ function startFlight() {
                         const client
                         of clients
                     ) {
-
                         sendBalance(
                             client
                         );
@@ -3363,9 +3195,7 @@ function startFlight() {
 
                     setTimeout(
                         () => {
-
                             runCountdown();
-
                         },
                         3500
                     );
@@ -3393,7 +3223,6 @@ let depositScanRunning =
 
 setInterval(
     async () => {
-
         if (
             depositScanRunning
         ) {
@@ -3404,18 +3233,15 @@ setInterval(
             true;
 
         try {
-
             await scanAndVerifyDeposits();
 
         } catch (error) {
-
             console.error(
                 'DEPOSIT SCANNER UNHANDLED ERROR:',
                 error
             );
 
         } finally {
-
             depositScanRunning =
                 false;
         }
@@ -3434,7 +3260,6 @@ app.listen(
     PORT,
     '0.0.0.0',
     () => {
-
         console.log(
             `🚀 Rocket Server running on port ${PORT}`
         );
@@ -3475,7 +3300,6 @@ app.listen(
 
         setTimeout(
             async () => {
-
                 if (
                     depositScanRunning
                 ) {
@@ -3486,18 +3310,15 @@ app.listen(
                     true;
 
                 try {
-
                     await scanAndVerifyDeposits();
 
                 } catch (error) {
-
                     console.error(
                         'INITIAL DEPOSIT SCAN ERROR:',
                         error
                     );
 
                 } finally {
-
                     depositScanRunning =
                         false;
                 }
