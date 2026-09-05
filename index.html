@@ -1556,9 +1556,11 @@ Bet Amount
 <input
     id="modal-amount-input"
     class="modal-amount-input"
-    type="text"
+    type="number"
     inputmode="decimal"
-    value="0.10"
+    min="0.01"
+    step="0.01"
+    value="1.00"
     placeholder="TON amount"
 >
 
@@ -1718,10 +1720,12 @@ TON Wallet: غير متصلة
 <input
     id="deposit-amount-input"
     class="modal-amount-input"
-    type="text"
+    type="number"
     inputmode="decimal"
-    value="0.10"
-    placeholder="0.10"
+    min="0.01"
+    step="0.01"
+    value="1.00"
+    placeholder="0.00"
 >
 
 <span class="amount-ton-icon">
@@ -2014,7 +2018,7 @@ let autoCashoutEnabled = false;
 
 let autoCashoutTarget = 2.00;
 
-let userBetAmount = 0.10;
+let userBetAmount = 1.00;
 
 let tonBalance = 0;
 
@@ -2967,37 +2971,6 @@ function syncAmountInput(){
             ).toFixed(2);
 
     }
-
-}
-
-
-/* =========================================
-DECIMAL INPUT HELPER
-========================================= */
-
-function parseDecimalInput(value){
-
-    const normalized =
-        String(
-            value ?? ""
-        )
-        .trim()
-        .replace(
-            ",",
-            "."
-        );
-
-
-    if(normalized === ""){
-
-        return NaN;
-
-    }
-
-
-    return Number(
-        normalized
-    );
 
 }
 
@@ -4244,7 +4217,7 @@ function readAutoCashout(){
 
 
     const value =
-        parseDecimalInput(
+        Number(
             input?.value
         );
 
@@ -4304,7 +4277,7 @@ function readBetAmount(){
 
 
     const value =
-        parseDecimalInput(
+        Number(
             input?.value
         );
 
@@ -5042,14 +5015,14 @@ function readDepositAmount(){
 
 
     const amount =
-        parseDecimalInput(
+        Number(
             input?.value
         );
 
 
     if(
         !Number.isFinite(amount) ||
-        amount < 0.10
+        amount < 0.01
     ){
 
         return null;
@@ -5480,7 +5453,7 @@ async function startTonDeposit(){
     if(amount === null){
 
         showToast(
-            "أدخل مبلغاً بين 0.10 و 100000 TON"
+            "أدخل مبلغاً بين 0.01 و 100000 TON"
         );
 
         return;
@@ -6615,7 +6588,7 @@ document
         function(){
 
             const value =
-                parseDecimalInput(
+                Number(
                     this.value
                 );
 
@@ -6661,7 +6634,7 @@ document
 
 
             const value =
-                parseDecimalInput(
+                Number(
                     this.value
                 );
 
@@ -6698,7 +6671,7 @@ document
         function(){
 
             let value =
-                parseDecimalInput(
+                Number(
                     this.value
                 );
 
@@ -6790,4 +6763,4 @@ window.addEventListener(
 </script>
 
 </body>
-</html>
+    </html>
