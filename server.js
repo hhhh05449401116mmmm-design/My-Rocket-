@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+
+const WebSocket = require('ws');
+globalThis.WebSocket = WebSocket;
+
 const { createClient } = require('@supabase/supabase-js');
 const { Address, beginCell, Cell } = require('@ton/core');
 
@@ -22,19 +26,20 @@ CONFIG
 */
 
 const SUPABASE_URL =
-    process.env.SUPABASE_URL;
+    process.env.SUPABASE_URL || '';
 
+/*
+Prefer a server-side secret key.
+SUPABASE_KEY remains as fallback for compatibility.
+*/
 const SUPABASE_KEY =
-    process.env.SUPABASE_KEY;
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_KEY ||
+    '';
 
 const TON_RECEIVER_ADDRESS =
     process.env.TON_RECEIVER_ADDRESS || '';
 
-/*
-Optional.
-If not provided, TON Center still allows limited
-requests. We scan every 15 seconds.
-*/
 const TONCENTER_API_KEY =
     process.env.TONCENTER_API_KEY || '';
 
@@ -45,7 +50,7 @@ const TONCENTER_BASE_URL =
 if (!SUPABASE_URL || !SUPABASE_KEY) {
 
     console.error(
-        '❌ Missing SUPABASE_URL or SUPABASE_KEY'
+        '❌ Missing SUPABASE_URL or SUPABASE_SECRET_KEY/SUPABASE_KEY'
     );
 }
 
@@ -836,12 +841,9 @@ TON DEPOSIT HELPERS
 */
 
 /*
-Creates the same comment format that the frontend
-will later put inside a TON comment cell.
+TON comment:
 
-Example:
-
-rocket-deposit:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+rocket-deposit:UUID
 */
 
 function createCommentPayload(
@@ -863,7 +865,6 @@ function createCommentPayload(
 
 /*
 Read plaintext TON comment from a Cell.
-TON comments use opcode 0 followed by UTF-8 text.
 */
 function extractCommentFromCell(
     cell,
@@ -980,10 +981,6 @@ function extractCommentFromMessage(
         return null;
     }
 
-    /*
-    Some TON Center responses expose
-    decoded message text directly.
-    */
     if (
         typeof message.message ===
         'string' &&
@@ -993,9 +990,6 @@ function extractCommentFromMessage(
         return message.message.trim();
     }
 
-    /*
-    Raw message body.
-    */
     if (
         typeof message
             .msg_data
@@ -1021,9 +1015,6 @@ function extractCommentFromMessage(
         }
     }
 
-    /*
-    Some indexed responses use message_content.
-    */
     if (
         typeof message
             .message_content
@@ -1096,11 +1087,6 @@ function transactionHash(
 function transactionSucceeded(
     tx
 ) {
-
-    /*
-    Explicitly reject aborted transactions
-    if this information is available.
-    */
 
     if (
         tx?.description?.aborted ===
@@ -1278,6 +1264,37 @@ async function creditConfirmedDeposit(
         );
     }
 
+    /*
+    Before crediting, verify that this deposit
+    is still confirmed.
+    */
+    const {
+        data: currentDeposit,
+        error: depositReadError
+    } =
+        await supabase
+            .from('deposits')
+            .select(
+                'id, status, tx_hash, telegram_id, amount'
+            )
+            .eq(
+                'id',
+                deposit.id
+            )
+            .maybeSingle();
+
+    if (depositReadError) {
+        throw depositReadError;
+    }
+
+    if (
+        !currentDeposit ||
+        currentDeposit.status !==
+            'confirmed'
+    ) {
+        return null;
+    }
+
     const {
         data: player,
         error: playerError
@@ -1356,7 +1373,11 @@ async function creditConfirmedDeposit(
         }
     }
 
+    /*
+    Only the confirmed deposit can become credited.
+    */
     const {
+        data: creditedRows,
         error: creditError
     } =
         await supabase
@@ -1378,10 +1399,22 @@ async function creditConfirmedDeposit(
             .eq(
                 'status',
                 'confirmed'
-            );
+            )
+            .select('id');
 
     if (creditError) {
         throw creditError;
+    }
+
+    /*
+    If another scanner already credited it,
+    do not update local balance again.
+    */
+    if (
+        !creditedRows ||
+        creditedRows.length === 0
+    ) {
+        return null;
     }
 
     const localPlayer =
@@ -1452,6 +1485,15 @@ async function verifyOneDeposit(
         return;
     }
 
+    /*
+    IMPORTANT:
+    deposits table uses "id".
+    The blockchain comment is:
+    rocket-deposit:<database UUID>
+    */
+    const expectedComment =
+        `rocket-deposit:${deposit.id}`;
+
     for (
         const tx
         of transactions
@@ -1498,13 +1540,22 @@ async function verifyOneDeposit(
             continue;
         }
 
-        const value =
-            BigInt(
-                String(
-                    inMsg.value ||
-                    '0'
-                )
-            );
+        let value;
+
+        try {
+
+            value =
+                BigInt(
+                    String(
+                        inMsg.value ||
+                        '0'
+                    )
+                );
+
+        } catch {
+
+            continue;
+        }
 
         if (
             value !==
@@ -1524,20 +1575,15 @@ async function verifyOneDeposit(
                 inMsg
             );
 
-        /*
-        IMPORTANT:
-        The deposit ID is the full comment,
-        e.g. rocket-deposit:UUID
-        */
         if (
             comment !==
-            deposit.deposit_id
+            expectedComment
         ) {
             continue;
         }
 
         /*
-        Prevent reuse of an already credited
+        Prevent reuse of an already used
         blockchain transaction.
         */
         const {
@@ -1569,7 +1615,7 @@ async function verifyOneDeposit(
         }
 
         /*
-        Mark as detected.
+        Mark transaction as detected.
         */
         const {
             error
@@ -1712,10 +1758,6 @@ async function confirmDetectedDeposits() {
             continue;
         }
 
-        /*
-        Verify the same sender, receiver,
-        amount and comment again.
-        */
         const inMsg =
             tx.in_msg;
 
@@ -1740,19 +1782,34 @@ async function confirmDetectedDeposits() {
                 deposit.amount
             );
 
-        const value =
-            inMsg?.value != null
-                ? BigInt(
-                    String(
-                        inMsg.value
-                    )
-                )
-                : null;
+        let value = null;
+
+        try {
+
+            if (
+                inMsg?.value != null
+            ) {
+
+                value =
+                    BigInt(
+                        String(
+                            inMsg.value
+                        )
+                    );
+            }
+
+        } catch {
+
+            value = null;
+        }
 
         const comment =
             extractCommentFromMessage(
                 inMsg
             );
+
+        const expectedComment =
+            `rocket-deposit:${deposit.id}`;
 
         if (
             source !==
@@ -1765,7 +1822,7 @@ async function confirmDetectedDeposits() {
                 expectedAmount ||
 
             comment !==
-                deposit.deposit_id
+                expectedComment
         ) {
 
             continue;
@@ -1853,15 +1910,22 @@ async function creditConfirmedDeposits() {
         return;
     }
 
+    if (
+        !deposits ||
+        deposits.length === 0
+    ) {
+        return;
+    }
+
+    const transactions =
+        await fetchReceiverTransactions();
+
     for (
         const deposit
-        of deposits || []
+        of deposits
     ) {
 
         try {
-
-            const transactions =
-                await fetchReceiverTransactions();
 
             const tx =
                 transactions.find(
@@ -1900,19 +1964,34 @@ async function creditConfirmedDeposits() {
                     deposit.amount
                 );
 
-            const value =
-                inMsg?.value != null
-                    ? BigInt(
-                        String(
-                            inMsg.value
-                        )
-                    )
-                    : null;
+            let value = null;
+
+            try {
+
+                if (
+                    inMsg?.value != null
+                ) {
+
+                    value =
+                        BigInt(
+                            String(
+                                inMsg.value
+                            )
+                        );
+                }
+
+            } catch {
+
+                value = null;
+            }
 
             const comment =
                 extractCommentFromMessage(
                     inMsg
                 );
+
+            const expectedComment =
+                `rocket-deposit:${deposit.id}`;
 
             if (
                 source !==
@@ -1925,10 +2004,11 @@ async function creditConfirmedDeposits() {
                     expectedAmount ||
 
                 comment !==
-                    deposit.deposit_id ||
+                    expectedComment ||
 
                 !transactionSucceeded(tx)
             ) {
+
                 continue;
             }
 
@@ -2042,19 +2122,6 @@ DEPOSIT API
 ==================================================
 */
 
-/*
-Create a pending deposit.
-
-Frontend will call this BEFORE opening
-TON Wallet.
-
-The server returns:
-- receiver
-- amountNano
-- comment
-- depositId
-*/
-
 app.post(
     '/api/deposit/create',
     async (req, res) => {
@@ -2137,9 +2204,6 @@ app.post(
                 });
             }
 
-            /*
-            TON native precision = 9 decimals.
-            */
             const amountString =
                 tonAmount
                     .toFixed(9)
@@ -2162,17 +2226,10 @@ app.post(
                 });
             }
 
-            const depositId =
-                crypto.randomUUID();
-
-            const depositComment =
-                `rocket-deposit:${depositId}`;
-
             /*
-            IMPORTANT:
-            The database stores the UUID itself.
-            The blockchain comment is rocket-deposit:UUID.
+            Database creates the UUID.
             */
+
             const {
                 data,
                 error
@@ -2213,6 +2270,15 @@ app.post(
                 });
             }
 
+            /*
+            IMPORTANT:
+            The blockchain comment must contain
+            the actual database UUID.
+            */
+
+            const comment =
+                `rocket-deposit:${data.id}`;
+
             return res.json({
 
                 ok: true,
@@ -2220,13 +2286,8 @@ app.post(
                 deposit:
                     data,
 
-                /*
-                Blockchain comment.
-                */
                 depositId:
-                    data.id
-                        ? `rocket-deposit:${data.id}`
-                        : depositComment,
+                    comment,
 
                 receiver:
                     TON_RECEIVER_ADDRESS,
@@ -2238,9 +2299,8 @@ app.post(
                     nano.toString(),
 
                 comment:
-                    data.id
-                        ? `rocket-deposit:${data.id}`
-                        : depositComment
+                    comment
+
             });
 
         } catch (error) {
@@ -2262,6 +2322,7 @@ app.post(
 /*
 Get deposit status.
 */
+
 app.get(
     '/api/deposit/status',
     async (req, res) => {
@@ -2612,9 +2673,6 @@ app.post(
                         ''
                 );
 
-            /*
-            Refresh from Supabase before betting.
-            */
             await refreshPlayerBalance(
                 player
             );
@@ -3218,6 +3276,8 @@ function startFlight() {
                         sendBalanceToPlayer(
                             player.telegramId
                         );
+
+                        broadcastPlayers();
                     }
                 }
 
@@ -3395,6 +3455,14 @@ app.listen(
             `🗄️ Supabase configured: ${
                 Boolean(
                     supabase
+                )
+            }`
+        );
+
+        console.log(
+            `🔌 WebSocket support: ${
+                Boolean(
+                    WebSocket
                 )
             }`
         );
