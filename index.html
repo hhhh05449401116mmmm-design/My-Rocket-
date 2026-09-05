@@ -12,7 +12,6 @@
     <meta name="theme-color" content="#070b16">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
     <style>
@@ -29,10 +28,7 @@
             min-height: 100%;
             background: #070b16;
             color: #ffffff;
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         body {
@@ -58,8 +54,6 @@
             position: relative;
         }
 
-        /* ================= HEADER ================= */
-
         .header {
             height: 70px;
             padding: 12px 14px;
@@ -84,6 +78,7 @@
             object-fit: cover;
             background: #171d2d;
             border: 1px solid rgba(255,255,255,.10);
+            transition: .2s;
         }
 
         .profile-info {
@@ -153,8 +148,6 @@
             transform: scale(.95);
         }
 
-        /* ================= GAME ================= */
-
         .game-card {
             margin: 4px 12px 0;
             height: 390px;
@@ -182,6 +175,21 @@
                 radial-gradient(circle, rgba(255,255,255,.35) 1px, transparent 1px);
             background-size: 71px 67px, 113px 101px;
             background-position: 8px 11px, 37px 31px;
+            animation: spaceMove 2.2s linear infinite;
+        }
+
+        @keyframes spaceMove {
+            from {
+                background-position:
+                    8px 11px,
+                    37px 31px;
+            }
+
+            to {
+                background-position:
+                    -90px 125px,
+                    -150px 190px;
+            }
         }
 
         .game-top {
@@ -274,9 +282,13 @@
                 opacity: 1;
                 transform: rotate(-12deg) scale(1);
             }
+
             100% {
                 opacity: 0;
-                transform: translate(60px, 70px) rotate(35deg) scale(.7);
+                transform:
+                    translate(60px, 70px)
+                    rotate(35deg)
+                    scale(.7);
             }
         }
 
@@ -294,6 +306,49 @@
             z-index: 4;
         }
 
+        .rocket-trail {
+            position: absolute;
+            left: 8%;
+            bottom: 78px;
+            width: 125px;
+            height: 5px;
+            border-radius: 50%;
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0),
+                    rgba(68,143,255,.18),
+                    rgba(255,92,142,.65)
+                );
+            filter: blur(2px);
+            opacity: 0;
+            transform: rotate(-12deg);
+            transform-origin: right center;
+            z-index: 3;
+            transition:
+                left .15s linear,
+                bottom .15s linear,
+                width .15s linear,
+                opacity .2s ease;
+        }
+
+        .rocket-trail::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 50%;
+            width: 35px;
+            height: 10px;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            background: rgba(255,173,51,.7);
+            filter: blur(5px);
+        }
+
+        .rocket-trail.active {
+            opacity: .9;
+        }
+
         .flight-line {
             position: absolute;
             left: 9%;
@@ -302,12 +357,13 @@
             height: 2px;
             transform: rotate(-9deg);
             transform-origin: left center;
-            background: linear-gradient(
-                90deg,
-                rgba(53,126,255,0),
-                rgba(53,126,255,.8),
-                rgba(255,92,142,.7)
-            );
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(53,126,255,0),
+                    rgba(53,126,255,.8),
+                    rgba(255,92,142,.7)
+                );
             opacity: .65;
         }
 
@@ -320,8 +376,6 @@
             color: #6f7890;
             font-size: 11px;
         }
-
-        /* ================= HISTORY ================= */
 
         .history {
             margin: 12px 12px 0;
@@ -374,8 +428,6 @@
             background: rgba(255,91,45,.18);
             color: #ff875f;
         }
-
-        /* ================= BET ================= */
 
         .bet-panel {
             margin: 12px;
@@ -462,6 +514,12 @@
             text-align: center;
             outline: none;
             font-size: 11px;
+            transition: .2s;
+        }
+
+        .auto-target:disabled {
+            opacity: .45;
+            cursor: not-allowed;
         }
 
         .switch {
@@ -491,6 +549,11 @@
             background: #ffffff;
         }
 
+        .switch:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
         .action-button {
             width: 100%;
             height: 50px;
@@ -516,8 +579,6 @@
             cursor: not-allowed;
             opacity: .75;
         }
-
-        /* ================= PLAYERS ================= */
 
         .players-panel {
             margin: 12px;
@@ -550,13 +611,28 @@
         }
 
         .player-row {
-            height: 43px;
+            min-height: 43px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 9px;
+            padding: 6px 9px;
             border-radius: 12px;
             background: #10182a;
+            transition:
+                background .2s ease,
+                border .2s ease,
+                transform .2s ease;
+            border: 1px solid transparent;
+        }
+
+        .player-row.player-winner {
+            background: rgba(35,177,92,.13);
+            border-color: rgba(61,225,138,.18);
+        }
+
+        .player-row.player-loser {
+            background: rgba(255,67,88,.10);
+            border-color: rgba(255,67,88,.16);
         }
 
         .player-left {
@@ -572,6 +648,19 @@
             border-radius: 50%;
             object-fit: cover;
             background: #1c2538;
+            border: 2px solid transparent;
+            transition: .2s;
+        }
+
+        .player-avatar.winner {
+            border-color: #45df88;
+            box-shadow: 0 0 9px rgba(69,223,136,.28);
+        }
+
+        .player-avatar.loser {
+            border-color: #ff5068;
+            box-shadow: 0 0 9px rgba(255,80,104,.22);
+            filter: grayscale(.35);
         }
 
         .player-name {
@@ -581,6 +670,15 @@
             white-space: nowrap;
             font-size: 11px;
             font-weight: 700;
+            transition: .2s;
+        }
+
+        .player-name.winner {
+            color: #4de18a;
+        }
+
+        .player-name.loser {
+            color: #ff5d70;
         }
 
         .player-status {
@@ -589,10 +687,34 @@
             margin-top: 2px;
         }
 
+        .player-amount-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            direction: ltr;
+        }
+
         .player-amount {
             font-size: 11px;
             font-weight: 800;
-            direction: ltr;
+        }
+
+        .player-multiplier {
+            min-width: 45px;
+            text-align: right;
+            font-size: 11px;
+            font-weight: 900;
+            color: #ffffff;
+            transition: .1s;
+        }
+
+        .player-multiplier.winner {
+            color: #4de18a;
+        }
+
+        .player-multiplier.loser {
+            color: #ff5d70;
         }
 
         .empty-players {
@@ -601,8 +723,6 @@
             color: #5e687e;
             font-size: 11px;
         }
-
-        /* ================= BOTTOM NAV ================= */
 
         .bottom-nav {
             position: fixed;
@@ -643,8 +763,6 @@
             background: #151f34;
             color: #ffffff;
         }
-
-        /* ================= MODALS ================= */
 
         .modal {
             position: fixed;
@@ -765,7 +883,6 @@
 
 <div class="app">
 
-    <!-- HEADER -->
     <header class="header">
 
         <div class="profile-box">
@@ -829,8 +946,6 @@
 
     </header>
 
-
-    <!-- GAME -->
     <main>
 
         <section class="game-card">
@@ -838,12 +953,14 @@
             <div class="stars"></div>
 
             <div class="game-top">
+
                 <div
                     id="round-label"
                     class="round-label"
                 >
                     ROUND #—
                 </div>
+
             </div>
 
             <div
@@ -865,6 +982,11 @@
                 <div
                     id="flight-line"
                     class="flight-line"
+                ></div>
+
+                <div
+                    id="rocket-trail"
+                    class="rocket-trail"
                 ></div>
 
                 <div
@@ -890,15 +1012,11 @@
 
         </section>
 
-
-        <!-- HISTORY -->
         <section
             id="history"
             class="history"
         ></section>
 
-
-        <!-- BET PANEL -->
         <section class="bet-panel">
 
             <div class="bet-head">
@@ -984,8 +1102,6 @@
 
         </section>
 
-
-        <!-- PLAYERS -->
         <section class="players-panel">
 
             <div class="players-title">
@@ -1014,8 +1130,6 @@
 
 </div>
 
-
-<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
 
     <button
@@ -1056,8 +1170,6 @@
 
 </nav>
 
-
-<!-- DEPOSIT MODAL -->
 <div
     id="deposit-modal"
     class="modal"
@@ -1104,8 +1216,6 @@
 
 </div>
 
-
-<!-- PROFILE MODAL -->
 <div
     id="profile-modal"
     class="modal"
@@ -1160,8 +1270,6 @@
 
 </div>
 
-
-<!-- TOP MODAL -->
 <div
     id="top-modal"
     class="modal"
@@ -1198,8 +1306,6 @@
 
 </div>
 
-
-<!-- GIFTS MODAL -->
 <div
     id="gifts-modal"
     class="modal"
@@ -1232,18 +1338,12 @@
 
 </div>
 
-
 <div
     id="toast"
     class="toast"
 ></div>
 
-
 <script>
-/* =========================================================
-   TELEGRAM
-========================================================= */
-
 const tg = window.Telegram?.WebApp;
 
 if (tg) {
@@ -1280,78 +1380,47 @@ const fullName =
 const userPhoto =
     telegramUser.photo_url || "";
 
-
-/* =========================================================
-   ADMIN
-========================================================= */
-
 const ADMIN_TELEGRAM_ID = "7385640899";
-
-
-/* =========================================================
-   BACKEND
-========================================================= */
 
 const BACKEND_URL =
     "https://my-rocket-production.up.railway.app";
 
-
-/* =========================================================
-   STATE
-========================================================= */
-
 let eventSource = null;
-
 let serverConnected = false;
 
 let currentRoundId = 0;
-
 let currentMultiplier = 1.00;
-
 let gamePhase = "COUNTDOWN";
-
 let countdownSeconds = 5;
 
 let globalHistory = [];
-
 let livePlayers = [];
 
 let hasBet = false;
-
 let isQueuedForNextRound = false;
-
 let actionInProgress = false;
 
 let autoCashoutEnabled = false;
-
 let autoCashoutTarget = 2.00;
-
 let userBetAmount = 1.00;
 
 let tonBalance = 0;
 
-
-/* =========================================================
-   TON CONNECT
-========================================================= */
+let pendingNextBet = null;
+let pendingNextBetSubmitted = false;
 
 let tonConnectUI = null;
-
 let tonWalletAddress = null;
-
 let tonWalletConnected = false;
-
 
 function initTonConnect() {
 
     if (
         typeof TON_CONNECT_UI === "undefined"
     ) {
-
         console.error(
             "TON Connect UI library failed to load."
         );
-
         return;
     }
 
@@ -1380,23 +1449,15 @@ function initTonConnect() {
                         wallet.account?.address ||
                         null;
 
-                    console.log(
-                        "TON Wallet connected:",
-                        tonWalletAddress
-                    );
-
                     updateTonWalletUI();
-
                     updateProfileWalletUI();
 
                 } else {
 
                     tonWalletConnected = false;
-
                     tonWalletAddress = null;
 
                     updateTonWalletUI();
-
                     updateProfileWalletUI();
                 }
             }
@@ -1411,7 +1472,6 @@ function initTonConnect() {
                 null;
 
             updateTonWalletUI();
-
             updateProfileWalletUI();
         }
 
@@ -1423,7 +1483,6 @@ function initTonConnect() {
         );
     }
 }
-
 
 function openTonWallet() {
 
@@ -1451,7 +1510,6 @@ function openTonWallet() {
         });
 }
 
-
 function updateTonWalletUI() {
 
     const box =
@@ -1470,22 +1528,12 @@ function updateTonWalletUI() {
         TON
     `;
 
-    if (
+    box.title =
         tonWalletConnected &&
         tonWalletAddress
-    ) {
-
-        box.title =
-            "TON Wallet: " +
-            tonWalletAddress;
-
-    } else {
-
-        box.title =
-            "Connect TON Wallet";
-    }
+            ? "TON Wallet: " + tonWalletAddress
+            : "Connect TON Wallet";
 }
-
 
 function updateProfileWalletUI() {
 
@@ -1513,11 +1561,6 @@ function updateProfileWalletUI() {
             "TON Wallet: غير متصلة";
     }
 }
-
-
-/* =========================================================
-   USER UI
-========================================================= */
 
 function initUserUI() {
 
@@ -1548,18 +1591,10 @@ function initUserUI() {
 
     if (idElement) {
 
-        if (
+        idElement.textContent =
             telegramUser.id
-        ) {
-
-            idElement.textContent =
-                "Telegram";
-
-        } else {
-
-            idElement.textContent =
-                "Guest";
-        }
+                ? "Telegram"
+                : "Guest";
     }
 
     if (modalName) {
@@ -1616,15 +1651,11 @@ function initUserUI() {
         admin &&
         telegramId === ADMIN_TELEGRAM_ID
     ) {
+
         admin.style.display =
             "block";
     }
 }
-
-
-/* =========================================================
-   SERVER CONNECTION
-========================================================= */
 
 function connectToServer() {
 
@@ -1672,7 +1703,6 @@ function connectToServer() {
         return;
     }
 
-
     eventSource.onopen =
         function() {
 
@@ -1680,7 +1710,6 @@ function connectToServer() {
 
             updateConnectionUI();
         };
-
 
     eventSource.onmessage =
         function(event) {
@@ -1705,7 +1734,6 @@ function connectToServer() {
             }
         };
 
-
     eventSource.onerror =
         function() {
 
@@ -1727,17 +1755,11 @@ function connectToServer() {
         };
 }
 
-
-/* =========================================================
-   SERVER MESSAGES
-========================================================= */
-
 function handleServerMessage(data) {
 
     if (!data) {
         return;
     }
-
 
     if (
         data.type === "SYNC" ||
@@ -1745,6 +1767,9 @@ function handleServerMessage(data) {
         data.type === "FLIGHT" ||
         data.type === "CRASH"
     ) {
+
+        const previousPhase =
+            gamePhase;
 
         if (
             typeof data.roundId !==
@@ -1815,13 +1840,29 @@ function handleServerMessage(data) {
             );
         }
 
+        if (
+            gamePhase === "COUNTDOWN" &&
+            previousPhase !== "COUNTDOWN"
+        ) {
+
+            pendingNextBetSubmitted =
+                false;
+
+            if (
+                pendingNextBet &&
+                !hasBet
+            ) {
+
+                submitQueuedBet();
+            }
+        }
+
         renderGame();
         renderHistory();
         renderPlayers();
 
         return;
     }
-
 
     if (
         data.type === "PLAYERS"
@@ -1849,7 +1890,6 @@ function handleServerMessage(data) {
         return;
     }
 
-
     if (
         data.type === "BALANCE"
     ) {
@@ -1875,11 +1915,6 @@ function handleServerMessage(data) {
     }
 }
 
-
-/* =========================================================
-   SELF STATE
-========================================================= */
-
 function updateSelfState(self) {
 
     if (!self) {
@@ -1891,9 +1926,8 @@ function updateSelfState(self) {
     ) {
 
         hasBet = true;
-
-        isQueuedForNextRound =
-            false;
+        isQueuedForNextRound = false;
+        pendingNextBet = null;
 
         if (
             Number.isFinite(
@@ -1925,15 +1959,12 @@ function updateSelfState(self) {
         return;
     }
 
-
     if (
         self.state === "pending"
     ) {
 
         hasBet = false;
-
-        isQueuedForNextRound =
-            true;
+        isQueuedForNextRound = true;
 
         setBetState(
             "محجوز للجولة القادمة"
@@ -1942,15 +1973,12 @@ function updateSelfState(self) {
         return;
     }
 
-
     if (
         self.state === "win"
     ) {
 
         hasBet = false;
-
-        isQueuedForNextRound =
-            false;
+        isQueuedForNextRound = false;
 
         setBetState(
             "ربح " +
@@ -1963,15 +1991,12 @@ function updateSelfState(self) {
         return;
     }
 
-
     if (
         self.state === "lose"
     ) {
 
         hasBet = false;
-
-        isQueuedForNextRound =
-            false;
+        isQueuedForNextRound = false;
 
         setBetState(
             "خسارة"
@@ -1980,21 +2005,13 @@ function updateSelfState(self) {
         return;
     }
 
-
     hasBet = false;
-
-    isQueuedForNextRound =
-        false;
+    isQueuedForNextRound = false;
 
     setBetState(
         "جاهز"
     );
 }
-
-
-/* =========================================================
-   GAME RENDER
-========================================================= */
 
 function renderGame() {
 
@@ -2028,13 +2045,16 @@ function renderGame() {
             "flame"
         );
 
+    const rocketTrail =
+        document.getElementById(
+            "rocket-trail"
+        );
 
     if (roundLabel) {
 
         roundLabel.textContent =
             `ROUND #${currentRoundId || "—"}`;
     }
-
 
     if (multiplier) {
 
@@ -2073,7 +2093,6 @@ function renderGame() {
         }
     }
 
-
     if (countdown) {
 
         if (
@@ -2109,7 +2128,6 @@ function renderGame() {
         }
     }
 
-
     if (status) {
 
         if (!serverConnected) {
@@ -2124,7 +2142,7 @@ function renderGame() {
 
             status.textContent =
                 isQueuedForNextRound
-                    ? "تم حجز رهانك"
+                    ? "تم حجز رهانك للجولة"
                     : "الرهان مفتوح";
 
         } else if (
@@ -2135,7 +2153,9 @@ function renderGame() {
             status.textContent =
                 hasBet
                     ? "راقب المضاعف واضغط Cash Out"
-                    : "الجولة مستمرة";
+                    : isQueuedForNextRound
+                        ? "رهانك محجوز للجولة القادمة"
+                        : "الجولة مستمرة";
 
         } else if (
             gamePhase ===
@@ -2146,7 +2166,6 @@ function renderGame() {
                 "بانتظار الجولة التالية";
         }
     }
-
 
     if (rocket) {
 
@@ -2189,35 +2208,53 @@ function renderGame() {
                 `rotate(${
                     -12 - progress * 15
                 }deg)`;
+
+            if (
+                rocketTrail &&
+                gamePhase === "FLIGHT"
+            ) {
+
+                rocketTrail.classList.add(
+                    "active"
+                );
+
+                rocketTrail.style.left =
+                    `${Math.max(
+                        4,
+                        7 + progress * 53
+                    )}%`;
+
+                rocketTrail.style.bottom =
+                    `${79 + progress * 120}px`;
+
+                rocketTrail.style.width =
+                    `${125 + progress * 25}px`;
+
+                rocketTrail.style.transform =
+                    `rotate(${
+                        -12 - progress * 15
+                    }deg)`;
+
+            } else if (rocketTrail) {
+
+                rocketTrail.classList.remove(
+                    "active"
+                );
+            }
         }
     }
-
 
     if (flame) {
 
-        if (
-            gamePhase ===
-            "FLIGHT"
-        ) {
-
-            flame.style.display =
-                "block";
-
-        } else {
-
-            flame.style.display =
-                "none";
-        }
+        flame.style.display =
+            gamePhase === "FLIGHT"
+                ? "block"
+                : "none";
     }
 
-
+    updateAutoControls();
     updateActionButton();
 }
-
-
-/* =========================================================
-   HISTORY
-========================================================= */
 
 function historyClass(value) {
 
@@ -2246,7 +2283,6 @@ function historyClass(value) {
 
     return "fire";
 }
-
 
 function renderHistory() {
 
@@ -2284,11 +2320,6 @@ function renderHistory() {
         });
 }
 
-
-/* =========================================================
-   PLAYERS
-========================================================= */
-
 function renderPlayers() {
 
     const list =
@@ -2313,9 +2344,7 @@ function renderPlayers() {
             );
     }
 
-    if (
-        !livePlayers.length
-    ) {
+    if (!livePlayers.length) {
 
         list.innerHTML = `
             <div class="empty-players">
@@ -2340,6 +2369,27 @@ function renderPlayers() {
             row.className =
                 "player-row";
 
+            const status =
+                player.status || "ACTIVE";
+
+            const isWinner =
+                status === "CASHED_OUT";
+
+            const isLoser =
+                status === "LOST";
+
+            if (isWinner) {
+                row.classList.add(
+                    "player-winner"
+                );
+            }
+
+            if (isLoser) {
+                row.classList.add(
+                    "player-loser"
+                );
+            }
+
             const amount =
                 Number(
                     player.amount || 0
@@ -2348,25 +2398,37 @@ function renderPlayers() {
             let statusText =
                 "نشط";
 
-            if (
-                player.status ===
-                "CASHED_OUT"
-            ) {
+            if (isWinner) {
 
                 statusText =
-                    Number(
-                        player.multiplier ||
-                        0
-                    ).toFixed(2) +
-                    "x";
+                    "فائز";
 
-            } else if (
-                player.status ===
-                "LOST"
-            ) {
+            } else if (isLoser) {
 
                 statusText =
                     "خسر";
+            }
+
+            let multiplierValue = 1;
+
+            if (
+                Number.isFinite(
+                    Number(player.multiplier)
+                )
+            ) {
+
+                multiplierValue =
+                    Number(
+                        player.multiplier
+                    );
+
+            } else if (
+                gamePhase === "FLIGHT" &&
+                status === "ACTIVE"
+            ) {
+
+                multiplierValue =
+                    currentMultiplier;
             }
 
             const avatar =
@@ -2396,18 +2458,39 @@ function renderPlayers() {
                     </svg>
                 `);
 
+            const avatarClass =
+                isWinner
+                    ? "winner"
+                    : isLoser
+                        ? "loser"
+                        : "";
+
+            const nameClass =
+                isWinner
+                    ? "winner"
+                    : isLoser
+                        ? "loser"
+                        : "";
+
+            const multiplierClass =
+                isWinner
+                    ? "winner"
+                    : isLoser
+                        ? "loser"
+                        : "";
+
             row.innerHTML = `
                 <div class="player-left">
 
                     <img
-                        class="player-avatar"
+                        class="player-avatar ${avatarClass}"
                         src="${escapeHtmlAttribute(avatar)}"
                         alt=""
                     >
 
                     <div>
 
-                        <div class="player-name">
+                        <div class="player-name ${nameClass}">
                             ${escapeHtml(
                                 player.name ||
                                 "اللاعب"
@@ -2422,8 +2505,16 @@ function renderPlayers() {
 
                 </div>
 
-                <div class="player-amount">
-                    ${amount} TON
+                <div class="player-amount-box">
+
+                    <div class="player-multiplier ${multiplierClass}">
+                        ${multiplierValue.toFixed(2)}x
+                    </div>
+
+                    <div class="player-amount">
+                        ${amount} TON
+                    </div>
+
                 </div>
             `;
 
@@ -2433,10 +2524,32 @@ function renderPlayers() {
         });
 }
 
+function updateAutoControls() {
 
-/* =========================================================
-   BET BUTTON
-========================================================= */
+    const target =
+        document.getElementById(
+            "auto-target"
+        );
+
+    const switchButton =
+        document.getElementById(
+            "auto-switch"
+        );
+
+    const canEdit =
+        gamePhase === "COUNTDOWN" ||
+        gamePhase === "CRASH";
+
+    if (target) {
+        target.disabled =
+            !canEdit;
+    }
+
+    if (switchButton) {
+        switchButton.disabled =
+            !canEdit;
+    }
+}
 
 function updateActionButton() {
 
@@ -2452,7 +2565,6 @@ function updateActionButton() {
     button.className =
         "action-button";
 
-
     if (actionInProgress) {
 
         button.disabled =
@@ -2464,10 +2576,8 @@ function updateActionButton() {
         return;
     }
 
-
     button.disabled =
         false;
-
 
     if (hasBet) {
 
@@ -2499,10 +2609,7 @@ function updateActionButton() {
         return;
     }
 
-
-    if (
-        isQueuedForNextRound
-    ) {
+    if (isQueuedForNextRound) {
 
         button.classList.add(
             "wait"
@@ -2517,7 +2624,6 @@ function updateActionButton() {
         return;
     }
 
-
     if (
         gamePhase ===
         "COUNTDOWN"
@@ -2528,7 +2634,6 @@ function updateActionButton() {
 
         return;
     }
-
 
     if (
         gamePhase ===
@@ -2541,7 +2646,6 @@ function updateActionButton() {
         return;
     }
 
-
     button.classList.add(
         "wait"
     );
@@ -2550,17 +2654,11 @@ function updateActionButton() {
         "WAIT...";
 }
 
-
-/* =========================================================
-   ACTION
-========================================================= */
-
 async function handleAction() {
 
     if (actionInProgress) {
         return;
     }
-
 
     if (hasBet) {
 
@@ -2570,20 +2668,13 @@ async function handleAction() {
         ) {
 
             await cashout();
-
         }
 
         return;
     }
 
-
     await placeBet();
 }
-
-
-/* =========================================================
-   PLACE BET
-========================================================= */
 
 async function placeBet() {
 
@@ -2596,7 +2687,6 @@ async function placeBet() {
         Number(
             input?.value
         );
-
 
     if (
         !Number.isFinite(
@@ -2612,7 +2702,6 @@ async function placeBet() {
         return;
     }
 
-
     if (
         amount >
         Number(tonBalance)
@@ -2625,18 +2714,23 @@ async function placeBet() {
         return;
     }
 
-
-    if (
-        !serverConnected
-    ) {
+    if (!navigator.onLine) {
 
         showToast(
-            "السيرفر غير متصل"
+            "لا يوجد اتصال بالإنترنت"
         );
 
         return;
     }
 
+    if (!serverConnected) {
+
+        showToast(
+            "جاري الاتصال بالسيرفر، حاول مرة أخرى"
+        );
+
+        return;
+    }
 
     autoCashoutEnabled =
         document
@@ -2647,7 +2741,6 @@ async function placeBet() {
             .contains("on") ||
         false;
 
-
     autoCashoutTarget =
         Number(
             document
@@ -2657,12 +2750,83 @@ async function placeBet() {
                 ?.value
         ) || 2;
 
+    if (
+        autoCashoutTarget < 1.01
+    ) {
+
+        autoCashoutTarget =
+            1.01;
+    }
+
+    if (
+        gamePhase === "FLIGHT"
+    ) {
+
+        pendingNextBet = {
+            amount,
+            autoCashout:
+                autoCashoutEnabled,
+            autoTarget:
+                autoCashoutTarget
+        };
+
+        pendingNextBetSubmitted =
+            false;
+
+        isQueuedForNextRound =
+            true;
+
+        hasBet =
+            false;
+
+        setBetState(
+            "محجوز للجولة القادمة"
+        );
+
+        updateActionButton();
+
+        showToast(
+            "تم حجز الرهان للجولة القادمة"
+        );
+
+        return;
+    }
+
+    if (
+        gamePhase !==
+        "COUNTDOWN"
+    ) {
+
+        showToast(
+            "انتظر الجولة القادمة"
+        );
+
+        return;
+    }
+
+    await sendBet(
+        amount,
+        currentRoundId,
+        autoCashoutEnabled,
+        autoCashoutTarget
+    );
+}
+
+async function sendBet(
+    amount,
+    roundIdToUse,
+    autoCashout,
+    autoTarget
+) {
+
+    if (actionInProgress) {
+        return;
+    }
 
     actionInProgress =
         true;
 
     updateActionButton();
-
 
     try {
 
@@ -2699,24 +2863,22 @@ async function placeBet() {
                                 amount,
 
                             roundId:
-                                currentRoundId,
+                                roundIdToUse,
 
                             autoCashout:
-                                autoCashoutEnabled,
+                                autoCashout,
 
                             autoTarget:
-                                autoCashoutTarget
+                                autoTarget
                         })
                 }
             );
-
 
         const data =
             await response.json()
                 .catch(
                     () => ({})
                 );
-
 
         if (
             !response.ok ||
@@ -2729,7 +2891,6 @@ async function placeBet() {
             );
         }
 
-
         userBetAmount =
             amount;
 
@@ -2737,6 +2898,12 @@ async function placeBet() {
             true;
 
         isQueuedForNextRound =
+            false;
+
+        pendingNextBet =
+            null;
+
+        pendingNextBetSubmitted =
             false;
 
         setBetState(
@@ -2747,7 +2914,6 @@ async function placeBet() {
             "تم وضع الرهان"
         );
 
-
     } catch (error) {
 
         console.error(
@@ -2755,10 +2921,26 @@ async function placeBet() {
             error
         );
 
-        showToast(
-            error.message ||
-            "تعذر وضع الرهان"
-        );
+        if (
+            String(
+                error.message
+            ).toLowerCase()
+                .includes(
+                    "closed"
+                )
+        ) {
+
+            showToast(
+                "انتهى وقت المراهنة، سيتم وضعه في الجولة التالية"
+            );
+
+        } else {
+
+            showToast(
+                error.message ||
+                "تعذر وضع الرهان"
+            );
+        }
 
     } finally {
 
@@ -2769,10 +2951,55 @@ async function placeBet() {
     }
 }
 
+async function submitQueuedBet() {
 
-/* =========================================================
-   CASHOUT
-========================================================= */
+    if (
+        !pendingNextBet ||
+        pendingNextBetSubmitted ||
+        hasBet
+    ) {
+        return;
+    }
+
+    if (
+        gamePhase !==
+        "COUNTDOWN"
+    ) {
+        return;
+    }
+
+    if (!serverConnected) {
+        return;
+    }
+
+    pendingNextBetSubmitted =
+        true;
+
+    const queued =
+        pendingNextBet;
+
+    await sendBet(
+        queued.amount,
+        currentRoundId,
+        queued.autoCashout,
+        queued.autoTarget
+    );
+
+    if (
+        hasBet
+    ) {
+
+        pendingNextBet =
+            null;
+
+        isQueuedForNextRound =
+            false;
+    } else {
+
+        pendingNextBetSubmitted =
+            false;
+    }
+}
 
 async function cashout() {
 
@@ -2785,24 +3012,30 @@ async function cashout() {
         return;
     }
 
+    if (!navigator.onLine) {
+
+        showToast(
+            "لا يوجد اتصال بالإنترنت"
+        );
+
+        return;
+    }
 
     if (
         !serverConnected
     ) {
 
         showToast(
-            "السيرفر غير متصل"
+            "جاري الاتصال بالسيرفر"
         );
 
         return;
     }
 
-
     actionInProgress =
         true;
 
     updateActionButton();
-
 
     try {
 
@@ -2833,13 +3066,11 @@ async function cashout() {
                 }
             );
 
-
         const data =
             await response.json()
                 .catch(
                     () => ({})
                 );
-
 
         if (
             !response.ok ||
@@ -2851,7 +3082,6 @@ async function cashout() {
                 "Cashout failed"
             );
         }
-
 
         hasBet =
             false;
@@ -2868,7 +3098,6 @@ async function cashout() {
         showToast(
             "تم Cash Out بنجاح"
         );
-
 
     } catch (error) {
 
@@ -2891,12 +3120,19 @@ async function cashout() {
     }
 }
 
-
-/* =========================================================
-   AUTO CASHOUT
-========================================================= */
-
 function toggleAutoCashout() {
+
+    if (
+        gamePhase !== "COUNTDOWN" &&
+        gamePhase !== "CRASH"
+    ) {
+
+        showToast(
+            "يمكن تعديل Auto Cashout قبل أو بعد الجولة"
+        );
+
+        return;
+    }
 
     const switchButton =
         document.getElementById(
@@ -2916,11 +3152,6 @@ function toggleAutoCashout() {
             "on"
         );
 }
-
-
-/* =========================================================
-   AMOUNT
-========================================================= */
 
 function changeAmount(delta) {
 
@@ -2954,11 +3185,6 @@ function changeAmount(delta) {
         value.toFixed(2);
 }
 
-
-/* =========================================================
-   BET STATE
-========================================================= */
-
 function setBetState(text) {
 
     const element =
@@ -2972,11 +3198,6 @@ function setBetState(text) {
             text;
     }
 }
-
-
-/* =========================================================
-   CONNECTION UI
-========================================================= */
 
 function updateConnectionUI() {
 
@@ -3001,11 +3222,6 @@ function updateConnectionUI() {
         renderGame();
     }
 }
-
-
-/* =========================================================
-   MODALS / NAV
-========================================================= */
 
 function openDeposit() {
 
@@ -3038,7 +3254,6 @@ function openDeposit() {
     }
 }
 
-
 function closeModal(id) {
 
     document
@@ -3047,7 +3262,6 @@ function closeModal(id) {
             "show"
         );
 }
-
 
 function closeModalOutside(
     event,
@@ -3062,7 +3276,6 @@ function closeModalOutside(
         closeModal(id);
     }
 }
-
 
 function showPage(page) {
 
@@ -3079,7 +3292,6 @@ function showPage(page) {
             }
         );
 
-
     if (
         page ===
         "home"
@@ -3095,7 +3307,6 @@ function showPage(page) {
 
         return;
     }
-
 
     if (
         page ===
@@ -3123,7 +3334,6 @@ function showPage(page) {
         return;
     }
 
-
     if (
         page ===
         "profile"
@@ -3150,7 +3360,6 @@ function showPage(page) {
         return;
     }
 
-
     if (
         page ===
         "gifts"
@@ -3176,11 +3385,6 @@ function showPage(page) {
     }
 }
 
-
-/* =========================================================
-   TOP LIST
-========================================================= */
-
 function renderTopList() {
 
     const list =
@@ -3191,7 +3395,6 @@ function renderTopList() {
     if (!list) {
         return;
     }
-
 
     if (
         !livePlayers.length
@@ -3205,7 +3408,6 @@ function renderTopList() {
 
         return;
     }
-
 
     const sorted =
         [...livePlayers]
@@ -3223,9 +3425,7 @@ function renderTopList() {
                 }
             );
 
-
     list.innerHTML = "";
-
 
     sorted
         .slice(0, 10)
@@ -3239,6 +3439,66 @@ function renderTopList() {
 
                 row.className =
                     "player-row";
+
+                const status =
+                    player.status ||
+                    "ACTIVE";
+
+                const isWinner =
+                    status ===
+                    "CASHED_OUT";
+
+                const isLoser =
+                    status ===
+                    "LOST";
+
+                if (isWinner) {
+                    row.classList.add(
+                        "player-winner"
+                    );
+                }
+
+                if (isLoser) {
+                    row.classList.add(
+                        "player-loser"
+                    );
+                }
+
+                const avatar =
+                    player.avatar ||
+                    "data:image/svg+xml;charset=UTF-8," +
+                    encodeURIComponent(`
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="60"
+                            height="60"
+                        >
+                            <rect
+                                width="60"
+                                height="60"
+                                rx="30"
+                                fill="#182137"
+                            />
+                            <text
+                                x="30"
+                                y="38"
+                                text-anchor="middle"
+                                fill="#ffffff"
+                                font-size="25"
+                            >
+                                👤
+                            </text>
+                        </svg>
+                    `);
+
+                const multiplierValue =
+                    isWinner
+                        ? Number(
+                            player.multiplier || 0
+                        )
+                        : gamePhase === "FLIGHT"
+                            ? currentMultiplier
+                            : 1;
 
                 row.innerHTML = `
                     <div class="player-left">
@@ -3254,8 +3514,29 @@ function renderTopList() {
                             #${index + 1}
                         </div>
 
+                        <img
+                            class="player-avatar ${
+                                isWinner
+                                    ? "winner"
+                                    : isLoser
+                                        ? "loser"
+                                        : ""
+                            }"
+                            src="${escapeHtmlAttribute(avatar)}"
+                            alt=""
+                        >
+
                         <div>
-                            <div class="player-name">
+
+                            <div
+                                class="player-name ${
+                                    isWinner
+                                        ? "winner"
+                                        : isLoser
+                                            ? "loser"
+                                            : ""
+                                }"
+                            >
                                 ${escapeHtml(
                                     player.name ||
                                     "اللاعب"
@@ -3264,22 +3545,29 @@ function renderTopList() {
 
                             <div class="player-status">
                                 ${
-                                    player.status ===
-                                    "CASHED_OUT"
-                                        ? "Cashed Out"
-                                        : "Active"
+                                    isWinner
+                                        ? "فائز"
+                                        : isLoser
+                                            ? "خسر"
+                                            : "نشط"
                                 }
                             </div>
+
                         </div>
 
                     </div>
 
-                    <div class="player-amount">
+                    <div class="
+                        player-multiplier
                         ${
-                            Number(
-                                player.multiplier || 0
-                            ).toFixed(2)
-                        }x
+                            isWinner
+                                ? "winner"
+                                : isLoser
+                                    ? "loser"
+                                    : ""
+                        }
+                    ">
+                        ${multiplierValue.toFixed(2)}x
                     </div>
                 `;
 
@@ -3289,11 +3577,6 @@ function renderTopList() {
             }
         );
 }
-
-
-/* =========================================================
-   TOAST
-========================================================= */
 
 let toastTimer = null;
 
@@ -3332,11 +3615,6 @@ function showToast(message) {
         );
 }
 
-
-/* =========================================================
-   ESCAPE
-========================================================= */
-
 function escapeHtml(value) {
 
     return String(
@@ -3364,18 +3642,12 @@ function escapeHtml(value) {
         );
 }
 
-
 function escapeHtmlAttribute(value) {
 
     return escapeHtml(
         value
     );
 }
-
-
-/* =========================================================
-   START
-========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -3393,17 +3665,13 @@ document.addEventListener(
 
         updateProfileWalletUI();
 
+        updateAutoControls();
+
         updateActionButton();
 
         connectToServer();
-
     }
 );
-
-
-/* =========================================================
-   KEEP CONNECTION ALIVE
-========================================================= */
 
 window.addEventListener(
     "beforeunload",
