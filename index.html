@@ -3558,27 +3558,22 @@ function renderPlayers(){
                     1;
 
 
-                if(
-                    Number.isFinite(
-                        Number(
-                            player.multiplier
-                        )
-                    )
-                ){
+                let multiplierValue =
+    Number(currentMultiplier) || 1;
 
-                    multiplierValue =
-                        Number(
-                            player.multiplier
-                        );
 
-                }else{
+if(
+    status === "CASHED_OUT" &&
+    Number.isFinite(
+        Number(player.multiplier)
+    ) &&
+    Number(player.multiplier) > 0
+){
 
-                    multiplierValue =
-                        Number(
-                            currentMultiplier
-                        ) || 1;
+    multiplierValue =
+        Number(player.multiplier);
 
-                }
+}
 
 
                 const amount =
