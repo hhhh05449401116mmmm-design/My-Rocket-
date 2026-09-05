@@ -1,1133 +1,31 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+const express = require('express');
+const cors = require('cors');
 
-    <title>Epic Gift Rocket Multiplayer Pro</title>
+const app = express();
 
-    <!-- Telegram -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+const PORT = process.env.PORT || 8080;
 
-    <!-- TON Connect -->
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS']
+}));
 
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0c0d14;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            overflow-y: auto;
-            user-select: none;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 15px;
-            background: #151724;
-            border-bottom: 1px solid #23273c;
-            align-items: center;
-        }
-
-        .profile-zone {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-align: left;
-            order: 1;
-        }
-
-        .avatar-container {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 2px solid #2d334d;
-            background: linear-gradient(135deg, #a020f0, #00ffcc);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .avatar-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .balances-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            align-items: flex-end;
-            order: 2;
-        }
-
-        .balance-box {
-            background: #1e2238;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            direction: ltr;
-        }
-
-        .balance-box.ton {
-            color: #0088cc;
-            cursor: pointer;
-        }
-
-        .admin-badge {
-            background: #ff3366;
-            padding: 1px 6px;
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: bold;
-            margin-top: 2px;
-            display: inline-block;
-            width: fit-content;
-        }
-
-        .player-badge {
-            background: #0066ff;
-            padding: 1px 6px;
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: bold;
-            margin-top: 2px;
-            display: inline-block;
-            width: fit-content;
-        }
-
-        .game-container {
-            padding: 10px;
-            height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            background: #07080f;
-            overflow: hidden;
-        }
-
-        .space-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .star {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            border-radius: 50%;
-            animation: scrollStars linear infinite;
-        }
-
-        @keyframes scrollStars {
-            0% {
-                transform: translateY(-20px) translateX(20px);
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(280px) translateX(-280px);
-                opacity: 0;
-            }
-        }
-
-        .svg-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .curve-line {
-            fill: none;
-            stroke-width: 4;
-            stroke-linecap: round;
-            transition: stroke-dasharray 0.06s linear, stroke 0.1s;
-        }
-
-        .rocket-container-wrapper {
-            position: absolute;
-            bottom: 52px;
-            left: 45px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 3;
-            transform: translate(0, 0);
-            transition: transform 0.06s linear;
-        }
-
-        .rocket-zone {
-            font-size: 52px;
-            display: inline-block;
-            position: relative;
-            filter: drop-shadow(0 0 15px rgba(0, 255, 204, 0.8));
-            text-shadow: 0 0 10px #00ffcc;
-            font-style: normal;
-        }
-
-        .particle-glow {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            background: var(--p-color, #ffaa00);
-            border-radius: 50%;
-            opacity: 0.8;
-            filter: blur(0.5px);
-            animation: emitParticle 0.3s linear infinite;
-        }
-
-        @keyframes emitParticle {
-            0% {
-                transform: translate(0, 0) scale(1);
-                opacity: 0.9;
-            }
-
-            100% {
-                transform: translate(-35px, 35px) scale(0.1);
-                opacity: 0;
-            }
-        }
-
-        .multiplier {
-            font-size: 55px;
-            font-weight: bold;
-            color: #fff;
-            z-index: 4;
-            font-family: sans-serif;
-            position: relative;
-            text-shadow: 0 0 12px rgba(255,255,255,0.2);
-        }
-
-        .countdown-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 4;
-        }
-
-        .countdown-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform: rotate(-90deg);
-            width: 80px;
-            height: 80px;
-        }
-
-        .countdown-svg circle {
-            fill: none;
-            stroke-width: 5;
-        }
-
-        .countdown-svg .bg-circle {
-            stroke: #1e2238;
-        }
-
-        .countdown-svg .bar-circle {
-            stroke: #ffaa00;
-            stroke-dasharray: 236;
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 1s linear;
-        }
-
-        .countdown-number {
-            font-size: 28px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .history-row {
-            display: flex;
-            gap: 8px;
-            padding: 10px;
-            background: #11131f;
-            overflow-x: auto;
-            direction: rtl;
-            align-items: center;
-            border-bottom: 1px solid #1f2235;
-        }
-
-        .history-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            min-width: 45px;
-            text-align: center;
-        }
-
-        .history-badge.red {
-            background: rgba(255, 51, 102, 0.15);
-            color: #ff3366;
-            border: 1px solid #ff336644;
-        }
-
-        .history-badge.green {
-            background: rgba(0, 255, 204, 0.15);
-            color: #00ffcc;
-            border: 1px solid #00ffcc44;
-        }
-
-        .history-badge.blue {
-            background: rgba(0, 102, 255, 0.15);
-            color: #0066ff;
-            border: 1px solid #0066ff44;
-        }
-
-        .history-badge.purple {
-            background: rgba(160, 32, 240, 0.15);
-            color: #a020f0;
-            border: 1px solid #a020f044;
-        }
-
-        .history-badge.gold {
-            background: rgba(255, 170, 0, 0.15);
-            color: #ffaa00;
-            border: 1px solid #ffaa0044;
-        }
-
-        .history-badge.fire {
-            background: rgba(255, 68, 0, 0.18);
-            color: #ff4400;
-            border: 1px solid #ff440055;
-            font-weight: 800;
-            box-shadow: 0 0 6px rgba(255,68,0,0.2);
-        }
-
-        .bet-panel {
-            padding: 15px;
-            background: #151724;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border-bottom: 1px solid #1f2235;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #8a92b2;
-            padding: 2px 5px;
-        }
-
-        .input-box-wrapper {
-            display: flex;
-            background: #0c0d14;
-            border: 1px solid #23273c;
-            border-radius: 12px;
-            padding: 12px;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .amount-input {
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            width: 70%;
-            text-align: left;
-            outline: none;
-        }
-
-        .switch-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #1c1f33;
-            padding: 10px 14px;
-            border-radius: 12px;
-        }
-
-        .switch-btn {
-            width: 44px;
-            height: 24px;
-            background: #3a3f58;
-            border-radius: 12px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .switch-btn.active {
-            background: #26a17b;
-        }
-
-        .switch-circle {
-            width: 18px;
-            height: 18px;
-            background: #fff;
-            border-radius: 50%;
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            transition: left 0.2s;
-        }
-
-        .switch-btn.active .switch-circle {
-            left: 23px;
-        }
-
-        .switch-btn.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .auto-cashout-control-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #11131f;
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid #23273c;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-
-        .auto-cashout-control-row.active {
-            opacity: 1;
-        }
-
-        .auto-cashout-control-row.locked {
-            opacity: 0.3 !important;
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-
-        .step-btn {
-            background: #1e2238;
-            border: 1px solid #2d334d;
-            color: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .auto-val-display {
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            font-family: monospace;
-        }
-
-        .main-btn {
-            background: #0066ff;
-            color: #fff;
-            border: none;
-            padding: 14px;
-            width: 100%;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .main-btn.cashout {
-            background: #00ffcc;
-            color: #07080c;
-            box-shadow: 0 4px 15px rgba(0,255,204,0.3);
-        }
-
-        .main-btn.queued {
-            background: #ffaa00;
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(255,170,0,0.3);
-        }
-
-        .main-btn:disabled {
-            background: #2b3047;
-            color: #5a607a;
-        }
-
-        .players-list {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: #0c0d14;
-        }
-
-        .player-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            border-radius: 12px;
-            background: #151724;
-            border: 1px solid #ffffff03;
-            transition: all 0.1s ease;
-        }
-
-        .player-card.active {
-            border-color: rgba(0, 102, 255, 0.3);
-            background: rgba(0, 102, 255, 0.04);
-        }
-
-        .player-card.win {
-            border-color: rgba(0, 255, 204, 0.3);
-            background: rgba(0, 255, 204, 0.08);
-        }
-
-        .player-card.lose {
-            border-color: rgba(255, 51, 102, 0.2);
-            background: rgba(255, 51, 102, 0.03);
-        }
-
-        .p-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .p-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: bold;
-            color: #fff;
-            overflow: hidden;
-            background: #2b3047;
-        }
-
-        .p-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .p-status-box {
-            padding: 3px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: bold;
-            min-width: 50px;
-            text-align: center;
-        }
-
-        .p-status-box.active {
-            background: rgba(0,102,255,0.15);
-            color: #0066ff;
-        }
-
-        .p-status-box.win {
-            background: rgba(0,255,204,0.2);
-            color: #00ffcc;
-        }
-
-        .p-status-box.lose {
-            background: rgba(255,51,102,0.15);
-            color: #ff3366;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="profile-zone">
-
-        <div id="avatar-box" class="avatar-container">
-            ⚙️
-        </div>
-
-        <div style="display:flex; flex-direction:column; align-items:flex-start;">
-
-            <span id="username" style="font-weight:bold; font-size:13px;">
-                جاري الاتصال...
-            </span>
-
-            <span id="role-tag" class="player-badge">
-                لاعب
-            </span>
-
-        </div>
-
-    </div>
-
-    <div class="balances-wrapper">
-
-        <div
-            id="ton-wallet-box"
-            class="balance-box ton"
-            onclick="openTonWallet()"
-            title="Connect TON Wallet">
-
-            <span id="ton-balance">126.04</span> TON
-
-        </div>
-
-        <div class="balance-box">
-
-            🚀
-
-            <span id="header-multiplier">
-                1.00x
-            </span>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<div class="game-container">
-
-    <div id="space-bg" class="space-bg"></div>
-
-    <svg
-        class="svg-canvas"
-        viewBox="0 0 320 250"
-        preserveAspectRatio="none">
-
-        <path
-            id="neon-curve"
-            class="curve-line"
-            d="M 45 220"
-            stroke="#ff3366">
-        </path>
-
-    </svg>
-
-    <div
-        id="rocket-container"
-        class="rocket-container-wrapper">
-
-        <div
-            id="rocket"
-            class="rocket-zone">
-            🚀
-        </div>
-
-    </div>
-
-    <div
-        id="multiplier"
-        class="multiplier"
-        style="display:none;">
-        1.00x
-    </div>
-
-    <div
-        id="countdown-wrapper"
-        class="countdown-container">
-
-        <svg
-            class="countdown-svg"
-            viewBox="0 0 80 80">
-
-            <circle
-                class="bg-circle"
-                cx="40"
-                cy="40"
-                r="37">
-            </circle>
-
-            <circle
-                id="progress-bar"
-                class="bar-circle"
-                cx="40"
-                cy="40"
-                r="37">
-            </circle>
-
-        </svg>
-
-        <div
-            id="countdown-num"
-            class="countdown-number">
-            5
-        </div>
-
-    </div>
-
-</div>
-
-
-<div
-    id="history-bar"
-    class="history-row">
-</div>
-
-
-<div class="bet-panel">
-
-    <div class="info-row">
-        <span>Available Balance</span>
-
-        <span id="balance-label">
-            126.04 TON
-        </span>
-    </div>
-
-    <div class="info-row">
-        <span>Bet Amount</span>
-    </div>
-
-    <div class="input-box-wrapper">
-
-        <input
-            id="bet-input"
-            class="amount-input"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value="1.00"
-            inputmode="decimal">
-
-        <span>TON</span>
-
-    </div>
-
-    <div class="switch-row">
-
-        <span>Auto cashout</span>
-
-        <div
-            id="auto-switch"
-            class="switch-btn"
-            onclick="toggleAutoCashout()">
-
-            <div class="switch-circle"></div>
-
-        </div>
-
-    </div>
-
-    <div
-        id="auto-control-box"
-        class="auto-cashout-control-row">
-
-        <button
-            class="step-btn"
-            type="button"
-            onclick="adjustAutoVal(-0.1)">
-            -
-        </button>
-
-        <span
-            id="auto-cashout-val"
-            class="auto-val-display">
-            1.50 x
-        </span>
-
-        <button
-            class="step-btn"
-            type="button"
-            onclick="adjustAutoVal(0.1)">
-            +
-        </button>
-
-    </div>
-
-    <button
-        id="action-btn"
-        class="main-btn"
-        onclick="handleAction()">
-        Place TON Bet 🚀
-    </button>
-
-</div>
-
-
-<div
-    id="players-feed"
-    class="players-list">
-</div>
-
-
-<script>
-"use strict";
-
-/* =========================================
-   TELEGRAM
-========================================= */
-
-const tg = window.Telegram?.WebApp;
-
-if (tg) {
-    tg.expand();
-    tg.ready();
-}
-
-const telegramUser =
-    tg?.initDataUnsafe?.user || {};
-
-const telegramId =
-    String(
-        telegramUser.id ||
-        "guest-" +
-        Math.random().toString(36).slice(2)
-    );
-
-const firstName =
-    telegramUser.first_name ||
-    "اللاعب";
-
-const userPhoto =
-    telegramUser.photo_url ||
-    "";
-
-
-/* =========================================
-   PROFILE
-========================================= */
-
-document.getElementById("username").innerText =
-    firstName;
-
-const avatarBox =
-    document.getElementById("avatar-box");
-
-if (userPhoto) {
-
-    avatarBox.innerHTML =
-        `<img src="${escapeHtml(userPhoto)}" alt="profile">`;
-
-} else {
-
-    avatarBox.innerText =
-        firstName.charAt(0).toUpperCase();
-
-}
-
+app.use(express.json());
 
 /*
-    نفس ID الإداري الموجود في التصميم القديم.
+==================================================
+GAME STATE
+==================================================
 */
 
-if (telegramId === "7385640899") {
-
-    const role =
-        document.getElementById("role-tag");
-
-    role.innerText =
-        "المالك";
-
-    role.className =
-        "admin-badge";
-
-}
-
-
-/* =========================================
-   RAILWAY
-========================================= */
-
-const BACKEND_URL =
-    "https://my-rocket-production.up.railway.app";
-
-
-/* =========================================
-   TON CONNECT
-========================================= */
-
-let tonConnectUI = null;
-
-let tonWalletAddress = null;
-
-let tonWalletConnected = false;
-
-
-/*
-    تهيئة TON Connect.
-
-    لا يوجد هنا:
-    - إيداع
-    - سحب
-    - تحويل TON
-    - تعديل الرصيد
-
-    هذه المرحلة للاتصال بالمحفظة فقط.
-*/
-
-function initTonConnect() {
-
-    if (
-        typeof TON_CONNECT_UI === "undefined"
-    ) {
-
-        console.error(
-            "TON Connect UI library failed to load."
-        );
-
-        return;
-
-    }
-
-
-    try {
-
-        tonConnectUI =
-            new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl:
-                    "https://my-rocket.vercel.app/tonconnect-manifest.json",
-
-                restoreConnection:
-                    true,
-
-                language:
-                    "en"
-            });
-
-
-        tonConnectUI.onStatusChange(
-            function(wallet) {
-
-                if (wallet) {
-
-                    tonWalletConnected =
-                        true;
-
-                    tonWalletAddress =
-                        wallet.account?.address ||
-                        null;
-
-                    console.log(
-                        "💎 TON Wallet connected:",
-                        tonWalletAddress
-                    );
-
-                    updateTonWalletUI();
-
-                } else {
-
-                    tonWalletConnected =
-                        false;
-
-                    tonWalletAddress =
-                        null;
-
-                    console.log(
-                        "💎 TON Wallet disconnected"
-                    );
-
-                    resetTonWalletUI();
-
-                }
-
-            }
-        );
-
-
-        /*
-            محاولة قراءة الحالة الحالية
-            إذا كانت الجلسة مستعادة.
-        */
-
-        if (
-            tonConnectUI.wallet
-        ) {
-
-            tonWalletConnected =
-                true;
-
-            tonWalletAddress =
-                tonConnectUI.wallet.account?.address ||
-                null;
-
-            updateTonWalletUI();
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "TON Connect initialization error:",
-            error
-        );
-
-    }
-
-}
-
-
-/* =========================================
-   OPEN TON WALLET
-========================================= */
-
-function openTonWallet() {
-
-    if (!tonConnectUI) {
-
-        console.error(
-            "TON Connect is not initialized."
-        );
-
-        return;
-
-    }
-
-
-    tonConnectUI
-        .openModal()
-        .catch(function(error) {
-
-            console.error(
-                "Unable to open TON wallet modal:",
-                error
-            );
-
-        });
-
-}
-
-
-/* =========================================
-   TON WALLET UI
-========================================= */
-
-function updateTonWalletUI() {
-
-    const box =
-        document.getElementById(
-            "ton-wallet-box"
-        );
-
-
-    if (!box) {
-        return;
-    }
-
-
-    if (
-        tonWalletConnected &&
-        tonWalletAddress
-    ) {
-
-        box.title =
-            "TON Wallet: " +
-            tonWalletAddress;
-
-
-        box.innerHTML = `
-            <span id="ton-balance">
-                ${Number(tonBalance).toFixed(2)}
-            </span>
-            TON
-        `;
-
-        return;
-
-    }
-
-
-    box.title =
-        "Connect TON Wallet";
-
-
-    box.innerHTML = `
-        <span id="ton-balance">
-            ${Number(tonBalance).toFixed(2)}
-        </span>
-        TON
-    `;
-
-}
-
-
-/* =========================================
-   RESET TON WALLET UI
-========================================= */
-
-function resetTonWalletUI() {
-
-    const box =
-        document.getElementById(
-            "ton-wallet-box"
-        );
-
-
-    if (!box) {
-        return;
-    }
-
-
-    box.title =
-        "Connect TON Wallet";
-
-
-    box.innerHTML = `
-        <span id="ton-balance">
-            ${Number(tonBalance).toFixed(2)}
-        </span>
-        TON
-    `;
-
-}
-
-
-/* =========================================
-   LOCAL UI STATE
-========================================= */
-
-let tonBalance = 126.04;
-
-let isGameRunning = false;
-
-let hasBet = false;
-
-let isQueuedForNextRound = false;
-
+let roundId = 0;
 let currentMultiplier = 1.00;
+let gameState = 'COUNTDOWN';
+let countdownSeconds = 5;
 
-let autoCashoutEnabled = false;
+const clients = new Set();
 
-let autoCashoutTarget = 1.50;
-
-let userBetAmount = 0;
-
-let currentRoundId = null;
-
-let serverConnected = false;
-
-let eventSource = null;
-
-let reconnectTimer = null;
-
-let actionInProgress = false;
-
-let globalHistory = [
+let history = [
     1.24,
     2.15,
     6.40,
@@ -1135,1947 +33,1982 @@ let globalHistory = [
     27.50
 ];
 
-let livePlayers = [];
+/*
+==================================================
+PLAYERS
+==================================================
 
+Each player:
 
-/* =========================================
-   SERVER CONNECTION
-========================================= */
+{
+    telegramId,
+    name,
+    avatar,
+    balance,
 
-function connectToGlobalServer() {
+    currentBet: {
+        roundId,
+        amount,
+        autoCashout,
+        autoTarget,
+        status,
+        payout,
+        cashoutMultiplier
+    },
 
-    if (eventSource) {
-
-        try {
-            eventSource.close();
-        } catch (e) {}
-
-        eventSource = null;
+    pendingBet: {
+        roundId,
+        amount,
+        autoCashout,
+        autoTarget,
+        status
     }
+}
+
+status:
+
+ACTIVE
+CASHED_OUT
+LOST
+PENDING
+*/
+
+const players = new Map();
+
+/*
+==================================================
+HELPERS
+==================================================
+*/
+
+function safeNumber(value, fallback = 0) {
+
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+        return fallback;
+    }
+
+    return n;
+}
+
+function round4(value) {
+
+    return Number(
+        safeNumber(value).toFixed(4)
+    );
+}
+
+function send(client, data) {
 
     try {
 
-        eventSource =
-            new EventSource(
-                `${BACKEND_URL}/api/game-stream?telegramId=${encodeURIComponent(telegramId)}`
-            );
+        client.write(
+            `data: ${JSON.stringify(data)}\n\n`
+        );
 
-        eventSource.onopen = function() {
+    } catch {
 
-            serverConnected = true;
+        clients.delete(client);
+    }
+}
 
-            actionInProgress = false;
+/*
+==================================================
+PUBLIC PLAYERS
+==================================================
 
-            clearTimeout(reconnectTimer);
+Only players who have a bet in the
+CURRENT round are displayed.
 
-            console.log(
-                "🚀 Connected to global Rocket Server"
-            );
+This prevents old players from
+remaining in the current bettor list.
+*/
 
+function getPublicPlayers() {
+
+    const result = [];
+
+    for (const player of players.values()) {
+
+        const bet = player.currentBet;
+
+        if (!bet) {
+            continue;
+        }
+
+        if (bet.roundId !== roundId) {
+            continue;
+        }
+
+        result.push({
+            telegramId: player.telegramId,
+
+            name:
+                player.name ||
+                'اللاعب',
+
+            avatar:
+                player.avatar ||
+                '',
+
+            amount:
+                round4(bet.amount),
+
+            status:
+                bet.status,
+
+            multiplier:
+                bet.status === 'CASHED_OUT'
+                    ? round4(bet.cashoutMultiplier)
+                    : null
+        });
+    }
+
+    return result;
+}
+
+/*
+==================================================
+SELF STATE
+==================================================
+*/
+
+function getSelfState(telegramId) {
+
+    const id = String(telegramId || '');
+
+    const player =
+        players.get(id);
+
+    if (!player) {
+
+        return {
+            state: 'none'
         };
+    }
 
+    /*
+    ----------------------------------------------
+    ACTIVE CURRENT BET
+    ----------------------------------------------
+    */
 
-        eventSource.onmessage =
-            function(event) {
+    if (
+        player.currentBet &&
+        player.currentBet.roundId === roundId
+    ) {
 
-                try {
+        const bet =
+            player.currentBet;
 
-                    const data =
-                        JSON.parse(event.data);
+        if (bet.status === 'ACTIVE') {
 
-                    handleServerMessage(data);
+            return {
+                state: 'active',
 
-                } catch (error) {
+                amount:
+                    round4(bet.amount),
 
-                    console.error(
-                        "Invalid server data:",
-                        error
-                    );
+                roundId:
+                    bet.roundId,
 
-                }
+                autoCashout:
+                    Boolean(
+                        bet.autoCashout
+                    ),
 
+                autoTarget:
+                    bet.autoTarget
+                        ? round4(bet.autoTarget)
+                        : null
             };
+        }
 
+        /*
+        ------------------------------------------
+        CASHED OUT
+        ------------------------------------------
+        */
 
-        eventSource.onerror =
-            function() {
+        if (
+            bet.status === 'CASHED_OUT'
+        ) {
 
-                serverConnected = false;
+            return {
+                state: 'win',
 
-                actionInProgress = false;
+                amount:
+                    round4(bet.amount),
 
-                showServerOffline();
+                payout:
+                    round4(bet.payout),
 
-                try {
-                    eventSource.close();
-                } catch (e) {}
+                multiplier:
+                    round4(
+                        bet.cashoutMultiplier
+                    ),
 
-                clearTimeout(
-                    reconnectTimer
-                );
-
-                reconnectTimer =
-                    setTimeout(
-                        connectToGlobalServer,
-                        3000
-                    );
-
+                roundId:
+                    bet.roundId
             };
-
-    } catch (error) {
-
-        console.error(
-            "Connection error:",
-            error
-        );
-
-        serverConnected = false;
-
-        showServerOffline();
-
-        clearTimeout(
-            reconnectTimer
-        );
-
-        reconnectTimer =
-            setTimeout(
-                connectToGlobalServer,
-                3000
-            );
-    }
-}
-
-
-/* =========================================
-   SERVER MESSAGE
-========================================= */
-
-function handleServerMessage(data) {
-
-    if (!data) {
-        return;
-    }
-
-
-    if (
-        data.roundId !== undefined &&
-        data.roundId !== null
-    ) {
-
-        currentRoundId =
-            data.roundId;
-
-    }
-
-
-    if (
-        Number.isFinite(
-            Number(data.balance)
-        )
-    ) {
-
-        tonBalance =
-            Number(data.balance);
-
-        updateBalanceUI();
-
-        updateTonWalletUI();
-
-    }
-
-
-    if (
-        Array.isArray(data.history)
-    ) {
-
-        globalHistory =
-            data.history;
-
-        renderHistoryUI();
-
-    }
-
-
-    if (
-        Array.isArray(data.players)
-    ) {
-
-        livePlayers =
-            data.players;
-
-    }
-
-
-    if (data.self) {
-
-        syncSelfState(
-            data.self
-        );
-
-    }
-
-
-    switch (data.type) {
-
-        case "SYNC":
-
-            handleSync(data);
-
-            break;
-
-
-        case "COUNTDOWN":
-
-            updateCountdownUI(
-                Number(data.seconds)
-            );
-
-            updatePlayersUI();
-
-            break;
-
-
-        case "FLIGHT":
-
-            updateFlightUI(
-                Number(data.multiplier)
-            );
-
-            updatePlayersUI();
-
-            break;
-
-
-        case "CRASH":
-
-            updateCrashUI(
-                Number(data.finalMultiplier),
-                data.history,
-                data.players
-            );
-
-            break;
-
-
-        case "PLAYERS":
-
-            updatePlayersUI();
-
-            break;
-
-
-        case "BALANCE":
-
-            updateBalanceUI();
-
-            break;
-
-    }
-
-}
-
-
-/* =========================================
-   SYNC
-========================================= */
-
-function handleSync(data) {
-
-    if (
-        data.phase === "COUNTDOWN"
-    ) {
-
-        updateCountdownUI(
-            Number(data.seconds)
-        );
-
-        return;
-
-    }
-
-
-    if (
-        data.phase === "FLIGHT"
-    ) {
-
-        updateFlightUI(
-            Number(data.multiplier)
-        );
-
-        return;
-
-    }
-
-
-    if (
-        data.phase === "CRASH"
-    ) {
-
-        updateCrashUI(
-            Number(data.finalMultiplier),
-            data.history,
-            data.players
-        );
-
-    }
-
-}
-
-
-/* =========================================
-   SELF STATE
-========================================= */
-
-function syncSelfState(self) {
-
-    if (!self) {
-        return;
-    }
-
-
-    const state =
-        String(self.state || "none");
-
-
-    if (state === "active") {
-
-        hasBet = true;
-
-        isQueuedForNextRound = false;
-
-        if (
-            Number(self.bet) > 0
-        ) {
-
-            userBetAmount =
-                Number(self.bet);
-
         }
 
-        return;
-    }
-
-
-    if (state === "pending") {
-
-        hasBet = false;
-
-        isQueuedForNextRound = true;
+        /*
+        ------------------------------------------
+        LOST
+        ------------------------------------------
+        */
 
         if (
-            Number(self.bet) > 0
+            bet.status === 'LOST'
         ) {
 
-            userBetAmount =
-                Number(self.bet);
+            return {
+                state: 'lose',
 
+                amount:
+                    round4(bet.amount),
+
+                roundId:
+                    bet.roundId
+            };
         }
-
-        return;
     }
 
-
-    if (state === "win") {
-
-        hasBet = false;
-
-        isQueuedForNextRound = false;
-
-        return;
-    }
-
+    /*
+    ----------------------------------------------
+    PENDING NEXT ROUND
+    ----------------------------------------------
+    */
 
     if (
-        state === "lose" ||
-        state === "none"
+        player.pendingBet &&
+        player.pendingBet.roundId ===
+            roundId + 1
     ) {
 
-        if (
-            state === "none"
-        ) {
+        const bet =
+            player.pendingBet;
 
-            hasBet = false;
+        return {
+            state: 'pending',
 
-            isQueuedForNextRound =
-                false;
+            amount:
+                round4(bet.amount),
 
-        }
+            roundId:
+                bet.roundId,
 
+            autoCashout:
+                Boolean(
+                    bet.autoCashout
+                ),
+
+            autoTarget:
+                bet.autoTarget
+                    ? round4(bet.autoTarget)
+                    : null
+        };
     }
 
+    return {
+        state: 'none'
+    };
 }
 
+/*
+==================================================
+GAME STATE
+==================================================
+*/
 
-/* =========================================
-   OFFLINE
-========================================= */
+function getState(
+    type = gameState,
+    telegramId = null
+) {
 
-function showServerOffline() {
+    return {
 
-    const btn =
-        document.getElementById(
-            "action-btn"
+        type,
+
+        phase:
+            gameState,
+
+        roundId,
+
+        seconds:
+            countdownSeconds,
+
+        multiplier:
+            round4(
+                currentMultiplier
+            ),
+
+        history,
+
+        players:
+            getPublicPlayers(),
+
+        self:
+            telegramId
+                ? getSelfState(
+                    telegramId
+                )
+                : null,
+
+        serverTime:
+            Date.now()
+    };
+}
+
+/*
+==================================================
+BROADCAST GAME STATE
+==================================================
+*/
+
+function broadcast(
+    type = gameState
+) {
+
+    for (const client of clients) {
+
+        send(
+            client,
+
+            getState(
+                type,
+                client.telegramId
+            )
         );
-
-    btn.disabled = true;
-
-    btn.className =
-        "main-btn";
-
-    btn.innerText =
-        "جاري الاتصال بالسيرفر...";
-
+    }
 }
 
+/*
+==================================================
+BROADCAST PLAYERS
+==================================================
+*/
 
-/* =========================================
-   COUNTDOWN
-========================================= */
+function broadcastPlayers() {
 
-function updateCountdownUI(seconds) {
+    const publicPlayers =
+        getPublicPlayers();
 
-    seconds =
-        Math.max(
-            0,
-            Math.min(
-                5,
-                Number(seconds)
+    for (const client of clients) {
+
+        send(
+            client,
+            {
+                type: 'PLAYERS',
+
+                players:
+                    publicPlayers,
+
+                self:
+                    getSelfState(
+                        client.telegramId
+                    ),
+
+                serverTime:
+                    Date.now()
+            }
+        );
+    }
+}
+
+/*
+==================================================
+SEND BALANCE
+==================================================
+*/
+
+function sendBalance(client) {
+
+    const player =
+        players.get(
+            String(
+                client.telegramId
             )
         );
 
-
-    isGameRunning = false;
-
-
-    const wrapper =
-        document.getElementById(
-            "countdown-wrapper"
-        );
-
-    const numText =
-        document.getElementById(
-            "countdown-num"
-        );
-
-    const bar =
-        document.getElementById(
-            "progress-bar"
-        );
-
-    const multText =
-        document.getElementById(
-            "multiplier"
-        );
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    wrapper.style.display =
-        "flex";
-
-    multText.style.display =
-        "none";
-
-
-    numText.innerText =
-        seconds;
-
-
-    const offset =
-        236 -
-        (
-            236 *
-            (seconds / 5)
-        );
-
-
-    bar.style.strokeDashoffset =
-        offset;
-
-
-    document.getElementById(
-        "header-multiplier"
-    ).innerText =
-        "1.00x";
-
-
-    document.getElementById(
-        "auto-switch"
-    ).classList.remove(
-        "disabled"
-    );
-
-
-    document.getElementById(
-        "auto-control-box"
-    ).classList.remove(
-        "locked"
-    );
-
-
-    if (hasBet) {
-
-        btn.disabled = true;
-
-        btn.className =
-            "main-btn";
-
-        btn.innerText =
-            "Waiting for Takeoff...";
-
+    if (!player) {
         return;
     }
 
+    send(
+        client,
+        {
+            type: 'BALANCE',
 
-    if (isQueuedForNextRound) {
+            balance:
+                round4(
+                    player.balance
+                ),
 
-        btn.disabled = true;
-
-        btn.className =
-            "main-btn queued";
-
-        btn.innerText =
-            "Queued for Next Round ⏳";
-
-        return;
-    }
-
-
-    btn.disabled =
-        !serverConnected;
-
-    btn.className =
-        "main-btn";
-
-    btn.innerText =
-        "Place TON Bet 🚀";
-
+            serverTime:
+                Date.now()
+        }
+    );
 }
 
+/*
+==================================================
+SEND BALANCE TO PLAYER
+==================================================
+*/
 
-/* =========================================
-   FLIGHT
-========================================= */
+function sendBalanceToPlayer(
+    telegramId
+) {
 
-function updateFlightUI(mult) {
+    const id =
+        String(telegramId);
 
-    if (!Number.isFinite(mult)) {
-        return;
+    for (const client of clients) {
+
+        if (
+            String(
+                client.telegramId
+            ) === id
+        ) {
+
+            sendBalance(client);
+        }
     }
+}
 
+/*
+==================================================
+CREATE PLAYER
+==================================================
+*/
 
-    isGameRunning = true;
+function getOrCreatePlayer({
+    telegramId,
+    name,
+    avatar
+}) {
 
-    currentMultiplier =
-        mult;
-
-
-    const rCont =
-        document.getElementById(
-            "rocket-container"
+    const id =
+        String(
+            telegramId
         );
 
-    const path =
-        document.getElementById(
-            "neon-curve"
+    if (!players.has(id)) {
+
+        players.set(
+            id,
+            {
+                telegramId: id,
+
+                name:
+                    name ||
+                    'اللاعب',
+
+                avatar:
+                    avatar ||
+                    '',
+
+                /*
+                ----------------------------------
+                TEMPORARY DEMO BALANCE
+                ----------------------------------
+
+                NOT blockchain money.
+                NOT Supabase money.
+                */
+
+                balance: 126.04,
+
+                currentBet: null,
+
+                pendingBet: null
+            }
         );
-
-    const multText =
-        document.getElementById(
-            "multiplier"
-        );
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    document.getElementById(
-        "countdown-wrapper"
-    ).style.display =
-        "none";
-
-
-    multText.style.display =
-        "block";
-
-
-    multText.innerText =
-        mult.toFixed(2) + "x";
-
-
-    document.getElementById(
-        "header-multiplier"
-    ).innerText =
-        mult.toFixed(2) + "x";
-
-
-    const currentColors =
-        getColorByMultiplier(
-            mult
-        );
-
-
-    path.setAttribute(
-        "stroke",
-        currentColors.hex
-    );
-
-
-    path.style.filter =
-        `drop-shadow(0 0 6px ${currentColors.hex})`;
-
-
-    const xMove =
-        Math.min(
-            210,
-            Math.max(
-                0,
-                (mult - 1) * 35
-            )
-        );
-
-
-    const yMove =
-        Math.min(
-            150,
-            Math.max(
-                0,
-                (mult - 1) * 45
-            )
-        );
-
-
-    rCont.style.transform =
-        `translate(${xMove}px, -${yMove}px) rotate(-15deg)`;
-
-
-    document.getElementById(
-        "auto-switch"
-    ).classList.add(
-        "disabled"
-    );
-
-
-    document.getElementById(
-        "auto-control-box"
-    ).classList.add(
-        "locked"
-    );
-
-
-    if (hasBet) {
-
-        btn.disabled = false;
-
-        btn.className =
-            "main-btn cashout";
-
-        btn.innerText =
-            `Cashout ${(userBetAmount * mult).toFixed(2)} TON 💎`;
-
-    } else if (isQueuedForNextRound) {
-
-        btn.disabled = true;
-
-        btn.className =
-            "main-btn queued";
-
-        btn.innerText =
-            "Queued for Next Round ⏳";
 
     } else {
 
-        btn.disabled = true;
-
-        btn.className =
-            "main-btn";
-
-        btn.innerText =
-            "Bet for Next Round ⏳";
-
-    }
-
-
-    if (Math.random() < 0.3) {
-
-        const p =
-            document.createElement(
-                "div"
-            );
-
-        p.className =
-            "particle-glow";
-
-        p.style.setProperty(
-            "--p-color",
-            currentColors.hex
-        );
-
-        p.style.left =
-            "22px";
-
-        p.style.top =
-            "22px";
-
-        rCont.appendChild(p);
-
-        setTimeout(
-            () => p.remove(),
-            400
-        );
-
-    }
-
-}
-
-
-/* =========================================
-   CRASH
-========================================= */
-
-function updateCrashUI(
-    finalMult,
-    newHistory,
-    serverPlayers
-) {
-
-    isGameRunning = false;
-
-
-    if (
-        Number.isFinite(finalMult)
-    ) {
-
-        currentMultiplier =
-            finalMult;
-
-    }
-
-
-    if (
-        Array.isArray(newHistory)
-    ) {
-
-        globalHistory =
-            newHistory;
-
-    }
-
-
-    if (
-        Array.isArray(serverPlayers)
-    ) {
-
-        livePlayers =
-            serverPlayers;
-
-    }
-
-
-    renderHistoryUI();
-
-    updatePlayersUI();
-
-
-    const rocket =
-        document.getElementById(
-            "rocket"
-        );
-
-
-    rocket.innerText =
-        "💥";
-
-
-    rocket.style.transform =
-        "scale(1.4)";
-
-
-    hasBet = false;
-
-    isQueuedForNextRound =
-        false;
-
-    userBetAmount = 0;
-
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    btn.disabled = true;
-
-    btn.className =
-        "main-btn";
-
-    btn.innerText =
-        "Place TON Bet 🚀";
-
-
-    setTimeout(
-        function() {
-
-            rocket.innerText =
-                "🚀";
-
-            rocket.style.transform =
-                "none";
-
-            document.getElementById(
-                "rocket-container"
-            ).style.transform =
-                "none";
-
-        },
-        3000
-    );
-
-}
-
-
-/* =========================================
-   STARS
-========================================= */
-
-const bg =
-    document.getElementById(
-        "space-bg"
-    );
-
-
-const starColors = [
-    "#fff",
-    "#00ffcc",
-    "#0066ff",
-    "#ffaa00",
-    "#ff3366"
-];
-
-
-for (
-    let i = 0;
-    i < 35;
-    i++
-) {
-
-    const star =
-        document.createElement(
-            "div"
-        );
-
-    star.className =
-        "star";
-
-    star.style.left =
-        Math.random() * 100 + "%";
-
-    star.style.top =
-        Math.random() * 100 + "%";
-
-    star.style.background =
-        starColors[
-            Math.floor(
-                Math.random() *
-                starColors.length
-            )
-        ];
-
-    star.style.animationDuration =
-        (
-            Math.random() * 1.5 +
-            0.8
-        ) + "s";
-
-    bg.appendChild(
-        star
-    );
-
-}
-
-
-/* =========================================
-   AUTO CASHOUT
-========================================= */
-
-function toggleAutoCashout() {
-
-    if (isGameRunning) {
-        return;
-    }
-
-
-    if (hasBet || isQueuedForNextRound) {
-        return;
-    }
-
-
-    autoCashoutEnabled =
-        !autoCashoutEnabled;
-
-
-    document.getElementById(
-        "auto-switch"
-    ).className =
-        "switch-btn" +
-        (
-            autoCashoutEnabled
-                ? " active"
-                : ""
-        );
-
-
-    document.getElementById(
-        "auto-control-box"
-    ).className =
-        "auto-cashout-control-row" +
-        (
-            autoCashoutEnabled
-                ? " active"
-                : ""
-        );
-
-}
-
-
-function adjustAutoVal(val) {
-
-    if (
-        !autoCashoutEnabled ||
-        isGameRunning
-    ) {
-
-        return;
-    }
-
-
-    autoCashoutTarget =
-        parseFloat(
-            (
-                autoCashoutTarget +
-                val
-            ).toFixed(2)
-        );
-
-
-    if (
-        autoCashoutTarget < 1.10
-    ) {
-
-        autoCashoutTarget =
-            1.10;
-
-    }
-
-
-    if (
-        autoCashoutTarget > 1000
-    ) {
-
-        autoCashoutTarget =
-            1000;
-
-    }
-
-
-    document.getElementById(
-        "auto-cashout-val"
-    ).innerText =
-        autoCashoutTarget.toFixed(2) +
-        " x";
-
-}
-
-
-/* =========================================
-   HISTORY
-========================================= */
-
-function renderHistoryUI() {
-
-    const bar =
-        document.getElementById(
-            "history-bar"
-        );
-
-
-    if (!bar) {
-        return;
-    }
-
-
-    bar.innerHTML =
-        "";
-
-
-    globalHistory.forEach(
-        function(val) {
-
-            const number =
-                Number(val);
-
-
-            if (
-                !Number.isFinite(number)
-            ) {
-                return;
-            }
-
-
-            const badgeColors =
-                getColorByMultiplier(
-                    number
-                );
-
-
-            const badge =
-                document.createElement(
-                    "div"
-                );
-
-
-            badge.className =
-                `history-badge ${badgeColors.name}`;
-
-
-            badge.innerText =
-                number.toFixed(2) +
-                "x";
-
-
-            bar.appendChild(
-                badge
-            );
-
+        const player =
+            players.get(id);
+
+        if (name) {
+            player.name = name;
         }
-    );
 
+        if (avatar) {
+            player.avatar = avatar;
+        }
+    }
+
+    return players.get(id);
 }
 
+/*
+==================================================
+HOME
+==================================================
+*/
 
-/* =========================================
-   PLAYERS
-========================================= */
+app.get(
+    '/',
+    (req, res) => {
 
-function updatePlayersUI() {
+        res.json({
+            ok: true,
 
-    const feed =
-        document.getElementById(
-            "players-feed"
-        );
+            service:
+                'Epic Gift Rocket Multiplayer',
 
+            gameState,
 
-    if (!feed) {
-        return;
+            roundId,
+
+            multiplier:
+                currentMultiplier,
+
+            players:
+                players.size,
+
+            connected:
+                clients.size
+        });
     }
+);
 
+/*
+==================================================
+HEALTH
+==================================================
+*/
 
-    feed.innerHTML =
-        "";
+app.get(
+    '/health',
+    (req, res) => {
 
+        res.json({
+            ok: true,
 
-    if (
-        !Array.isArray(livePlayers)
-    ) {
+            gameState,
 
-        return;
+            roundId,
 
+            multiplier:
+                currentMultiplier,
+
+            clients:
+                clients.size,
+
+            players:
+                players.size
+        });
     }
+);
 
+/*
+==================================================
+GAME STREAM
+==================================================
+*/
 
-    livePlayers.forEach(
-        function(p) {
+app.get(
+    '/api/game-stream',
+    (req, res) => {
 
-            if (!p) {
-                return;
-            }
-
-
-            const bet =
-                Number(p.bet) || 0;
-
-
-            const finalMult =
-                Number(p.finalMult) || 1;
-
-
-            const runningMult =
-                p.state === "active"
-                    ? currentMultiplier
-                    : finalMult;
-
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                `player-card ${p.state || "active"}`;
-
-
-            const stateClass =
-                p.state === "win"
-                    ? "win"
-                    : (
-                        p.state === "lose"
-                            ? "lose"
-                            : "active"
-                    );
-
-
-            let imgTag;
-
-
-            if (
-                p.avatar &&
-                /^https:\/\//i.test(
-                    p.avatar
-                )
-            ) {
-
-                imgTag =
-                    `<img src="${escapeHtml(p.avatar)}" alt="profile">`;
-
-            } else {
-
-                imgTag =
-                    `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${p.color || "#2b3047"}">${escapeHtml((p.name || "?").charAt(0))}</div>`;
-
-            }
-
-
-            let statusAmount =
-                bet * runningMult;
-
-
-            if (
-                p.state === "lose"
-            ) {
-
-                statusAmount =
-                    0;
-
-            }
-
-
-            card.innerHTML = `
-                <div class="p-info">
-
-                    <div class="p-avatar">
-                        ${imgTag}
-                    </div>
-
-                    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-
-                        <span style="font-weight:bold; font-size:13px;">
-                            ${escapeHtml(p.name || "Player")}
-                        </span>
-
-                        <span style="font-size:11px; color:#8a92b2; direction:ltr;">
-                            💎 ${bet.toFixed(2)} ×${runningMult.toFixed(2)}
-                        </span>
-
-                    </div>
-
-                </div>
-
-                <div class="p-status-box ${stateClass}">
-                    ${
-                        p.state === "win"
-                            ? "💎 " + statusAmount.toFixed(2)
-                            : (
-                                p.state === "lose"
-                                    ? "💥 Lost"
-                                    : "💎 " + statusAmount.toFixed(2)
-                            )
-                    }
-                </div>
-            `;
-
-
-            feed.appendChild(
-                card
+        const telegramId =
+            String(
+                req.query.telegramId ||
+                'guest'
             );
 
-        }
-    );
+        const name =
+            String(
+                req.query.name ||
+                'اللاعب'
+            );
 
-}
+        const avatar =
+            String(
+                req.query.avatar ||
+                ''
+            );
 
+        /*
+        ------------------------------------------
+        CREATE / UPDATE PLAYER
+        ------------------------------------------
+        */
 
-/* =========================================
-   COLORS
-========================================= */
+        getOrCreatePlayer({
+            telegramId,
+            name,
+            avatar
+        });
 
-function getColorByMultiplier(val) {
+        /*
+        ------------------------------------------
+        SSE HEADERS
+        ------------------------------------------
+        */
 
-    if (val < 1.30) {
+        res.status(200);
 
-        return {
-            name: "red",
-            hex: "#ff3366"
-        };
-
-    }
-
-
-    if (
-        val >= 1.30 &&
-        val < 2.00
-    ) {
-
-        return {
-            name: "green",
-            hex: "#00ffcc"
-        };
-
-    }
-
-
-    if (
-        val >= 2.00 &&
-        val < 5.00
-    ) {
-
-        return {
-            name: "blue",
-            hex: "#0066ff"
-        };
-
-    }
-
-
-    if (
-        val >= 5.00 &&
-        val < 9.00
-    ) {
-
-        return {
-            name: "purple",
-            hex: "#a020f0"
-        };
-
-    }
-
-
-    if (
-        val >= 9.00 &&
-        val < 25.00
-    ) {
-
-        return {
-            name: "gold",
-            hex: "#ffaa00"
-        };
-
-    }
-
-
-    if (val >= 25.00) {
-
-        return {
-            name: "fire",
-            hex: "#ff4400"
-        };
-
-    }
-
-
-    return {
-        name: "green",
-        hex: "#00ffcc"
-    };
-
-}
-
-
-/* =========================================
-   BALANCE
-========================================= */
-
-function updateBalanceUI() {
-
-    if (
-        !Number.isFinite(
-            Number(tonBalance)
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    document.getElementById(
-        "ton-balance"
-    ).innerText =
-        Number(tonBalance).toFixed(2);
-
-
-    document.getElementById(
-        "balance-label"
-    ).innerText =
-        Number(tonBalance).toFixed(2) +
-        " TON";
-
-}
-
-
-/* =========================================
-   BET AMOUNT
-========================================= */
-
-function getBetAmount() {
-
-    const input =
-        document.getElementById(
-            "bet-input"
+        res.setHeader(
+            'Content-Type',
+            'text/event-stream'
         );
 
-
-    const amount =
-        parseFloat(
-            input.value
+        res.setHeader(
+            'Cache-Control',
+            'no-cache, no-transform'
         );
 
+        res.setHeader(
+            'Connection',
+            'keep-alive'
+        );
 
-    if (
-        !Number.isFinite(amount) ||
-        amount <= 0
-    ) {
-
-        return 0;
-
-    }
-
-
-    return Number(
-        amount.toFixed(2)
-    );
-
-}
-
-
-/* =========================================
-   MAIN ACTION
-========================================= */
-
-function handleAction() {
-
-    if (!serverConnected) {
-        return;
-    }
-
-
-    if (actionInProgress) {
-        return;
-    }
-
-
-    if (
-        isGameRunning &&
-        hasBet
-    ) {
-
-        triggerCashoutSuccess();
-
-        return;
-    }
-
-
-    if (
-        isGameRunning &&
-        !hasBet
-    ) {
+        res.setHeader(
+            'X-Accel-Buffering',
+            'no'
+        );
 
         if (
-            isQueuedForNextRound
+            res.flushHeaders
         ) {
 
-            return;
-
+            res.flushHeaders();
         }
 
+        /*
+        ------------------------------------------
+        ATTACH USER TO CONNECTION
+        ------------------------------------------
+        */
 
-        placeBet();
+        res.telegramId =
+            telegramId;
 
-        return;
-    }
+        clients.add(res);
 
+        /*
+        ------------------------------------------
+        INITIAL SYNC
+        ------------------------------------------
+        */
 
-    if (
-        !isGameRunning &&
-        !hasBet &&
-        !isQueuedForNextRound
-    ) {
-
-        placeBet();
-
-    }
-
-}
-
-
-/* =========================================
-   PLACE BET
-========================================= */
-
-function placeBet() {
-
-    if (!serverConnected) {
-        return;
-    }
-
-
-    if (actionInProgress) {
-        return;
-    }
-
-
-    const amount =
-        getBetAmount();
-
-
-    if (
-        amount <= 0
-    ) {
-
-        alert(
-            "أدخل قيمة رهان صحيحة."
+        send(
+            res,
+            getState(
+                'SYNC',
+                telegramId
+            )
         );
 
-        return;
-    }
+        sendBalance(res);
 
+        /*
+        ------------------------------------------
+        CLOSE
+        ------------------------------------------
+        */
 
-    if (
-        amount > tonBalance
-    ) {
+        req.on(
+            'close',
+            () => {
 
-        alert(
-            "الرصيد غير كافٍ."
+                clients.delete(res);
+            }
         );
-
-        return;
     }
+);
 
+/*
+==================================================
+GAME ACTION
+==================================================
+*/
 
-    actionInProgress = true;
+app.post(
+    '/api/game-action',
+    (req, res) => {
 
+        try {
 
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
+            const body =
+                req.body || {};
 
+            const type =
+                String(
+                    body.type ||
+                    ''
+                ).toUpperCase();
 
-    btn.disabled =
-        true;
+            const telegramId =
+                String(
+                    body.telegramId ||
+                    ''
+                );
 
+            const name =
+                body.name
+                    ? String(body.name)
+                    : '';
 
-    btn.innerText =
-        "جاري تسجيل الرهان...";
+            const avatar =
+                body.avatar
+                    ? String(body.avatar)
+                    : '';
 
+            const requestedRoundId =
+                safeNumber(
+                    body.roundId,
+                    -1
+                );
 
-    sendServerAction(
-        {
-            type: "BET",
+            const amount =
+                safeNumber(
+                    body.amount,
+                    0
+                );
 
-            telegramId:
-                telegramId,
+            const autoCashout =
+                Boolean(
+                    body.autoCashout
+                );
 
-            name:
-                firstName,
+            const autoTarget =
+                safeNumber(
+                    body.autoTarget,
+                    0
+                );
 
-            avatar:
-                userPhoto,
+            /*
+            --------------------------------------
+            VALIDATE USER
+            --------------------------------------
+            */
 
-            amount:
-                amount,
+            if (!telegramId) {
 
-            roundId:
-                currentRoundId,
+                return res
+                    .status(400)
+                    .json({
+                        ok: false,
 
-            autoCashout:
-                autoCashoutEnabled,
+                        error:
+                            'telegramId is required'
+                    });
+            }
 
-            autoTarget:
-                autoCashoutTarget
-        },
+            /*
+            --------------------------------------
+            GET / CREATE PLAYER
+            --------------------------------------
+            */
 
-        function(data) {
+            const player =
+                getOrCreatePlayer({
+                    telegramId,
+                    name,
+                    avatar
+                });
 
-            actionInProgress =
-                false;
+            /*
+            ======================================
+            BET
+            ======================================
+            */
 
+            if (type === 'BET') {
 
-            if (
-                data &&
-                data.ok
-            ) {
-
-                userBetAmount =
-                    amount;
-
+                /*
+                ----------------------------------
+                VALIDATE AMOUNT
+                ----------------------------------
+                */
 
                 if (
-                    Number.isFinite(
-                        Number(data.balance)
+                    !Number.isFinite(amount) ||
+                    amount <= 0
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
+
+                            error:
+                                'Invalid bet amount'
+                        });
+                }
+
+                /*
+                ----------------------------------
+                MINIMUM BET
+                ----------------------------------
+                */
+
+                if (amount < 0.01) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
+
+                            error:
+                                'Minimum bet is 0.01 TON'
+                        });
+                }
+
+                /*
+                ----------------------------------
+                ONE BET / ROUND
+                ----------------------------------
+
+                If already active or pending,
+                reject duplicate bet.
+                */
+
+                if (
+                    player.currentBet &&
+                    player.currentBet.roundId ===
+                        roundId &&
+                    (
+                        player.currentBet.status ===
+                            'ACTIVE' ||
+                        player.currentBet.status ===
+                            'CASHED_OUT'
                     )
                 ) {
 
-                    tonBalance =
-                        Number(
-                            data.balance
-                        );
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
 
-                    updateBalanceUI();
-
-                    updateTonWalletUI();
-
+                            error:
+                                'You already have a bet this round'
+                        });
                 }
-
 
                 if (
-                    isGameRunning
+                    player.pendingBet &&
+                    player.pendingBet.roundId ===
+                        roundId + 1
                 ) {
 
-                    hasBet =
-                        false;
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
 
-                    isQueuedForNextRound =
-                        true;
-
-                } else {
-
-                    hasBet =
-                        true;
-
-                    isQueuedForNextRound =
-                        false;
-
+                            error:
+                                'You already have a queued bet'
+                        });
                 }
 
+                /*
+                ==================================
+                BET DURING COUNTDOWN
+                ==================================
+                */
 
-                updateButtonFromLocalState();
+                if (
+                    gameState ===
+                    'COUNTDOWN'
+                ) {
 
-            } else {
+                    if (
+                        requestedRoundId !==
+                        roundId
+                    ) {
 
-                resetActionButton();
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
 
+                                error:
+                                    'Round has changed'
+                            });
+                    }
+
+                    /*
+                    Balance check
+                    */
+
+                    if (
+                        amount >
+                        player.balance
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
+
+                                error:
+                                    'Insufficient balance'
+                            });
+                    }
+
+                    /*
+                    Deduct balance
+                    */
+
+                    player.balance =
+                        round4(
+                            player.balance -
+                            amount
+                        );
+
+                    /*
+                    Create current bet
+                    */
+
+                    player.currentBet = {
+
+                        roundId,
+
+                        amount:
+                            round4(amount),
+
+                        autoCashout,
+
+                        autoTarget:
+                            autoCashout &&
+                            autoTarget > 1
+                                ? round4(
+                                    autoTarget
+                                )
+                                : null,
+
+                        status:
+                            'ACTIVE',
+
+                        payout: 0,
+
+                        cashoutMultiplier:
+                            null
+                    };
+
+                    /*
+                    Clear any old pending bet
+                    */
+
+                    player.pendingBet =
+                        null;
+
+                    broadcastPlayers();
+
+                    sendBalanceToPlayer(
+                        telegramId
+                    );
+
+                    return res.json({
+                        ok: true,
+
+                        action:
+                            'BET',
+
+                        status:
+                            'ACTIVE',
+
+                        roundId,
+
+                        amount:
+                            round4(amount),
+
+                        balance:
+                            round4(
+                                player.balance
+                            )
+                    });
+                }
+
+                /*
+                ==================================
+                BET DURING FLIGHT
+                ==================================
+
+                Queue for NEXT round.
+
+                This matches the frontend
+                isQueuedForNextRound behavior.
+                */
+
+                if (
+                    gameState ===
+                    'FLIGHT'
+                ) {
+
+                    /*
+                    The requested round should
+                    normally be the current round.
+                    */
+
+                    if (
+                        requestedRoundId !==
+                        roundId
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
+
+                                error:
+                                    'Round has changed'
+                            });
+                    }
+
+                    /*
+                    Balance check
+                    */
+
+                    if (
+                        amount >
+                        player.balance
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
+
+                                error:
+                                    'Insufficient balance'
+                            });
+                    }
+
+                    /*
+                    Deduct now and reserve
+                    the money for next round.
+                    */
+
+                    player.balance =
+                        round4(
+                            player.balance -
+                            amount
+                        );
+
+                    player.pendingBet = {
+
+                        roundId:
+                            roundId + 1,
+
+                        amount:
+                            round4(amount),
+
+                        autoCashout,
+
+                        autoTarget:
+                            autoCashout &&
+                            autoTarget > 1
+                                ? round4(
+                                    autoTarget
+                                )
+                                : null,
+
+                        status:
+                            'PENDING'
+                    };
+
+                    /*
+                    Tell user that bet is queued.
+                    */
+
+                    broadcastPlayers();
+
+                    sendBalanceToPlayer(
+                        telegramId
+                    );
+
+                    return res.json({
+                        ok: true,
+
+                        action:
+                            'BET',
+
+                        status:
+                            'PENDING',
+
+                        roundId:
+                            roundId + 1,
+
+                        amount:
+                            round4(amount),
+
+                        balance:
+                            round4(
+                                player.balance
+                            )
+                    });
+                }
+
+                /*
+                ==================================
+                BET DURING CRASH
+                ==================================
+                */
+
+                if (
+                    gameState ===
+                    'CRASH'
+                ) {
+
+                    /*
+                    Queue for next round.
+                    */
+
+                    if (
+                        requestedRoundId !==
+                        roundId
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
+
+                                error:
+                                    'Round has changed'
+                            });
+                    }
+
+                    if (
+                        amount >
+                        player.balance
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                ok: false,
+
+                                error:
+                                    'Insufficient balance'
+                            });
+                    }
+
+                    player.balance =
+                        round4(
+                            player.balance -
+                            amount
+                        );
+
+                    player.pendingBet = {
+
+                        roundId:
+                            roundId + 1,
+
+                        amount:
+                            round4(amount),
+
+                        autoCashout,
+
+                        autoTarget:
+                            autoCashout &&
+                            autoTarget > 1
+                                ? round4(
+                                    autoTarget
+                                )
+                                : null,
+
+                        status:
+                            'PENDING'
+                    };
+
+                    broadcastPlayers();
+
+                    sendBalanceToPlayer(
+                        telegramId
+                    );
+
+                    return res.json({
+                        ok: true,
+
+                        action:
+                            'BET',
+
+                        status:
+                            'PENDING',
+
+                        roundId:
+                            roundId + 1,
+
+                        amount:
+                            round4(amount),
+
+                        balance:
+                            round4(
+                                player.balance
+                            )
+                    });
+                }
+
+                return res
+                    .status(400)
+                    .json({
+                        ok: false,
+
+                        error:
+                            'Betting is not available'
+                    });
             }
 
-        },
+            /*
+            ======================================
+            CASHOUT
+            ======================================
+            */
 
-        function(error) {
+            if (type === 'CASHOUT') {
 
-            actionInProgress =
-                false;
+                /*
+                Cashout only during flight.
+                */
+
+                if (
+                    gameState !==
+                    'FLIGHT'
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
+
+                            error:
+                                'Cashout is not available'
+                        });
+                }
+
+                /*
+                Validate round.
+                */
+
+                if (
+                    requestedRoundId !==
+                    roundId
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
+
+                            error:
+                                'Round has changed'
+                        });
+                }
+
+                const bet =
+                    player.currentBet;
+
+                if (
+                    !bet ||
+                    bet.roundId !==
+                        roundId ||
+                    bet.status !==
+                        'ACTIVE'
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            ok: false,
+
+                            error:
+                                'No active bet'
+                        });
+                }
+
+                /*
+                ----------------------------------
+                CASHOUT MULTIPLIER
+                ----------------------------------
+                */
+
+                const cashoutMultiplier =
+                    round4(
+                        currentMultiplier
+                    );
+
+                /*
+                ----------------------------------
+                PAYOUT
+                ----------------------------------
+                */
+
+                const payout =
+                    round4(
+                        bet.amount *
+                        cashoutMultiplier
+                    );
+
+                /*
+                ----------------------------------
+                CREDIT BALANCE
+                ----------------------------------
+                */
+
+                player.balance =
+                    round4(
+                        player.balance +
+                        payout
+                    );
+
+                /*
+                ----------------------------------
+                UPDATE BET
+                ----------------------------------
+                */
+
+                bet.status =
+                    'CASHED_OUT';
+
+                bet.cashoutMultiplier =
+                    cashoutMultiplier;
+
+                bet.payout =
+                    payout;
+
+                /*
+                ----------------------------------
+                BROADCAST
+                ----------------------------------
+                */
+
+                broadcastPlayers();
+
+                sendBalanceToPlayer(
+                    telegramId
+                );
+
+                return res.json({
+                    ok: true,
+
+                    action:
+                        'CASHOUT',
+
+                    status:
+                        'CASHED_OUT',
+
+                    roundId,
+
+                    multiplier:
+                        cashoutMultiplier,
+
+                    payout,
+
+                    balance:
+                        round4(
+                            player.balance
+                        )
+                });
+            }
+
+            /*
+            ======================================
+            UNKNOWN ACTION
+            ======================================
+            */
+
+            return res
+                .status(400)
+                .json({
+                    ok: false,
+
+                    error:
+                        'Unknown action'
+                });
+
+        } catch (error) {
 
             console.error(
+                'GAME ACTION ERROR:',
                 error
             );
 
-            resetActionButton();
+            return res
+                .status(500)
+                .json({
+                    ok: false,
 
+                    error:
+                        'Internal server error'
+                });
         }
-    );
-
-}
-
-
-/* =========================================
-   CASHOUT
-========================================= */
-
-function triggerCashoutSuccess() {
-
-    if (!hasBet) {
-        return;
     }
+);
 
+/*
+==================================================
+HEARTBEAT
+==================================================
+*/
 
-    if (!serverConnected) {
-        return;
-    }
+setInterval(
+    () => {
 
-
-    if (actionInProgress) {
-        return;
-    }
-
-
-    actionInProgress =
-        true;
-
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    btn.disabled =
-        true;
-
-
-    btn.className =
-        "main-btn";
-
-
-    btn.innerText =
-        "Cashing out... 💎";
-
-
-    sendServerAction(
-        {
-            type: "CASHOUT",
-
-            telegramId:
-                telegramId,
-
-            roundId:
-                currentRoundId
-        },
-
-        function(data) {
-
-            actionInProgress =
-                false;
-
-
-            if (
-                data &&
-                data.ok
-            ) {
-
-                hasBet =
-                    false;
-
-                isQueuedForNextRound =
-                    false;
-
-                userBetAmount =
-                    0;
-
-
-                if (
-                    Number.isFinite(
-                        Number(data.balance)
-                    )
-                ) {
-
-                    tonBalance =
-                        Number(
-                            data.balance
-                        );
-
-                    updateBalanceUI();
-
-                    updateTonWalletUI();
-
-                }
-
-
-                btn.className =
-                    "main-btn";
-
-                btn.disabled =
-                    true;
-
-                btn.innerText =
-                    "Bet for Next Round ⏳";
-
-            } else {
-
-                btn.disabled =
-                    false;
-
-                btn.className =
-                    "main-btn cashout";
-
-                btn.innerText =
-                    `Cashout ${(userBetAmount * currentMultiplier).toFixed(2)} TON 💎`;
-
-            }
-
-        },
-
-        function(error) {
-
-            actionInProgress =
-                false;
-
-            console.error(
-                "Cashout error:",
-                error
-            );
-
-
-            btn.disabled =
-                false;
-
-            btn.className =
-                "main-btn cashout";
-
-            btn.innerText =
-                `Cashout ${(userBetAmount * currentMultiplier).toFixed(2)} TON 💎`;
-
-        }
-    );
-
-}
-
-
-/* =========================================
-   SERVER ACTION
-========================================= */
-
-function sendServerAction(
-    payload,
-    onSuccess,
-    onError
-) {
-
-    const url =
-        `${BACKEND_URL}/api/game-action`;
-
-
-    fetch(
-        url,
-        {
-            method: "POST",
-
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-
-            body:
-                JSON.stringify(
-                    payload
-                )
-
-        }
-    )
-    .then(
-        async function(response) {
-
-            let data = {};
+        for (
+            const client
+            of clients
+        ) {
 
             try {
 
-                data =
-                    await response.json();
-
-            } catch (e) {}
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.error ||
-                    "Server action failed"
+                client.write(
+                    `: heartbeat ${Date.now()}\n\n`
                 );
 
+            } catch {
+
+                clients.delete(client);
             }
-
-
-            return data;
-
         }
-    )
-    .then(
-        function(data) {
 
-            if (
-                typeof onSuccess ===
-                "function"
-            ) {
-
-                onSuccess(data);
-
-            }
-
-        }
-    )
-    .catch(
-        function(error) {
-
-            if (
-                typeof onError ===
-                "function"
-            ) {
-
-                onError(error);
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================
-   LOCAL BUTTON STATE
-========================================= */
-
-function updateButtonFromLocalState() {
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    if (
-        isQueuedForNextRound
-    ) {
-
-        btn.disabled =
-            true;
-
-        btn.className =
-            "main-btn queued";
-
-        btn.innerText =
-            "Queued for Next Round ⏳";
-
-        return;
-
-    }
-
-
-    if (hasBet) {
-
-        btn.disabled =
-            true;
-
-        btn.className =
-            "main-btn";
-
-        btn.innerText =
-            "Waiting for Takeoff...";
-
-        return;
-
-    }
-
-
-    btn.disabled =
-        !serverConnected;
-
-    btn.className =
-        "main-btn";
-
-    btn.innerText =
-        "Place TON Bet 🚀";
-
-}
-
-
-/* =========================================
-   RESET BUTTON
-========================================= */
-
-function resetActionButton() {
-
-    actionInProgress =
-        false;
-
-    hasBet =
-        false;
-
-    isQueuedForNextRound =
-        false;
-
-    userBetAmount =
-        0;
-
-
-    const btn =
-        document.getElementById(
-            "action-btn"
-        );
-
-
-    btn.disabled =
-        !serverConnected;
-
-    btn.className =
-        "main-btn";
-
-    btn.innerText =
-        "Place TON Bet 🚀";
-
-}
-
-
-/* =========================================
-   ESCAPE HTML
-========================================= */
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
-
-
-/* =========================================
-   INITIAL UI
-========================================= */
-
-renderHistoryUI();
-
-updateBalanceUI();
-
-updatePlayersUI();
-
-
-/* =========================================
-   START
-========================================= */
+    },
+    15000
+);
 
 /*
-    نبدأ TON Connect والـRailway
-    بشكل مستقل عن بعضهما.
+==================================================
+CRASH POINT
+==================================================
+
+DEMO ONLY.
+
+This is NOT suitable for real-money
+production.
+
+Do not use Math.random() for a
+real-money gambling engine.
 */
 
-initTonConnect();
+function generateCrashPoint() {
 
-connectToGlobalServer();
+    const r =
+        Math.random();
 
-</script>
+    if (r < 0.70) {
 
-</body>
-</html>
+        return Number(
+            (
+                1.01 +
+                Math.random() *
+                0.78
+            ).toFixed(2)
+        );
+    }
+
+    if (r < 0.99) {
+
+        return Number(
+            (
+                1.80 +
+                Math.random() *
+                8.20
+            ).toFixed(2)
+        );
+    }
+
+    return Number(
+        (
+            10.00 +
+            Math.random() *
+            25.00
+        ).toFixed(2)
+    );
+}
+
+/*
+==================================================
+PROMOTE PENDING BETS
+==================================================
+
+Called when a new round starts.
+
+Pending bets were already deducted
+from balance when they were queued.
+
+They now become ACTIVE.
+*/
+
+function promotePendingBets() {
+
+    for (
+        const player
+        of players.values()
+    ) {
+
+        const pending =
+            player.pendingBet;
+
+        if (
+            !pending ||
+            pending.roundId !==
+                roundId
+        ) {
+
+            continue;
+        }
+
+        player.currentBet = {
+
+            roundId,
+
+            amount:
+                round4(
+                    pending.amount
+                ),
+
+            autoCashout:
+                Boolean(
+                    pending.autoCashout
+                ),
+
+            autoTarget:
+                pending.autoTarget
+                    ? round4(
+                        pending.autoTarget
+                    )
+                    : null,
+
+            status:
+                'ACTIVE',
+
+            payout: 0,
+
+            cashoutMultiplier:
+                null
+        };
+
+        player.pendingBet =
+            null;
+    }
+}
+
+/*
+==================================================
+CLEAN OLD BETS
+==================================================
+
+Only remove data that belongs to
+rounds older than the previous/current
+round.
+
+Current and pending bets are preserved.
+*/
+
+function cleanOldBets() {
+
+    for (
+        const player
+        of players.values()
+    ) {
+
+        if (
+            player.currentBet &&
+            player.currentBet.roundId <
+                roundId
+        ) {
+
+            player.currentBet =
+                null;
+        }
+
+        if (
+            player.pendingBet &&
+            player.pendingBet.roundId <
+                roundId
+        ) {
+
+            player.pendingBet =
+                null;
+        }
+    }
+}
+
+/*
+==================================================
+COUNTDOWN
+==================================================
+*/
+
+function runCountdown() {
+
+    roundId++;
+
+    gameState =
+        'COUNTDOWN';
+
+    countdownSeconds =
+        5;
+
+    currentMultiplier =
+        1.00;
+
+    /*
+    ----------------------------------------------
+    Promote queued bets
+    ----------------------------------------------
+    */
+
+    promotePendingBets();
+
+    /*
+    ----------------------------------------------
+    Clean old bets
+    ----------------------------------------------
+    */
+
+    cleanOldBets();
+
+    /*
+    ----------------------------------------------
+    Send initial countdown
+    ----------------------------------------------
+    */
+
+    broadcast(
+        'COUNTDOWN'
+    );
+
+    broadcastPlayers();
+
+    /*
+    ----------------------------------------------
+    Countdown timer
+    ----------------------------------------------
+    */
+
+    const timer =
+        setInterval(
+            () => {
+
+                countdownSeconds--;
+
+                if (
+                    countdownSeconds > 0
+                ) {
+
+                    broadcast(
+                        'COUNTDOWN'
+                    );
+
+                    broadcastPlayers();
+
+                    return;
+                }
+
+                clearInterval(timer);
+
+                startFlight();
+
+            },
+            1000
+        );
+}
+
+/*
+==================================================
+FLIGHT
+==================================================
+*/
+
+function startFlight() {
+
+    gameState =
+        'FLIGHT';
+
+    currentMultiplier =
+        1.00;
+
+    const crashPoint =
+        generateCrashPoint();
+
+    const startedAt =
+        Date.now();
+
+    console.log(
+        `🚀 Round ${roundId} started | Crash: ${crashPoint}x`
+    );
+
+    /*
+    ----------------------------------------------
+    INITIAL FLIGHT STATE
+    ----------------------------------------------
+    */
+
+    broadcast(
+        'FLIGHT'
+    );
+
+    broadcastPlayers();
+
+    /*
+    ----------------------------------------------
+    FLIGHT TIMER
+    ----------------------------------------------
+    */
+
+    const timer =
+        setInterval(
+            () => {
+
+                const elapsed =
+                    (
+                        Date.now() -
+                        startedAt
+                    ) / 1000;
+
+                currentMultiplier =
+                    round4(
+                        Math.exp(
+                            elapsed *
+                            0.16
+                        )
+                    );
+
+                /*
+                ==================================
+                AUTO CASHOUT
+                ==================================
+                */
+
+                let playersChanged =
+                    false;
+
+                for (
+                    const player
+                    of players.values()
+                ) {
+
+                    const bet =
+                        player.currentBet;
+
+                    if (
+                        !bet ||
+                        bet.roundId !==
+                            roundId ||
+                        bet.status !==
+                            'ACTIVE'
+                    ) {
+
+                        continue;
+                    }
+
+                    if (
+                        bet.autoCashout &&
+                        Number.isFinite(
+                            bet.autoTarget
+                        ) &&
+                        bet.autoTarget > 1 &&
+                        currentMultiplier >=
+                            bet.autoTarget
+                    ) {
+
+                        const multiplier =
+                            round4(
+                                bet.autoTarget
+                            );
+
+                        const payout =
+                            round4(
+                                bet.amount *
+                                multiplier
+                            );
+
+                        player.balance =
+                            round4(
+                                player.balance +
+                                payout
+                            );
+
+                        bet.status =
+                            'CASHED_OUT';
+
+                        bet.cashoutMultiplier =
+                            multiplier;
+
+                        bet.payout =
+                            payout;
+
+                        playersChanged =
+                            true;
+
+                        sendBalanceToPlayer(
+                            player.telegramId
+                        );
+                    }
+                }
+
+                if (
+                    playersChanged
+                ) {
+
+                    broadcastPlayers();
+                }
+
+                /*
+                ==================================
+                CRASH
+                ==================================
+                */
+
+                if (
+                    currentMultiplier >=
+                    crashPoint
+                ) {
+
+                    clearInterval(timer);
+
+                    currentMultiplier =
+                        crashPoint;
+
+                    gameState =
+                        'CRASH';
+
+                    /*
+                    --------------------------------
+                    LOSE ACTIVE BETS
+                    --------------------------------
+                    */
+
+                    for (
+                        const player
+                        of players.values()
+                    ) {
+
+                        const bet =
+                            player.currentBet;
+
+                        if (
+                            bet &&
+                            bet.roundId ===
+                                roundId &&
+                            bet.status ===
+                                'ACTIVE'
+                        ) {
+
+                            bet.status =
+                                'LOST';
+                        }
+                    }
+
+                    /*
+                    --------------------------------
+                    UPDATE HISTORY
+                    --------------------------------
+                    */
+
+                    history.unshift(
+                        crashPoint
+                    );
+
+                    if (
+                        history.length > 5
+                    ) {
+
+                        history =
+                            history.slice(
+                                0,
+                                5
+                            );
+                    }
+
+                    console.log(
+                        `💥 Round ${roundId} crashed at ${crashPoint}x`
+                    );
+
+                    /*
+                    --------------------------------
+                    BROADCAST CRASH
+                    --------------------------------
+                    */
+
+                    broadcast(
+                        'CRASH'
+                    );
+
+                    broadcastPlayers();
+
+                    /*
+                    --------------------------------
+                    SEND BALANCES
+                    --------------------------------
+                    */
+
+                    for (
+                        const client
+                        of clients
+                    ) {
+
+                        sendBalance(
+                            client
+                        );
+                    }
+
+                    /*
+                    --------------------------------
+                    NEXT ROUND
+                    --------------------------------
+                    */
+
+                    setTimeout(
+                        () => {
+
+                            runCountdown();
+
+                        },
+                        3500
+                    );
+
+                    return;
+                }
+
+                /*
+                ==================================
+                NORMAL FLIGHT BROADCAST
+                ==================================
+                */
+
+                broadcast(
+                    'FLIGHT'
+                );
+
+            },
+            50
+        );
+}
+
+/*
+==================================================
+START SERVER
+==================================================
+*/
+
+app.listen(
+    PORT,
+    '0.0.0.0',
+    () => {
+
+        console.log(
+            `🚀 Rocket Server running on port ${PORT}`
+        );
+
+        console.log(
+            `🌐 Port: ${PORT}`
+        );
+
+        console.log(
+            `🎮 Multiplayer engine ready`
+        );
+
+        runCountdown();
+    }
+);
