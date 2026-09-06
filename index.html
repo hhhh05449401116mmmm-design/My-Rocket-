@@ -3025,7 +3025,8 @@
             const profileSub = document.getElementById("profile-page-sub");  
             if(profileSub){ profileSub.textContent = getTranslation('telegramPlayer'); }  
             updateProfilePage();  
-            applyLanguage();  
+            // ✅ Apply language after DOM is ready
+            setTimeout(applyLanguage, 100);  
         }  
 
         /* =========================================================
@@ -3036,70 +3037,160 @@
         }  
 
         /* =========================================================
+           SAFE ELEMENT GETTER (FIX)
+        ========================================================= */  
+        function safeGetElement(id) {  
+            const el = document.getElementById(id);  
+            if (!el) {  
+                console.warn(`⚠️ Element not found: #${id}`);  
+            }  
+            return el;  
+        }  
+
+        /* =========================================================
            APPLY LANGUAGE (FIXED - ALL texts now dynamic)
         ========================================================= */  
         function applyLanguage(){  
+            // ✅ Check if DOM is ready
+            if (!document.getElementById('game-hub-title')) {  
+                console.warn('⚠️ DOM not ready yet, retrying applyLanguage...');  
+                setTimeout(applyLanguage, 100);  
+                return;  
+            }  
+            
             const t = translations[currentLanguage] || translations.ar;  
             
             // Game Hub  
-            document.getElementById('game-hub-title').innerHTML = '❄️ <span class="ice">' + t.gameHub + '</span>';  
-            document.getElementById('rocket-game-title').textContent = t.rocket;  
-            document.getElementById('rocket-game-desc').textContent = t.rocketDesc;  
-            document.getElementById('rocket-game-badge').textContent = t.live;  
-            document.getElementById('coming-soon-title').textContent = t.comingSoon;  
-            document.getElementById('coming-soon-desc').textContent = '';  
-            document.getElementById('soon-badge').textContent = t.soon;  
-            document.getElementById('back-to-hub-btn').textContent = t.back;  
+            const gameHubTitle = safeGetElement('game-hub-title');  
+            if (gameHubTitle) gameHubTitle.innerHTML = '❄️ <span class="ice">' + t.gameHub + '</span>';  
+            
+            const rocketTitle = safeGetElement('rocket-game-title');  
+            if (rocketTitle) rocketTitle.textContent = t.rocket;  
+            
+            const rocketDesc = safeGetElement('rocket-game-desc');  
+            if (rocketDesc) rocketDesc.textContent = t.rocketDesc;  
+            
+            const rocketBadge = safeGetElement('rocket-game-badge');  
+            if (rocketBadge) rocketBadge.textContent = t.live;  
+            
+            const comingSoon = safeGetElement('coming-soon-title');  
+            if (comingSoon) comingSoon.textContent = t.comingSoon;  
+            
+            const soonBadge = safeGetElement('soon-badge');  
+            if (soonBadge) soonBadge.textContent = t.soon;  
+            
+            const backBtn = safeGetElement('back-to-hub-btn');  
+            if (backBtn) backBtn.textContent = t.back;  
             
             // Players  
-            document.getElementById('players-title-text').textContent = t.players;  
+            const playersTitle = safeGetElement('players-title-text');  
+            if (playersTitle) playersTitle.textContent = t.players;  
             
             // Profile  
-            document.getElementById('profile-balance-label').textContent = t.balance;  
-            document.getElementById('profile-deposit-btn').textContent = t.deposit;  
-            document.getElementById('vip-title-text').textContent = t.vipLevels;  
-            document.getElementById('profile-stat-rounds').textContent = t.rounds;  
-            document.getElementById('profile-stat-wins').textContent = t.wins;  
-            document.getElementById('profile-stat-wallet').textContent = t.wallet;  
-            document.getElementById('profile-connect-wallet').textContent = t.connectWallet;  
-            document.getElementById('profile-deposit-ton').textContent = t.depositTon;  
-            document.getElementById('language-title').textContent = t.language;  
-            document.getElementById('profile-page-sub').textContent = t.telegramPlayer;  
+            const balanceLabel = safeGetElement('profile-balance-label');  
+            if (balanceLabel) balanceLabel.textContent = t.balance;  
+            
+            const depositBtn = safeGetElement('profile-deposit-btn');  
+            if (depositBtn) depositBtn.textContent = t.deposit;  
+            
+            const vipTitle = safeGetElement('vip-title-text');  
+            if (vipTitle) vipTitle.textContent = t.vipLevels;  
+            
+            const roundsStat = safeGetElement('profile-stat-rounds');  
+            if (roundsStat) roundsStat.textContent = t.rounds;  
+            
+            const winsStat = safeGetElement('profile-stat-wins');  
+            if (winsStat) winsStat.textContent = t.wins;  
+            
+            const walletStat = safeGetElement('profile-stat-wallet');  
+            if (walletStat) walletStat.textContent = t.wallet;  
+            
+            const connectWalletBtn = safeGetElement('profile-connect-wallet');  
+            if (connectWalletBtn) connectWalletBtn.textContent = t.connectWallet;  
+            
+            const depositTonBtn = safeGetElement('profile-deposit-ton');  
+            if (depositTonBtn) depositTonBtn.textContent = t.depositTon;  
+            
+            const languageTitle = safeGetElement('language-title');  
+            if (languageTitle) languageTitle.textContent = t.language;  
+            
+            const profileSub = safeGetElement('profile-page-sub');  
+            if (profileSub) profileSub.textContent = t.telegramPlayer;  
             
             // Nav  
-            document.getElementById('nav-home-text').textContent = t.home;  
-            document.getElementById('nav-top-text').textContent = t.top;  
-            document.getElementById('nav-profile-text').textContent = t.profile;  
-            document.getElementById('nav-gifts-text').textContent = t.gifts;  
-            document.getElementById('nav-earn-text').textContent = t.earn;  
+            const navHome = safeGetElement('nav-home-text');  
+            if (navHome) navHome.textContent = t.home;  
+            
+            const navTop = safeGetElement('nav-top-text');  
+            if (navTop) navTop.textContent = t.top;  
+            
+            const navProfile = safeGetElement('nav-profile-text');  
+            if (navProfile) navProfile.textContent = t.profile;  
+            
+            const navGifts = safeGetElement('nav-gifts-text');  
+            if (navGifts) navGifts.textContent = t.gifts;  
+            
+            const navEarn = safeGetElement('nav-earn-text');  
+            if (navEarn) navEarn.textContent = t.earn;  
             
             // Bet Modal  
-            document.getElementById('bet-modal-title').textContent = t.placeBet;  
-            document.getElementById('modal-available-label').textContent = t.availableBalance;  
-            document.getElementById('bet-amount-label').textContent = t.betAmount;  
-            document.getElementById('gift-bet-label').textContent = t.chooseGift;  
-            document.getElementById('gift-selection-info').textContent = t.selectGift;  
-            document.getElementById('auto-cashout-label').textContent = t.autoCashout;  
+            const betTitle = safeGetElement('bet-modal-title');  
+            if (betTitle) betTitle.textContent = t.placeBet;  
+            
+            const availBalance = safeGetElement('modal-available-label');  
+            if (availBalance) availBalance.textContent = t.availableBalance;  
+            
+            const betAmount = safeGetElement('bet-amount-label');  
+            if (betAmount) betAmount.textContent = t.betAmount;  
+            
+            const giftBetLabel = safeGetElement('gift-bet-label');  
+            if (giftBetLabel) giftBetLabel.textContent = t.chooseGift;  
+            
+            const giftInfo = safeGetElement('gift-selection-info');  
+            if (giftInfo) giftInfo.textContent = t.selectGift;  
+            
+            const autoCashoutLabel = safeGetElement('auto-cashout-label');  
+            if (autoCashoutLabel) autoCashoutLabel.textContent = t.autoCashout;  
             
             // Deposit  
-            document.getElementById('deposit-modal-title').textContent = t.depositTitle;  
-            document.getElementById('deposit-modal-info').textContent = t.depositInfo;  
-            document.getElementById('deposit-amount-label').textContent = t.depositAmount;  
-            document.getElementById('deposit-send-button').textContent = t.depositButton;  
+            const depositTitle = safeGetElement('deposit-modal-title');  
+            if (depositTitle) depositTitle.textContent = t.depositTitle;  
+            
+            const depositInfo = safeGetElement('deposit-modal-info');  
+            if (depositInfo) depositInfo.textContent = t.depositInfo;  
+            
+            const depositAmountLabel = safeGetElement('deposit-amount-label');  
+            if (depositAmountLabel) depositAmountLabel.textContent = t.depositAmount;  
+            
+            const depositSendBtn = safeGetElement('deposit-send-button');  
+            if (depositSendBtn) depositSendBtn.textContent = t.depositButton;  
             
             // Top  
-            document.getElementById('top-modal-title').textContent = t.topTitle;  
-            document.getElementById('top-empty-text').textContent = t.topEmpty;  
+            const topTitle = safeGetElement('top-modal-title');  
+            if (topTitle) topTitle.textContent = t.topTitle;  
+            
+            const topEmpty = safeGetElement('top-empty-text');  
+            if (topEmpty) topEmpty.textContent = t.topEmpty;  
             
             // Gifts Modal  
-            document.getElementById('gifts-modal-title').textContent = t.giftsModalTitle;  
-            document.getElementById('gifts-modal-content').textContent = t.giftsModalContent;  
+            const giftsModalTitle = safeGetElement('gifts-modal-title');  
+            if (giftsModalTitle) giftsModalTitle.textContent = t.giftsModalTitle;  
             
-            // Gifts Page (FIXED)  
-            document.getElementById('gifts-page-title').textContent = t.giftsTitle;  
-            document.getElementById('gifts-page-sub').textContent = t.giftsSub;  
-            document.getElementById('empty-gifts-title').textContent = t.noGiftsTitle;  
-            document.getElementById('empty-gifts-desc').textContent = t.noGiftsDesc;  
+            const giftsModalContent = safeGetElement('gifts-modal-content');  
+            if (giftsModalContent) giftsModalContent.textContent = t.giftsModalContent;  
+            
+            // Gifts Page  
+            const giftsPageTitle = safeGetElement('gifts-page-title');  
+            if (giftsPageTitle) giftsPageTitle.textContent = t.giftsTitle;  
+            
+            const giftsPageSub = safeGetElement('gifts-page-sub');  
+            if (giftsPageSub) giftsPageSub.textContent = t.giftsSub;  
+            
+            const emptyGiftsTitle = safeGetElement('empty-gifts-title');  
+            if (emptyGiftsTitle) emptyGiftsTitle.textContent = t.noGiftsTitle;  
+            
+            const emptyGiftsDesc = safeGetElement('empty-gifts-desc');  
+            if (emptyGiftsDesc) emptyGiftsDesc.textContent = t.noGiftsDesc;  
             
             // Update main bet button  
             updateMainBetButton();  
@@ -3585,10 +3676,12 @@
                 placeButton.className = "modal-place-button gift";  
                 placeButton.textContent = t.placeGiftBet;  
                 const info = document.getElementById("gift-selection-info");  
-                if(userGifts.length === 0){  
-                    info.textContent = t.noGiftsToBet;  
-                }else{  
-                    info.textContent = t.selectGift;  
+                if(info){  
+                    if(userGifts.length === 0){  
+                        info.textContent = t.noGiftsToBet;  
+                    }else{  
+                        info.textContent = t.selectGift;  
+                    }  
                 }  
             }else{  
                 tonSection.style.display = "block";  
@@ -3626,9 +3719,11 @@
                     updateGiftSelectionInModal();  
                     showToast(t.giftSelected + ': ' + gift.emoji + ' ' + gift.name);  
                     const btn = document.getElementById("modal-place-button");  
-                    btn.className = "modal-place-button gift";  
-                    btn.textContent = t.placeGiftBet + ' 🎁';  
-                    btn.disabled = false;  
+                    if(btn){  
+                        btn.className = "modal-place-button gift";  
+                        btn.textContent = t.placeGiftBet + ' 🎁';  
+                        btn.disabled = false;  
+                    }  
                 };  
                 const rarityMap = {  
                     'common': t.common,  
@@ -4487,8 +4582,10 @@
                 collection.style.display = "none";  
                 empty.style.display = "block";  
                 // Update empty state texts from translations  
-                document.getElementById('empty-gifts-title').textContent = t.noGiftsTitle;  
-                document.getElementById('empty-gifts-desc').textContent = t.noGiftsDesc;  
+                const emptyTitle = safeGetElement('empty-gifts-title');  
+                if (emptyTitle) emptyTitle.textContent = t.noGiftsTitle;  
+                const emptyDesc = safeGetElement('empty-gifts-desc');  
+                if (emptyDesc) emptyDesc.textContent = t.noGiftsDesc;  
                 return;  
             }  
             
