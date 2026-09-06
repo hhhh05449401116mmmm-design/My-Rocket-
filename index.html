@@ -206,7 +206,7 @@
         .deposit-button:active { transform: scale(0.91); }
 
         /* =========================================================
-           GAME HUB - PREMIUM
+           GAME HUB - PREMIUM WITH LOOT BOXES
         ========================================================= */
         .game-hub {
             display: block;
@@ -227,6 +227,8 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        /* Game Cards */
         .game-card-hub {
             background: linear-gradient(145deg, #0f2847, #0a1a30);
             border-radius: 24px;
@@ -289,6 +291,98 @@
             font-size: 11px;
             font-weight: 700;
             border: 1px solid rgba(100, 200, 255, 0.1);
+        }
+
+        /* =========================================================
+           LOOT BOXES SECTION (NEW)
+        ========================================================= */
+        .loot-section {
+            margin: 14px 0;
+            padding: 16px;
+            background: linear-gradient(145deg, #0f2847, #0a1a30);
+            border-radius: 24px;
+            border: 1px solid rgba(100, 200, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+        .loot-title {
+            font-size: 20px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 16px;
+            color: #e8f4ff;
+        }
+        .loot-title .highlight {
+            background: linear-gradient(135deg, #ffd700, #f0a500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .loot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .loot-box {
+            background: linear-gradient(145deg, #1a2a4a, #0f1a30);
+            border-radius: 16px;
+            padding: 14px 12px;
+            text-align: center;
+            border: 1px solid rgba(100, 200, 255, 0.06);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .loot-box:active { transform: scale(0.95); }
+        .loot-box.free {
+            border-color: rgba(56, 210, 123, 0.3);
+            background: linear-gradient(145deg, #0f2a1a, #0a1a10);
+        }
+        .loot-box.free .loot-emoji {
+            animation: freePulse 2s ease-in-out infinite;
+        }
+        @keyframes freePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .loot-box .loot-emoji {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .loot-box .loot-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #c8e6ff;
+            display: block;
+        }
+        .loot-box .loot-price {
+            font-size: 11px;
+            color: #4fc3f7;
+            font-weight: 700;
+            display: block;
+            margin-top: 2px;
+        }
+        .loot-box .loot-price.free {
+            color: #4de18a;
+        }
+        .loot-box .loot-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255, 215, 0, 0.15);
+            color: #ffd700;
+        }
+        .loot-box .loot-badge.free-badge {
+            background: rgba(56, 210, 123, 0.15);
+            color: #4de18a;
+        }
+        .loot-box .loot-badge.popular {
+            background: rgba(255, 79, 103, 0.15);
+            color: #ff6b6b;
         }
 
         /* =========================================================
@@ -995,6 +1089,9 @@
             .modal-title { font-size: 21px; }
             .modal-amount-input { font-size: 27px; }
             .auto-number-control { width: 70px; }
+            .loot-grid { gap: 6px; }
+            .loot-box { padding: 10px 8px; }
+            .loot-box .loot-emoji { font-size: 26px; }
         }
 
         @media(prefers-reduced-motion:reduce) {
@@ -1028,22 +1125,6 @@
             transition: all 0.3s ease;
             position: relative;
         }
-        .gift-card.popular {
-            border-color: #ffd700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
-        }
-        .gift-card.popular::before {
-            content: '🔥 شائع';
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: linear-gradient(135deg, #ff6b6b, #ffd700);
-            color: #000;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: 900;
-        }
         .gift-card:active { transform: scale(0.95); }
         .gift-card .emoji { font-size: 36px; display: block; margin-bottom: 4px; }
         .gift-card .name {
@@ -1056,12 +1137,6 @@
             color: #c8e6ff;
         }
         .gift-card .value { font-size: 10px; color: #7a9bcb; display: block; margin-top: 2px; }
-        .gift-card .popularity {
-            font-size: 9px;
-            color: #7a9bcb;
-            display: block;
-            margin-top: 2px;
-        }
         .gift-card .rarity {
             font-size: 9px;
             padding: 2px 8px;
@@ -1401,7 +1476,6 @@
             color: #c8e6ff;
         }
         .gift-select-item .value { font-size: 9px; color: #7a9bcb; display: block; }
-        .gift-select-item .popularity { font-size: 8px; color: #7a9bcb; display: block; margin-top: 1px; }
         .gift-select-item .check { display: none; color: #4de18a; font-size: 14px; margin-top: 2px; }
         .gift-select-item.selected .check { display: block; }
 
@@ -1723,11 +1797,12 @@
         </header>
 
         <!-- =========================================================
-           GAME HUB
+           GAME HUB - WITH LOOT BOXES
         ========================================================= -->
         <div id="game-hub" class="game-hub">
             <div class="game-hub-title">❄️ <span class="ice">Game Hub</span></div>
 
+            <!-- Rocket Game -->
             <div class="game-card-hub" onclick="openRocketGame()">
                 <div class="game-card-hub-icon">🚀</div>
                 <div class="game-card-hub-info">
@@ -1737,6 +1812,17 @@
                 <div class="game-card-hub-badge" id="rocket-game-badge">❄️ Live</div>
             </div>
 
+            <!-- =========================================================
+               LOOT BOXES SECTION (NEW)
+            ========================================================= -->
+            <div class="loot-section">
+                <div class="loot-title">🎁 <span class="highlight">صناديق الحظ</span></div>
+                <div class="loot-grid" id="loot-grid">
+                    <!-- سيتم إنشاؤها بواسطة JavaScript -->
+                </div>
+            </div>
+
+            <!-- Coming Soon -->
             <div class="game-card-hub" style="opacity:0.5;cursor:default;">
                 <div class="game-card-hub-icon">🎰</div>
                 <div class="game-card-hub-info">
@@ -2059,6 +2145,72 @@
         createSnowfall();
 
         /* =========================================================
+           LOOT BOXES DATA (NEW)
+        ========================================================= */
+        const LOOT_BOXES = [
+            { id: 'free', name: 'FREE', emoji: '🎁', price: 0, badge: 'مجاني', badgeClass: 'free-badge' },
+            { id: 'box_100', name: '100 TON', emoji: '💎', price: 100, badge: '🔥 VIP', badgeClass: 'popular' },
+            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badge: '🔥 VIP', badgeClass: 'popular' },
+            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badge: '⭐ نادر', badgeClass: '' },
+            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badge: '⭐ نادر', badgeClass: '' },
+            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badge: '⭐ نادر', badgeClass: '' },
+            { id: 'box_5', name: '5 TON', emoji: '💎', price: 5, badge: '', badgeClass: '' },
+            { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badge: '', badgeClass: '' },
+            { id: 'box_1', name: '1 TON', emoji: '💎', price: 1, badge: '', badgeClass: '' },
+            { id: 'box_0_5', name: '0.5 TON', emoji: '💎', price: 0.5, badge: '', badgeClass: '' },
+            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badge: '', badgeClass: '' }
+        ];
+
+        function renderLootBoxes() {
+            const grid = document.getElementById('loot-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            LOOT_BOXES.forEach(function(box) {
+                const div = document.createElement('div');
+                div.className = 'loot-box' + (box.id === 'free' ? ' free' : '');
+                div.onclick = function() { openLootBox(box); };
+
+                const priceDisplay = box.price === 0 ? 'مجاني' : box.price + ' TON';
+                const priceClass = box.price === 0 ? 'free' : '';
+
+                div.innerHTML = `
+                    <span class="loot-emoji">${box.emoji}</span>
+                    <span class="loot-name">${box.name}</span>
+                    <span class="loot-price ${priceClass}">${priceDisplay}</span>
+                    ${box.badge ? `<span class="loot-badge ${box.badgeClass}">${box.badge}</span>` : ''}
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function openLootBox(box) {
+            if (box.id === 'free') {
+                showToast('🎁 فتحت صندوق مجاني!');
+                // هنا يمكن إضافة منطق للحصول على هدية عشوائية
+                const randomGift = TELEGRAM_GIFTS[Math.floor(Math.random() * TELEGRAM_GIFTS.length)];
+                if (randomGift && !userGifts.includes(randomGift.id)) {
+                    userGifts.push(randomGift.id);
+                    renderGiftsPage();
+                    updateGiftSelectionInModal();
+                    showToast('🎉 ربحت: ' + randomGift.emoji + ' ' + randomGift.name);
+                }
+                return;
+            }
+
+            // التحقق من الرصيد
+            if (tonBalance < box.price) {
+                showToast('❌ رصيدك غير كافٍ!');
+                openDeposit();
+                return;
+            }
+
+            showToast('🔄 جاري فتح الصندوق...');
+            // هنا يمكن إضافة منطق لفتح الصندوق وخصم الرصيد
+            // وإعطاء هدية عشوائية
+        }
+
+        /* =========================================================
            ROCKET VARIANTS - TELEGRAM GIFT LOTTIE FILES
         ========================================================= */
         const ROCKET_VARIANTS = [
@@ -2181,67 +2333,32 @@
         let currentVipLevel = 0;
 
         /* =========================================================
-           TELEGRAM GIFTS - UPDATED WITH ALL GIFTS FROM IMAGES
+           TELEGRAM GIFTS - UPDATED (No purchasers shown)
         ========================================================= */
         const TELEGRAM_GIFTS = [
-            // ===== NEW GIFTS FROM IMAGES (Epic Gifts) =====
-            { 
-                id: 'nail_bracelet', 
-                name: 'Nail Bracelet', 
-                emoji: '📿', 
-                value: 117.53, 
-                rarity: 'epic', 
-                purchasers: 1234 
-            },
-            { 
-                id: 'bonded_ring', 
-                name: 'Bonded Ring', 
-                emoji: '💍', 
-                value: 41.66, 
-                rarity: 'rare', 
-                purchasers: 5678 
-            },
-            { 
-                id: 'signet_ring', 
-                name: 'Signet Ring', 
-                emoji: '🔮', 
-                value: 33.44, 
-                rarity: 'rare', 
-                purchasers: 3456 
-            },
-            { 
-                id: 'diamond_ring', 
-                name: 'Diamond Ring', 
-                emoji: '💎', 
-                value: 30.32, 
-                rarity: 'epic', 
-                purchasers: 2345 
-            },
-            { 
-                id: 'backpack', 
-                name: 'Backpack', 
-                emoji: '🎒', 
-                value: 22.47, 
-                rarity: 'common', 
-                purchasers: 8901 
-            },
-            // ===== EXISTING GIFTS =====
-            { id: 'love_you', name: 'LOVE YOU', emoji: '❤️', value: 1.11, rarity: 'rare', purchasers: 664 },
-            { id: 'b_day', name: 'B-DAY', emoji: '🎂', value: 2.70, rarity: 'rare', purchasers: 524 },
-            { id: 'space', name: 'SPACE', emoji: '🚀', value: 0.91, rarity: 'common', purchasers: 963 },
-            { id: 'movie', name: 'MOVIE', emoji: '🎬', value: 1.65, rarity: 'common', purchasers: 1639 },
-            { id: 'punk42', name: 'PUNK42', emoji: '👾', value: 2.97, rarity: 'epic', purchasers: 298430 },
-            { id: 'homer', name: 'HOMER', emoji: '🍩', value: 1.79, rarity: 'common', purchasers: 1139 },
-            { id: 'crypto', name: 'CRYPTO', emoji: '₿', value: 1.02, rarity: 'common', purchasers: 5307 },
-            { id: 'free24', name: 'FREE24', emoji: '🎁', value: 2.19, rarity: 'epic', purchasers: 2320 },
-            { id: 'telegram', name: 'TELEGRAM', emoji: '✈️', value: 1.07, rarity: 'common', purchasers: 2151 },
-            { id: 'invite', name: 'INVITE', emoji: '📨', value: 2.01, rarity: 'common', purchasers: 5312 },
-            { id: 'earn', name: 'EARN', emoji: '💰', value: 1.33, rarity: 'common', purchasers: 417 },
-            { id: 'space_nft', name: 'SPACE NFT', emoji: '🌌', value: 1.72, rarity: 'legendary', purchasers: 6548 },
-            { id: 'adult', name: '18+', emoji: '🔞', value: 1.26, rarity: 'epic', purchasers: 7554 },
-            { id: 'free', name: 'FREE', emoji: '🆓', value: 0.50, rarity: 'common', purchasers: 1750 },
-            { id: 'hot', name: 'HOT', emoji: '🔥', value: 1.98, rarity: 'rare', purchasers: 4842 },
-            { id: 'new', name: 'NEW', emoji: '✨', value: 0.75, rarity: 'common', purchasers: 4842 }
+            // NEW GIFTS
+            { id: 'nail_bracelet', name: 'Nail Bracelet', emoji: '📿', value: 117.53, rarity: 'epic' },
+            { id: 'bonded_ring', name: 'Bonded Ring', emoji: '💍', value: 41.66, rarity: 'rare' },
+            { id: 'signet_ring', name: 'Signet Ring', emoji: '🔮', value: 33.44, rarity: 'rare' },
+            { id: 'diamond_ring', name: 'Diamond Ring', emoji: '💎', value: 30.32, rarity: 'epic' },
+            { id: 'backpack', name: 'Backpack', emoji: '🎒', value: 22.47, rarity: 'common' },
+            // EXISTING GIFTS
+            { id: 'love_you', name: 'LOVE YOU', emoji: '❤️', value: 1.11, rarity: 'rare' },
+            { id: 'b_day', name: 'B-DAY', emoji: '🎂', value: 2.70, rarity: 'rare' },
+            { id: 'space', name: 'SPACE', emoji: '🚀', value: 0.91, rarity: 'common' },
+            { id: 'movie', name: 'MOVIE', emoji: '🎬', value: 1.65, rarity: 'common' },
+            { id: 'punk42', name: 'PUNK42', emoji: '👾', value: 2.97, rarity: 'epic' },
+            { id: 'homer', name: 'HOMER', emoji: '🍩', value: 1.79, rarity: 'common' },
+            { id: 'crypto', name: 'CRYPTO', emoji: '₿', value: 1.02, rarity: 'common' },
+            { id: 'free24', name: 'FREE24', emoji: '🎁', value: 2.19, rarity: 'epic' },
+            { id: 'telegram', name: 'TELEGRAM', emoji: '✈️', value: 1.07, rarity: 'common' },
+            { id: 'invite', name: 'INVITE', emoji: '📨', value: 2.01, rarity: 'common' },
+            { id: 'earn', name: 'EARN', emoji: '💰', value: 1.33, rarity: 'common' },
+            { id: 'space_nft', name: 'SPACE NFT', emoji: '🌌', value: 1.72, rarity: 'legendary' },
+            { id: 'adult', name: '18+', emoji: '🔞', value: 1.26, rarity: 'epic' },
+            { id: 'free', name: 'FREE', emoji: '🆓', value: 0.50, rarity: 'common' },
+            { id: 'hot', name: 'HOT', emoji: '🔥', value: 1.98, rarity: 'rare' },
+            { id: 'new', name: 'NEW', emoji: '✨', value: 0.75, rarity: 'common' }
         ];
 
         let userGifts = [];
@@ -2355,6 +2472,7 @@
                 betNextRound: '🚀 Bet Next Round'
             },
             en: {
+                // ... (نفس الترجمة الإنجليزية)
                 gameHub: '❄️ Game Hub',
                 rocket: 'Rocket Ice',
                 rocketDesc: 'Multiplayer crash game • Bet & Cash Out',
@@ -2445,6 +2563,7 @@
                 betNextRound: '🚀 Bet Next Round'
             },
             ru: {
+                // ... (نفس الترجمة الروسية)
                 gameHub: '❄️ Игровой центр',
                 rocket: 'Rocket Ice',
                 rocketDesc: 'Мультиплеерная игра • Ставки и вывод',
@@ -2870,7 +2989,7 @@
         }
 
         /* =========================================================
-           SERVER SSE
+           SERVER SSE (FIXED - NO CONSTANT BUTTON FLICKER)
         ========================================================= */
         function connectToServer() {
             if (eventSource) {
@@ -3107,7 +3226,7 @@
         }
 
         /* =========================================================
-           RENDER GAME
+           RENDER GAME (FIXED - NO CONSTANT BUTTON FLICKER)
         ========================================================= */
         function renderGame() {
             const multiplier = document.getElementById("multiplier");
@@ -3178,7 +3297,11 @@
             if (flame) {
                 flame.style.display = gamePhase === "FLIGHT" ? "block" : "none";
             }
-            updateMainBetButton();
+            
+            // ✅ تحديث الزر فقط إذا لم يكن في حالة انتظار
+            if (!actionInProgress) {
+                updateMainBetButton();
+            }
             updateAutoCashoutUI();
         }
 
@@ -3259,37 +3382,57 @@
         }
 
         /* =========================================================
-           MAIN BET BUTTON
+           MAIN BET BUTTON (FIXED - NO FLICKER)
         ========================================================= */
         function updateMainBetButton() {
             const button = document.getElementById("main-bet-button");
             if (!button) return;
             const t = translations[currentLanguage] || translations.ar;
+            
+            // ✅ منع التحديث المتكرر
+            if (button.dataset.updating === 'true') return;
+            button.dataset.updating = 'true';
+            
             button.className = "place-bet-main";
             button.disabled = false;
+            
             if (actionInProgress) {
                 button.textContent = t.pleaseWait;
                 button.disabled = true;
+                button.dataset.updating = 'false';
                 return;
             }
+            
             if (hasBet) {
                 if (gamePhase === "FLIGHT") {
                     button.classList.add("cashout-main");
                     button.textContent = t.cashOut;
-                    return;
+                } else {
+                    button.classList.add("wait-main");
+                    button.textContent = t.betActiveBtn;
+                    button.disabled = true;
                 }
-                button.classList.add("wait-main");
-                button.textContent = t.betActiveBtn;
-                button.disabled = true;
+                button.dataset.updating = 'false';
                 return;
             }
+            
             if (isQueuedForNextRound) {
                 button.classList.add("queued-main");
                 button.textContent = t.betQueuedBtn;
                 button.disabled = true;
+                button.dataset.updating = 'false';
                 return;
             }
-            button.textContent = t.placeBetBtn;
+            
+            // ✅ الحالة الطبيعية
+            if (gamePhase === "COUNTDOWN" || gamePhase === "FLIGHT") {
+                button.textContent = t.placeBetBtn;
+            } else {
+                button.textContent = t.placeBetBtn;
+                button.disabled = true;
+            }
+            
+            button.dataset.updating = 'false';
         }
 
         /* =========================================================
@@ -3340,7 +3483,7 @@
                 const info = document.getElementById("gift-selection-info");
                 if (info) {
                     if (userGifts.length === 0) {
-                        info.textContent = t.noGiftsToBet;
+                        info.textContent = '🔒 قم بربط محفظتك لعرض هداياك';
                     } else {
                         info.textContent = t.selectGift;
                     }
@@ -3354,7 +3497,7 @@
         }
 
         /* =========================================================
-           UPDATE GIFT SELECTION IN MODAL
+           UPDATE GIFT SELECTION IN MODAL (FIXED - NO EMPTY MESSAGE)
         ========================================================= */
         function updateGiftSelectionInModal() {
             const grid = document.getElementById("gift-selection-grid");
@@ -3371,18 +3514,25 @@
             grid.innerHTML = "";
 
             if (userGifts.length === 0) {
-                const emptyMsg = document.createElement("div");
-                emptyMsg.style.cssText =
-                "grid-column:1/-1;text-align:center;padding:20px;color:#7a9bcb;font-size:13px;";
-                emptyMsg.textContent = t.noGiftsToBet;
-                grid.appendChild(emptyMsg);
+                // ✅ إخفاء الشبكة وعرض رسالة بديلة
+                grid.style.display = 'none';
                 if (selectedDisplay) {
-                    selectedDisplay.innerHTML = `<span style="color:#7a9bcb;">${t.noGiftsToBet}</span>`;
+                    selectedDisplay.innerHTML = `<span style="color:#7a9bcb;">🔒 قم بربط محفظة TON لعرض هداياك</span>`;
                 }
                 if (valueDisplay) {
                     valueDisplay.textContent = "0.00";
                 }
+                const info = document.getElementById("gift-selection-info");
+                if (info) {
+                    info.textContent = '🔒 قم بربط محفظتك لعرض هداياك';
+                }
                 return;
+            }
+
+            grid.style.display = 'grid';
+            const info = document.getElementById("gift-selection-info");
+            if (info) {
+                info.textContent = t.selectGift;
             }
 
             userGifts.forEach(function(giftId) {
@@ -3432,12 +3582,10 @@
                     'legendary': t.legendary
                 };
                 const rarityText = rarityMap[gift.rarity] || t.common;
-                const purchasersText = gift.purchasers ? `👥 ${gift.purchasers.toLocaleString()}` : '';
                 item.innerHTML = `
                     <span class="emoji">${gift.emoji}</span>
                     <span class="name">${gift.name}</span>
                     <span class="value">${gift.value.toFixed(2)} TON</span>
-                    <span class="popularity">${purchasersText}</span>
                     <span class="check">✅</span>
                 `;
                 grid.appendChild(item);
@@ -4318,10 +4466,6 @@
                 const card = document.createElement("div");
                 card.className = "gift-card";
 
-                if (gift.purchasers && gift.purchasers > 10000) {
-                    card.classList.add("popular");
-                }
-
                 const rarityMap = {
                     'common': 'common',
                     'rare': 'rare',
@@ -4336,13 +4480,11 @@
                 };
                 const rarityText = rarityLabels[currentLanguage]?.[gift.rarity] || rarityLabels['en'][gift.rarity] ||
                 'Common';
-                const purchasersText = gift.purchasers ? `👥 ${gift.purchasers.toLocaleString()}` : '';
 
                 card.innerHTML = `
                     <span class="emoji">${gift.emoji}</span>
                     <span class="name">${gift.name}</span>
                     <span class="value">${t.giftValue}: ${gift.value.toFixed(2)} TON</span>
-                    <span class="popularity">${purchasersText}</span>
                     <span class="rarity ${rarityClass}">${rarityText}</span>
                     <button class="bet-btn" onclick="betWithGift('${gift.id}')">${t.betWithGift}</button>
                 `;
@@ -4648,6 +4790,8 @@
             updateMainBetButton();
             updateProfilePage();
             renderGiftsPage();
+            // ✅ Render Loot Boxes
+            renderLootBoxes();
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("profile-page").classList.remove("show");
