@@ -458,6 +458,128 @@
         .language-btn:active{  
             transform:scale(.95);  
         }  
+        
+        /* =========================================================
+           GIFTS PAGE (NEW)
+        ========================================================= */
+        .gifts-page{  
+            display:none;  
+            padding:16px 14px;  
+        }  
+        .gifts-page.show{  
+            display:block;  
+        }  
+        .gifts-header{  
+            text-align:center;  
+            padding:16px 0;  
+        }  
+        .gifts-header h2{  
+            font-size:24px;  
+            font-weight:900;  
+            margin:0;  
+        }  
+        .gifts-header p{  
+            color:#79839b;  
+            font-size:13px;  
+            margin:6px 0 0;  
+        }  
+        .gifts-collection{  
+            display:grid;  
+            grid-template-columns:repeat(3,1fr);  
+            gap:10px;  
+            margin-top:16px;  
+        }  
+        .gift-card{  
+            background:linear-gradient(145deg,#141e34,#0d1425);  
+            border-radius:16px;  
+            padding:14px 10px;  
+            text-align:center;  
+            border:1px solid rgba(255,255,255,.06);  
+            transition:all .2s;  
+        }  
+        .gift-card:active{  
+            transform:scale(.95);  
+        }  
+        .gift-card .emoji{  
+            font-size:36px;  
+            display:block;  
+            margin-bottom:4px;  
+        }  
+        .gift-card .name{  
+            font-size:11px;  
+            font-weight:700;  
+            display:block;  
+            white-space:nowrap;  
+            overflow:hidden;  
+            text-overflow:ellipsis;  
+        }  
+        .gift-card .value{  
+            font-size:10px;  
+            color:#79839b;  
+            display:block;  
+            margin-top:2px;  
+        }  
+        .gift-card .rarity{  
+            font-size:9px;  
+            padding:2px 8px;  
+            border-radius:10px;  
+            display:inline-block;  
+            margin-top:4px;  
+        }  
+        .gift-card .rarity.common{  
+            background:rgba(255,255,255,.06);  
+            color:#79839b;  
+        }  
+        .gift-card .rarity.rare{  
+            background:rgba(56,210,123,.12);  
+            color:#4de18a;  
+        }  
+        .gift-card .rarity.epic{  
+            background:rgba(168,76,240,.12);  
+            color:#b986ff;  
+        }  
+        .gift-card .rarity.legendary{  
+            background:rgba(255,215,0,.12);  
+            color:#ffd700;  
+        }  
+        .gift-card .bet-btn{  
+            background:linear-gradient(135deg,#20b8ef,#2878e9);  
+            color:#fff;  
+            border:none;  
+            padding:6px 12px;  
+            border-radius:10px;  
+            font-size:10px;  
+            font-weight:700;  
+            margin-top:6px;  
+            width:100%;  
+        }  
+        .gift-card .bet-btn:active{  
+            transform:scale(.95);  
+        }  
+        .gift-card .bet-btn:disabled{  
+            opacity:.4;  
+            cursor:not-allowed;  
+        }  
+        .empty-gifts{  
+            text-align:center;  
+            padding:60px 20px;  
+            color:#79839b;  
+        }  
+        .empty-gifts .icon{  
+            font-size:64px;  
+            display:block;  
+            margin-bottom:16px;  
+        }  
+        .empty-gifts h3{  
+            font-size:20px;  
+            color:#fff;  
+            margin:0 0 8px;  
+        }  
+        .empty-gifts p{  
+            font-size:13px;  
+            margin:0;  
+        }  
+        
         /* =========================================================
            ORIGINAL GAME STYLES (Keep everything)
         ========================================================= */
@@ -1116,6 +1238,11 @@
         .modal-tab.ton.active{  
             background:#a84cf0;  
         }  
+        /* GIFT tab in modal */
+        .modal-tab.gift-tab.active{
+            background:linear-gradient(135deg,#ff6b6b,#ee5a24);
+            box-shadow:0 3px 10px rgba(238,90,36,.25);
+        }
         .modal-bet-card{  
             border-radius:24px;  
             padding:20px 16px 22px;  
@@ -1336,9 +1463,12 @@
             background:  
                 linear-gradient(  
                     100deg,  
-                    #a94df0,  
-                    #8234d3  
+                    #ff6b6b,  
+                    #ee5a24  
                 );  
+            color:#fff;  
+            box-shadow:  
+                0 10px 25px rgba(238,90,36,.22);  
         }  
         .modal-place-button.next-round{  
             background:  
@@ -1363,6 +1493,53 @@
             line-height:1.8;  
             margin:5px 0 12px;  
         }  
+        /* Gift selection inside modal */
+        .gift-selection-grid{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:8px;
+            margin:12px 0;
+        }
+        .gift-select-item{
+            background:#1a1a2e;
+            border:2px solid transparent;
+            border-radius:14px;
+            padding:10px 6px;
+            text-align:center;
+            cursor:pointer;
+            transition:all .2s;
+        }
+        .gift-select-item:active{
+            transform:scale(.95);
+        }
+        .gift-select-item.selected{
+            border-color:#ff6b6b;
+            background:rgba(255,107,107,.1);
+        }
+        .gift-select-item .emoji{
+            font-size:28px;
+            display:block;
+        }
+        .gift-select-item .name{
+            font-size:10px;
+            font-weight:700;
+            display:block;
+            margin-top:2px;
+        }
+        .gift-select-item .value{
+            font-size:9px;
+            color:#79839b;
+            display:block;
+        }
+        .gift-select-item .check{
+            display:none;
+            color:#4de18a;
+            font-size:14px;
+            margin-top:2px;
+        }
+        .gift-select-item.selected .check{
+            display:block;
+        }
         .wallet-connect{  
             width:100%;  
             min-height:50px;  
@@ -1682,15 +1859,14 @@
             background:
                 linear-gradient(
                     135deg,
-                    #c15cff 0%,
-                    #a743ed 50%,
-                    #7f32d1 100%
+                    #ff6b6b 0%,
+                    #ee5a24 100%
                 );
             border-color:
-                rgba(222,169,255,.22);
+                rgba(255,107,107,.25);
             box-shadow:
                 0 10px 28px
-                rgba(157,64,232,.30),
+                rgba(238,90,36,.28),
                 inset 0 1px 0
                 rgba(255,255,255,.25);
         }
@@ -2146,24 +2322,24 @@
          GAME HUB (NEW - Shows first by default)
     ========================================================= -->
     <div id="game-hub" class="game-hub">  
-        <div class="game-hub-title">🎮 Game Hub</div>  
+        <div class="game-hub-title" id="game-hub-title">🎮 Game Hub</div>  
         
         <div class="game-card-hub" onclick="openRocketGame()">  
             <div class="game-card-hub-icon">🚀</div>  
             <div class="game-card-hub-info">  
-                <h3>Rocket</h3>  
-                <p>Multiplayer crash game • Bet & Cash Out</p>  
+                <h3 id="rocket-game-title">Rocket</h3>  
+                <p id="rocket-game-desc">Multiplayer crash game • Bet & Cash Out</p>  
             </div>  
-            <div class="game-card-hub-badge">Live</div>  
+            <div class="game-card-hub-badge" id="rocket-game-badge">Live</div>  
         </div>  
         
         <div class="game-card-hub" style="opacity:0.5;cursor:default;">  
             <div class="game-card-hub-icon">🎰</div>  
             <div class="game-card-hub-info">  
-                <h3>Coming Soon</h3>  
-                <p>New games arriving soon</p>  
+                <h3 id="coming-soon-title">Coming Soon</h3>  
+                <p id="coming-soon-desc">New games arriving soon</p>  
             </div>  
-            <div class="game-card-hub-badge" style="background:rgba(255,255,255,.06);color:#79839b;">Soon</div>  
+            <div class="game-card-hub-badge" style="background:rgba(255,255,255,.06);color:#79839b;" id="soon-badge">Soon</div>  
         </div>  
     </div>  
 
@@ -2172,12 +2348,12 @@
     ========================================================= -->
     <div id="rocket-game" class="rocket-game-container hidden">  
         <!-- Back button to return to Game Hub -->
-        <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
-            <button class="back-button show" type="button" onclick="closeRocketGame()" style="display:flex;align-items:center;gap:6px;background:transparent;color:#79839b;font-size:14px;font-weight:700;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:12px;">
-                ← Back
-            </button>
-            <span style="font-size:14px;font-weight:700;color:#fff;">🚀 Rocket</span>
-        </div>
+        <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">  
+            <button class="back-button show" type="button" onclick="closeRocketGame()" style="display:flex;align-items:center;gap:6px;background:transparent;color:#79839b;font-size:14px;font-weight:700;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:12px;" id="back-to-hub-btn">  
+                ← Back  
+            </button>  
+            <span style="font-size:14px;font-weight:700;color:#fff;">🚀 Rocket</span>  
+        </div>  
         
         <main>  
             <section class="game-card">  
@@ -2201,7 +2377,7 @@
             </section>  
             <section class="players-panel">  
                 <div class="players-title">  
-                    <strong>اللاعبين</strong>  
+                    <strong id="players-title-text">اللاعبين</strong>  
                     <span id="players-count" class="players-count">0</span>  
                 </div>  
                 <div id="players-list" class="players-list"></div>  
@@ -2210,7 +2386,23 @@
     </div>  
 
     <!-- =========================================================
-         PROFILE PAGE (NEW - Full page, replaces modal)
+         GIFTS PAGE (NEW - Full page for gifts)
+    ========================================================= -->
+    <div id="gifts-page" class="gifts-page">  
+        <div class="gifts-header">  
+            <h2 id="gifts-page-title">🎁 الهدايا</h2>  
+            <p id="gifts-page-sub">هدايا Telegram الخاصة بك</p>  
+        </div>  
+        <div id="gifts-collection" class="gifts-collection"></div>  
+        <div id="empty-gifts" class="empty-gifts" style="display:none;">  
+            <span class="icon">🎒</span>  
+            <h3 id="empty-gifts-title">لا توجد هدايا</h3>  
+            <p id="empty-gifts-desc">لم تقم بربح أي هدية بعد. استمر باللعب للفوز بهدية!</p>  
+        </div>  
+    </div>  
+
+    <!-- =========================================================
+         PROFILE PAGE (NEW - Full page)
     ========================================================= -->
     <div id="profile-page" class="profile-page">  
         <div class="profile-hero">  
@@ -2221,19 +2413,19 @@
         </div>  
 
         <div class="profile-balance-card">  
-            <div class="profile-balance-label">الرصيد</div>  
+            <div class="profile-balance-label" id="profile-balance-label">الرصيد</div>  
             <div class="profile-balance-value">  
                 <span id="profile-page-balance">0.00</span>  
                 <span>TON</span>  
             </div>  
-            <button class="profile-deposit-btn" type="button" onclick="openDeposit()">+ إيداع TON</button>  
+            <button class="profile-deposit-btn" type="button" onclick="openDeposit()" id="profile-deposit-btn">+ إيداع TON</button>  
         </div>  
 
         <!-- VIP Section -->
         <div class="vip-section">  
             <div class="vip-title">  
-                <span>💎 VIP Levels</span>  
-                <span id="vip-turnover-label">Turnover: 0 TON</span>  
+                <span id="vip-title-text">💎 مستويات VIP</span>  
+                <span id="vip-turnover-label">الإجمالي: 0 TON</span>  
             </div>  
             <div class="vip-current">  
                 <div class="vip-current-top">  
@@ -2243,7 +2435,7 @@
                 <div class="vip-progress-bar">  
                     <div class="vip-progress-fill" id="vip-progress-fill" style="width:0%;"></div>  
                 </div>  
-                <div class="vip-progress-text" id="vip-progress-text">Next: Bronze at 5,000 TON</div>  
+                <div class="vip-progress-text" id="vip-progress-text">التالي: Bronze عند 5,000 TON</div>  
             </div>  
             <div class="vip-list" id="vip-list"></div>  
         </div>  
@@ -2251,62 +2443,74 @@
         <div class="profile-stats">  
             <div class="profile-stat">  
                 <strong id="profile-page-rounds">0</strong>  
-                <span>الجولات</span>  
+                <span id="profile-stat-rounds">الجولات</span>  
             </div>  
             <div class="profile-stat">  
                 <strong id="profile-page-wins">0</strong>  
-                <span>الانتصارات</span>  
+                <span id="profile-stat-wins">الانتصارات</span>  
             </div>  
             <div class="profile-stat">  
                 <strong id="profile-page-wallet">غير متصلة</strong>  
-                <span>المحفظة</span>  
+                <span id="profile-stat-wallet">المحفظة</span>  
             </div>  
         </div>  
 
         <!-- Language Selector -->
         <div class="vip-title" style="margin-top:10px;">  
-            <span>🌍 Language</span>  
+            <span id="language-title">🌍 اللغة</span>  
         </div>  
         <div class="language-selector">  
-            <button class="language-btn active" data-lang="ar" onclick="setLanguage('ar')">🇸🇦 العربية</button>  
-            <button class="language-btn" data-lang="en" onclick="setLanguage('en')">🇬🇧 English</button>  
-            <button class="language-btn" data-lang="ru" onclick="setLanguage('ru')">🇷🇺 Русский</button>  
+            <button class="language-btn active" data-lang="ar" onclick="setLanguage('ar')" id="lang-ar">🇸🇦 العربية</button>  
+            <button class="language-btn" data-lang="en" onclick="setLanguage('en')" id="lang-en">🇬🇧 English</button>  
+            <button class="language-btn" data-lang="ru" onclick="setLanguage('ru')" id="lang-ru">🇷🇺 Русский</button>  
         </div>  
 
         <div class="profile-actions">  
-            <button type="button" onclick="openTonWallet()">💎 ربط / تغيير TON Wallet</button>  
-            <button type="button" onclick="openDeposit()">💰 إيداع TON</button>  
+            <button type="button" onclick="openTonWallet()" id="profile-connect-wallet">💎 ربط / تغيير TON Wallet</button>  
+            <button type="button" onclick="openDeposit()" id="profile-deposit-ton">💰 إيداع TON</button>  
         </div>  
     </div>  
 
     <!-- =========================================================
-         BET MODAL (Keep original)
+         BET MODAL (Keep original + GIFT tab)
     ========================================================= -->
     <div id="bet-modal" class="modal" onclick="closeModalOutside(event,'bet-modal')">  
         <div class="modal-card">  
             <div class="modal-head">  
-                <div class="modal-title">Place bet</div>  
+                <div class="modal-title" id="bet-modal-title">Place bet</div>  
                 <button class="close-button" type="button" onclick="closeModal('bet-modal')">×</button>  
             </div>  
             <div class="modal-tabs">  
-                <button id="modal-gift-tab" class="modal-tab" type="button" onclick="selectBetType('GIFT')">Gifts</button>  
-                <button id="modal-ton-tab" class="modal-tab ton active" type="button" onclick="selectBetType('TON')">TON</button>  
+                <button id="modal-gift-tab" class="modal-tab gift-tab" type="button" onclick="selectBetType('GIFT')">🎁 Gifts</button>  
+                <button id="modal-ton-tab" class="modal-tab ton active" type="button" onclick="selectBetType('TON')">💎 TON</button>  
             </div>  
             <div class="modal-bet-card">  
                 <div class="available-balance">  
-                    <div class="available-label">Available Balance</div>  
+                    <div class="available-label" id="modal-available-label">Available Balance</div>  
                     <div class="available-value">  
                         <span id="modal-balance">0.00</span>  
                         <span class="ton-symbol">💎</span>  
                     </div>  
                 </div>  
-                <div class="bet-amount-label">Bet Amount</div>  
-                <div class="modal-amount-box">  
-                    <input id="modal-amount-input" class="modal-amount-input" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="TON amount">  
-                    <span class="amount-ton-icon">💎</span>  
+                
+                <!-- TON Bet Section -->
+                <div id="ton-bet-section">  
+                    <div class="bet-amount-label" id="bet-amount-label">Bet Amount</div>  
+                    <div class="modal-amount-box">  
+                        <input id="modal-amount-input" class="modal-amount-input" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="TON amount">  
+                        <span class="amount-ton-icon">💎</span>  
+                    </div>  
                 </div>  
+                
+                <!-- GIFT Bet Section -->
+                <div id="gift-bet-section" style="display:none;">  
+                    <div class="bet-amount-label" id="gift-bet-label">اختر هديتك للرهان</div>  
+                    <div id="gift-selection-grid" class="gift-selection-grid"></div>  
+                    <div style="text-align:center;padding:8px;font-size:12px;color:#79839b;" id="gift-selection-info">اختر هدية من هداياك للرهان بها</div>  
+                </div>  
+                
                 <div class="auto-cashout-row">  
-                    <div class="auto-cashout-label">Auto cashout</div>  
+                    <div class="auto-cashout-label" id="auto-cashout-label">Auto cashout</div>  
                     <button id="auto-switch-modal" class="auto-switch-modal" type="button" onclick="toggleAutoCashout()">  
                         <span></span>  
                     </button>  
@@ -2330,10 +2534,10 @@
     <div id="deposit-modal" class="modal" onclick="closeModalOutside(event,'deposit-modal')">  
         <div class="modal-card">  
             <div class="modal-head">  
-                <div class="modal-title">إيداع TON</div>  
+                <div class="modal-title" id="deposit-modal-title">إيداع TON</div>  
                 <button class="close-button" type="button" onclick="closeModal('deposit-modal')">×</button>  
             </div>  
-            <div class="modal-info">  
+            <div class="modal-info" id="deposit-modal-info">  
                 أرسل TON من محفظتك مباشرة إلى حساب اللعبة. بعد إرسال المعاملة سيتم التحقق منها تلقائياً على شبكة TON وإضافة الرصيد إلى حسابك.  
             </div>  
             <div id="deposit-wallet-status" class="wallet-address" style="margin-bottom:10px;">  
@@ -2343,7 +2547,7 @@
                 ربط TON Wallet  
             </button>  
             <div id="deposit-form" style="margin-top:15px;">  
-                <div style="font-size:14px;font-weight:800;margin-bottom:9px;">مبلغ الإيداع</div>  
+                <div style="font-size:14px;font-weight:800;margin-bottom:9px;" id="deposit-amount-label">مبلغ الإيداع</div>  
                 <div class="modal-amount-box" style="height:82px;">  
                     <input id="deposit-amount-input" class="modal-amount-input" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="0.00">  
                     <span class="amount-ton-icon">💎</span>  
@@ -2363,25 +2567,25 @@
     <div id="top-modal" class="modal" onclick="closeModalOutside(event,'top-modal')">  
         <div class="modal-card">  
             <div class="modal-head">  
-                <div class="modal-title">🏆 المتصدرون</div>  
+                <div class="modal-title" id="top-modal-title">🏆 المتصدرون</div>  
                 <button class="close-button" type="button" onclick="closeModal('top-modal')">×</button>  
             </div>  
             <div id="top-list" class="players-list">  
-                <div class="empty-players">لا توجد بيانات بعد</div>  
+                <div class="empty-players" id="top-empty-text">لا توجد بيانات بعد</div>  
             </div>  
         </div>  
     </div>  
 
     <!-- =========================================================
-         GIFTS MODAL (Keep original)
+         GIFTS MODAL (Keep original - fallback)
     ========================================================= -->
     <div id="gifts-modal" class="modal" onclick="closeModalOutside(event,'gifts-modal')">  
         <div class="modal-card">  
             <div class="modal-head">  
-                <div class="modal-title">🎁 الهدايا</div>  
+                <div class="modal-title" id="gifts-modal-title">🎁 الهدايا</div>  
                 <button class="close-button" type="button" onclick="closeModal('gifts-modal')">×</button>  
             </div>  
-            <div class="gift-box">  
+            <div class="gift-box" id="gifts-modal-content">  
                 قسم الهدايا جاهز للواجهة، وعند ربط نظام الهدايا بالـ backend يمكن استخدام الهدايا كطريقة رهان.  
             </div>  
         </div>  
@@ -2398,19 +2602,19 @@
     <nav class="bottom-nav">  
         <button id="nav-home" class="nav-button active" type="button" onclick="showPage('home')">  
             <span class="nav-icon">⌂</span>  
-            <span>الرئيسية</span>  
+            <span id="nav-home-text">الرئيسية</span>  
         </button>  
         <button id="nav-top" class="nav-button" type="button" onclick="showPage('top')">  
             <span class="nav-icon">🏆</span>  
-            <span>المتصدرون</span>  
+            <span id="nav-top-text">المتصدرون</span>  
         </button>  
         <button id="nav-profile" class="nav-button" type="button" onclick="showPage('profile')">  
             <span class="nav-icon">👤</span>  
-            <span>الملف</span>  
+            <span id="nav-profile-text">الملف</span>  
         </button>  
         <button id="nav-gifts" class="nav-button" type="button" onclick="showPage('gifts')">  
             <span class="nav-icon">🎁</span>  
-            <span>الهدايا</span>  
+            <span id="nav-gifts-text">الهدايا</span>  
         </button>  
     </nav>  
 </div>  
@@ -2465,6 +2669,7 @@
     let pendingNextBet = null;  
     let pendingNextBetSubmitted = false;  
     let selectedBetType = "TON";  
+    let selectedGiftId = null; // For gift betting  
 
     /* =========================================================
        TON CONNECT STATE (Original)
@@ -2495,8 +2700,33 @@
         { id: 'obsidian', name: 'Obsidian', icon: '🪐', requirement: 1000000 }  
     ];  
 
-    let userTurnover = 0; // Total turnover from server  
-    let currentVipLevel = 0; // Index into VIP_LEVELS  
+    let userTurnover = 0;  
+    let currentVipLevel = 0;  
+
+    /* =========================================================
+       GIFTS SYSTEM (NEW - All Telegram gifts from images)
+    ========================================================= */  
+    const TELEGRAM_GIFTS = [  
+        { id: 'love_you', name: 'LOVE YOU', emoji: '❤️', value: 1.11, stars: 1111, rarity: 'rare' },  
+        { id: 'b_day', name: 'B-DAY', emoji: '🎂', value: 2.70, stars: 2699, rarity: 'rare' },  
+        { id: 'space', name: 'SPACE', emoji: '🚀', value: 0.91, stars: 910, rarity: 'common' },  
+        { id: 'movie', name: 'MOVIE', emoji: '🎬', value: 1.65, stars: 1654, rarity: 'common' },  
+        { id: 'punk42', name: 'PUNK42', emoji: '👾', value: 2.97, stars: 2970, rarity: 'epic' },  
+        { id: 'homer', name: 'HOMER', emoji: '🍩', value: 1.79, stars: 1790, rarity: 'common' },  
+        { id: 'crypto', name: 'CRYPTO', emoji: '₿', value: 1.02, stars: 1017, rarity: 'common' },  
+        { id: 'free24', name: 'FREE24', emoji: '🎁', value: 2.19, stars: 2191, rarity: 'epic' },  
+        { id: 'telegram', name: 'TELEGRAM', emoji: '✈️', value: 1.07, stars: 1071, rarity: 'common' },  
+        { id: 'backpack', name: 'BACKPACK', emoji: '🎒', value: 2.72, stars: 2722, rarity: 'common' },  
+        { id: 'invite', name: 'INVITE', emoji: '📨', value: 2.01, stars: 2006, rarity: 'common' },  
+        { id: 'earn', name: 'EARN', emoji: '💰', value: 1.33, stars: 1334, rarity: 'common' },  
+        { id: 'space_nft', name: 'SPACE NFT', emoji: '🌌', value: 1.72, stars: 1718, rarity: 'legendary' },  
+        { id: 'adult', name: '18+', emoji: '🔞', value: 1.26, stars: 1264, rarity: 'epic' },  
+        { id: 'free', name: 'FREE', emoji: '🆓', value: 0.50, stars: 500, rarity: 'common' },  
+        { id: 'hot', name: 'HOT', emoji: '🔥', value: 1.98, stars: 1978, rarity: 'rare' },  
+        { id: 'new', name: 'NEW', emoji: '✨', value: 0.75, stars: 750, rarity: 'common' }  
+    ];  
+
+    let userGifts = []; // List of gift IDs the user owns  
 
     /* =========================================================
        LANGUAGE SYSTEM (NEW)
@@ -2504,33 +2734,75 @@
     let currentLanguage = 'ar';  
     const translations = {  
         ar: {  
+            // Game Hub  
             gameHub: '🎮 Game Hub',  
             rocket: 'Rocket',  
-            rocketDesc: 'Multiplayer crash game • Bet & Cash Out',  
-            live: 'Live',  
-            comingSoon: 'Coming Soon',  
-            soon: 'Soon',  
-            back: '← Back',  
-            players: 'اللاعبين',  
-            profile: 'الملف الشخصي',  
+            rocketDesc: 'لعبة متعددة اللاعبين • رهان وسحب',  
+            live: 'مباشر',  
+            comingSoon: 'قريباً',  
+            soon: 'قريباً',  
+            back: '← رجوع',  
+            // Gifts  
+            giftsTitle: '🎁 الهدايا',  
+            giftsSub: 'هدايا Telegram الخاصة بك',  
+            noGiftsTitle: 'لا توجد هدايا',  
+            noGiftsDesc: 'لم تقم بربح أي هدية بعد. استمر باللعب للفوز بهدية!',  
+            giftValue: 'قيمة',  
+            betWithGift: 'رهان بالهدية',  
+            // Profile  
             balance: 'الرصيد',  
             deposit: '+ إيداع TON',  
             vipLevels: '💎 مستويات VIP',  
             turnover: 'الإجمالي',  
             next: 'التالي',  
+            at: 'عند',  
             rounds: 'الجولات',  
             wins: 'الانتصارات',  
             wallet: 'المحفظة',  
             notConnected: 'غير متصلة',  
             connectWallet: '💎 ربط / تغيير TON Wallet',  
             depositTon: '💰 إيداع TON',  
+            language: '🌍 اللغة',  
+            // Nav  
             home: 'الرئيسية',  
             top: 'المتصدرون',  
+            profile: 'الملف',  
             gifts: 'الهدايا',  
-            language: '🌍 اللغة',  
-            arabic: '🇸🇦 العربية',  
-            english: '🇬🇧 English',  
-            russian: '🇷🇺 Русский'  
+            // Bet Modal  
+            placeBet: 'ضع رهانك',  
+            availableBalance: 'الرصيد المتاح',  
+            betAmount: 'مبلغ الرهان',  
+            chooseGift: 'اختر هديتك للرهان',  
+            selectGift: 'اختر هدية من هداياك للرهان بها',  
+            noGiftsToBet: 'لا تملك هدايا للرهان بها',  
+            placeTonBet: 'رهان بـ TON 🚀',  
+            placeGiftBet: 'رهان بالهدية 🎁',  
+            // Deposit  
+            depositTitle: 'إيداع TON',  
+            depositInfo: 'أرسل TON من محفظتك مباشرة إلى حساب اللعبة. بعد إرسال المعاملة سيتم التحقق منها تلقائياً على شبكة TON وإضافة الرصيد إلى حسابك.',  
+            depositAmount: 'مبلغ الإيداع',  
+            depositButton: 'إيداع TON 🚀',  
+            connectWalletBtn: 'ربط TON Wallet',  
+            changeWalletBtn: 'تغيير TON Wallet',  
+            // Players  
+            players: 'اللاعبين',  
+            // Top  
+            topTitle: '🏆 المتصدرون',  
+            topEmpty: 'لا توجد بيانات بعد',  
+            // Gifts Modal  
+            giftsModalTitle: '🎁 الهدايا',  
+            giftsModalContent: 'قسم الهدايا جاهز للواجهة، وعند ربط نظام الهدايا بالـ backend يمكن استخدام الهدايا كطريقة رهان.',  
+            // Auto Cashout  
+            autoCashout: 'سحب تلقائي',  
+            // Empty states  
+            emptyGifts: '🎁 لا توجد هدايا بعد',  
+            // Toast messages  
+            giftSelected: 'تم اختيار الهدية للرهان',  
+            noGiftSelected: 'الرجاء اختيار هدية',  
+            giftBetPlaced: 'تم وضع الرهان بالهدية',  
+            giftBetFailed: 'فشل الرهان بالهدية',  
+            giftWon: '🎁 ربحت هدية!',  
+            giftLost: '💔 خسرت هديتك'  
         },  
         en: {  
             gameHub: '🎮 Game Hub',  
@@ -2540,26 +2812,56 @@
             comingSoon: 'Coming Soon',  
             soon: 'Soon',  
             back: '← Back',  
-            players: 'Players',  
-            profile: 'Profile',  
+            giftsTitle: '🎁 Gifts',  
+            giftsSub: 'Your Telegram Gifts',  
+            noGiftsTitle: 'No Gifts Yet',  
+            noGiftsDesc: 'You haven\'t won any gifts yet. Keep playing to win one!',  
+            giftValue: 'Value',  
+            betWithGift: 'Bet with Gift',  
             balance: 'Balance',  
             deposit: '+ Deposit TON',  
             vipLevels: '💎 VIP Levels',  
             turnover: 'Turnover',  
             next: 'Next',  
+            at: 'at',  
             rounds: 'Rounds',  
             wins: 'Wins',  
             wallet: 'Wallet',  
             notConnected: 'Not Connected',  
             connectWallet: '💎 Connect / Change TON Wallet',  
             depositTon: '💰 Deposit TON',  
+            language: '🌍 Language',  
             home: 'Home',  
             top: 'Leaderboard',  
+            profile: 'Profile',  
             gifts: 'Gifts',  
-            language: '🌍 Language',  
-            arabic: '🇸🇦 Arabic',  
-            english: '🇬🇧 English',  
-            russian: '🇷🇺 Russian'  
+            placeBet: 'Place Bet',  
+            availableBalance: 'Available Balance',  
+            betAmount: 'Bet Amount',  
+            chooseGift: 'Choose your gift to bet',  
+            selectGift: 'Select a gift from your collection to bet with',  
+            noGiftsToBet: 'You have no gifts to bet with',  
+            placeTonBet: 'Place TON Bet 🚀',  
+            placeGiftBet: 'Place Gift Bet 🎁',  
+            depositTitle: 'Deposit TON',  
+            depositInfo: 'Send TON from your wallet directly to the game account. After sending the transaction, it will be automatically verified on the TON network and added to your balance.',  
+            depositAmount: 'Deposit Amount',  
+            depositButton: 'Deposit TON 🚀',  
+            connectWalletBtn: 'Connect TON Wallet',  
+            changeWalletBtn: 'Change TON Wallet',  
+            players: 'Players',  
+            topTitle: '🏆 Leaderboard',  
+            topEmpty: 'No data yet',  
+            giftsModalTitle: '🎁 Gifts',  
+            giftsModalContent: 'Gifts section is ready for the interface. When the gift system is connected to the backend, gifts can be used as a betting method.',  
+            autoCashout: 'Auto Cashout',  
+            emptyGifts: '🎁 No gifts yet',  
+            giftSelected: 'Gift selected for betting',  
+            noGiftSelected: 'Please select a gift',  
+            giftBetPlaced: 'Gift bet placed successfully',  
+            giftBetFailed: 'Gift bet failed',  
+            giftWon: '🎁 You won a gift!',  
+            giftLost: '💔 You lost your gift'  
         },  
         ru: {  
             gameHub: '🎮 Игровой центр',  
@@ -2569,26 +2871,56 @@
             comingSoon: 'Скоро',  
             soon: 'Скоро',  
             back: '← Назад',  
-            players: 'Игроки',  
-            profile: 'Профиль',  
+            giftsTitle: '🎁 Подарки',  
+            giftsSub: 'Ваши подарки Telegram',  
+            noGiftsTitle: 'Нет подарков',  
+            noGiftsDesc: 'Вы ещё не выиграли ни одного подарка. Продолжайте играть, чтобы выиграть!',  
+            giftValue: 'Ценность',  
+            betWithGift: 'Ставка подарком',  
             balance: 'Баланс',  
             deposit: '+ Пополнить TON',  
             vipLevels: '💎 VIP уровни',  
             turnover: 'Оборот',  
             next: 'Следующий',  
+            at: 'на',  
             rounds: 'Раунды',  
             wins: 'Победы',  
             wallet: 'Кошелек',  
             notConnected: 'Не подключен',  
             connectWallet: '💎 Подключить / изменить TON кошелек',  
             depositTon: '💰 Пополнить TON',  
+            language: '🌍 Язык',  
             home: 'Главная',  
             top: 'Лидеры',  
+            profile: 'Профиль',  
             gifts: 'Подарки',  
-            language: '🌍 Язык',  
-            arabic: '🇸🇦 Арабский',  
-            english: '🇬🇧 Английский',  
-            russian: '🇷🇺 Русский'  
+            placeBet: 'Сделать ставку',  
+            availableBalance: 'Доступный баланс',  
+            betAmount: 'Сумма ставки',  
+            chooseGift: 'Выберите подарок для ставки',  
+            selectGift: 'Выберите подарок из вашей коллекции для ставки',  
+            noGiftsToBet: 'У вас нет подарков для ставки',  
+            placeTonBet: 'Ставка TON 🚀',  
+            placeGiftBet: 'Ставка подарком 🎁',  
+            depositTitle: 'Пополнить TON',  
+            depositInfo: 'Отправьте TON из вашего кошелька на игровой счет. После отправки транзакция будет автоматически проверена в сети TON и добавлена к вашему балансу.',  
+            depositAmount: 'Сумма пополнения',  
+            depositButton: 'Пополнить TON 🚀',  
+            connectWalletBtn: 'Подключить TON кошелек',  
+            changeWalletBtn: 'Изменить TON кошелек',  
+            players: 'Игроки',  
+            topTitle: '🏆 Лидеры',  
+            topEmpty: 'Нет данных',  
+            giftsModalTitle: '🎁 Подарки',  
+            giftsModalContent: 'Раздел подарков готов для интерфейса. После подключения системы подарков к бэкенду подарки можно будет использовать как способ ставки.',  
+            autoCashout: 'Автовывод',  
+            emptyGifts: '🎁 Нет подарков',  
+            giftSelected: 'Подарок выбран для ставки',  
+            noGiftSelected: 'Пожалуйста, выберите подарок',  
+            giftBetPlaced: 'Ставка подарком размещена',  
+            giftBetFailed: 'Ставка подарком не удалась',  
+            giftWon: '🎁 Вы выиграли подарок!',  
+            giftLost: '💔 Вы потеряли подарок'  
         }  
     };  
 
@@ -2709,7 +3041,7 @@
             }  
         }  
         if(button){  
-            button.textContent = tonWalletConnected ? "تغيير TON Wallet" : "ربط TON Wallet";  
+            button.textContent = tonWalletConnected ? getTranslation('changeWalletBtn') : getTranslation('connectWalletBtn');  
         }  
         if(address){  
             if(tonWalletConnected && tonWalletAddress){  
@@ -2756,6 +3088,82 @@
         const profileName = document.getElementById("profile-page-name");  
         if(profileName){ profileName.textContent = fullName || "اللاعب"; }  
         updateProfilePage();  
+        applyLanguage();  
+    }  
+
+    /* =========================================================
+       GET TRANSLATION (NEW)
+    ========================================================= */  
+    function getTranslation(key){  
+        return translations[currentLanguage]?.[key] || translations.ar[key] || key;  
+    }  
+
+    /* =========================================================
+       APPLY LANGUAGE (NEW)
+    ========================================================= */  
+    function applyLanguage(){  
+        const t = translations[currentLanguage] || translations.ar;  
+        
+        // Game Hub  
+        document.getElementById('game-hub-title').textContent = t.gameHub;  
+        document.getElementById('rocket-game-title').textContent = t.rocket;  
+        document.getElementById('rocket-game-desc').textContent = t.rocketDesc;  
+        document.getElementById('rocket-game-badge').textContent = t.live;  
+        document.getElementById('coming-soon-title').textContent = t.comingSoon;  
+        document.getElementById('coming-soon-desc').textContent = '';  
+        document.getElementById('soon-badge').textContent = t.soon;  
+        document.getElementById('back-to-hub-btn').textContent = t.back;  
+        
+        // Players  
+        document.getElementById('players-title-text').textContent = t.players;  
+        
+        // Profile  
+        document.getElementById('profile-balance-label').textContent = t.balance;  
+        document.getElementById('profile-deposit-btn').textContent = t.deposit;  
+        document.getElementById('vip-title-text').textContent = t.vipLevels;  
+        document.getElementById('profile-stat-rounds').textContent = t.rounds;  
+        document.getElementById('profile-stat-wins').textContent = t.wins;  
+        document.getElementById('profile-stat-wallet').textContent = t.wallet;  
+        document.getElementById('profile-connect-wallet').textContent = t.connectWallet;  
+        document.getElementById('profile-deposit-ton').textContent = t.depositTon;  
+        document.getElementById('language-title').textContent = t.language;  
+        
+        // Nav  
+        document.getElementById('nav-home-text').textContent = t.home;  
+        document.getElementById('nav-top-text').textContent = t.top;  
+        document.getElementById('nav-profile-text').textContent = t.profile;  
+        document.getElementById('nav-gifts-text').textContent = t.gifts;  
+        
+        // Bet Modal  
+        document.getElementById('bet-modal-title').textContent = t.placeBet;  
+        document.getElementById('modal-available-label').textContent = t.availableBalance;  
+        document.getElementById('bet-amount-label').textContent = t.betAmount;  
+        document.getElementById('gift-bet-label').textContent = t.chooseGift;  
+        document.getElementById('gift-selection-info').textContent = t.selectGift;  
+        document.getElementById('auto-cashout-label').textContent = t.autoCashout;  
+        
+        // Deposit  
+        document.getElementById('deposit-modal-title').textContent = t.depositTitle;  
+        document.getElementById('deposit-modal-info').textContent = t.depositInfo;  
+        document.getElementById('deposit-amount-label').textContent = t.depositAmount;  
+        document.getElementById('deposit-send-button').textContent = t.depositButton;  
+        
+        // Top  
+        document.getElementById('top-modal-title').textContent = t.topTitle;  
+        document.getElementById('top-empty-text').textContent = t.topEmpty;  
+        
+        // Gifts Modal  
+        document.getElementById('gifts-modal-title').textContent = t.giftsModalTitle;  
+        document.getElementById('gifts-modal-content').textContent = t.giftsModalContent;  
+        
+        // Gifts Page  
+        document.getElementById('gifts-page-title').textContent = t.giftsTitle;  
+        document.getElementById('gifts-page-sub').textContent = t.giftsSub;  
+        document.getElementById('empty-gifts-title').textContent = t.noGiftsTitle;  
+        document.getElementById('empty-gifts-desc').textContent = t.noGiftsDesc;  
+        
+        // Update VIP  
+        updateVipUI();  
     }  
 
     /* =========================================================
@@ -2804,7 +3212,7 @@
     }  
 
     /* =========================================================
-       SERVER MESSAGE (Original - Keep exactly)
+       SERVER MESSAGE (Original - Keep exactly + GIFTS support)
     ========================================================= */  
     function handleServerMessage(data){  
         if(!data) return;  
@@ -2834,6 +3242,12 @@
             if(data.self){  
                 updateSelfState(data.self);  
             }  
+            // Check for gifts in data  
+            if(data.gifts){  
+                userGifts = data.gifts;  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
+            }  
             renderGame();  
             renderHistory();  
             renderPlayers();  
@@ -2851,6 +3265,11 @@
             if(data.self){  
                 updateSelfState(data.self);  
             }  
+            if(data.gifts){  
+                userGifts = data.gifts;  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
+            }  
             renderPlayers();  
             updateAutoCashoutUI();  
             updateProfilePage();  
@@ -2864,7 +3283,6 @@
                 updateProfilePage();  
             }  
         }  
-        // Also check for turnover data if server sends it  
         if(data.type === "PROFILE" || data.type === "SYNC"){  
             if(typeof data.turnover !== "undefined"){  
                 userTurnover = Number(data.turnover) || 0;  
@@ -2874,11 +3292,40 @@
                 currentVipLevel = Math.min(Math.max(Number(data.vipLevel) || 0, 0), VIP_LEVELS.length - 1);  
                 updateProfilePage();  
             }  
+            if(data.gifts){  
+                userGifts = data.gifts || [];  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
+            }  
+        }  
+        // Gift win/lose events  
+        if(data.type === "GIFT_WIN"){  
+            const giftId = data.giftId;  
+            if(giftId && !userGifts.includes(giftId)){  
+                userGifts.push(giftId);  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
+                const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);  
+                showToast(getTranslation('giftWon') + ' ' + (gift ? gift.emoji + ' ' + gift.name : ''));  
+            }  
+        }  
+        if(data.type === "GIFT_LOSE"){  
+            const giftId = data.giftId;  
+            if(giftId){  
+                const index = userGifts.indexOf(giftId);  
+                if(index > -1){  
+                    userGifts.splice(index, 1);  
+                    renderGiftsPage();  
+                    updateGiftSelectionInModal();  
+                    const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);  
+                    showToast(getTranslation('giftLost') + ' ' + (gift ? gift.emoji + ' ' + gift.name : ''));  
+                }  
+            }  
         }  
     }  
 
     /* =========================================================
-       SELF STATE (Original)
+       SELF STATE (Original + GIFTS)
     ========================================================= */  
     function updateSelfState(self){  
         if(!self) return;  
@@ -2905,10 +3352,15 @@
             hasBet = false;  
             playedThisRound = true;  
             isQueuedForNextRound = false;  
-            // Update turnover if available  
             if(Number.isFinite(Number(self.turnover))){  
                 userTurnover = Number(self.turnover);  
                 updateProfilePage();  
+            }  
+            // Check for gifts  
+            if(self.gifts){  
+                userGifts = self.gifts;  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
             }  
             updateAutoCashoutUI();  
             return;  
@@ -3105,11 +3557,11 @@
             button.disabled = true;  
             return;  
         }  
-        button.textContent = "Place bet";  
+        button.textContent = getTranslation('placeBet');  
     }  
 
     /* =========================================================
-       MAIN BET (Original)
+       MAIN BET (Original + GIFT support)
     ========================================================= */  
     function handleMainBetButton(){  
         if(actionInProgress) return;  
@@ -3125,17 +3577,104 @@
     }  
 
     /* =========================================================
-       OPEN BET MODAL (Original)
+       OPEN BET MODAL (Original + GIFT)
     ========================================================= */  
     function openBetModal(){  
         syncAmountInput();  
         updateModalBalance();  
         updateAutoCashoutUI();  
         updateModalBetButton();  
+        // Show/hide sections based on selected bet type  
+        showBetTypeSection(selectedBetType);  
+        // Update gift selection  
+        updateGiftSelectionInModal();  
         const modal = document.getElementById("bet-modal");  
         if(modal){  
             modal.classList.add("show");  
         }  
+    }  
+
+    /* =========================================================
+       SHOW BET TYPE SECTION (NEW)
+    ========================================================= */  
+    function showBetTypeSection(type){  
+        const tonSection = document.getElementById("ton-bet-section");  
+        const giftSection = document.getElementById("gift-bet-section");  
+        const placeButton = document.getElementById("modal-place-button");  
+        if(type === "GIFT"){  
+            tonSection.style.display = "none";  
+            giftSection.style.display = "block";  
+            // Update button  
+            placeButton.className = "modal-place-button gift";  
+            placeButton.textContent = getTranslation('placeGiftBet');  
+            // Update gift selection info  
+            const info = document.getElementById("gift-selection-info");  
+            if(userGifts.length === 0){  
+                info.textContent = getTranslation('noGiftsToBet');  
+            }else{  
+                info.textContent = getTranslation('selectGift');  
+            }  
+        }else{  
+            tonSection.style.display = "block";  
+            giftSection.style.display = "none";  
+            placeButton.className = "modal-place-button ton";  
+            placeButton.textContent = gamePhase === "FLIGHT" ? "🚀 Bet Next Round" : getTranslation('placeTonBet');  
+        }  
+    }  
+
+    /* =========================================================
+       UPDATE GIFT SELECTION IN MODAL (NEW)
+    ========================================================= */  
+    function updateGiftSelectionInModal(){  
+        const grid = document.getElementById("gift-selection-grid");  
+        if(!grid) return;  
+        grid.innerHTML = "";  
+        if(userGifts.length === 0){  
+            const emptyMsg = document.createElement("div");  
+            emptyMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:20px;color:#79839b;font-size:13px;";  
+            emptyMsg.textContent = getTranslation('noGiftsToBet');  
+            grid.appendChild(emptyMsg);  
+            return;  
+        }  
+        userGifts.forEach(function(giftId){  
+            const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);  
+            if(!gift) return;  
+            const item = document.createElement("div");  
+            item.className = "gift-select-item" + (selectedGiftId === giftId ? " selected" : "");  
+            item.onclick = function(){  
+                if(selectedBetType !== "GIFT"){  
+                    selectBetType("GIFT");  
+                }  
+                selectedGiftId = giftId;  
+                updateGiftSelectionInModal();  
+                showToast(getTranslation('giftSelected') + ': ' + gift.emoji + ' ' + gift.name);  
+                // Update place button  
+                const btn = document.getElementById("modal-place-button");  
+                btn.className = "modal-place-button gift";  
+                btn.textContent = getTranslation('placeGiftBet') + ' 🎁';  
+                btn.disabled = false;  
+            };  
+            const rarityMap = {  
+                'common': 'عادية',  
+                'rare': 'نادرة',  
+                'epic': 'أسطورية',  
+                'legendary': 'خرافية'  
+            };  
+            const rarityMapEn = {  
+                'common': 'Common',  
+                'rare': 'Rare',  
+                'epic': 'Epic',  
+                'legendary': 'Legendary'  
+            };  
+            const rarityText = currentLanguage === 'ar' ? rarityMap[gift.rarity] || 'عادية' : rarityMapEn[gift.rarity] || 'Common';  
+            item.innerHTML = `  
+                <span class="emoji">${gift.emoji}</span>  
+                <span class="name">${gift.name}</span>  
+                <span class="value">${gift.value.toFixed(2)} TON</span>  
+                <span class="check">✅</span>  
+            `;  
+            grid.appendChild(item);  
+        });  
     }  
 
     /* =========================================================
@@ -3168,7 +3707,7 @@
     }  
 
     /* =========================================================
-       BET TYPE (Original)
+       BET TYPE (Original + GIFT)
     ========================================================= */  
     function selectBetType(type){  
         selectedBetType = type === "GIFT" ? "GIFT" : "TON";  
@@ -3180,24 +3719,36 @@
         if(giftTab){  
             giftTab.classList.toggle("active", selectedBetType === "GIFT");  
         }  
+        showBetTypeSection(selectedBetType);  
         updateModalBetButton();  
+        if(selectedBetType === "GIFT"){  
+            updateGiftSelectionInModal();  
+        }  
     }  
 
     /* =========================================================
-       MODAL BET BUTTON (Original)
+       MODAL BET BUTTON (Original + GIFT)
     ========================================================= */  
     function updateModalBetButton(){  
         const button = document.getElementById("modal-place-button");  
         if(!button) return;  
-        button.className = "modal-place-button " + (selectedBetType === "GIFT" ? "gift" : "ton");  
         if(selectedBetType === "GIFT"){  
-            button.textContent = "Play with Gift 🎁";  
+            button.className = "modal-place-button gift";  
+            if(userGifts.length === 0 || !selectedGiftId){  
+                button.disabled = true;  
+                button.textContent = getTranslation('noGiftsToBet');  
+            }else{  
+                button.disabled = false;  
+                button.textContent = getTranslation('placeGiftBet') + ' 🎁';  
+            }  
         }else{  
+            button.className = "modal-place-button ton";  
+            button.disabled = false;  
             if(gamePhase === "FLIGHT"){  
                 button.className = "modal-place-button next-round";  
                 button.textContent = "🚀 Bet Next Round";  
             }else{  
-                button.textContent = "Place TON Bet 🚀";  
+                button.textContent = getTranslation('placeTonBet');  
             }  
         }  
     }  
@@ -3290,14 +3841,35 @@
     }  
 
     /* =========================================================
-       HANDLE BET (Original)
+       HANDLE MODAL BET (Original + GIFT)
     ========================================================= */  
     async function handleModalBet(){  
         if(actionInProgress) return;  
+        
         if(selectedBetType === "GIFT"){  
-            showToast("اللعب بالهدايا يحتاج ربط نظام الهدايا بالـ backend");  
+            // Gift betting  
+            if(!selectedGiftId){  
+                showToast(getTranslation('noGiftSelected'));  
+                return;  
+            }  
+            // Check if user still has this gift  
+            if(!userGifts.includes(selectedGiftId)){  
+                showToast(getTranslation('noGiftsToBet'));  
+                selectedGiftId = null;  
+                updateGiftSelectionInModal();  
+                return;  
+            }  
+            const gift = TELEGRAM_GIFTS.find(g => g.id === selectedGiftId);  
+            if(!gift){  
+                showToast(getTranslation('noGiftsToBet'));  
+                return;  
+            }  
+            readAutoCashout();  
+            await placeGiftBet(selectedGiftId);  
             return;  
         }  
+        
+        // TON betting  
         const amount = readBetAmount();  
         if(amount === null){  
             showToast("أدخل مبلغ TON صحيح");  
@@ -3312,7 +3884,112 @@
     }  
 
     /* =========================================================
-       PLACE BET (Original)
+       PLACE GIFT BET (NEW)
+    ========================================================= */  
+    async function placeGiftBet(giftId){  
+        if(!navigator.onLine){  
+            showToast("لا يوجد اتصال بالإنترنت");  
+            return;  
+        }  
+        if(gamePhase === "FLIGHT"){  
+            // Queue for next round  
+            pendingNextBet = {  
+                type: "GIFT",  
+                giftId: giftId,  
+                autoCashout: autoCashoutEnabled,  
+                autoTarget: autoCashoutTarget  
+            };  
+            pendingNextBetSubmitted = false;  
+            isQueuedForNextRound = true;  
+            hasBet = false;  
+            closeModal("bet-modal");  
+            updateMainBetButton();  
+            showToast("تم حجز الرهان بالهدية للجولة القادمة");  
+            trySubmitQueuedBet();  
+            return;  
+        }  
+        if(gamePhase !== "COUNTDOWN"){  
+            showToast("انتظر الجولة القادمة");  
+            return;  
+        }  
+        const success = await sendGiftBet(giftId, currentRoundId, autoCashoutEnabled, autoCashoutTarget);  
+        if(success){  
+            closeModal("bet-modal");  
+        }  
+    }  
+
+    /* =========================================================
+       SEND GIFT BET (NEW)
+    ========================================================= */  
+    async function sendGiftBet(giftId, roundIdToUse, autoCashout, autoTarget){  
+        if(actionInProgress) return false;  
+        actionInProgress = true;  
+        updateMainBetButton();  
+        try{  
+            const response = await fetch(`${BACKEND_URL}/api/game-action`, {  
+                method: "POST",  
+                headers: { "Content-Type": "application/json" },  
+                body: JSON.stringify({  
+                    type: "BET",  
+                    betType: "GIFT",  
+                    giftId: giftId,  
+                    telegramId: telegramId,  
+                    name: fullName || firstName || "اللاعب",  
+                    avatar: userPhoto,  
+                    roundId: roundIdToUse,  
+                    autoCashout: autoCashout,  
+                    autoTarget: autoTarget  
+                })  
+            });  
+            const data = await response.json().catch(() => ({}));  
+            if(!response.ok || !data.ok){  
+                throw new Error(data.error || getTranslation('giftBetFailed'));  
+            }  
+            // Remove gift from user (it's used)  
+            const index = userGifts.indexOf(giftId);  
+            if(index > -1){  
+                userGifts.splice(index, 1);  
+                renderGiftsPage();  
+                updateGiftSelectionInModal();  
+            }  
+            hasBet = true;  
+            playedThisRound = true;  
+            isQueuedForNextRound = false;  
+            pendingNextBet = null;  
+            pendingNextBetSubmitted = false;  
+            selectedGiftId = null;  
+            updateMainBetButton();  
+            updateAutoCashoutUI();  
+            showToast(getTranslation('giftBetPlaced'));  
+            return true;  
+        }catch(error){  
+            console.error("GIFT BET ERROR:", error);  
+            const message = String(error.message || "");  
+            if(gamePhase === "FLIGHT"){  
+                pendingNextBet = {  
+                    type: "GIFT",  
+                    giftId: giftId,  
+                    autoCashout: autoCashout,  
+                    autoTarget: autoTarget  
+                };  
+                pendingNextBetSubmitted = false;  
+                isQueuedForNextRound = true;  
+                hasBet = false;  
+                updateMainBetButton();  
+                showToast("تم حجز الرهان بالهدية للجولة القادمة");  
+            }else{  
+                showToast(message || getTranslation('giftBetFailed'));  
+            }  
+            return false;  
+        }finally{  
+            actionInProgress = false;  
+            updateMainBetButton();  
+            updateAutoCashoutUI();  
+        }  
+    }  
+
+    /* =========================================================
+       PLACE BET (Original - Modified for GIFT queue)
     ========================================================= */  
     async function placeBet(amount){  
         if(!navigator.onLine){  
@@ -3321,6 +3998,7 @@
         }  
         if(gamePhase === "FLIGHT"){  
             pendingNextBet = {  
+                type: "TON",  
                 amount: amount,  
                 autoCashout: autoCashoutEnabled,  
                 autoTarget: autoCashoutTarget  
@@ -3357,6 +4035,7 @@
                 headers: { "Content-Type": "application/json" },  
                 body: JSON.stringify({  
                     type: "BET",  
+                    betType: "TON",  
                     telegramId: telegramId,  
                     name: fullName || firstName || "اللاعب",  
                     avatar: userPhoto,  
@@ -3385,6 +4064,7 @@
             const message = String(error.message || "");  
             if(gamePhase === "FLIGHT"){  
                 pendingNextBet = {  
+                    type: "TON",  
                     amount: amount,  
                     autoCashout: autoCashout,  
                     autoTarget: autoTarget  
@@ -3406,7 +4086,7 @@
     }  
 
     /* =========================================================
-       QUEUED BET (Original)
+       QUEUED BET (Original + GIFT)
     ========================================================= */  
     function trySubmitQueuedBet(){  
         if(!pendingNextBet || pendingNextBetSubmitted || hasBet || gamePhase !== "COUNTDOWN" || !serverConnected || actionInProgress){  
@@ -3414,20 +4094,38 @@
         }  
         pendingNextBetSubmitted = true;  
         const queued = { ...pendingNextBet };  
-        sendBet(queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success){  
-            if(success){  
-                pendingNextBet = null;  
-                pendingNextBetSubmitted = false;  
-                isQueuedForNextRound = false;  
-            }else{  
-                pendingNextBetSubmitted = false;  
-                if(gamePhase !== "COUNTDOWN"){  
+        if(queued.type === "GIFT"){  
+            sendGiftBet(queued.giftId, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success){  
+                if(success){  
                     pendingNextBet = null;  
+                    pendingNextBetSubmitted = false;  
                     isQueuedForNextRound = false;  
+                    selectedGiftId = null;  
+                }else{  
+                    pendingNextBetSubmitted = false;  
+                    if(gamePhase !== "COUNTDOWN"){  
+                        pendingNextBet = null;  
+                        isQueuedForNextRound = false;  
+                    }  
                 }  
-            }  
-            updateMainBetButton();  
-        });  
+                updateMainBetButton();  
+            });  
+        }else{  
+            sendBet(queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success){  
+                if(success){  
+                    pendingNextBet = null;  
+                    pendingNextBetSubmitted = false;  
+                    isQueuedForNextRound = false;  
+                }else{  
+                    pendingNextBetSubmitted = false;  
+                    if(gamePhase !== "COUNTDOWN"){  
+                        pendingNextBet = null;  
+                        isQueuedForNextRound = false;  
+                    }  
+                }  
+                updateMainBetButton();  
+            });  
+        }  
     }  
 
     /* =========================================================
@@ -3499,7 +4197,7 @@
         const button = document.getElementById("deposit-send-button");  
         if(!button) return;  
         button.disabled = Boolean(disabled);  
-        button.textContent = text || "إيداع TON 🚀";  
+        button.textContent = text || getTranslation('depositButton');  
     }  
 
     /* =========================================================
@@ -3651,7 +4349,7 @@
             console.error("DEPOSIT ERROR:", error);  
             setDepositStatus(error.message || "تعذر تنفيذ الإيداع", "error");  
             showToast(error.message || "تعذر تنفيذ الإيداع");  
-            setDepositButtonState(false, "إيداع TON 🚀");  
+            setDepositButtonState(false, getTranslation('depositButton'));  
         }finally{  
             depositInProgress = false;  
         }  
@@ -3690,7 +4388,7 @@
                         depositStatusTimer = null;  
                     }  
                     setDepositStatus("تم إرسال المعاملة، لكن التحقق يحتاج وقتاً أطول. لا ترسل المبلغ مرة أخرى.", "info");  
-                    setDepositButtonState(false, "إيداع TON 🚀");  
+                    setDepositButtonState(false, getTranslation('depositButton'));  
                     resolve();  
                     return;  
                 }  
@@ -3718,7 +4416,7 @@
                     if(status === "credited"){  
                         const creditedAmount = Number(deposit.amount || 0);  
                         setDepositStatus(`✅ تم الإيداع بنجاح! تمت إضافة ${creditedAmount.toFixed(2)} TON إلى رصيدك.`, "success");  
-                        setDepositButtonState(false, "إيداع TON 🚀");  
+                        setDepositButtonState(false, getTranslation('depositButton'));  
                         showToast(`تمت إضافة ${creditedAmount.toFixed(2)} TON`);  
                         updateTonWalletUI();  
                         await finishSuccess();  
@@ -3732,7 +4430,7 @@
                         }  
                         const reason = deposit.failure_reason || "فشل التحقق من الإيداع";  
                         setDepositStatus(reason, "error");  
-                        setDepositButtonState(false, "إيداع TON 🚀");  
+                        setDepositButtonState(false, getTranslation('depositButton'));  
                         reject(new Error(reason));  
                         return;  
                     }  
@@ -3754,7 +4452,7 @@
     }  
 
     /* =========================================================
-       NAVIGATION (Modified to handle Game Hub & Profile page)
+       NAVIGATION (Modified to handle Game Hub, Profile, Gifts pages)
     ========================================================= */  
     function showPage(page){  
         document.querySelectorAll(".nav-button").forEach(function(button){  
@@ -3770,12 +4468,13 @@
         document.getElementById("game-hub").classList.add("hidden");  
         document.getElementById("rocket-game").classList.add("hidden");  
         document.getElementById("profile-page").classList.remove("show");  
+        document.getElementById("gifts-page").classList.remove("show");  
 
         if(page === "home"){  
             document.getElementById("nav-home").classList.add("active");  
             document.getElementById("game-hub").classList.remove("hidden");  
-            // If rocket game was open, close it  
             document.getElementById("rocket-game").classList.add("hidden");  
+            document.getElementById("gifts-page").classList.remove("show");  
         }else if(page === "top"){  
             document.getElementById("nav-top").classList.add("active");  
             renderTopList();  
@@ -3785,13 +4484,91 @@
             updateProfileWalletUI();  
             updateProfilePage();  
             document.getElementById("profile-page").classList.add("show");  
-            // Hide game hub and rocket  
             document.getElementById("game-hub").classList.add("hidden");  
             document.getElementById("rocket-game").classList.add("hidden");  
+            document.getElementById("gifts-page").classList.remove("show");  
         }else if(page === "gifts"){  
             document.getElementById("nav-gifts").classList.add("active");  
-            document.getElementById("gifts-modal").classList.add("show");  
+            renderGiftsPage();  
+            document.getElementById("gifts-page").classList.add("show");  
+            document.getElementById("game-hub").classList.add("hidden");  
+            document.getElementById("rocket-game").classList.add("hidden");  
+            document.getElementById("profile-page").classList.remove("show");  
         }  
+    }  
+
+    /* =========================================================
+       RENDER GIFTS PAGE (NEW)
+    ========================================================= */  
+    function renderGiftsPage(){  
+        const collection = document.getElementById("gifts-collection");  
+        const empty = document.getElementById("empty-gifts");  
+        if(!collection) return;  
+        
+        collection.innerHTML = "";  
+        
+        if(!userGifts || userGifts.length === 0){  
+            collection.style.display = "none";  
+            empty.style.display = "block";  
+            return;  
+        }  
+        
+        collection.style.display = "grid";  
+        empty.style.display = "none";  
+        
+        userGifts.forEach(function(giftId){  
+            const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);  
+            if(!gift) return;  
+            const card = document.createElement("div");  
+            card.className = "gift-card";  
+            const rarityMap = {  
+                'common': 'common',  
+                'rare': 'rare',  
+                'epic': 'epic',  
+                'legendary': 'legendary'  
+            };  
+            const rarityClass = rarityMap[gift.rarity] || 'common';  
+            const rarityLabels = {  
+                'ar': { 'common': 'عادية', 'rare': 'نادرة', 'epic': 'أسطورية', 'legendary': 'خرافية' },  
+                'en': { 'common': 'Common', 'rare': 'Rare', 'epic': 'Epic', 'legendary': 'Legendary' },  
+                'ru': { 'common': 'Обычный', 'rare': 'Редкий', 'epic': 'Эпический', 'legendary': 'Легендарный' }  
+            };  
+            const rarityText = rarityLabels[currentLanguage]?.[gift.rarity] || rarityLabels['en'][gift.rarity] || 'Common';  
+            card.innerHTML = `  
+                <span class="emoji">${gift.emoji}</span>  
+                <span class="name">${gift.name}</span>  
+                <span class="value">${getTranslation('giftValue')}: ${gift.value.toFixed(2)} TON</span>  
+                <span class="rarity ${rarityClass}">${rarityText}</span>  
+                <button class="bet-btn" onclick="betWithGift('${gift.id}')">${getTranslation('betWithGift')}</button>  
+            `;  
+            collection.appendChild(card);  
+        });  
+    }  
+
+    /* =========================================================
+       BET WITH GIFT (NEW - Quick bet from gifts page)
+    ========================================================= */  
+    function betWithGift(giftId){  
+        if(actionInProgress) return;  
+        if(!userGifts.includes(giftId)){  
+            showToast(getTranslation('noGiftsToBet'));  
+            return;  
+        }  
+        selectedBetType = "GIFT";  
+        selectedGiftId = giftId;  
+        // Open bet modal with gift selected  
+        openBetModal();  
+        // Update the gift selection  
+        setTimeout(function(){  
+            updateGiftSelectionInModal();  
+            // Switch to gift tab  
+            const tonTab = document.getElementById("modal-ton-tab");  
+            const giftTab = document.getElementById("modal-gift-tab");  
+            if(tonTab) tonTab.classList.remove("active");  
+            if(giftTab) giftTab.classList.add("active");  
+            showBetTypeSection("GIFT");  
+            updateModalBetButton();  
+        }, 100);  
     }  
 
     /* =========================================================
@@ -3801,11 +4578,10 @@
         document.getElementById("game-hub").classList.add("hidden");  
         document.getElementById("rocket-game").classList.remove("hidden");  
         document.getElementById("profile-page").classList.remove("show");  
-        // Close any modals  
+        document.getElementById("gifts-page").classList.remove("show");  
         document.querySelectorAll(".modal").forEach(function(m){  
             m.classList.remove("show");  
         });  
-        // Update nav to show home as active  
         document.querySelectorAll(".nav-button").forEach(function(b){  
             b.classList.remove("active");  
         });  
@@ -3816,6 +4592,7 @@
         document.getElementById("rocket-game").classList.add("hidden");  
         document.getElementById("game-hub").classList.remove("hidden");  
         document.getElementById("profile-page").classList.remove("show");  
+        document.getElementById("gifts-page").classList.remove("show");  
     }  
 
     /* =========================================================
@@ -3825,7 +4602,7 @@
         const list = document.getElementById("top-list");  
         if(!list) return;  
         if(!livePlayers.length){  
-            list.innerHTML = `<div class="empty-players">لا توجد بيانات للمتصدرين حالياً</div>`;  
+            list.innerHTML = `<div class="empty-players">${getTranslation('topEmpty')}</div>`;  
             return;  
         }  
         list.innerHTML = "";  
@@ -3920,62 +4697,34 @@
     ========================================================= */  
     function setLanguage(lang){  
         currentLanguage = lang;  
-        // Update button states  
         document.querySelectorAll(".language-btn").forEach(function(btn){  
             btn.classList.toggle("active", btn.dataset.lang === lang);  
         });  
-        // Apply translations to UI elements  
-        const t = translations[lang] || translations.ar;  
-        // Game Hub  
-        document.querySelector(".game-hub-title").textContent = t.gameHub;  
-        document.querySelectorAll(".game-card-hub")[0].querySelector("h3").textContent = t.rocket;  
-        document.querySelectorAll(".game-card-hub")[0].querySelector("p").textContent = t.rocketDesc;  
-        document.querySelectorAll(".game-card-hub-badge")[0].textContent = t.live;  
-        document.querySelectorAll(".game-card-hub")[1].querySelector("h3").textContent = t.comingSoon;  
-        document.querySelectorAll(".game-card-hub-badge")[1].textContent = t.soon;  
-        // Back button  
-        const backBtn = document.querySelector(".back-button");  
-        if(backBtn) backBtn.textContent = t.back;  
-        // Profile page  
-        document.querySelector(".profile-page-sub").textContent = "Telegram Player";  
-        document.querySelector(".profile-balance-label").textContent = t.balance;  
-        document.querySelector(".profile-deposit-btn").textContent = t.deposit;  
-        document.querySelector(".vip-title span:first-child").textContent = t.vipLevels;  
-        document.querySelectorAll(".profile-stat span")[0].textContent = t.rounds;  
-        document.querySelectorAll(".profile-stat span")[1].textContent = t.wins;  
-        document.querySelectorAll(".profile-stat span")[2].textContent = t.wallet;  
-        document.querySelectorAll(".profile-actions button")[0].textContent = t.connectWallet;  
-        document.querySelectorAll(".profile-actions button")[1].textContent = t.depositTon;  
-        // Nav  
-        document.querySelectorAll(".nav-button span:last-child")[0].textContent = t.home;  
-        document.querySelectorAll(".nav-button span:last-child")[1].textContent = t.top;  
-        document.querySelectorAll(".nav-button span:last-child")[2].textContent = t.profile;  
-        document.querySelectorAll(".nav-button span:last-child")[3].textContent = t.gifts;  
-        // Language section  
-        document.querySelector(".vip-title span:last-child").textContent = t.language;  
-        // Update VIP section  
+        applyLanguage();  
+        renderGiftsPage();  
+        updateGiftSelectionInModal();  
+        updateVipUI();  
         updateProfilePage();  
+        updateMainBetButton();  
+        updateModalBetButton();  
     }  
 
     /* =========================================================
        PROFILE PAGE UPDATE (NEW)
     ========================================================= */  
     function updateProfilePage(){  
-        // Balance  
         const balanceEl = document.getElementById("profile-page-balance");  
         if(balanceEl){  
             balanceEl.textContent = Number(tonBalance).toFixed(2);  
         }  
-        // Wallet status  
         const walletEl = document.getElementById("profile-page-wallet");  
         if(walletEl){  
             if(tonWalletConnected && tonWalletAddress){  
                 walletEl.textContent = tonWalletAddress.slice(0, 8) + "..." + tonWalletAddress.slice(-6);  
             }else{  
-                walletEl.textContent = translations[currentLanguage]?.notConnected || "غير متصلة";  
+                walletEl.textContent = getTranslation('notConnected');  
             }  
         }  
-        // VIP  
         updateVipUI();  
     }  
 
@@ -3994,31 +4743,26 @@
         const currentLevel = VIP_LEVELS[currentLevelIndex];  
         const nextLevel = VIP_LEVELS[Math.min(currentLevelIndex + 1, VIP_LEVELS.length - 1)];  
 
-        // Badge  
         const badge = document.getElementById("profile-page-vip-badge");  
         if(badge){  
             badge.textContent = `${currentLevel.icon} ${currentLevel.name}`;  
         }  
 
-        // Current level name  
         const nameEl = document.getElementById("vip-current-name");  
         if(nameEl){  
             nameEl.textContent = `${currentLevel.icon} ${currentLevel.name}`;  
         }  
 
-        // Progress  
         const progressEl = document.getElementById("vip-current-progress");  
         const progressFill = document.getElementById("vip-progress-fill");  
         const progressText = document.getElementById("vip-progress-text");  
         const turnoverLabel = document.getElementById("vip-turnover-label");  
-        const t = translations[currentLanguage] || translations.ar;  
 
         if(turnoverLabel){  
-            turnoverLabel.textContent = `${t.turnover}: ${userTurnover.toLocaleString()} TON`;  
+            turnoverLabel.textContent = `${getTranslation('turnover')}: ${userTurnover.toLocaleString()} TON`;  
         }  
 
         if(currentLevelIndex >= VIP_LEVELS.length - 1){  
-            // Max level  
             if(progressEl){  
                 progressEl.textContent = `${userTurnover.toLocaleString()} TON (MAX)`;  
             }  
@@ -4026,7 +4770,7 @@
                 progressFill.style.width = "100%";  
             }  
             if(progressText){  
-                progressText.textContent = `🏆 ${t.next}: MAX LEVEL`;  
+                progressText.textContent = `🏆 ${getTranslation('next')}: MAX LEVEL`;  
             }  
         }else{  
             const nextReq = nextLevel.requirement;  
@@ -4039,11 +4783,10 @@
                 progressFill.style.width = `${Math.max(0, progress)}%`;  
             }  
             if(progressText){  
-                progressText.textContent = `${t.next}: ${nextLevel.icon} ${nextLevel.name} at ${nextReq.toLocaleString()} TON`;  
+                progressText.textContent = `${getTranslation('next')}: ${nextLevel.icon} ${nextLevel.name} ${getTranslation('at')} ${nextReq.toLocaleString()} TON`;  
             }  
         }  
 
-        // List all levels  
         const listEl = document.getElementById("vip-list");  
         if(listEl){  
             listEl.innerHTML = "";  
@@ -4065,14 +4808,12 @@
             });  
         }  
 
-        // Update rounds/wins from live players (approximate)  
         const roundsEl = document.getElementById("profile-page-rounds");  
         if(roundsEl){  
             roundsEl.textContent = globalHistory.length || "0";  
         }  
         const winsEl = document.getElementById("profile-page-wins");  
         if(winsEl){  
-            // Count winning players from live players  
             let wins = livePlayers.filter(p => p.status === "CASHED_OUT" && p.telegramId === telegramId).length;  
             winsEl.textContent = wins || "0";  
         }  
@@ -4093,10 +4834,12 @@
         updateModalBetButton();  
         updateMainBetButton();  
         updateProfilePage();  
+        renderGiftsPage();  
         // Start with Game Hub visible, Rocket hidden  
         document.getElementById("game-hub").classList.remove("hidden");  
         document.getElementById("rocket-game").classList.add("hidden");  
         document.getElementById("profile-page").classList.remove("show");  
+        document.getElementById("gifts-page").classList.remove("show");  
         connectToServer();  
     });  
 
@@ -4113,4 +4856,4 @@
     });  
 </script>  
 </body>  
-  </html>
+    </html>
