@@ -2062,7 +2062,8 @@
             .modal-place-button,  
             .auto-switch-modal,  
             .auto-switch-modal span,  
-            .snowflake{  
+            .snowflake,  
+            .rocket{  
                 transition:none !important;  
                 animation:none !important;  
             }  
@@ -2460,20 +2461,57 @@
         createSnowfall();
 
         /* =========================================================
-           ROCKET VARIANTS (Changes each round)
+           TELEGRAM ROCKETS (37 rockets from your images)
         ========================================================= */
-        const ROCKET_VARIANTS = [
-            { emoji: '🚀', name: 'Ice Rocket', class: 'rocket-variant-0' },
-            { emoji: '❄️', name: 'Snow Rocket', class: 'rocket-variant-1' },
-            { emoji: '🧊', name: 'Crystal Rocket', class: 'rocket-variant-2' },
-            { emoji: '🌟', name: 'Star Rocket', class: 'rocket-variant-3' },
-            { emoji: '✨', name: 'Frost Rocket', class: 'rocket-variant-4' }
+        const TELEGRAM_ROCKETS = [
+            // 3% rarity
+            { id: 'fireworks', emoji: '🎆', color: '#ff6b6b', glow: '255,107,107' },
+            { id: 'green_jelly', emoji: '🟢', color: '#2ecc71', glow: '46,204,113' },
+            { id: 'hornet', emoji: '🐝', color: '#f1c40f', glow: '241,196,15' },
+            { id: 'lollipop', emoji: '🍭', color: '#fd79a8', glow: '253,121,168' },
+            { id: 'neon_fuel', emoji: '🧪', color: '#00d2d3', glow: '0,210,211' },
+            { id: 'popsicle', emoji: '🍦', color: '#74b9ff', glow: '116,185,255' },
+            { id: 'ruby_sparkle', emoji: '💎', color: '#e84393', glow: '232,67,147' },
+            { id: 'sky_ghost', emoji: '👻', color: '#a29bfe', glow: '162,155,254' },
+            { id: 'unicorn', emoji: '🦄', color: '#fd79a8', glow: '253,121,168' },
+            { id: 'vintage_toy', emoji: '🧸', color: '#fdcb6e', glow: '253,203,110' },
+            // 2.5% rarity
+            { id: 'cardboard', emoji: '📦', color: '#d35400', glow: '211,84,0' },
+            { id: 'checkered', emoji: '🏁', color: '#2d3436', glow: '45,52,54' },
+            { id: 'first_step', emoji: '👣', color: '#6c5ce7', glow: '108,92,231' },
+            { id: 'flower_power', emoji: '🌺', color: '#fd79a8', glow: '253,121,168' },
+            { id: 'jet_bike', emoji: '🏍️', color: '#0984e3', glow: '9,132,227' },
+            { id: 'lava_lamp', emoji: '🌋', color: '#e17055', glow: '225,112,85' },
+            { id: 'malfunction', emoji: '⚠️', color: '#d63031', glow: '214,48,49' },
+            { id: 'rocket_plush', emoji: '🧸', color: '#00b894', glow: '0,184,148' },
+            { id: 'silver_ride', emoji: '🚀', color: '#b2bec3', glow: '178,190,195' },
+            // 1% - Telegram
+            { id: 'telegram_rocket', emoji: '✈️', color: '#0088cc', glow: '0,136,204' },
+            // 1.5% rarity
+            { id: 'chrome', emoji: '🔧', color: '#dfe6e9', glow: '223,230,233' },
+            { id: 'knowledge', emoji: '📚', color: '#6c5ce7', glow: '108,92,231' },
+            { id: 'pepelatz', emoji: '🛸', color: '#00cec9', glow: '0,206,201' },
+            { id: 'planet_express', emoji: '🌍', color: '#0984e3', glow: '9,132,227' },
+            { id: 'police_box', emoji: '📞', color: '#2d3436', glow: '45,52,54' },
+            { id: 'submarine', emoji: '🛥️', color: '#00b894', glow: '0,184,148' },
+            // 2% rarity
+            { id: 'alien_pizza', emoji: '🍕', color: '#e17055', glow: '225,112,85' },
+            { id: 'baby_carrot', emoji: '🥕', color: '#e17055', glow: '225,112,85' },
+            { id: 'clever_bird', emoji: '🐦', color: '#00b894', glow: '0,184,148' },
+            { id: 'doomsday', emoji: '☢️', color: '#d63031', glow: '214,48,49' },
+            { id: 'fishing_cat', emoji: '🐱', color: '#fdcb6e', glow: '253,203,110' },
+            { id: 'laika', emoji: '🐕', color: '#636e72', glow: '99,110,114' },
+            { id: 'little_journey', emoji: '🧳', color: '#6c5ce7', glow: '108,92,231' },
+            { id: 'pencil', emoji: '✏️', color: '#fdcb6e', glow: '253,203,110' },
+            { id: 'squirrel', emoji: '🐿️', color: '#e17055', glow: '225,112,85' },
+            { id: 'worm_gun', emoji: '🐛', color: '#00b894', glow: '0,184,148' },
+            { id: 'banana', emoji: '🍌', color: '#f1c40f', glow: '241,196,15' }
         ];
-        let currentRocketVariant = 0;
+        let currentRocketIndex = 0;
 
-        function getNextRocketVariant(){
-            currentRocketVariant = (currentRocketVariant + 1) % ROCKET_VARIANTS.length;
-            return ROCKET_VARIANTS[currentRocketVariant];
+        function getNextRocket() {
+            currentRocketIndex = (currentRocketIndex + 1) % TELEGRAM_ROCKETS.length;
+            return TELEGRAM_ROCKETS[currentRocketIndex];
         }
 
         /* =========================================================
@@ -3025,7 +3063,6 @@
             const profileSub = document.getElementById("profile-page-sub");  
             if(profileSub){ profileSub.textContent = getTranslation('telegramPlayer'); }  
             updateProfilePage();  
-            // ✅ Apply language after DOM is ready
             setTimeout(applyLanguage, 100);  
         }  
 
@@ -3051,7 +3088,6 @@
            APPLY LANGUAGE (FIXED - ALL texts now dynamic)
         ========================================================= */  
         function applyLanguage(){  
-            // ✅ Check if DOM is ready
             if (!document.getElementById('game-hub-title')) {  
                 console.warn('⚠️ DOM not ready yet, retrying applyLanguage...');  
                 setTimeout(applyLanguage, 100);  
@@ -3060,7 +3096,6 @@
             
             const t = translations[currentLanguage] || translations.ar;  
             
-            // Game Hub  
             const gameHubTitle = safeGetElement('game-hub-title');  
             if (gameHubTitle) gameHubTitle.innerHTML = '❄️ <span class="ice">' + t.gameHub + '</span>';  
             
@@ -3082,11 +3117,9 @@
             const backBtn = safeGetElement('back-to-hub-btn');  
             if (backBtn) backBtn.textContent = t.back;  
             
-            // Players  
             const playersTitle = safeGetElement('players-title-text');  
             if (playersTitle) playersTitle.textContent = t.players;  
             
-            // Profile  
             const balanceLabel = safeGetElement('profile-balance-label');  
             if (balanceLabel) balanceLabel.textContent = t.balance;  
             
@@ -3117,7 +3150,6 @@
             const profileSub = safeGetElement('profile-page-sub');  
             if (profileSub) profileSub.textContent = t.telegramPlayer;  
             
-            // Nav  
             const navHome = safeGetElement('nav-home-text');  
             if (navHome) navHome.textContent = t.home;  
             
@@ -3133,7 +3165,6 @@
             const navEarn = safeGetElement('nav-earn-text');  
             if (navEarn) navEarn.textContent = t.earn;  
             
-            // Bet Modal  
             const betTitle = safeGetElement('bet-modal-title');  
             if (betTitle) betTitle.textContent = t.placeBet;  
             
@@ -3152,7 +3183,6 @@
             const autoCashoutLabel = safeGetElement('auto-cashout-label');  
             if (autoCashoutLabel) autoCashoutLabel.textContent = t.autoCashout;  
             
-            // Deposit  
             const depositTitle = safeGetElement('deposit-modal-title');  
             if (depositTitle) depositTitle.textContent = t.depositTitle;  
             
@@ -3165,21 +3195,18 @@
             const depositSendBtn = safeGetElement('deposit-send-button');  
             if (depositSendBtn) depositSendBtn.textContent = t.depositButton;  
             
-            // Top  
             const topTitle = safeGetElement('top-modal-title');  
             if (topTitle) topTitle.textContent = t.topTitle;  
             
             const topEmpty = safeGetElement('top-empty-text');  
             if (topEmpty) topEmpty.textContent = t.topEmpty;  
             
-            // Gifts Modal  
             const giftsModalTitle = safeGetElement('gifts-modal-title');  
             if (giftsModalTitle) giftsModalTitle.textContent = t.giftsModalTitle;  
             
             const giftsModalContent = safeGetElement('gifts-modal-content');  
             if (giftsModalContent) giftsModalContent.textContent = t.giftsModalContent;  
             
-            // Gifts Page  
             const giftsPageTitle = safeGetElement('gifts-page-title');  
             if (giftsPageTitle) giftsPageTitle.textContent = t.giftsTitle;  
             
@@ -3192,18 +3219,15 @@
             const emptyGiftsDesc = safeGetElement('empty-gifts-desc');  
             if (emptyGiftsDesc) emptyGiftsDesc.textContent = t.noGiftsDesc;  
             
-            // Update main bet button  
             updateMainBetButton();  
             updateModalBetButton();  
-            
-            // Update VIP  
             updateVipUI();  
             renderGiftsPage();  
             updateGiftSelectionInModal();  
         }  
 
         /* =========================================================
-           SERVER SSE (ORIGINAL - KEEP EXACTLY + AUTO START ROUND FIX)
+           SERVER SSE (ORIGINAL - KEEP EXACTLY)
         ========================================================= */  
         function connectToServer(){  
             if(eventSource){  
@@ -3216,7 +3240,6 @@
             });  
             const url = `${BACKEND_URL}/api/game-stream?${params.toString()}`;  
             
-            // ✅ Log connection attempt
             console.log("🔗 Connecting to SSE:", url);
             
             try{  
@@ -3250,23 +3273,20 @@
                 if(eventSource){  
                     try{ eventSource.close(); }catch{}  
                 }  
-                // ✅ Reconnect after 3 seconds  
                 setTimeout(connectToServer, 3000);  
             };  
         }  
 
         /* =========================================================
-           SERVER MESSAGE (ORIGINAL - KEEP EXACTLY + AUTO START ROUND FIX)
+           SERVER MESSAGE (ORIGINAL - KEEP EXACTLY)
         ========================================================= */  
         function handleServerMessage(data){  
             if(!data) return;  
             
-            // ✅ Handle CRASH - auto start new round
+            // Auto start new round after crash
             if(data.phase === "CRASH" && data.roundId && serverConnected){  
-                // After crash, request new round automatically  
                 setTimeout(function(){  
                     if(!hasBet && !actionInProgress){  
-                        // Try to start new round by sending a dummy request  
                         fetch(`${BACKEND_URL}/api/game-action`, {  
                             method: "POST",  
                             headers: { "Content-Type": "application/json" },  
@@ -3285,12 +3305,28 @@
                     if(newRoundId !== currentRoundId){  
                         currentRoundId = newRoundId;  
                         playedThisRound = false;  
-                        // Change rocket variant each round  
-                        const variant = getNextRocketVariant();  
-                        const rocket = document.getElementById("rocket");  
-                        if(rocket){  
-                            rocket.textContent = variant.emoji;  
-                            rocket.className = "rocket " + variant.class;  
+                        // ✅ Change rocket each round  
+                        const rocket = getNextRocket();  
+                        const rocketEl = document.getElementById("rocket");  
+                        if(rocketEl){  
+                            rocketEl.textContent = rocket.emoji;  
+                            rocketEl.style.filter = `drop-shadow(0 10px 30px rgba(${rocket.glow},0.4)) drop-shadow(0 0 60px rgba(${rocket.glow},0.2))`;  
+                            // Update flame color  
+                            const flameEl = document.getElementById("flame");  
+                            if(flameEl){  
+                                flameEl.style.background = `linear-gradient(180deg, rgba(${rocket.glow},0.8), rgba(${rocket.glow},0.3))`;  
+                                flameEl.style.boxShadow = `0 0 40px rgba(${rocket.glow},0.3)`;  
+                            }  
+                            // Update trail color  
+                            const trailEl = document.getElementById("rocket-trail");  
+                            if(trailEl){  
+                                trailEl.style.background = `linear-gradient(90deg, rgba(${rocket.glow},0), rgba(${rocket.glow},0.15), rgba(${rocket.glow},0.6), rgba(${rocket.glow},0.8))`;  
+                            }  
+                            // Update flight line  
+                            const lineEl = document.getElementById("flight-line");  
+                            if(lineEl){  
+                                lineEl.style.background = `linear-gradient(90deg, rgba(${rocket.glow},0), rgba(${rocket.glow},0.6), rgba(${rocket.glow},0.9), rgba(${rocket.glow},0.6))`;  
+                            }  
                         }  
                     }  
                 }  
@@ -4568,7 +4604,7 @@
         }  
 
         /* =========================================================
-           RENDER GIFTS PAGE (FIXED - uses translations)
+           RENDER GIFTS PAGE
         ========================================================= */  
         function renderGiftsPage(){  
             const collection = document.getElementById("gifts-collection");  
@@ -4581,7 +4617,6 @@
             if(!userGifts || userGifts.length === 0){  
                 collection.style.display = "none";  
                 empty.style.display = "block";  
-                // Update empty state texts from translations  
                 const emptyTitle = safeGetElement('empty-gifts-title');  
                 if (emptyTitle) emptyTitle.textContent = t.noGiftsTitle;  
                 const emptyDesc = safeGetElement('empty-gifts-desc');  
