@@ -2248,13 +2248,13 @@
         const BACKEND_URL = "https://my-rocket-production.up.railway.app";
 
         /* =========================================================
-           GAME STATE
+           GAME STATE (تم تعديل الأنيميشن هنا فقط!)
         ========================================================= */
         let gameInterval = null;
         let serverConnected = false;
         let currentRoundId = 0;
         let currentMultiplier = 1.00;
-        let displayMultiplier = 1.00; // للأنيميشن السلس
+        let displayMultiplier = 1.00; // الرقم الذي يظهر فعلياً على الشاشة (يتحرك بسلاسة)
         let gamePhase = "COUNTDOWN";
         let countdownSeconds = 5;
         let globalHistory = [];
@@ -2467,16 +2467,15 @@
         }
 
         /* =========================================================
-           SERVER CONNECTION (تم إصلاحه! - لا مزيد من أخطاء SSE)
+           SERVER CONNECTION
         ========================================================= */
         function connectToServer() {
             if (gameInterval) clearInterval(gameInterval);
             
-            // جلب الحالة من السيرفر كل ثانية (أكثر استقراراً من SSE)
             fetchGameState();
             gameInterval = setInterval(fetchGameState, 1000);
             
-            // بدء الأنيميشن السلس (لا يقفز الرقم أبداً)
+            // بدء حلقة الأنيميشن المستمرة للرقم
             requestAnimationFrame(animateGameLoop);
         }
 
@@ -2492,7 +2491,6 @@
                     
                     currentMultiplier = state.multiplier;
                     
-                    // عندما نكون في مرحلة "العد التنازلي"
                     if (state.phase === "COUNTDOWN") {
                         if (gamePhase !== "COUNTDOWN") {
                             countdownStartTime = Date.now();
@@ -2504,7 +2502,6 @@
                         }
                     }
                     
-                    // عندما نكون في مرحلة "الطيران"
                     if (state.phase === "FLIGHT") {
                         if (gamePhase !== "FLIGHT") {
                             displayMultiplier = 1.00;
@@ -2516,7 +2513,6 @@
                         document.getElementById("rocket").classList.remove("crashed");
                     }
 
-                    // عندما تنفجر
                     if (state.phase === "CRASH") {
                         gamePhase = "CRASH";
                         document.getElementById("multiplier").classList.remove("flying");
@@ -2538,14 +2534,17 @@
         }
 
         /* =========================================================
-           SMOOTH ANIMATION LOOP (الحركة المستمرة - لا يتوقف أبداً)
+           SMOOTH ANIMATION LOOP (التعديل السحري هنا!)
+           هذه الدالة تجعل الرقم يصعد بشكل ناعم ومستمر نحو القيمة الجديدة
         ========================================================= */
         function animateGameLoop() {
             if (gamePhase === "FLIGHT") {
-                // نقرب الرقم المعروض من الرقم الحقيقي بسلاسة
+                // إذا كان الرقم المعروض أصغر من الهدف القادم من السيرفر
                 if (displayMultiplier < currentMultiplier) {
-                    displayMultiplier += (currentMultiplier - displayMultiplier) * 0.08;
-                    displayMultiplier += 0.001; // نمو خفيف حتى لا يتوقف
+                    // نقترب من الهدف بسلاسة (0.05 = نعومة)
+                    // ونضيف 0.0002 لضمان أنه لا يتوقف أبداً حتى لو تأخر السيرفر
+                    displayMultiplier += (currentMultiplier - displayMultiplier) * 0.05;
+                    displayMultiplier += 0.0002;
 
                     const multEl = document.getElementById("multiplier");
                     if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
