@@ -2181,16 +2181,51 @@
         let currentVipLevel = 0;
 
         /* =========================================================
-           TELEGRAM GIFTS - UPDATED WITH REAL DATA
+           TELEGRAM GIFTS - UPDATED WITH ALL GIFTS FROM IMAGES
         ========================================================= */
         const TELEGRAM_GIFTS = [
-            // Epic Gifts (من الصور)
-            { id: 'nail_bracelet', name: 'Nail Bracelet', emoji: '📿', value: 117.53, rarity: 'epic', purchasers: 1234 },
-            { id: 'bonded_ring', name: 'Bonded Ring', emoji: '💍', value: 41.66, rarity: 'rare', purchasers: 5678 },
-            { id: 'signet_ring', name: 'Signet Ring', emoji: '🔮', value: 33.44, rarity: 'rare', purchasers: 3456 },
-            { id: 'diamond_ring', name: 'Diamond Ring', emoji: '💎', value: 30.32, rarity: 'epic', purchasers: 2345 },
-            { id: 'backpack', name: 'Backpack', emoji: '🎒', value: 22.47, rarity: 'common', purchasers: 8901 },
-            // Existing Gifts
+            // ===== NEW GIFTS FROM IMAGES (Epic Gifts) =====
+            { 
+                id: 'nail_bracelet', 
+                name: 'Nail Bracelet', 
+                emoji: '📿', 
+                value: 117.53, 
+                rarity: 'epic', 
+                purchasers: 1234 
+            },
+            { 
+                id: 'bonded_ring', 
+                name: 'Bonded Ring', 
+                emoji: '💍', 
+                value: 41.66, 
+                rarity: 'rare', 
+                purchasers: 5678 
+            },
+            { 
+                id: 'signet_ring', 
+                name: 'Signet Ring', 
+                emoji: '🔮', 
+                value: 33.44, 
+                rarity: 'rare', 
+                purchasers: 3456 
+            },
+            { 
+                id: 'diamond_ring', 
+                name: 'Diamond Ring', 
+                emoji: '💎', 
+                value: 30.32, 
+                rarity: 'epic', 
+                purchasers: 2345 
+            },
+            { 
+                id: 'backpack', 
+                name: 'Backpack', 
+                emoji: '🎒', 
+                value: 22.47, 
+                rarity: 'common', 
+                purchasers: 8901 
+            },
+            // ===== EXISTING GIFTS =====
             { id: 'love_you', name: 'LOVE YOU', emoji: '❤️', value: 1.11, rarity: 'rare', purchasers: 664 },
             { id: 'b_day', name: 'B-DAY', emoji: '🎂', value: 2.70, rarity: 'rare', purchasers: 524 },
             { id: 'space', name: 'SPACE', emoji: '🚀', value: 0.91, rarity: 'common', purchasers: 963 },
@@ -2210,6 +2245,19 @@
         ];
 
         let userGifts = [];
+
+        // ===== ADD TEST GIFTS FOR DEMONSTRATION =====
+        function addTestGifts() {
+            const testGifts = ['nail_bracelet', 'bonded_ring', 'signet_ring', 'diamond_ring', 'backpack', 'love_you', 'space', 'punk42'];
+            testGifts.forEach(giftId => {
+                if (!userGifts.includes(giftId)) {
+                    userGifts.push(giftId);
+                }
+            });
+            renderGiftsPage();
+            updateGiftSelectionInModal();
+            console.log('✅ Test gifts added:', userGifts);
+        }
 
         /* =========================================================
            LANGUAGE SYSTEM
@@ -4270,7 +4318,6 @@
                 const card = document.createElement("div");
                 card.className = "gift-card";
 
-                // Add popular badge
                 if (gift.purchasers && gift.purchasers > 10000) {
                     card.classList.add("popular");
                 }
@@ -4606,6 +4653,9 @@
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
             connectToServer();
+
+            // ===== ADD TEST GIFTS FOR DEMONSTRATION =====
+            setTimeout(addTestGifts, 1500);
         });
 
         /* =========================================================
