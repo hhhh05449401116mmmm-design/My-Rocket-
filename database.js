@@ -165,6 +165,7 @@ function initDatabase() {
                     wallet_address TEXT NOT NULL,
                     amount REAL NOT NULL,
                     transaction_hash TEXT,
+                    transaction_boc TEXT,
                     payload TEXT,
                     status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'DETECTED', 'CONFIRMED', 'CREDITED', 'FAILED')),
                     failure_reason TEXT,
@@ -291,6 +292,15 @@ function initDatabase() {
                         console.error(`Failed to add rounds.${name}:`, error.message);
                     }
                 });
+            });
+            db.run('ALTER TABLE deposits ADD COLUMN transaction_boc TEXT', error => {
+                if (error && !error.message.includes('duplicate column name')) {
+                    console.error('Failed to add deposits.transaction_boc:', error.message);
+                }
+            });
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_deposits_transaction_hash
+                ON deposits(transaction_hash) WHERE transaction_hash IS NOT NULL`, error => {
+                if (error) console.error('Failed to index deposit transaction hashes:', error.message);
             });
 
             db.run('SELECT 1', error => {
@@ -816,24 +826,80 @@ async function createDeposit(userId, walletAddress, amount, payload) {
     return await get('SELECT * FROM deposits WHERE id = ?', [result.lastID]);
 }
 
+async function saveDepositBoc(depositId, userId, transactionBoc) {
+    if (typeof transactionBoc !== 'string' || transactionBoc.length === 0 || transactionBoc.length > 200000) {
+        throw new Error('Invalid transaction BOC');
+    }
+    const result = await run(`
+        UPDATE deposits
+        SET transaction_boc = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ? AND status = 'PENDING'
+    `, [transactionBoc, depositId, userId]);
+    if (result.changes !== 1) throw new Error('Deposit is not pending');
+    return await get('SELECT * FROM deposits WHERE id = ? AND user_id = ?', [depositId, userId]);
+}
+
+async function creditVerifiedDeposit(depositId, userId, transactionHash, transactionBoc = null) {
+    return await transaction(async () => {
+        const deposit = await get(
+            'SELECT * FROM deposits WHERE id = ? AND user_id = ?',
+            [depositId, userId]
+        );
+        if (!deposit) throw new Error('Deposit not found');
+        if (deposit.status !== 'PENDING') {
+            throw new Error('Deposit is not pending');
+        }
+
+        const used = await get(
+            'SELECT id FROM deposits WHERE transaction_hash = ? AND id != ?',
+            [transactionHash, depositId]
+        );
+        if (used) throw new Error('Transaction already used');
+
+        const update = await run(`
+            UPDATE deposits
+            SET status = 'CREDITED', transaction_hash = ?, transaction_boc = COALESCE(?, transaction_boc), updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'PENDING'
+        `, [transactionHash, transactionBoc, depositId, userId]);
+        if (update.changes !== 1) {
+            return await get('SELECT * FROM deposits WHERE id = ? AND user_id = ?', [depositId, userId]);
+        }
+
+        await run(
+            'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [deposit.amount, userId]
+        );
+        return await get('SELECT * FROM deposits WHERE id = ? AND user_id = ?', [depositId, userId]);
+    });
+}
+
 async function updateDepositStatus(depositId, status, failureReason = null) {
     const validStatuses = ['PENDING', 'DETECTED', 'CONFIRMED', 'CREDITED', 'FAILED'];
     if (!validStatuses.includes(status)) throw new Error('Invalid status');
-    
-    await run(`
-        UPDATE deposits 
-        SET status = ?, failure_reason = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-    `, [status, failureReason, depositId]);
-    
-    const deposit = await get('SELECT * FROM deposits WHERE id = ?', [depositId]);
-    
-    // إذا تم الإيداع بنجاح، أضف الرصيد
-    if (status === 'CREDITED' && deposit) {
-        await updateUserBalance(deposit.user_id, deposit.amount, 'add');
-    }
-    
-    return deposit;
+
+    return await transaction(async () => {
+        const deposit = await get('SELECT * FROM deposits WHERE id = ?', [depositId]);
+        if (!deposit) return null;
+        if (status === 'CREDITED' && deposit.status !== 'PENDING') {
+            throw new Error('Only pending deposits can be credited');
+        }
+        if (deposit.status === 'CREDITED') return deposit;
+
+        const update = await run(`
+            UPDATE deposits
+            SET status = ?, failure_reason = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status != 'CREDITED' AND (? != 'CREDITED' OR status = 'PENDING')
+        `, [status, failureReason, depositId, status]);
+
+        if (status === 'CREDITED' && update.changes === 1) {
+            await run(
+                'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [deposit.amount, deposit.user_id]
+            );
+        }
+
+        return await get('SELECT * FROM deposits WHERE id = ?', [depositId]);
+    });
 }
 
 // ===== 5.7 إحصائيات المستخدم =====
@@ -944,6 +1010,8 @@ module.exports = {
     
     // الإيداعات
     createDeposit,
+    saveDepositBoc,
+    creditVerifiedDeposit,
     updateDepositStatus,
     
     // الإحصائيات

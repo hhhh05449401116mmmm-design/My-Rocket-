@@ -6,6 +6,9 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
 require('dotenv').config();
 const {
     DEFAULT_CLIENT_SEED,
@@ -37,6 +40,8 @@ const {
     cashoutTonBet,
     openLootbox,
     createDeposit,
+    saveDepositBoc,
+    creditVerifiedDeposit,
     updateDepositStatus,
     updateUserStats,
     createNotification,
@@ -64,6 +69,123 @@ app.use(express.static('.'));
 // =========================================================
 const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const TON_DEPOSIT_RECEIVER = process.env.TON_DEPOSIT_RECEIVER || '';
+const TONCENTER_API_URL = process.env.TONCENTER_API_URL || 'https://toncenter.com/api/v2';
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
+
+function requestJson(urlString) {
+    return new Promise((resolve, reject) => {
+        const url = new URL(urlString);
+        if (process.env.NODE_ENV === 'production' && url.protocol !== 'https:') {
+            reject(new Error('TONCENTER_API_URL must use HTTPS in production'));
+            return;
+        }
+        const client = url.protocol === 'http:' ? http : https;
+        const request = client.get(url, {
+            headers: {
+                Accept: 'application/json',
+                ...(TONCENTER_API_KEY ? { 'X-API-Key': TONCENTER_API_KEY } : {})
+            }
+        }, response => {
+            let body = '';
+            response.setEncoding('utf8');
+            response.on('data', chunk => { body += chunk; });
+            response.on('end', () => {
+                if (response.statusCode < 200 || response.statusCode >= 300) {
+                    reject(new Error(`TON indexer HTTP ${response.statusCode}`));
+                    return;
+                }
+                try { resolve(JSON.parse(body)); } catch (error) { reject(error); }
+            });
+        });
+        request.setTimeout(10000, () => request.destroy(new Error('TON indexer timeout')));
+        request.on('error', reject);
+    });
+}
+
+function canonicalTonAddress(address) {
+    if (typeof address !== 'string') return null;
+    const value = address.trim();
+    const rawMatch = value.match(/^(-?\d+):([a-fA-F0-9]{64})$/);
+    if (rawMatch) return `${Number(rawMatch[1])}:${rawMatch[2].toLowerCase()}`;
+    try {
+        const bytes = Buffer.from(value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4), 'base64');
+        if (bytes.length !== 36) return null;
+        return `${bytes.readInt8(1)}:${bytes.subarray(2, 34).toString('hex')}`;
+    } catch (error) {
+        return null;
+    }
+}
+
+function extractComment(value) {
+    if (!value) return '';
+    if (typeof value === 'string') {
+        if (value.includes('rocket-deposit:')) return value;
+        try {
+            const decoded = Buffer.from(value, 'base64').toString('utf8');
+            if (decoded.includes('rocket-deposit:')) return decoded;
+        } catch (error) {}
+        return '';
+    }
+    if (Array.isArray(value)) return value.map(extractComment).find(Boolean) || '';
+    if (typeof value === 'object') {
+        for (const key of ['text', 'comment', 'message', 'body', 'msg_data']) {
+            const comment = extractComment(value[key]);
+            if (comment) return comment;
+        }
+    }
+    return '';
+}
+
+async function findVerifiedDepositTransaction(deposit) {
+    if (!TON_DEPOSIT_RECEIVER) throw new Error('TON_DEPOSIT_RECEIVER is not configured');
+    const expectedRecipient = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
+    const expectedSender = canonicalTonAddress(deposit.wallet_address);
+    const expectedAmount = BigInt(Math.ceil(Number(deposit.amount) * 1000000000));
+    const expectedComment = `rocket-deposit:${deposit.id}`;
+    const createdAtSeconds = Math.floor(new Date(deposit.created_at).getTime() / 1000);
+    const pageSize = 100;
+    const maxPages = 20;
+    let toLt = null;
+    let toHash = null;
+
+    for (let page = 0; page < maxPages; page++) {
+        const apiUrl = new URL(`${TONCENTER_API_URL.replace(/\/$/, '')}/getTransactions`);
+        apiUrl.searchParams.set('address', TON_DEPOSIT_RECEIVER);
+        apiUrl.searchParams.set('limit', String(pageSize));
+        if (toLt && toHash) {
+            apiUrl.searchParams.set('lt', toLt);
+            apiUrl.searchParams.set('hash', toHash);
+        }
+        const result = await requestJson(apiUrl.toString());
+        const transactions = Array.isArray(result.result) ? result.result : [];
+        if (transactions.length === 0) break;
+
+        for (const transaction of transactions) {
+            const message = transaction.in_msg || {};
+            let value;
+            try { value = BigInt(String(message.value || '0')); } catch (error) { continue; }
+            const transactionHash = transaction.transaction_id?.hash || transaction.hash;
+            const transactionId = transactionHash && transaction.transaction_id?.lt
+                ? `${transaction.transaction_id.lt}:${transactionHash}`
+                : transactionHash;
+            const comment = extractComment(message);
+            if (!transactionId || !message.source || !message.destination) continue;
+            if (canonicalTonAddress(message.destination) !== expectedRecipient) continue;
+            if (canonicalTonAddress(message.source) !== expectedSender) continue;
+            if (value < expectedAmount || !comment.includes(expectedComment)) continue;
+            return { transactionHash: transactionId };
+        }
+
+        const oldest = transactions[transactions.length - 1];
+        const oldestUtime = Number(oldest.utime || oldest.now || 0);
+        if (createdAtSeconds && oldestUtime && oldestUtime < createdAtSeconds) break;
+        const oldestId = oldest.transaction_id || {};
+        if (!oldestId.lt || !oldestId.hash || transactions.length < pageSize) break;
+        toLt = String(oldestId.lt);
+        toHash = String(oldestId.hash);
+    }
+    return null;
+}
 
 function verifyTelegramData(initData) {
     try {
@@ -558,15 +680,16 @@ app.post('/api/lootbox/open', authenticate, async (req, res) => {
 app.post('/api/deposit/create', authenticate, async (req, res) => {
     try {
         const { walletAddress, amount, payload } = req.body;
+        const normalizedAmount = Number(amount);
         
-        if (!walletAddress || !amount || amount <= 0) {
+        if (!walletAddress || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0 || normalizedAmount > 100000) {
             return res.status(400).json({ ok: false, error: 'Invalid deposit data' });
         }
         if (!TON_DEPOSIT_RECEIVER) {
             return res.status(503).json({ ok: false, error: 'TON_DEPOSIT_RECEIVER is not configured' });
         }
 
-        const deposit = await createDeposit(req.user.id, walletAddress, amount, payload);
+        const deposit = await createDeposit(req.user.id, walletAddress, Number(normalizedAmount.toFixed(9)), payload);
         const amountNano = Math.round(Number(deposit.amount) * 1000000000).toString();
         const comment = `rocket-deposit:${deposit.id}`;
         res.json({ 
@@ -582,6 +705,17 @@ app.post('/api/deposit/create', authenticate, async (req, res) => {
                 createdAt: deposit.created_at
             }
         });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/deposit/submit', authenticate, async (req, res) => {
+    try {
+        const { depositId, boc } = req.body;
+        if (!depositId || !boc) return res.status(400).json({ ok: false, error: 'depositId and boc required' });
+        const deposit = await saveDepositBoc(depositId, req.user.id, boc);
+        res.json({ ok: true, depositId: deposit.id, status: deposit.status });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }
@@ -603,6 +737,32 @@ app.get('/api/deposit/status', authenticate, async (req, res) => {
         
         if (!deposit) {
             return res.status(404).json({ ok: false, error: 'Deposit not found' });
+        }
+
+        if (deposit.status === 'PENDING') {
+            try {
+                const verified = await findVerifiedDepositTransaction(deposit);
+                if (verified) {
+                    await creditVerifiedDeposit(deposit.id, req.user.id, verified.transactionHash);
+                }
+            } catch (verificationError) {
+                console.error('TON deposit verification error:', verificationError.message);
+            }
+            const refreshed = await get(
+                'SELECT * FROM deposits WHERE id = ? AND user_id = ?',
+                [depositId, req.user.id]
+            );
+            return res.json({
+                ok: true,
+                deposit: {
+                    id: refreshed.id,
+                    amount: refreshed.amount,
+                    status: refreshed.status,
+                    failureReason: refreshed.failure_reason,
+                    createdAt: refreshed.created_at,
+                    updatedAt: refreshed.updated_at
+                }
+            });
         }
         
         res.json({ 

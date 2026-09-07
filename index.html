@@ -3627,6 +3627,15 @@
                 let txResult;
                 try { txResult = await tonConnectUI.sendTransaction(transaction); } catch (walletError) { console.error("TON TRANSACTION ERROR:", walletError); throw new Error(t.depositFailed); }
                 console.log("TON TRANSACTION RESULT:", txResult);
+                if (txResult?.boc) {
+                    const submitResponse = await fetch(`${BACKEND_URL}/api/deposit/submit`, {
+                        method: "POST",
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ depositId: activeDepositId, boc: txResult.boc })
+                    });
+                    const submitData = await submitResponse.json().catch(() => ({}));
+                    if (!submitResponse.ok || !submitData.ok) throw new Error(submitData.error || t.depositFailed);
+                }
                 depositTransactionSent = true;
                 setDepositStatus(t.depositDetected, "info");
                 setDepositButtonState(true, t.depositButton);
@@ -3666,7 +3675,7 @@
                             setDepositStatus(t.depositCredited + ' ' + creditedAmount.toFixed(2) + ' TON', "success");
                             setDepositButtonState(false, t.depositButton);
                             showToast(t.depositCredited + ' ' + creditedAmount.toFixed(2) + ' TON');
-                            updateTonWalletUI();
+                            await fetchBalance();
                             await finishSuccess();
                             return;
                         }
