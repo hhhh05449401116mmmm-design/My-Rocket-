@@ -63,6 +63,7 @@ app.use(express.static('.'));
 // 1. المصادقة والتحقق من Telegram
 // =========================================================
 const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const TON_DEPOSIT_RECEIVER = process.env.TON_DEPOSIT_RECEIVER || '';
 
 function verifyTelegramData(initData) {
     try {
@@ -561,10 +562,18 @@ app.post('/api/deposit/create', authenticate, async (req, res) => {
         if (!walletAddress || !amount || amount <= 0) {
             return res.status(400).json({ ok: false, error: 'Invalid deposit data' });
         }
+        if (!TON_DEPOSIT_RECEIVER) {
+            return res.status(503).json({ ok: false, error: 'TON_DEPOSIT_RECEIVER is not configured' });
+        }
 
         const deposit = await createDeposit(req.user.id, walletAddress, amount, payload);
+        const amountNano = Math.round(Number(deposit.amount) * 1000000000).toString();
+        const comment = `rocket-deposit:${deposit.id}`;
         res.json({ 
             ok: true, 
+            receiver: TON_DEPOSIT_RECEIVER,
+            amountNano,
+            comment,
             deposit: {
                 id: deposit.id,
                 amount: deposit.amount,
