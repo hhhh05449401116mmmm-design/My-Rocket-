@@ -2251,10 +2251,16 @@
            GAME STATE (تم تعديل الأنيميشن هنا فقط!)
         ========================================================= */
         let gameInterval = null;
+        let gameStreamController = null;
         let serverConnected = false;
         let currentRoundId = 0;
         let currentMultiplier = 1.00;
         let displayMultiplier = 1.00; // الرقم الذي يظهر فعلياً على الشاشة (يتحرك بسلاسة)
+        const multiplierRate = 1 / 2.7;
+        let multiplierSampledAt = 0;
+        let previousMultiplierSample = 1.00;
+        let serverTimeOffset = 0;
+        let flightStartedAt = null;
         let gamePhase = "COUNTDOWN";
         let countdownSeconds = 5;
         let globalHistory = [];
@@ -2471,12 +2477,53 @@
         ========================================================= */
         function connectToServer() {
             if (gameInterval) clearInterval(gameInterval);
-            
-            fetchGameState();
-            gameInterval = setInterval(fetchGameState, 1000);
-            
-            // بدء حلقة الأنيميشن المستمرة للرقم
+            if (gameStreamController) gameStreamController.abort();
+            connectToGameStream();
             requestAnimationFrame(animateGameLoop);
+        }
+
+        async function connectToGameStream() {
+            const token = authToken || localStorage.getItem('authToken');
+            if (!token) {
+                setServerStatus(false);
+                return;
+            }
+            gameStreamController = new AbortController();
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/game-stream?token=${encodeURIComponent(token)}`, {
+                    headers: { 'Accept': 'text/event-stream' },
+                    signal: gameStreamController.signal,
+                    cache: 'no-store'
+                });
+                if (!response.ok || !response.body) throw new Error(`SSE connection failed: ${response.status}`);
+                setServerStatus(true);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) throw new Error('SSE stream closed');
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop() || '';
+                    events.forEach(eventText => {
+                        const dataLine = eventText.split('\n').find(line => line.startsWith('data: '));
+                        if (!dataLine) return;
+                        try { applyGameState(JSON.parse(dataLine.slice(6))); } catch (error) { console.error('Game stream event error:', error); }
+                    });
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                setServerStatus(false);
+                console.error('Game stream error:', error);
+                if (!gameInterval) gameInterval = setInterval(fetchGameState, 1000);
+            }
+        }
+
+        function setServerStatus(connected) {
+            serverConnected = connected;
+            const status = document.getElementById('status-message');
+            if (status) status.textContent = connected ? getTranslation('roundLive') : getTranslation('connecting');
         }
 
         async function fetchGameState() {
@@ -2485,52 +2532,59 @@
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
-                if (data.ok) {
-                    serverConnected = true;
-                    const state = data.state;
-                    
-                    currentMultiplier = state.multiplier;
-                    
-                    if (state.phase === "COUNTDOWN") {
-                        if (gamePhase !== "COUNTDOWN") {
-                            countdownStartTime = Date.now();
-                            countdownDuration = state.seconds * 1000;
-                            displayMultiplier = 1.00;
-                            document.getElementById("countdown-container").classList.add("show");
-                            document.getElementById("multiplier").classList.remove("flying");
-                            document.getElementById("multiplier").classList.remove("crashed");
-                        }
-                    }
-                    
-                    if (state.phase === "FLIGHT") {
-                        if (gamePhase !== "FLIGHT") {
-                            displayMultiplier = 1.00;
-                            document.getElementById("countdown-container").classList.remove("show");
-                            document.getElementById("multiplier").classList.remove("waiting");
-                            document.getElementById("multiplier").classList.add("flying");
-                        }
-                        document.getElementById("multiplier").classList.remove("crashed");
-                        document.getElementById("rocket").classList.remove("crashed");
-                    }
-
-                    if (state.phase === "CRASH") {
-                        gamePhase = "CRASH";
-                        document.getElementById("multiplier").classList.remove("flying");
-                        document.getElementById("multiplier").classList.add("crashed");
-                        document.getElementById("multiplier").textContent = currentMultiplier.toFixed(2) + "x";
-                        document.getElementById("rocket").classList.add("crashed");
-                        document.getElementById("flame").style.display = "none";
-                        document.getElementById("countdown-container").classList.remove("show");
-                    }
-
-                    gamePhase = state.phase;
-                    globalHistory = state.history || [];
-                    renderHistory();
-                    updateMainBetButton();
-                }
+                if (data.ok) applyGameState(data.state);
             } catch (error) {
+                setServerStatus(false);
                 console.error('Game state error:', error);
             }
+        }
+
+        function applyGameState(state) {
+            setServerStatus(true);
+            currentRoundId = state.roundId;
+            serverTimeOffset = Number(state.serverTime || Date.now()) - Date.now();
+            const previousPhase = gamePhase;
+            flightStartedAt = state.flightStartedAt || null;
+            const currentStateMultiplier = Number(state.multiplier) || 1;
+            const sampledAt = performance.now();
+            previousMultiplierSample = currentStateMultiplier;
+            multiplierSampledAt = sampledAt;
+            currentMultiplier = currentStateMultiplier;
+            if (state.phase === "COUNTDOWN") {
+                if (gamePhase !== "COUNTDOWN") {
+                    countdownStartTime = Date.now();
+                    countdownDuration = state.seconds * 1000;
+                    displayMultiplier = 1.00;
+                    multiplierSampledAt = 0;
+                    previousMultiplierSample = 1.00;
+                    document.getElementById("countdown-container").classList.add("show");
+                    document.getElementById("multiplier").classList.remove("flying");
+                    document.getElementById("multiplier").classList.remove("crashed");
+                }
+            }
+            if (state.phase === "FLIGHT") {
+                if (previousPhase !== "FLIGHT") {
+                    displayMultiplier = 1.00;
+                    document.getElementById("countdown-container").classList.remove("show");
+                    document.getElementById("multiplier").classList.remove("waiting");
+                    document.getElementById("multiplier").classList.add("flying");
+                }
+                document.getElementById("multiplier").classList.remove("crashed");
+                document.getElementById("rocket").classList.remove("crashed");
+            }
+            if (state.phase === "CRASH") {
+                gamePhase = "CRASH";
+                document.getElementById("multiplier").classList.remove("flying");
+                document.getElementById("multiplier").classList.add("crashed");
+                document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
+                document.getElementById("rocket").classList.add("crashed");
+                document.getElementById("flame").style.display = "none";
+                document.getElementById("countdown-container").classList.remove("show");
+            }
+            gamePhase = state.phase;
+            globalHistory = state.history || [];
+            renderHistory();
+            updateMainBetButton();
         }
 
         /* =========================================================
@@ -2539,19 +2593,18 @@
         ========================================================= */
         function animateGameLoop() {
             if (gamePhase === "FLIGHT") {
-                // إذا كان الرقم المعروض أصغر من الهدف القادم من السيرفر
-                if (displayMultiplier < currentMultiplier) {
-                    // نقترب من الهدف بسلاسة (0.05 = نعومة)
-                    // ونضيف 0.0002 لضمان أنه لا يتوقف أبداً حتى لو تأخر السيرفر
-                    displayMultiplier += (currentMultiplier - displayMultiplier) * 0.05;
-                    displayMultiplier += 0.0002;
+                const serverNow = Date.now() + serverTimeOffset;
+                const elapsedSeconds = flightStartedAt
+                    ? Math.max((serverNow - flightStartedAt) / 1000, 0)
+                    : 0;
+                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
+                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
 
-                    const multEl = document.getElementById("multiplier");
-                    if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
+                const multEl = document.getElementById("multiplier");
+                if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
 
-                    const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
-                    moveRocket(progress);
-                }
+                const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
+                moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
                 // حساب العداد الدائري
                 const now = Date.now();

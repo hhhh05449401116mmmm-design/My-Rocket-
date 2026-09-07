@@ -108,8 +108,23 @@ let currentGameState = {
     phase: 'COUNTDOWN', // COUNTDOWN, FLIGHT, CRASH
     multiplier: 1.00,
     seconds: 5,
+    flightStartedAt: null,
     history: []
 };
+
+const MULTIPLIER_INCREASE_PER_SECOND = 1 / 2.7;
+
+function getGameStateSnapshot() {
+    return {
+        roundId: currentGameState.roundId,
+        phase: currentGameState.phase,
+        multiplier: currentGameState.multiplier,
+        seconds: currentGameState.seconds,
+        flightStartedAt: currentGameState.flightStartedAt,
+        serverTime: Date.now(),
+        history: currentGameState.history
+    };
+}
 
 // جلب الحالة الحالية
 function getCurrentRoundId() {
@@ -136,7 +151,10 @@ function startGameLoop() {
     setInterval(() => {
         // محاكاة تقدم الجولة
         if (currentGameState.phase === 'FLIGHT') {
-            currentGameState.multiplier += 0.01 + Math.random() * 0.02;
+            const flightElapsedSeconds = currentGameState.flightStartedAt
+                ? (Date.now() - currentGameState.flightStartedAt) / 1000
+                : 0;
+            currentGameState.multiplier = 1 + flightElapsedSeconds * MULTIPLIER_INCREASE_PER_SECOND;
             currentGameState.multiplier = Math.round(currentGameState.multiplier * 100) / 100;
             
             // محاكاة التحطم العشوائي (احتمال 2%)
@@ -154,6 +172,7 @@ function startGameLoop() {
                     currentGameState.phase = 'COUNTDOWN';
                     currentGameState.multiplier = 1.00;
                     currentGameState.seconds = 5;
+                    currentGameState.flightStartedAt = null;
                     console.log(`🔄 Starting round ${currentGameState.roundId}`);
                 }, 3000);
             }
@@ -162,6 +181,7 @@ function startGameLoop() {
             if (currentGameState.seconds <= 0) {
                 currentGameState.phase = 'FLIGHT';
                 currentGameState.multiplier = 1.00;
+                currentGameState.flightStartedAt = Date.now();
                 console.log(`🚀 Round ${currentGameState.roundId} launched!`);
             }
         }
@@ -220,19 +240,43 @@ app.post('/api/auth', async (req, res) => {
 // ===== 5.2 جلب حالة اللعبة =====
 app.get('/api/game/state', authenticate, async (req, res) => {
     try {
-        res.json({
-            ok: true,
-            state: {
-                roundId: currentGameState.roundId,
-                phase: currentGameState.phase,
-                multiplier: currentGameState.multiplier,
-                seconds: currentGameState.seconds,
-                history: currentGameState.history
-            }
-        });
+        res.json({ ok: true, state: getGameStateSnapshot() });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }
+});
+
+// ===== 5.2.1 بث حالة اللعبة عبر SSE =====
+app.get('/api/game-stream', async (req, res) => {
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    if (!token) return res.status(401).end();
+
+    try {
+        const user = await get('SELECT id FROM users WHERE id = ?', [token]);
+        if (!user) return res.status(401).end();
+    } catch (error) {
+        return res.status(500).end();
+    }
+
+    res.set({
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    });
+    res.flushHeaders();
+
+    const sendState = () => {
+        res.write(`event: game-state\ndata: ${JSON.stringify(getGameStateSnapshot())}\n\n`);
+    };
+    sendState();
+    const streamTimer = setInterval(sendState, 250);
+    const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 15000);
+
+    req.on('close', () => {
+        clearInterval(streamTimer);
+        clearInterval(heartbeat);
+    });
 });
 
 // ===== 5.3 جلب هدايا المستخدم =====
