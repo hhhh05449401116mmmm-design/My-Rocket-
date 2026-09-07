@@ -3588,8 +3588,8 @@
 
         async function createDepositRequest(amount) {
             const response = await fetch(`${BACKEND_URL}/api/deposit/create`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ telegramId: telegramId, walletAddress: tonWalletAddress, amount: amount })
+                method: "POST", headers: getAuthHeaders(),
+                body: JSON.stringify({ walletAddress: tonWalletAddress, amount: amount })
             });
             const data = await response.json().catch(() => ({}));
             if (!response.ok || !data.ok) throw new Error(data.error || getTranslation('depositFailed'));
@@ -3652,8 +3652,8 @@
                     if (finished) return;
                     if (Date.now() - startedAt > timeout) { finished = true; if (depositStatusTimer) { clearInterval(depositStatusTimer); depositStatusTimer = null; } setDepositStatus(t.depositTimeout, "info"); setDepositButtonState(false, t.depositButton); resolve(); return; }
                     try {
-                        const url = `${BACKEND_URL}/api/deposit/status?telegramId=${encodeURIComponent(telegramId)}&depositId=${encodeURIComponent(depositId)}`;
-                        const response = await fetch(url, { method: "GET", cache: "no-store" });
+                        const url = `${BACKEND_URL}/api/deposit/status?depositId=${encodeURIComponent(depositId)}`;
+                        const response = await fetch(url, { method: "GET", cache: "no-store", headers: getAuthHeaders() });
                         const data = await response.json().catch(() => ({}));
                         if (!response.ok || !data.ok) throw new Error(data.error || t.depositFailed);
                         const deposit = data.deposit || {};
