@@ -8,9 +8,28 @@
     {
       "src": "*.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "tonconnect-manifest.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "icon-180.png",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/tonconnect-manifest.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "dest": "/tonconnect-manifest.json"
+    },
+    {
+      "src": "/icon-180.png",
+      "dest": "/icon-180.png"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/server.js"
