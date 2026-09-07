@@ -7,6 +7,11 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 require('dotenv').config();
+const {
+    DEFAULT_CLIENT_SEED,
+    createFairRound,
+    shouldAutoCashout
+} = require('./crashFair');
 
 // =========================================================
 // استيراد قاعدة البيانات
@@ -35,7 +40,13 @@ const {
     updateDepositStatus,
     updateUserStats,
     createNotification,
-    getNotifications
+    getNotifications,
+    createRoundRecord,
+    getRoundByNumber,
+    updateRoundState,
+    getActiveBetsForRound,
+    cashoutBet,
+    crashRound
 } = require('./database');
 
 const app = express();
@@ -104,15 +115,24 @@ async function authenticate(req, res, next) {
 // 3. دوال حالة اللعبة (Game State)
 // =========================================================
 let currentGameState = {
-    roundId: 1,
+    roundId: 0,
     phase: 'COUNTDOWN', // COUNTDOWN, FLIGHT, CRASH
     multiplier: 1.00,
     seconds: 5,
     flightStartedAt: null,
-    history: []
+    history: [],
+    serverSeedHash: null,
+    serverSeed: null,
+    clientSeed: DEFAULT_CLIENT_SEED,
+    nonce: 0,
+    crashAt: null
 };
 
 const MULTIPLIER_INCREASE_PER_SECOND = 1 / 2.7;
+let roundSettlementInProgress = false;
+let gameLoopBusy = false;
+let gameLoopTimer = null;
+let roundTransitionTimer = null;
 
 function getGameStateSnapshot() {
     return {
@@ -122,7 +142,12 @@ function getGameStateSnapshot() {
         seconds: currentGameState.seconds,
         flightStartedAt: currentGameState.flightStartedAt,
         serverTime: Date.now(),
-        history: currentGameState.history
+        history: currentGameState.history,
+        serverSeedHash: currentGameState.serverSeedHash,
+        clientSeed: currentGameState.clientSeed,
+        nonce: currentGameState.nonce,
+        serverSeed: currentGameState.phase === 'CRASH' ? currentGameState.serverSeed : null,
+        crashAt: currentGameState.phase === 'CRASH' ? currentGameState.crashAt : null
     };
 }
 
@@ -144,48 +169,121 @@ function updateGameState(newState) {
     currentGameState = { ...currentGameState, ...newState };
 }
 
+async function startRound(roundNumber) {
+    if (roundTransitionTimer) clearTimeout(roundTransitionTimer);
+    roundTransitionTimer = null;
+    const fairRound = createFairRound(roundNumber, DEFAULT_CLIENT_SEED);
+    await createRoundRecord(fairRound);
+    updateGameState({
+        roundId: roundNumber,
+        phase: 'COUNTDOWN',
+        multiplier: 1.00,
+        seconds: 5,
+        flightStartedAt: null,
+        serverSeedHash: fairRound.serverSeedHash,
+        serverSeed: fairRound.serverSeed,
+        clientSeed: fairRound.clientSeed,
+        nonce: fairRound.nonce,
+        crashAt: fairRound.crashAt
+    });
+    console.log(`🔐 Round ${roundNumber} committed: ${fairRound.serverSeedHash}`);
+}
+
+async function launchRound() {
+    if (currentGameState.phase !== 'COUNTDOWN') return;
+    await updateRoundState(currentGameState.roundId, 'FLIGHT', 1.00);
+    updateGameState({
+        phase: 'FLIGHT',
+        multiplier: 1.00,
+        flightStartedAt: Date.now()
+    });
+    console.log(`🚀 Round ${currentGameState.roundId} launched!`);
+    if (currentGameState.crashAt <= 1.00) await crashCurrentRound();
+}
+
+async function processAutoCashouts(multiplier) {
+    const bets = await getActiveBetsForRound(currentGameState.roundId);
+    for (const bet of bets) {
+        const target = Number(bet.target);
+        if (shouldAutoCashout(target, multiplier, currentGameState.crashAt)) {
+            try {
+                await cashoutBet(bet.bet_type, bet.id, bet.user_id, currentGameState.roundId, target);
+            } catch (error) {
+                if (!error.message.includes('already settled') && !error.message.includes('not found')) {
+                    console.error(`Auto cashout failed for ${bet.bet_type} ${bet.id}:`, error.message);
+                }
+            }
+        }
+    }
+}
+
+async function crashCurrentRound() {
+    if (currentGameState.phase !== 'FLIGHT' || roundSettlementInProgress) return;
+    roundSettlementInProgress = true;
+    const roundId = currentGameState.roundId;
+    const crashAt = currentGameState.crashAt;
+    try {
+        const result = await crashRound(roundId, crashAt);
+        if (!result.settled) return;
+        updateGameState({
+            phase: 'CRASH',
+            multiplier: crashAt,
+            flightStartedAt: null,
+            history: [crashAt, ...currentGameState.history].slice(0, 10)
+        });
+        console.log(`💥 Round ${roundId} crashed at ${crashAt}x`);
+        roundTransitionTimer = setTimeout(async () => {
+            try {
+                await startRound(roundId + 1);
+            } catch (error) {
+                console.error('Failed to start next round:', error);
+            }
+        }, 3000);
+    } finally {
+        roundSettlementInProgress = false;
+    }
+}
+
 // =========================================================
 // 4. حلقة اللعبة (Game Loop)
 // =========================================================
 function startGameLoop() {
-    setInterval(() => {
-        // محاكاة تقدم الجولة
-        if (currentGameState.phase === 'FLIGHT') {
-            const flightElapsedSeconds = currentGameState.flightStartedAt
-                ? (Date.now() - currentGameState.flightStartedAt) / 1000
-                : 0;
-            currentGameState.multiplier = 1 + flightElapsedSeconds * MULTIPLIER_INCREASE_PER_SECOND;
-            currentGameState.multiplier = Math.round(currentGameState.multiplier * 100) / 100;
-            
-            // محاكاة التحطم العشوائي (احتمال 2%)
-            if (Math.random() < 0.02 && currentGameState.multiplier > 1.5) {
-                currentGameState.phase = 'CRASH';
-                currentGameState.history.unshift(currentGameState.multiplier);
-                if (currentGameState.history.length > 10) {
-                    currentGameState.history.pop();
+    if (gameLoopTimer) return gameLoopTimer;
+    gameLoopTimer = setInterval(async () => {
+        if (gameLoopBusy) return;
+        gameLoopBusy = true;
+        try {
+            if (currentGameState.phase === 'FLIGHT') {
+                const flightElapsedSeconds = currentGameState.flightStartedAt
+                    ? (Date.now() - currentGameState.flightStartedAt) / 1000
+                    : 0;
+                const nextMultiplier = Math.round((1 + flightElapsedSeconds * MULTIPLIER_INCREASE_PER_SECOND) * 100) / 100;
+
+                if (nextMultiplier >= currentGameState.crashAt) {
+                    await processAutoCashouts(currentGameState.crashAt);
+                    await crashCurrentRound();
+                } else {
+                    currentGameState.multiplier = nextMultiplier;
+                    await processAutoCashouts(nextMultiplier);
                 }
-                console.log(`💥 Round ${currentGameState.roundId} crashed at ${currentGameState.multiplier}x`);
-                
-                // بدء جولة جديدة بعد 3 ثوانٍ
-                setTimeout(() => {
-                    currentGameState.roundId++;
-                    currentGameState.phase = 'COUNTDOWN';
-                    currentGameState.multiplier = 1.00;
-                    currentGameState.seconds = 5;
-                    currentGameState.flightStartedAt = null;
-                    console.log(`🔄 Starting round ${currentGameState.roundId}`);
-                }, 3000);
+            } else if (currentGameState.phase === 'COUNTDOWN') {
+                currentGameState.seconds--;
+                if (currentGameState.seconds <= 0) await launchRound();
             }
-        } else if (currentGameState.phase === 'COUNTDOWN') {
-            currentGameState.seconds--;
-            if (currentGameState.seconds <= 0) {
-                currentGameState.phase = 'FLIGHT';
-                currentGameState.multiplier = 1.00;
-                currentGameState.flightStartedAt = Date.now();
-                console.log(`🚀 Round ${currentGameState.roundId} launched!`);
-            }
+        } catch (error) {
+            console.error('Game loop error:', error);
+        } finally {
+            gameLoopBusy = false;
         }
     }, 1000);
+    return gameLoopTimer;
+}
+
+function stopGameLoop() {
+    if (gameLoopTimer) clearInterval(gameLoopTimer);
+    if (roundTransitionTimer) clearTimeout(roundTransitionTimer);
+    gameLoopTimer = null;
+    roundTransitionTimer = null;
 }
 
 // =========================================================
@@ -341,7 +439,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
         }
 
         const multiplier = currentGameState.multiplier;
-        const result = await cashoutGiftBet(betId, req.user.id, multiplier);
+        const result = await cashoutBet('GIFT', betId, req.user.id, currentGameState.roundId, multiplier);
         
         // إنشاء إشعار
         await createNotification(
@@ -404,7 +502,7 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
         }
 
         const multiplier = currentGameState.multiplier;
-        const result = await cashoutTonBet(betId, req.user.id, multiplier);
+        const result = await cashoutBet('TON', betId, req.user.id, currentGameState.roundId, multiplier);
         
         // إنشاء إشعار
         await createNotification(
@@ -557,46 +655,66 @@ app.get('/api/lootboxes', authenticate, async (req, res) => {
 // =========================================================
 // 6. بدء تشغيل السيرفر
 // =========================================================
-async function startServer() {
+async function startServer(port = PORT) {
     try {
         // تهيئة قاعدة البيانات
         await initDatabase();
         await seedDatabase();
         console.log('✅ Database initialized and seeded');
 
+        const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
+        const nextRoundNumber = Number(latestRound?.round_number || 0) + 1;
+        await startRound(nextRoundNumber);
+
         // بدء حلقة اللعبة
         startGameLoop();
         console.log('🎮 Game loop started');
 
         // بدء السيرفر
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`📊 Database: rocket.db`);
-            console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' ? '⚠️ NOT SET' : '✅ SET'}`);
+        return await new Promise((resolve, reject) => {
+            const server = app.listen(port, () => {
+                console.log(`🚀 Server running on http://localhost:${server.address().port}`);
+                console.log(`📊 Database: ${process.env.DATABASE_PATH || 'rocket.db'}`);
+                console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' ? '⚠️ NOT SET' : '✅ SET'}`);
+                resolve(server);
+            });
+            server.once('error', reject);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-startServer();
-
-// =========================================================
-// 7. التعامل مع إغلاق السيرفر
-// =========================================================
-process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down server...');
-    db.close(() => {
-        console.log('✅ Database closed');
-        process.exit(0);
+if (require.main === module) {
+    startServer().catch(error => {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
     });
-});
 
-process.on('SIGTERM', () => {
-    console.log('\n🛑 Shutting down server...');
-    db.close(() => {
-        console.log('✅ Database closed');
-        process.exit(0);
-    });
-});
+    // =========================================================
+    // 7. التعامل مع إغلاق السيرفر
+    // =========================================================
+    const shutdown = () => {
+        console.log('\n🛑 Shutting down server...');
+        stopGameLoop();
+        db.close(() => {
+            console.log('✅ Database closed');
+            process.exit(0);
+        });
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+}
+
+module.exports = {
+    app,
+    startServer,
+    stopGameLoop,
+    startRound,
+    launchRound,
+    processAutoCashouts,
+    crashCurrentRound,
+    getGameStateSnapshot,
+    updateGameState
+};

@@ -2279,6 +2279,7 @@
         let selectedGiftId = null;
         let selectedGiftForBet = null;
         let currentBetId = null;
+        let currentBetType = "TON";
 
         // عداد الجولة القادمة (دائرة)
         let countdownStartTime = 0;
@@ -2541,7 +2542,18 @@
 
         function applyGameState(state) {
             setServerStatus(true);
+            const previousRoundId = currentRoundId;
             currentRoundId = state.roundId;
+            if (previousRoundId && previousRoundId !== currentRoundId) {
+                hasBet = false;
+                currentBetId = null;
+                playedThisRound = false;
+                isQueuedForNextRound = false;
+            }
+            if (state.phase === "CRASH") {
+                hasBet = false;
+                currentBetId = null;
+            }
             serverTimeOffset = Number(state.serverTime || Date.now()) - Date.now();
             const previousPhase = gamePhase;
             flightStartedAt = state.flightStartedAt || null;
@@ -3039,10 +3051,10 @@
             actionInProgress = true;
             updateMainBetButton();
             try {
-                const response = await fetch(`${BACKEND_URL}/api/game-action`, {
+                const response = await fetch(`${BACKEND_URL}/api/bet/gift`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: "BET", betType: "GIFT", giftId: giftId, amount: amount, telegramId: telegramId, name: fullName || firstName || "اللاعب", avatar: userPhoto, roundId: roundIdToUse, autoCashout: autoCashout, autoTarget: autoTarget })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ giftId: giftId, autoCashoutTarget: autoCashout ? autoTarget : null })
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.giftBetFailed);
@@ -3053,6 +3065,8 @@
                     updateGiftSelectionInModal();
                 }
                 hasBet = true;
+                currentBetId = data.bet?.betId || null;
+                currentBetType = "GIFT";
                 playedThisRound = true;
                 isQueuedForNextRound = false;
                 pendingNextBet = null;
@@ -3107,15 +3121,17 @@
             actionInProgress = true;
             updateMainBetButton();
             try {
-                const response = await fetch(`${BACKEND_URL}/api/game-action`, {
+                const response = await fetch(`${BACKEND_URL}/api/bet/ton`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: "BET", betType: "TON", telegramId: telegramId, name: fullName || firstName || "اللاعب", avatar: userPhoto, amount: amount, roundId: roundIdToUse, autoCashout: autoCashout, autoTarget: autoTarget })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ amount: amount, autoCashoutTarget: autoCashout ? autoTarget : null })
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.placeBet);
                 userBetAmount = amount;
                 hasBet = true;
+                currentBetId = data.bet?.betId || null;
+                currentBetType = "TON";
                 playedThisRound = true;
                 isQueuedForNextRound = false;
                 pendingNextBet = null;
@@ -3171,14 +3187,16 @@
             actionInProgress = true;
             updateMainBetButton();
             try {
-                const response = await fetch(`${BACKEND_URL}/api/game-action`, {
+                const endpoint = currentBetType === "GIFT" ? "/api/cashout/gift" : "/api/cashout/ton";
+                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: "CASHOUT", telegramId: telegramId, roundId: currentRoundId })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ betId: currentBetId })
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.placeBet);
                 hasBet = false;
+                currentBetId = null;
                 playedThisRound = true;
                 updateAutoCashoutUI();
                 showToast(t.cashOut);

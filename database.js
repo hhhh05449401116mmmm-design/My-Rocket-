@@ -9,7 +9,7 @@ const crypto = require('crypto');
 // =========================================================
 // 1. إنشاء اتصال قاعدة البيانات
 // =========================================================
-const dbPath = path.join(__dirname, 'rocket.db');
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'rocket.db');
 const db = new sqlite3.Database(dbPath);
 
 // =========================================================
@@ -42,20 +42,27 @@ function run(sql, params = []) {
     });
 }
 
+let transactionTail = Promise.resolve();
+
 function transaction(callback) {
-    return new Promise((resolve, reject) => {
-        db.serialize(async () => {
+    const operation = transactionTail.then(async () => {
+        await run('BEGIN IMMEDIATE TRANSACTION');
+        try {
+            const result = await callback();
+            await run('COMMIT');
+            return result;
+        } catch (error) {
             try {
-                await run('BEGIN TRANSACTION');
-                const result = await callback();
-                await run('COMMIT');
-                resolve(result);
-            } catch (error) {
                 await run('ROLLBACK');
-                reject(error);
+            } catch (rollbackError) {
+                error.rollbackError = rollbackError;
             }
-        });
+            throw error;
+        }
     });
+
+    transactionTail = operation.catch(() => undefined);
+    return operation;
 }
 
 // =========================================================
@@ -201,6 +208,11 @@ function initDatabase() {
                     round_number INTEGER UNIQUE NOT NULL,
                     multiplier REAL DEFAULT 1.00,
                     phase TEXT DEFAULT 'COUNTDOWN' CHECK(phase IN ('COUNTDOWN', 'FLIGHT', 'CRASH')),
+                    server_seed_hash TEXT,
+                    server_seed TEXT,
+                    client_seed TEXT,
+                    nonce INTEGER,
+                    crash_at REAL,
                     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                     end_time DATETIME,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -265,8 +277,29 @@ function initDatabase() {
                 )
             `);
 
-            console.log('✅ All database tables created/verified');
-            resolve();
+            // Migrate databases created before the Provably Fair fields existed.
+            const roundColumns = [
+                ['server_seed_hash', 'TEXT'],
+                ['server_seed', 'TEXT'],
+                ['client_seed', 'TEXT'],
+                ['nonce', 'INTEGER'],
+                ['crash_at', 'REAL']
+            ];
+            roundColumns.forEach(([name, type]) => {
+                db.run(`ALTER TABLE rounds ADD COLUMN ${name} ${type}`, error => {
+                    if (error && !error.message.includes('duplicate column name')) {
+                        console.error(`Failed to add rounds.${name}:`, error.message);
+                    }
+                });
+            });
+
+            db.run('SELECT 1', error => {
+                if (error) reject(error);
+                else {
+                    console.log('✅ All database tables created/verified');
+                    resolve();
+                }
+            });
         });
     });
 }
@@ -386,6 +419,145 @@ async function updateUserBalance(userId, amount, operation = 'add') {
     return newBalance;
 }
 
+function normalizeAutoCashoutTarget(target) {
+    if (target === null || target === undefined || target === '') return null;
+    const normalizedTarget = Number(target);
+    if (!Number.isFinite(normalizedTarget) || normalizedTarget < 1.01 || normalizedTarget > 1000) {
+        throw new Error('Invalid auto cashout target');
+    }
+    return normalizedTarget;
+}
+
+async function createRoundRecord(round) {
+    await run(`
+        INSERT INTO rounds
+        (round_number, multiplier, phase, server_seed_hash, server_seed, client_seed, nonce, crash_at, start_time)
+        VALUES (?, 1.00, 'COUNTDOWN', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `, [
+        round.nonce,
+        round.serverSeedHash,
+        round.serverSeed,
+        round.clientSeed,
+        round.nonce,
+        round.crashAt
+    ]);
+
+    return await getRoundByNumber(round.nonce);
+}
+
+async function getRoundByNumber(roundNumber) {
+    return await get('SELECT * FROM rounds WHERE round_number = ?', [roundNumber]);
+}
+
+async function updateRoundState(roundNumber, phase, multiplier) {
+    const endTime = phase === 'CRASH' ? 'CURRENT_TIMESTAMP' : 'end_time';
+    await run(`
+        UPDATE rounds
+        SET phase = ?, multiplier = ?, end_time = ${endTime}
+        WHERE round_number = ?
+    `, [phase, multiplier, roundNumber]);
+}
+
+async function getActiveBetsForRound(roundNumber) {
+    return await query(`
+        SELECT id, user_id, 'TON' AS bet_type, auto_cashout_target AS target
+        FROM ton_bets
+        WHERE round_id = ? AND status = 'ACTIVE' AND auto_cashout_target IS NOT NULL
+        UNION ALL
+        SELECT id, user_id, 'GIFT' AS bet_type, auto_cashout_target AS target
+        FROM gift_bets
+        WHERE round_id = ? AND status = 'ACTIVE' AND auto_cashout_target IS NOT NULL
+    `, [roundNumber, roundNumber]);
+}
+
+async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
+    const config = type === 'TON'
+        ? { table: 'ton_bets', amountColumn: 'amount', payoutColumn: 'payout' }
+        : type === 'GIFT'
+            ? { table: 'gift_bets', amountColumn: 'gift_value_at_bet', payoutColumn: 'payout' }
+            : null;
+    if (!config) throw new Error('Invalid bet type');
+    if (!Number.isFinite(multiplier) || multiplier <= 1) {
+        throw new Error('Cashout must be above 1.00x');
+    }
+
+    return await transaction(async () => {
+        const round = await getRoundByNumber(roundNumber);
+        if (!round || round.phase !== 'FLIGHT' || multiplier > round.crash_at) {
+            throw new Error('Round is not available for cashout');
+        }
+
+        const bet = await get(`
+            SELECT * FROM ${config.table}
+            WHERE id = ? AND user_id = ? AND round_id = ? AND status = 'ACTIVE'
+        `, [betId, userId, roundNumber]);
+        if (!bet) throw new Error('Bet not found or already settled');
+
+        const payout = bet[config.amountColumn] * multiplier;
+        const update = await run(`
+            UPDATE ${config.table}
+            SET status = 'CASHED_OUT', cashout_multiplier = ?, ${config.payoutColumn} = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'ACTIVE'
+        `, [multiplier, payout, betId]);
+        if (update.changes !== 1) throw new Error('Bet was settled concurrently');
+
+        if (type === 'TON') {
+            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+        } else {
+            await run(`UPDATE user_gifts SET status = 'WON', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [bet.user_gift_id]);
+        }
+
+        await updateUserStats(userId, 'win', payout);
+        return {
+            payout,
+            multiplier,
+            amount: bet[config.amountColumn],
+            giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined
+        };
+    });
+}
+
+async function crashRound(roundNumber, multiplier) {
+    return await transaction(async () => {
+        const round = await getRoundByNumber(roundNumber);
+        if (!round || round.phase === 'CRASH') return { settled: false, alreadySettled: true };
+
+        const giftBets = await query(`
+            SELECT user_gift_id FROM gift_bets
+            WHERE round_id = ? AND status = 'ACTIVE'
+        `, [roundNumber]);
+
+        const roundUpdate = await run(`
+            UPDATE rounds
+            SET phase = 'CRASH', multiplier = ?, end_time = CURRENT_TIMESTAMP
+            WHERE round_number = ? AND phase != 'CRASH'
+        `, [multiplier, roundNumber]);
+        if (roundUpdate.changes !== 1) return { settled: false, alreadySettled: true };
+
+        const tonLosses = await run(`
+            UPDATE ton_bets SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
+            WHERE round_id = ? AND status = 'ACTIVE'
+        `, [roundNumber]);
+        const giftLosses = await run(`
+            UPDATE gift_bets SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
+            WHERE round_id = ? AND status = 'ACTIVE'
+        `, [roundNumber]);
+
+        for (const bet of giftBets) {
+            await run(`
+                UPDATE user_gifts SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND status = 'IN_BET'
+            `, [bet.user_gift_id]);
+        }
+
+        return {
+            settled: true,
+            tonLosses: tonLosses.changes,
+            giftLosses: giftLosses.changes
+        };
+    });
+}
+
 // ===== 5.2 إدارة هدايا المستخدم =====
 async function getUserGifts(userId, status = null) {
     let sql = `
@@ -444,18 +616,22 @@ async function updateGiftStatus(userGiftId, status) {
 
 // ===== 5.3 نظام الرهان بالهدايا =====
 async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
+    const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
     return await transaction(async () => {
+        const round = await getRoundByNumber(roundId);
+        if (!round || round.phase !== 'COUNTDOWN') throw new Error('Betting is closed for this round');
+
+        // The client supplies only an identifier; value always comes from gifts.
+        const gift = await getGiftById(giftId);
+        if (!gift) throw new Error('Gift not found');
+
         // 1. التحقق من ملكية الهدية
         const userGift = await get(`
             SELECT * FROM user_gifts 
             WHERE user_id = ? AND gift_id = ? AND status = 'OWNED'
-        `, [userId, giftId]);
+        `, [userId, gift.id]);
         
         if (!userGift) throw new Error('Gift not owned or not available');
-        
-        // 2. الحصول على قيمة الهدية
-        const gift = await get('SELECT * FROM gifts WHERE id = ?', [giftId]);
-        if (!gift) throw new Error('Gift not found');
         
         // 3. قفل الهدية
         await run(`
@@ -469,7 +645,7 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
             INSERT INTO gift_bets 
             (user_id, user_gift_id, round_id, gift_value_at_bet, auto_cashout_target)
             VALUES (?, ?, ?, ?, ?)
-        `, [userId, userGift.id, roundId, gift.value, autoCashoutTarget]);
+        `, [userId, userGift.id, roundId, gift.value, normalizedAutoCashoutTarget]);
         
         return {
             betId: result.lastID,
@@ -521,24 +697,33 @@ async function cashoutGiftBet(betId, userId, multiplier) {
 
 // ===== 5.4 نظام الرهان بـ TON =====
 async function placeTonBet(userId, amount, roundId, autoCashoutTarget = null) {
+    const normalizedAmount = Number(amount);
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        throw new Error('Invalid amount');
+    }
+    const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
     return await transaction(async () => {
+        const round = await getRoundByNumber(roundId);
+        if (!round || round.phase !== 'COUNTDOWN') throw new Error('Betting is closed for this round');
+
         // 1. التحقق من الرصيد
         const balance = await getUserBalance(userId);
-        if (balance < amount) throw new Error('Insufficient balance');
+        if (balance < normalizedAmount) throw new Error('Insufficient balance');
         
         // 2. خصم الرصيد
-        await updateUserBalance(userId, amount, 'subtract');
+        const balanceUpdate = await run('UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?', [normalizedAmount, userId, normalizedAmount]);
+        if (balanceUpdate.changes !== 1) throw new Error('Insufficient balance');
         
         // 3. إنشاء سجل الرهان
         const result = await run(`
             INSERT INTO ton_bets 
             (user_id, round_id, amount, auto_cashout_target)
             VALUES (?, ?, ?, ?)
-        `, [userId, roundId, amount, autoCashoutTarget]);
+        `, [userId, roundId, normalizedAmount, normalizedAutoCashoutTarget]);
         
         return {
             betId: result.lastID,
-            amount: amount,
+            amount: normalizedAmount,
             roundId: roundId
         };
     });
@@ -733,6 +918,12 @@ module.exports = {
     findOrCreateUser,
     getUserBalance,
     updateUserBalance,
+    createRoundRecord,
+    getRoundByNumber,
+    updateRoundState,
+    getActiveBetsForRound,
+    cashoutBet,
+    crashRound,
     
     // إدارة الهدايا
     getUserGifts,
