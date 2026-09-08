@@ -1969,7 +1969,7 @@
                     <div id="ton-bet-section">
                         <div class="bet-amount-label" id="bet-amount-label">Bet Amount</div>
                         <div class="modal-amount-box">
-                            <input id="modal-amount-input" class="modal-amount-input" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="TON amount">
+                            <input id="modal-amount-input" class="modal-amount-input" type="text" inputmode="decimal" min="0.1" step="0.01" value="1.00" placeholder="TON amount">
                             <span class="amount-ton-icon">💎</span>
                         </div>
                     </div>
@@ -2788,7 +2788,7 @@
            OPEN BET MODAL
         ========================================================= */
         function openBetModal() {
-            syncAmountInput();
+            normalizeAmountInput();
             updateModalBalance();
             updateAutoCashoutUI();
             updateModalBetButton();
@@ -2992,9 +2992,15 @@
 
         function readBetAmount() {
             const input = document.getElementById("modal-amount-input");
-            const value = Number(input?.value);
-            if (!Number.isFinite(value) || value <= 0) return null;
+            const value = Number(String(input?.value || "").trim().replace(',', '.'));
+            if (!Number.isFinite(value) || value < 0.1) return null;
             return Number(value.toFixed(9));
+        }
+
+        function normalizeAmountInput() {
+            const input = document.getElementById("modal-amount-input");
+            if (!input) return;
+            input.value = String(input.value || '').replace(',', '.');
         }
 
         async function handleModalBet() {
@@ -3138,6 +3144,7 @@
                 pendingNextBetSubmitted = false;
                 updateMainBetButton();
                 updateAutoCashoutUI();
+                await fetchBalance();
                 showToast(t.placeBet);
                 return true;
             } catch (error) {

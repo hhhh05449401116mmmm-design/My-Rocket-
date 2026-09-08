@@ -707,8 +707,8 @@ async function cashoutGiftBet(betId, userId, multiplier) {
 
 // ===== 5.4 نظام الرهان بـ TON =====
 async function placeTonBet(userId, amount, roundId, autoCashoutTarget = null) {
-    const normalizedAmount = Number(amount);
-    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount < 0.1) {
         throw new Error('Invalid amount');
     }
     const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);

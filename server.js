@@ -587,8 +587,9 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
 app.post('/api/bet/ton', authenticate, async (req, res) => {
     try {
         const { amount, autoCashoutTarget } = req.body;
+        const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
         
-        if (!amount || amount <= 0) {
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount < 0.1) {
             return res.status(400).json({ ok: false, error: 'Invalid amount' });
         }
 
@@ -598,7 +599,7 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
         }
 
         const roundId = currentGameState.roundId;
-        const result = await placeTonBet(req.user.id, amount, roundId, autoCashoutTarget);
+        const result = await placeTonBet(req.user.id, normalizedAmount, roundId, autoCashoutTarget);
         
         res.json({ 
             ok: true, 
