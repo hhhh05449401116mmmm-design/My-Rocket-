@@ -303,6 +303,43 @@ function initDatabase() {
                 if (error) console.error('Failed to index deposit transaction hashes:', error.message);
             });
 
+            // Foundation for real unique Telegram collectibles (additive, does not touch existing data).
+            const userGiftColumns = [
+                ['unique_collectible_id', 'TEXT'],
+                ['telegram_gift_instance_id', 'TEXT'],
+                ['collectible_number', 'INTEGER'],
+                ['ownership_verified', 'INTEGER DEFAULT 0'],
+                ['verified_metadata', 'TEXT']
+            ];
+            userGiftColumns.forEach(([name, type]) => {
+                db.run(`ALTER TABLE user_gifts ADD COLUMN ${name} ${type}`, error => {
+                    if (error && !error.message.includes('duplicate column name')) {
+                        console.error(`Failed to add user_gifts.${name}:`, error.message);
+                    }
+                });
+            });
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_unique_collectible
+                ON user_gifts(unique_collectible_id) WHERE unique_collectible_id IS NOT NULL`, error => {
+                if (error) console.error('Failed to index unique_collectible_id:', error.message);
+            });
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
+                ON user_gifts(telegram_gift_instance_id) WHERE telegram_gift_instance_id IS NOT NULL`, error => {
+                if (error) console.error('Failed to index telegram_gift_instance_id:', error.message);
+            });
+
+            // Short-lived server-side import intents (Phase 3A). No ownership is granted here.
+            db.run(`
+                CREATE TABLE IF NOT EXISTS collectible_import_intents (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    intent_token TEXT UNIQUE NOT NULL,
+                    status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'EXPIRED', 'CONSUMED')),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+
             db.run('SELECT 1', error => {
                 if (error) reject(error);
                 else {
@@ -640,6 +677,118 @@ async function updateGiftStatus(userGiftId, status) {
     
     await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, userGiftId]);
     return await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]);
+}
+
+// ===== 5.2.1 أساس ملكية Collectible Gifts الحقيقية (لا يُستخدم بعد من مسارات الرهان الحالية) =====
+
+// كل هدايا المستخدم مع حقول الملكية الفريدة الجديدة، دون المساس بـ getUserGifts القائمة.
+async function getUserCollectibles(userId, status = null) {
+    let sql = `
+        SELECT g.*, ug.id AS user_gift_id, ug.status AS ownership_status,
+               ug.unique_collectible_id, ug.telegram_gift_instance_id,
+               ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+               ug.received_at, ug.updated_at
+        FROM user_gifts ug
+        JOIN gifts g ON ug.gift_id = g.id
+        WHERE ug.user_id = ?
+    `;
+    const params = [userId];
+    if (status) {
+        sql += ' AND ug.status = ?';
+        params.push(status);
+    }
+    sql += ' ORDER BY ug.received_at DESC';
+    return await query(sql, params);
+}
+
+// جلب قطعة واحدة عبر هويتها الفريدة (وليس gift_id/type).
+async function getCollectibleByUniqueId(uniqueCollectibleId) {
+    return await get(`
+        SELECT g.*, ug.id AS user_gift_id, ug.user_id, ug.status AS ownership_status,
+               ug.unique_collectible_id, ug.telegram_gift_instance_id,
+               ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+               ug.received_at, ug.updated_at
+        FROM user_gifts ug
+        JOIN gifts g ON ug.gift_id = g.id
+        WHERE ug.unique_collectible_id = ?
+    `, [uniqueCollectibleId]);
+}
+
+// فحص وجود قطعة مستوردة مسبقًا عبر معرّف Telegram الخاص بها (لمنع الاستيراد المكرر لاحقًا).
+async function getCollectibleByTelegramInstanceId(telegramGiftInstanceId) {
+    return await get('SELECT * FROM user_gifts WHERE telegram_gift_instance_id = ?', [telegramGiftInstanceId]);
+}
+
+// حجز قطعة فريدة للرهان: OWNED -> IN_BET، ذريًا، وفق نفس شروط placeGiftBet الحالية.
+async function reserveCollectibleForBet(userId, uniqueCollectibleId) {
+    return await transaction(async () => {
+        const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
+        if (!collectible) throw new Error('Collectible not found');
+        if (collectible.user_id !== userId) throw new Error('Collectible not owned by this user');
+        if (!collectible.unique_collectible_id) throw new Error('Collectible has no unique identity');
+        if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible is not available');
+
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = 'IN_BET', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'OWNED'
+        `, [collectible.user_gift_id]);
+        if (update.changes !== 1) throw new Error('Collectible was reserved concurrently');
+
+        return collectible;
+    });
+}
+
+// تسوية قطعة محجوزة: IN_BET -> WON أو LOST، ذريًا. لا يوجد أي تحويل خارجي فعلي عند WON.
+async function releaseCollectible(uniqueCollectibleId, outcome) {
+    if (outcome !== 'WON' && outcome !== 'LOST') throw new Error('Invalid collectible outcome');
+    return await transaction(async () => {
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE unique_collectible_id = ? AND status = 'IN_BET'
+        `, [outcome, uniqueCollectibleId]);
+        if (update.changes !== 1) throw new Error('Collectible is not reserved for a bet');
+        return await getCollectibleByUniqueId(uniqueCollectibleId);
+    });
+}
+
+// بيع قطعة مملوكة: OWNED -> SOLD، ذريًا.
+async function markCollectibleSold(userId, uniqueCollectibleId) {
+    return await transaction(async () => {
+        const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
+        if (!collectible) throw new Error('Collectible not found');
+        if (collectible.user_id !== userId) throw new Error('Collectible not owned by this user');
+
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = 'SOLD', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'OWNED'
+        `, [collectible.user_gift_id]);
+        if (update.changes !== 1) throw new Error('Collectible is not available for sale');
+
+        return await getCollectibleByUniqueId(uniqueCollectibleId);
+    });
+}
+
+// إنشاء أو إعادة استخدام intent استيراد قصير العمر (لا يمنح أي ملكية). آمن ضد replay/spam.
+async function createOrGetImportIntent(userId, ttlSeconds = 600) {
+    return await transaction(async () => {
+        const existing = await get(`
+            SELECT * FROM collectible_import_intents
+            WHERE user_id = ? AND status = 'PENDING' AND expires_at > CURRENT_TIMESTAMP
+            ORDER BY created_at DESC LIMIT 1
+        `, [userId]);
+        if (existing) return existing;
+
+        const intentToken = crypto.randomBytes(24).toString('hex');
+        const result = await run(`
+            INSERT INTO collectible_import_intents (user_id, intent_token, status, expires_at)
+            VALUES (?, ?, 'PENDING', datetime('now', '+' || ? || ' seconds'))
+        `, [userId, intentToken, ttlSeconds]);
+
+        return await get('SELECT * FROM collectible_import_intents WHERE id = ?', [result.lastID]);
+    });
 }
 
 // ===== 5.3 نظام الرهان بالهدايا =====
@@ -1015,6 +1164,15 @@ module.exports = {
     getGiftById,
     addGiftToUser,
     updateGiftStatus,
+
+    // أساس ملكية Collectible Gifts الحقيقية
+    getUserCollectibles,
+    getCollectibleByUniqueId,
+    getCollectibleByTelegramInstanceId,
+    reserveCollectibleForBet,
+    releaseCollectible,
+    markCollectibleSold,
+    createOrGetImportIntent,
     
     // الرهان بالهدايا
     placeGiftBet,

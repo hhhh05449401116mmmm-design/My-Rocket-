@@ -34,6 +34,8 @@ const {
     getGiftById,
     addGiftToUser,
     updateGiftStatus,
+    getUserCollectibles,
+    createOrGetImportIntent,
     placeGiftBet,
     cashoutGiftBet,
     placeTonBet,
@@ -532,6 +534,44 @@ app.get('/api/gifts', authenticate, async (req, res) => {
         res.json({ ok: true, gifts });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.1 جلب مقتنيات Telegram الحقيقية الموثّقة فقط (Phase 3A) =====
+app.get('/api/collectibles', authenticate, async (req, res) => {
+    try {
+        const rows = await getUserCollectibles(req.user.id);
+        const collectibles = rows
+            .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
+            .map(row => ({
+                id: row.unique_collectible_id,
+                userGiftId: row.user_gift_id,
+                name: row.name,
+                imageUrl: row.image_url,
+                collectibleNumber: row.collectible_number,
+                rarity: row.rarity,
+                value: row.value,
+                status: row.ownership_status,
+                verifiedMetadata: row.verified_metadata,
+                receivedAt: row.received_at
+            }));
+        res.json({ ok: true, collectibles });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.2 إنشاء intent استيراد قصير العمر (لا يمنح ملكية) =====
+app.post('/api/collectibles/import-intent', authenticate, async (req, res) => {
+    try {
+        const intent = await createOrGetImportIntent(req.user.id);
+        res.json({
+            ok: true,
+            intentId: intent.intent_token,
+            expiresAt: intent.expires_at
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
     }
 });
 

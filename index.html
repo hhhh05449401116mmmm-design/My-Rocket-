@@ -1147,6 +1147,95 @@
         .empty-gifts h3 { font-size: 20px; color: #e8f4ff; margin: 0 0 8px; }
         .empty-gifts p { font-size: 13px; margin: 0; color: #5a7a9a; }
 
+        .collectible-deposit-panel {
+            background: linear-gradient(160deg, #123259, #0a1a30);
+            border: 1px solid rgba(100, 200, 255, 0.12);
+            border-radius: 22px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-top: 4px;
+        }
+        .collectible-deposit-icon { font-size: 40px; margin-bottom: 10px; }
+        .collectible-deposit-text { font-size: 13px; color: #a9c6e8; line-height: 1.6; margin: 0 0 12px; }
+        .collectible-deposit-username {
+            display: inline-block;
+            background: rgba(100, 200, 255, 0.08);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            color: #6fd0ff;
+            font-weight: 800;
+            font-size: 14px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+            direction: ltr;
+        }
+        .collectible-send-btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, #1a8cff, #0f3a7a);
+            color: #fff;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 800;
+            box-shadow: 0 8px 20px rgba(26, 140, 255, 0.25);
+        }
+        .collectible-send-btn:active { transform: scale(0.97); }
+        .collectible-import-status { font-size: 12px; color: #7a9bcb; margin-top: 12px; min-height: 16px; }
+
+        .collectibles-section { margin-top: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(100, 200, 255, 0.08); }
+        .collectibles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .collectibles-header span { font-size: 14px; font-weight: 800; color: #c8e6ff; }
+        .collectibles-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .collectible-card {
+            background: linear-gradient(145deg, #0f2847, #0a1a30);
+            border-radius: 16px;
+            padding: 14px 10px;
+            text-align: center;
+            border: 1px solid rgba(100, 200, 255, 0.06);
+            position: relative;
+        }
+        .collectible-card img { width: 44px; height: 44px; object-fit: contain; margin-bottom: 4px; }
+        .collectible-card .name {
+            font-size: 11px;
+            font-weight: 700;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #c8e6ff;
+        }
+        .collectible-card .number { font-size: 9px; color: #7a9bcb; display: block; margin-top: 2px; }
+        .collectible-card .actions { display: flex; gap: 4px; margin-top: 6px; }
+        .collectible-card .actions button {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            color: #5a7a9a;
+            border: 1px solid rgba(100, 200, 255, 0.06);
+            padding: 5px 4px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        #empty-collectibles { padding: 24px 20px; }
+        #empty-collectibles .icon { font-size: 40px; margin-bottom: 8px; }
+        #empty-collectibles h3 { font-size: 15px; }
+        #empty-collectibles p { font-size: 12px; }
+
         /* =========================================================
            PROFILE PAGE
         ========================================================= */
@@ -1901,6 +1990,24 @@
                 <h2 id="gifts-page-title">🎁 الهدايا</h2>
                 <p id="gifts-page-sub">هدايا Telegram الخاصة بك</p>
             </div>
+            <div class="collectible-deposit-panel">
+                <div class="collectible-deposit-icon">🎁</div>
+                <p class="collectible-deposit-text" id="collectible-deposit-text"></p>
+                <div class="collectible-deposit-username" id="collectible-deposit-username"></div>
+                <button type="button" class="collectible-send-btn" id="collectible-send-btn" onclick="sendCollectibleToTelegram()">🎁 إرسال مقتنى</button>
+                <div id="collectible-import-status" class="collectible-import-status"></div>
+            </div>
+            <div class="collectibles-section">
+                <div class="collectibles-header">
+                    <span id="collectibles-title">المقتنيات الموثّقة</span>
+                </div>
+                <div id="collectibles-list" class="collectibles-list"></div>
+                <div id="empty-collectibles" class="empty-gifts" style="display:none;">
+                    <span class="icon">🔒</span>
+                    <h3 id="no-collectibles-title">لا توجد مقتنيات موثّقة بعد</h3>
+                    <p id="no-collectibles-desc"></p>
+                </div>
+            </div>
             <div id="gifts-collection" class="gifts-collection"></div>
             <div id="empty-gifts" class="empty-gifts" style="display:none;">
                 <span class="icon">🎒</span>
@@ -2278,6 +2385,8 @@
         const userPhoto = telegramUser.photo_url || "";
         const ADMIN_TELEGRAM_ID = "7385640899";
         const BACKEND_URL = "https://my-rocket-production.up.railway.app";
+        // ⚠️ Public config only (not a secret) — the game's public Telegram username for receiving collectibles.
+        const COLLECTIBLE_RECEIVER_USERNAME = "v_rray";
 
         /* =========================================================
            GAME STATE (تم تعديل الأنيميشن هنا فقط!)
@@ -2405,6 +2514,46 @@
         Object.assign(translations.en, { noActivePlayers: 'No active players', guestPlayer: 'Guest', playerActive: 'Active', playerWon: 'Won', playerLost: 'Lost' });
         Object.assign(translations.ru, { noActivePlayers: 'Нет активных игроков', guestPlayer: 'Гость', playerActive: 'Активен', playerWon: 'Выиграл', playerLost: 'Проиграл' });
 
+        Object.assign(translations.ar, {
+            depositCollectibleBtn: '🎁 إرسال مقتنى',
+            collectibleDepositText: 'يمكنك إرسال مقتناتك من Telegram إلى حساب اللعبة الموضح أدناه. لن يظهر المقتنى في الحقيبة إلا بعد التحقق من السيرفر.',
+            collectiblesTitle: 'المقتنيات الموثّقة',
+            noCollectiblesTitle: 'لا توجد مقتنيات موثّقة بعد',
+            noCollectiblesDesc: 'اضغط "إرسال مقتنى" لإرسال مقتناك عبر حساب اللعبة على Telegram.',
+            collectibleImportFailed: 'تعذّر فتح حساب اللعبة على Telegram',
+            collectibleNumberLabel: 'الرقم التسلسلي',
+            collectibleActionUnavailable: 'غير متاح بعد (المرحلة القادمة)',
+            keepCollectible: 'احتفاظ',
+            sellCollectible: 'بيع',
+            betCollectible: 'رهان'
+        });
+        Object.assign(translations.en, {
+            depositCollectibleBtn: '🎁 Send Collectible',
+            collectibleDepositText: 'You can send your collectible from Telegram to the game’s account shown below. It will only appear in your Backpack after server verification.',
+            collectiblesTitle: 'Verified Collectibles',
+            noCollectiblesTitle: 'No verified collectibles yet',
+            noCollectiblesDesc: 'Tap "Send Collectible" to send your collectible to the game’s Telegram account.',
+            collectibleImportFailed: 'Could not open the game’s Telegram account',
+            collectibleNumberLabel: 'Serial Number',
+            collectibleActionUnavailable: 'Not available yet (next phase)',
+            keepCollectible: 'Keep',
+            sellCollectible: 'Sell',
+            betCollectible: 'Bet'
+        });
+        Object.assign(translations.ru, {
+            depositCollectibleBtn: '🎁 Отправить коллекционный подарок',
+            collectibleDepositText: 'Вы можете отправить свой коллекционный подарок из Telegram на аккаунт игры, указанный ниже. Он появится в рюкзаке только после проверки сервером.',
+            collectiblesTitle: 'Проверенные коллекционные подарки',
+            noCollectiblesTitle: 'Пока нет проверенных подарков',
+            noCollectiblesDesc: 'Нажмите «Отправить коллекционный подарок», чтобы отправить его на аккаунт игры в Telegram.',
+            collectibleImportFailed: 'Не удалось открыть аккаунт игры в Telegram',
+            collectibleNumberLabel: 'Серийный номер',
+            collectibleActionUnavailable: 'Пока недоступно (следующий этап)',
+            keepCollectible: 'Оставить',
+            sellCollectible: 'Продать',
+            betCollectible: 'Ставка'
+        });
+
         function getTranslation(key) {
             return translations[currentLanguage]?.[key] || translations.ar[key] || key;
         }
@@ -2511,10 +2660,23 @@
             if (emptyGiftsTitle) emptyGiftsTitle.textContent = t.noGiftsTitle;
             const emptyGiftsDesc = safeGetElement('empty-gifts-desc');
             if (emptyGiftsDesc) emptyGiftsDesc.textContent = t.noGiftsDesc;
+            const collectiblesTitle = safeGetElement('collectibles-title');
+            if (collectiblesTitle) collectiblesTitle.textContent = t.collectiblesTitle;
+            const depositCollectibleBtn = safeGetElement('collectible-send-btn');
+            if (depositCollectibleBtn) depositCollectibleBtn.textContent = t.depositCollectibleBtn;
+            const collectibleDepositText = safeGetElement('collectible-deposit-text');
+            if (collectibleDepositText) collectibleDepositText.textContent = t.collectibleDepositText;
+            const collectibleDepositUsername = safeGetElement('collectible-deposit-username');
+            if (collectibleDepositUsername) collectibleDepositUsername.textContent = '@' + COLLECTIBLE_RECEIVER_USERNAME;
+            const noCollectiblesTitle = safeGetElement('no-collectibles-title');
+            if (noCollectiblesTitle) noCollectiblesTitle.textContent = t.noCollectiblesTitle;
+            const noCollectiblesDesc = safeGetElement('no-collectibles-desc');
+            if (noCollectiblesDesc) noCollectiblesDesc.textContent = t.noCollectiblesDesc;
             updateMainBetButton();
             updateModalBetButton();
             updateVipUI();
             renderGiftsPage();
+            renderCollectibles();
             updateGiftSelectionInModal();
         }
 
@@ -3525,6 +3687,85 @@
             });
         }
 
+        let verifiedCollectibles = [];
+        let collectibleImportBusy = false;
+
+        async function fetchCollectibles() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/collectibles`, { headers: getAuthHeaders() });
+                const data = await response.json();
+                if (data.ok) {
+                    verifiedCollectibles = data.collectibles || [];
+                    renderCollectibles();
+                }
+            } catch (error) { console.error('fetchCollectibles error:', error); }
+        }
+
+        function renderCollectibles() {
+            const list = document.getElementById("collectibles-list");
+            const empty = document.getElementById("empty-collectibles");
+            const t = translations[currentLanguage] || translations.ar;
+            if (!list || !empty) return;
+            list.innerHTML = "";
+            if (!verifiedCollectibles || verifiedCollectibles.length === 0) {
+                list.style.display = "none";
+                empty.style.display = "block";
+                const title = safeGetElement('no-collectibles-title');
+                if (title) title.textContent = t.noCollectiblesTitle;
+                const desc = safeGetElement('no-collectibles-desc');
+                if (desc) desc.textContent = t.noCollectiblesDesc;
+                return;
+            }
+            list.style.display = "grid";
+            empty.style.display = "none";
+            verifiedCollectibles.forEach(function(item) {
+                const card = document.createElement("div");
+                card.className = "collectible-card";
+                const imageHtml = item.imageUrl
+                    ? `<img src="${item.imageUrl}" alt="${item.name || ''}">`
+                    : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
+                card.innerHTML = `
+                    ${imageHtml}
+                    <span class="name">${item.name || ''}</span>
+                    ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
+                    <div class="actions">
+                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.keepCollectible}</button>
+                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.sellCollectible}</button>
+                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.betCollectible}</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function sendCollectibleToTelegram() {
+            if (collectibleImportBusy) return;
+            collectibleImportBusy = true;
+            const t = translations[currentLanguage] || translations.ar;
+            const statusEl = document.getElementById("collectible-import-status");
+            try {
+                // Server-authoritative intent record only; opening Telegram is NOT proof of ownership.
+                await fetch(`${BACKEND_URL}/api/collectibles/import-intent`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                const telegramUrl = `https://t.me/${COLLECTIBLE_RECEIVER_USERNAME}`;
+                if (window.Telegram?.WebApp?.openTelegramLink) {
+                    window.Telegram.WebApp.openTelegramLink(telegramUrl);
+                } else {
+                    window.open(telegramUrl, '_blank');
+                }
+            } catch (error) {
+                if (statusEl) statusEl.textContent = t.collectibleImportFailed;
+            } finally {
+                collectibleImportBusy = false;
+            }
+        }
+
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) fetchCollectibles();
+        });
+
         function betWithGift(giftId) {
             if (actionInProgress) return;
             const t = translations[currentLanguage] || translations.ar;
@@ -3567,6 +3808,8 @@
             } else if (page === "gifts") {
                 document.getElementById("nav-gifts-btn").classList.add("active");
                 renderGiftsPage();
+                renderCollectibles();
+                fetchCollectibles();
                 document.getElementById("gifts-page").classList.add("show");
             } else if (page === "earn") {
                 document.getElementById("nav-earn").classList.add("active");
