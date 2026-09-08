@@ -1911,7 +1911,7 @@
                LOOT BOXES SECTION
             ========================================================= -->
             <div class="loot-section">
-                <div class="loot-title">🎁 <span class="highlight">صناديق الحظ</span></div>
+                <div class="loot-title">🎁 <span class="highlight" id="loot-title-text">صناديق الحظ</span></div>
                 <div class="loot-grid" id="loot-grid">
                     <!-- سيتم إنشاؤها بواسطة JavaScript -->
                 </div>
@@ -2115,14 +2115,14 @@
                     <div id="gift-bet-section" style="display:none;">
                         <div class="bet-amount-label" id="gift-bet-label">🎁 اختر هديتك للرهان</div>
                         <div class="gift-balance-display">
-                            🎒 لديك <strong id="user-gift-count">0</strong> هدية
+                            <span id="gift-balance-text">🎒 لديك <strong id="user-gift-count">0</strong> هدية</span>
                         </div>
                         <div id="gift-selection-grid" class="gift-selection-grid"></div>
                         <div id="selected-gift-display" class="selected-gift-display">
-                            <span style="color:#7a9bcb;">لم تختار هدية بعد</span>
+                            <span style="color:#7a9bcb;" id="no-gift-selected-text">لم تختار هدية بعد</span>
                         </div>
                         <div class="gift-value-display">
-                            💎 قيمة الهدية: <strong id="gift-value-display">0.00</strong> TON
+                            <span id="gift-value-label-text">💎 قيمة الهدية:</span> <strong id="gift-value-display">0.00</strong> TON
                         </div>
                         <div style="text-align:center;padding:8px;font-size:12px;color:#7a9bcb;" id="gift-selection-info">اختر هدية من هداياك للرهان بها</div>
                     </div>
@@ -2265,22 +2265,23 @@
            LOOT BOXES DATA
         ========================================================= */
         const LOOT_BOXES = [
-            { id: 'free', name: 'FREE', emoji: '🎁', price: 0, badge: 'مجاني', badgeClass: 'free-badge' },
-            { id: 'box_100', name: '100 TON', emoji: '💎', price: 100, badge: '🔥 VIP', badgeClass: 'popular' },
-            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badge: '🔥 VIP', badgeClass: 'popular' },
-            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badge: '⭐ نادر', badgeClass: '' },
-            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badge: '⭐ نادر', badgeClass: '' },
-            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badge: '⭐ نادر', badgeClass: '' },
-            { id: 'box_5', name: '5 TON', emoji: '💎', price: 5, badge: '', badgeClass: '' },
-            { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badge: '', badgeClass: '' },
-            { id: 'box_1', name: '1 TON', emoji: '💎', price: 1, badge: '', badgeClass: '' },
-            { id: 'box_0_5', name: '0.5 TON', emoji: '💎', price: 0.5, badge: '', badgeClass: '' },
-            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badge: '', badgeClass: '' }
+            { id: 'free', name: 'FREE', emoji: '🎁', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
+            { id: 'box_100', name: '100 TON', emoji: '💎', price: 100, badgeType: 'vip', badgeClass: 'popular' },
+            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: 'vip', badgeClass: 'popular' },
+            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: 'rare', badgeClass: '' },
+            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badgeType: 'rare', badgeClass: '' },
+            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badgeType: 'rare', badgeClass: '' },
+            { id: 'box_5', name: '5 TON', emoji: '💎', price: 5, badgeType: null, badgeClass: '' },
+            { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
+            { id: 'box_1', name: '1 TON', emoji: '💎', price: 1, badgeType: null, badgeClass: '' },
+            { id: 'box_0_5', name: '0.5 TON', emoji: '💎', price: 0.5, badgeType: null, badgeClass: '' },
+            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' }
         ];
 
         function renderLootBoxes() {
             const grid = document.getElementById('loot-grid');
             if (!grid) return;
+            const t = translations[currentLanguage] || translations.ar;
             grid.innerHTML = '';
 
             LOOT_BOXES.forEach(function(box) {
@@ -2288,39 +2289,42 @@
                 div.className = 'loot-box' + (box.id === 'free' ? ' free' : '');
                 div.onclick = function() { openLootBox(box); };
 
-                const priceDisplay = box.price === 0 ? 'مجاني' : box.price + ' TON';
+                const priceDisplay = box.price === 0 ? t.freeLabel : box.price + ' TON';
                 const priceClass = box.price === 0 ? 'free' : '';
+                const badgeLabels = { free: t.freeLabel, vip: '🔥 VIP', rare: '⭐ ' + t.rareLabel };
+                const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
                 div.innerHTML = `
                     <span class="loot-emoji">${box.emoji}</span>
                     <span class="loot-name">${box.name}</span>
                     <span class="loot-price ${priceClass}">${priceDisplay}</span>
-                    ${box.badge ? `<span class="loot-badge ${box.badgeClass}">${box.badge}</span>` : ''}
+                    ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
                 `;
                 grid.appendChild(div);
             });
         }
 
         function openLootBox(box) {
+            const t = translations[currentLanguage] || translations.ar;
             if (box.id === 'free') {
-                showToast('🎁 فتحت صندوق مجاني!');
+                showToast(t.openedFreeBox);
                 const randomGift = TELEGRAM_GIFTS[Math.floor(Math.random() * TELEGRAM_GIFTS.length)];
                 if (randomGift && !userGifts.includes(randomGift.id)) {
                     userGifts.push(randomGift.id);
                     renderGiftsPage();
                     updateGiftSelectionInModal();
-                    showToast('🎉 ربحت: ' + randomGift.emoji + ' ' + randomGift.name);
+                    showToast(t.wonPrefix + ' ' + randomGift.emoji + ' ' + randomGift.name);
                 }
                 return;
             }
 
             if (tonBalance < box.price) {
-                showToast('❌ رصيدك غير كافٍ!');
+                showToast(t.insufficientBalance);
                 openDeposit();
                 return;
             }
 
-            showToast('🔄 جاري فتح الصندوق...');
+            showToast(t.openingBox);
         }
 
         /* =========================================================
@@ -2518,14 +2522,30 @@
             depositCollectibleBtn: '🎁 إرسال مقتنى',
             collectibleDepositText: 'يمكنك إرسال مقتناتك من Telegram إلى حساب اللعبة الموضح أدناه. لن يظهر المقتنى في الحقيبة إلا بعد التحقق من السيرفر.',
             collectiblesTitle: 'المقتنيات الموثّقة',
-            noCollectiblesTitle: 'لا توجد مقتنيات موثّقة بعد',
-            noCollectiblesDesc: 'اضغط "إرسال مقتنى" لإرسال مقتناك عبر حساب اللعبة على Telegram.',
+            noCollectiblesTitle: 'لا توجد مقتنيات موثقة بعد',
+            noCollectiblesDesc: 'اضغط «إرسال مقتنى» لإرسال مقتناك إلى حساب اللعبة على Telegram.',
             collectibleImportFailed: 'تعذّر فتح حساب اللعبة على Telegram',
+            collectibleIntentCreated: 'تم إنشاء طلب الإرسال، يمكنك المتابعة في Telegram',
+            collectibleLoading: 'جاري التحضير...',
             collectibleNumberLabel: 'الرقم التسلسلي',
             collectibleActionUnavailable: 'غير متاح بعد (المرحلة القادمة)',
             keepCollectible: 'احتفاظ',
             sellCollectible: 'بيع',
-            betCollectible: 'رهان'
+            betCollectible: 'رهان',
+            adminBadge: 'ADMIN',
+            lootBoxesTitle: 'صناديق الحظ',
+            comingSoonDesc: 'ألعاب جديدة قريباً',
+            freeLabel: 'مجاني',
+            rareLabel: 'نادر',
+            openedFreeBox: '🎁 فتحت صندوقاً مجانياً!',
+            wonPrefix: '🎉 ربحت:',
+            insufficientBalance: '❌ رصيدك غير كافٍ!',
+            openingBox: '🔄 جاري فتح الصندوق...',
+            giftBalanceLabel: '🎒 لديك {count} هدية',
+            noGiftSelectedYet: 'لم تختر هدية بعد',
+            connectWalletForGifts: '🔒 قم بربط محفظتك لعرض هداياك',
+            giftValueLabel: '💎 قيمة الهدية:',
+            vipStart: 'بداية'
         });
         Object.assign(translations.en, {
             depositCollectibleBtn: '🎁 Send Collectible',
@@ -2534,24 +2554,56 @@
             noCollectiblesTitle: 'No verified collectibles yet',
             noCollectiblesDesc: 'Tap "Send Collectible" to send your collectible to the game’s Telegram account.',
             collectibleImportFailed: 'Could not open the game’s Telegram account',
+            collectibleIntentCreated: 'Deposit request created — continue in Telegram',
+            collectibleLoading: 'Preparing...',
             collectibleNumberLabel: 'Serial Number',
             collectibleActionUnavailable: 'Not available yet (next phase)',
             keepCollectible: 'Keep',
             sellCollectible: 'Sell',
-            betCollectible: 'Bet'
+            betCollectible: 'Bet',
+            adminBadge: 'ADMIN',
+            lootBoxesTitle: 'Loot Boxes',
+            comingSoonDesc: 'New games arriving soon',
+            freeLabel: 'Free',
+            rareLabel: 'Rare',
+            openedFreeBox: '🎁 You opened a free box!',
+            wonPrefix: '🎉 You won:',
+            insufficientBalance: '❌ Insufficient balance!',
+            openingBox: '🔄 Opening the box...',
+            giftBalanceLabel: '🎒 You have {count} gifts',
+            noGiftSelectedYet: 'No gift selected yet',
+            connectWalletForGifts: '🔒 Connect your wallet to view your gifts',
+            giftValueLabel: '💎 Gift value:',
+            vipStart: 'Start'
         });
         Object.assign(translations.ru, {
             depositCollectibleBtn: '🎁 Отправить коллекционный подарок',
             collectibleDepositText: 'Вы можете отправить свой коллекционный подарок из Telegram на аккаунт игры, указанный ниже. Он появится в рюкзаке только после проверки сервером.',
             collectiblesTitle: 'Проверенные коллекционные подарки',
-            noCollectiblesTitle: 'Пока нет проверенных подарков',
-            noCollectiblesDesc: 'Нажмите «Отправить коллекционный подарок», чтобы отправить его на аккаунт игры в Telegram.',
+            noCollectiblesTitle: 'Пока нет подтверждённых коллекционных подарков',
+            noCollectiblesDesc: 'Нажмите «Отправить коллекционный подарок», чтобы отправить его на Telegram-аккаунт игры.',
             collectibleImportFailed: 'Не удалось открыть аккаунт игры в Telegram',
+            collectibleIntentCreated: 'Запрос на отправку создан — продолжите в Telegram',
+            collectibleLoading: 'Подготовка...',
             collectibleNumberLabel: 'Серийный номер',
             collectibleActionUnavailable: 'Пока недоступно (следующий этап)',
             keepCollectible: 'Оставить',
             sellCollectible: 'Продать',
-            betCollectible: 'Ставка'
+            betCollectible: 'Ставка',
+            adminBadge: 'ADMIN',
+            lootBoxesTitle: 'Сундуки удачи',
+            comingSoonDesc: 'Новые игры уже скоро',
+            freeLabel: 'Бесплатно',
+            rareLabel: 'Редкий',
+            openedFreeBox: '🎁 Вы открыли бесплатный сундук!',
+            wonPrefix: '🎉 Вы выиграли:',
+            insufficientBalance: '❌ Недостаточно средств!',
+            openingBox: '🔄 Открытие сундука...',
+            giftBalanceLabel: '🎒 У вас {count} подарков',
+            noGiftSelectedYet: 'Подарок ещё не выбран',
+            connectWalletForGifts: '🔒 Подключите кошелек, чтобы увидеть свои подарки',
+            giftValueLabel: '💎 Ценность подарка:',
+            vipStart: 'Старт'
         });
 
         function getTranslation(key) {
@@ -2672,11 +2724,22 @@
             if (noCollectiblesTitle) noCollectiblesTitle.textContent = t.noCollectiblesTitle;
             const noCollectiblesDesc = safeGetElement('no-collectibles-desc');
             if (noCollectiblesDesc) noCollectiblesDesc.textContent = t.noCollectiblesDesc;
+            const lootTitleText = safeGetElement('loot-title-text');
+            if (lootTitleText) lootTitleText.textContent = t.lootBoxesTitle;
+            const comingSoonDesc = safeGetElement('coming-soon-desc');
+            if (comingSoonDesc) comingSoonDesc.textContent = t.comingSoonDesc;
+            const giftValueLabelText = safeGetElement('gift-value-label-text');
+            if (giftValueLabelText) giftValueLabelText.textContent = t.giftValueLabel;
+            const noGiftSelectedText = safeGetElement('no-gift-selected-text');
+            if (noGiftSelectedText) noGiftSelectedText.textContent = t.noGiftSelectedYet;
+            const statusMessage = safeGetElement('status-message');
+            if (statusMessage) statusMessage.textContent = serverConnected ? t.roundLive : t.connecting;
             updateMainBetButton();
             updateModalBetButton();
             updateVipUI();
             renderGiftsPage();
             renderCollectibles();
+            renderLootBoxes();
             updateGiftSelectionInModal();
         }
 
@@ -3022,7 +3085,7 @@
                 placeButton.textContent = t.placeGiftBet;
                 const info = document.getElementById("gift-selection-info");
                 if (info) {
-                    if (userGifts.length === 0) info.textContent = '🔒 قم بربط محفظتك لعرض هداياك';
+                    if (userGifts.length === 0) info.textContent = t.connectWalletForGifts;
                     else info.textContent = t.selectGift;
                 }
             } else {
@@ -3036,20 +3099,22 @@
         function updateGiftSelectionInModal() {
             const grid = document.getElementById("gift-selection-grid");
             const countDisplay = document.getElementById("user-gift-count");
+            const balanceText = document.getElementById("gift-balance-text");
             const selectedDisplay = document.getElementById("selected-gift-display");
             const valueDisplay = document.getElementById("gift-value-display");
             const t = translations[currentLanguage] || translations.ar;
 
             if (countDisplay) countDisplay.textContent = userGifts.length;
+            if (balanceText) balanceText.textContent = t.giftBalanceLabel.replace('{count}', userGifts.length);
             if (!grid) return;
             grid.innerHTML = "";
 
             if (userGifts.length === 0) {
                 grid.style.display = 'none';
-                if (selectedDisplay) selectedDisplay.innerHTML = `<span style="color:#7a9bcb;">🔒 قم بربط محفظة TON لعرض هداياك</span>`;
+                if (selectedDisplay) selectedDisplay.innerHTML = `<span style="color:#7a9bcb;">${t.connectWalletForGifts}</span>`;
                 if (valueDisplay) valueDisplay.textContent = "0.00";
                 const info = document.getElementById("gift-selection-info");
-                if (info) info.textContent = '🔒 قم بربط محفظتك لعرض هداياك';
+                if (info) info.textContent = t.connectWalletForGifts;
                 return;
             }
 
