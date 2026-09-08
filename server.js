@@ -50,6 +50,7 @@ const {
     getRoundByNumber,
     updateRoundState,
     getActiveBetsForRound,
+    getRoundPlayers,
     cashoutBet,
     crashRound
 } = require('./database');
@@ -248,7 +249,8 @@ let currentGameState = {
     serverSeed: null,
     clientSeed: DEFAULT_CLIENT_SEED,
     nonce: 0,
-    crashAt: null
+    crashAt: null,
+    players: []
 };
 
 const MULTIPLIER_INCREASE_PER_SECOND = 1 / 2.7;
@@ -270,7 +272,8 @@ function getGameStateSnapshot() {
         clientSeed: currentGameState.clientSeed,
         nonce: currentGameState.nonce,
         serverSeed: currentGameState.phase === 'CRASH' ? currentGameState.serverSeed : null,
-        crashAt: currentGameState.phase === 'CRASH' ? currentGameState.crashAt : null
+        crashAt: currentGameState.phase === 'CRASH' ? currentGameState.crashAt : null,
+        players: currentGameState.players
     };
 }
 
@@ -292,6 +295,23 @@ function updateGameState(newState) {
     currentGameState = { ...currentGameState, ...newState };
 }
 
+// اسم Telegram الظاهر فقط (لا username، لا telegram_id)
+function buildPlayerDisplayName(firstName, lastName) {
+    const name = [firstName, lastName].filter(Boolean).join(' ').trim();
+    return name || null;
+}
+
+async function refreshRoundPlayers() {
+    const rows = await getRoundPlayers(currentGameState.roundId);
+    currentGameState.players = rows.map(row => ({
+        id: `${row.bet_type}:${row.bet_id}`,
+        name: buildPlayerDisplayName(row.first_name, row.last_name),
+        amount: row.amount,
+        status: row.status,
+        multiplier: row.multiplier
+    }));
+}
+
 async function startRound(roundNumber) {
     if (roundTransitionTimer) clearTimeout(roundTransitionTimer);
     roundTransitionTimer = null;
@@ -307,7 +327,8 @@ async function startRound(roundNumber) {
         serverSeed: fairRound.serverSeed,
         clientSeed: fairRound.clientSeed,
         nonce: fairRound.nonce,
-        crashAt: fairRound.crashAt
+        crashAt: fairRound.crashAt,
+        players: []
     });
     console.log(`🔐 Round ${roundNumber} committed: ${fairRound.serverSeedHash}`);
 }
@@ -326,11 +347,13 @@ async function launchRound() {
 
 async function processAutoCashouts(multiplier) {
     const bets = await getActiveBetsForRound(currentGameState.roundId);
+    let anyCashed = false;
     for (const bet of bets) {
         const target = Number(bet.target);
         if (shouldAutoCashout(target, multiplier, currentGameState.crashAt)) {
             try {
                 await cashoutBet(bet.bet_type, bet.id, bet.user_id, currentGameState.roundId, target);
+                anyCashed = true;
             } catch (error) {
                 if (!error.message.includes('already settled') && !error.message.includes('not found')) {
                     console.error(`Auto cashout failed for ${bet.bet_type} ${bet.id}:`, error.message);
@@ -338,6 +361,7 @@ async function processAutoCashouts(multiplier) {
             }
         }
     }
+    if (anyCashed) await refreshRoundPlayers();
 }
 
 async function crashCurrentRound() {
@@ -354,6 +378,7 @@ async function crashCurrentRound() {
             flightStartedAt: null,
             history: [crashAt, ...currentGameState.history].slice(0, 10)
         });
+        await refreshRoundPlayers();
         console.log(`💥 Round ${roundId} crashed at ${crashAt}x`);
         roundTransitionTimer = setTimeout(async () => {
             try {
@@ -536,6 +561,7 @@ app.post('/api/bet/gift', authenticate, async (req, res) => {
 
         const roundId = currentGameState.roundId;
         const result = await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
+        await refreshRoundPlayers();
         
         res.json({ 
             ok: true, 
@@ -564,6 +590,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
         const multiplier = currentGameState.multiplier;
         const result = await cashoutBet('GIFT', betId, req.user.id, currentGameState.roundId, multiplier);
         const balance = await getUserBalance(req.user.id);
+        await refreshRoundPlayers();
         
         // إنشاء إشعار
         await createNotification(
@@ -602,6 +629,7 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
 
         const roundId = currentGameState.roundId;
         const result = await placeTonBet(req.user.id, normalizedAmount, roundId, autoCashoutTarget);
+        await refreshRoundPlayers();
         
         res.json({ 
             ok: true, 
@@ -630,6 +658,7 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
         const multiplier = currentGameState.multiplier;
         const result = await cashoutBet('TON', betId, req.user.id, currentGameState.roundId, multiplier);
         const balance = await getUserBalance(req.user.id);
+        await refreshRoundPlayers();
         
         // إنشاء إشعار
         await createNotification(

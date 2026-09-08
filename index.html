@@ -855,6 +855,7 @@
             border: 1px solid rgba(100, 200, 255, 0.04);
             transition: all 0.3s ease;
         }
+        .player-row.player-active { background: rgba(79, 195, 247, 0.08); border-color: rgba(79, 195, 247, 0.2); }
         .player-row.player-winner { background: rgba(56, 210, 123, 0.08); border-color: rgba(56, 210, 123, 0.15); }
         .player-row.player-loser { background: rgba(255, 79, 103, 0.06); border-color: rgba(255, 79, 103, 0.1); }
         .player-left {
@@ -1305,26 +1306,52 @@
         /* =========================================================
            LANGUAGE SELECTOR
         ========================================================= */
-        .language-selector {
-            margin: 12px 0;
+        .language-selector-globe { position: relative; margin: 12px 0; }
+        .language-globe-btn {
+            width: 100%;
             display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
-            flex-wrap: wrap;
-        }
-        .language-btn {
             background: rgba(15, 40, 71, 0.6);
             color: #c8e6ff;
-            padding: 8px 16px;
+            padding: 10px 16px;
             border-radius: 12px;
             font-weight: 700;
             font-size: 13px;
             border: 1px solid rgba(100, 200, 255, 0.06);
             transition: all 0.3s ease;
-            flex: 1;
-            min-width: 80px;
         }
-        .language-btn.active { border-color: #4fc3f7; background: rgba(79, 195, 247, 0.08); color: #4fc3f7; }
-        .language-btn:active { transform: scale(0.95); }
+        .language-globe-btn:active { transform: scale(0.97); }
+        .language-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            background: rgba(10, 26, 48, 0.96);
+            border: 1px solid rgba(100, 200, 255, 0.1);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        .language-menu.show { display: flex; }
+        .language-menu-item {
+            background: rgba(15, 40, 71, 0.6);
+            color: #c8e6ff;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            border: 1px solid rgba(100, 200, 255, 0.06);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .language-menu-item.active { border-color: #4fc3f7; background: rgba(79, 195, 247, 0.08); color: #4fc3f7; }
+        .language-menu-item:active { transform: scale(0.97); }
 
         /* =========================================================
            MODAL COMPONENTS
@@ -1934,10 +1961,15 @@
             <div class="vip-title" style="margin-top:10px;">
                 <span id="language-title">🌍 اللغة</span>
             </div>
-            <div class="language-selector">
-                <button class="language-btn active" data-lang="ar" onclick="setLanguage('ar')" id="lang-ar">🇸🇦 العربية</button>
-                <button class="language-btn" data-lang="en" onclick="setLanguage('en')" id="lang-en">🇬🇧 English</button>
-                <button class="language-btn" data-lang="ru" onclick="setLanguage('ru')" id="lang-ru">🇷🇺 Русский</button>
+            <div class="language-selector-globe">
+                <button type="button" class="language-globe-btn" onclick="toggleLanguageMenu()" id="language-globe-btn">
+                    <span>🌐</span> <span id="language-current-label">🇸🇦 العربية</span>
+                </button>
+                <div class="language-menu" id="language-menu">
+                    <button class="language-menu-item active" data-lang="ar" onclick="setLanguage('ar')" id="lang-ar">🇸🇦 العربية</button>
+                    <button class="language-menu-item" data-lang="en" onclick="setLanguage('en')" id="lang-en">🇬🇧 English</button>
+                    <button class="language-menu-item" data-lang="ru" onclick="setLanguage('ru')" id="lang-ru">🇷🇺 Русский</button>
+                </div>
             </div>
             <div class="profile-actions">
                 <button type="button" onclick="openTonWallet()" id="profile-connect-wallet">💎 ربط / تغيير TON Wallet</button>
@@ -2360,12 +2392,18 @@
         /* =========================================================
            LANGUAGE SYSTEM
         ========================================================= */
-        let currentLanguage = 'ar';
+        let currentLanguage = localStorage.getItem('rocketLanguage') || 'ar';
+        const LANGUAGE_LABELS = { ar: '🇸🇦 العربية', en: '🇬🇧 English', ru: '🇷🇺 Русский' };
+        const LANGUAGE_DIR = { ar: 'rtl', en: 'ltr', ru: 'ltr' };
         const translations = {
             ar: { gameHub: '❄️ Game Hub', rocket: 'Rocket Ice', rocketDesc: 'لعبة متعددة اللاعبين • رهان وسحب', live: '❄️ مباشر', comingSoon: 'قريباً', soon: 'قريباً', back: '← رجوع', giftsTitle: '🎁 الهدايا', giftsSub: 'هدايا Telegram الخاصة بك', noGiftsTitle: 'لا توجد هدايا!', noGiftsDesc: 'لم تقم بربح أي هدية بعد. استمر باللعب للفوز بهدية!', giftValue: 'القيمة', betWithGift: 'رهان بالهدية', balance: 'الرصيد', deposit: '+ إيداع TON', vipLevels: '💎 مستويات VIP', turnover: 'الإجمالي', next: 'التالي', at: 'عند', rounds: 'الجولات', wins: 'الانتصارات', wallet: 'المحفظة', notConnected: 'غير متصلة', connectWallet: '💎 ربط / تغيير TON Wallet', depositTon: '💰 إيداع TON', language: '🌍 اللغة', telegramPlayer: 'Telegram Player', home: 'الرئيسية', top: 'المتصدرون', profile: 'الملف', gifts: 'الهدايا', earn: 'الأرباح', placeBet: 'ضع رهانك', availableBalance: 'الرصيد المتاح', betAmount: 'مبلغ الرهان', chooseGift: 'اختر هديتك للرهان', selectGift: 'اختر هدية من هداياك للرهان بها', noGiftsToBet: 'لا تملك هدايا للرهان بها', placeTonBet: 'رهان بـ TON 🚀', placeGiftBet: 'رهان بالهدية 🎁', depositTitle: 'إيداع TON', depositInfo: 'أرسل TON من محفظتك مباشرة إلى حساب اللعبة.', depositAmount: 'مبلغ الإيداع', depositButton: 'إيداع TON 🚀', connectWalletBtn: 'ربط TON Wallet', changeWalletBtn: 'تغيير TON Wallet', players: 'اللاعبين', topTitle: '🏆 المتصدرون', topEmpty: 'لا توجد بيانات بعد', giftsModalTitle: '🎁 الهدايا', giftsModalContent: 'قسم الهدايا جاهز للواجهة.', autoCashout: 'سحب تلقائي', giftSelected: 'تم اختيار الهدية للرهان', noGiftSelected: 'الرجاء اختيار هدية', giftBetPlaced: 'تم وضع الرهان بالهدية', giftBetFailed: 'فشل الرهان بالهدية', giftWon: '🎁 ربحت هدية!', giftLost: '💔 خسرت هديتك', maxLevel: 'الحد الأقصى', depositPending: 'جاري إنشاء طلب الإيداع...', depositDetected: '✅ تم العثور على المعاملة.', depositConfirmed: '✅ تم تأكيد المعاملة.', depositCredited: '✅ تم الإيداع بنجاح!', depositFailed: 'فشل الإيداع', depositTimeout: 'انتهت مهلة الإيداع', common: 'عادية', rare: 'نادرة', epic: 'أسطورية', legendary: 'خرافية', walletConnected: 'متصلة', walletDisconnected: 'غير متصلة', roundStarts: 'تبدأ الجولة خلال', roundLive: 'الجولة مستمرة', roundCrashed: '🚀 انتهت الجولة', connecting: 'جاري الاتصال...', betOpen: 'الرهان مفتوح', betActive: 'راقب المضاعف واضغط Cash Out', betQueued: 'رهانك محجوز للجولة القادمة', roundInProgress: 'الجولة مستمرة', waitingNext: 'بانتظار الجولة التالية', roundLabel: 'ROUND #', multiplier: 'x', placeBetBtn: 'Place bet', cashOut: 'CASH OUT', betActiveBtn: 'BET ACTIVE', betQueuedBtn: 'BET QUEUED', pleaseWait: 'Please wait...', betNextRound: '🚀 Bet Next Round' },
             en: { gameHub: '❄️ Game Hub', rocket: 'Rocket Ice', rocketDesc: 'Multiplayer crash game • Bet & Cash Out', live: '❄️ Live', comingSoon: 'Coming Soon', soon: 'Soon', back: '← Back', giftsTitle: '🎁 Gifts', giftsSub: 'Your Telegram Gifts', noGiftsTitle: 'No Gifts Yet!', noGiftsDesc: "You haven't won any gifts yet. Keep playing!", giftValue: 'Value', betWithGift: 'Bet with Gift', balance: 'Balance', deposit: '+ Deposit TON', vipLevels: '💎 VIP Levels', turnover: 'Turnover', next: 'Next', at: 'at', rounds: 'Rounds', wins: 'Wins', wallet: 'Wallet', notConnected: 'Not Connected', connectWallet: '💎 Connect / Change TON Wallet', depositTon: '💰 Deposit TON', language: '🌍 Language', telegramPlayer: 'Telegram Player', home: 'Home', top: 'Leaderboard', profile: 'Profile', gifts: 'Gifts', earn: 'Earn', placeBet: 'Place Bet', availableBalance: 'Available Balance', betAmount: 'Bet Amount', chooseGift: 'Choose your gift to bet', selectGift: 'Select a gift from your collection', noGiftsToBet: 'You have no gifts to bet with', placeTonBet: 'Place TON Bet 🚀', placeGiftBet: 'Place Gift Bet 🎁', depositTitle: 'Deposit TON', depositInfo: 'Send TON from your wallet directly to the game account.', depositAmount: 'Deposit Amount', depositButton: 'Deposit TON 🚀', connectWalletBtn: 'Connect TON Wallet', changeWalletBtn: 'Change TON Wallet', players: 'Players', topTitle: '🏆 Leaderboard', topEmpty: 'No data yet', giftsModalTitle: '🎁 Gifts', giftsModalContent: 'Gifts section ready for the interface.', autoCashout: 'Auto Cashout', giftSelected: 'Gift selected for betting', noGiftSelected: 'Please select a gift', giftBetPlaced: 'Gift bet placed successfully', giftBetFailed: 'Gift bet failed', giftWon: '🎁 You won a gift!', giftLost: '💔 You lost your gift', maxLevel: 'MAX LEVEL', depositPending: 'Creating deposit request...', depositDetected: '✅ Transaction found.', depositConfirmed: '✅ Transaction confirmed.', depositCredited: '✅ Deposit successful!', depositFailed: 'Deposit failed', depositTimeout: 'Deposit timeout', common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', walletConnected: 'Connected', walletDisconnected: 'Not Connected', roundStarts: 'Round starts in', roundLive: 'Round in progress', roundCrashed: '🚀 Round ended', connecting: 'Connecting...', betOpen: 'Betting open', betActive: 'Watch the multiplier and press Cash Out', betQueued: 'Your bet is queued for next round', roundInProgress: 'Round in progress', waitingNext: 'Waiting for next round', roundLabel: 'ROUND #', multiplier: 'x', placeBetBtn: 'Place bet', cashOut: 'CASH OUT', betActiveBtn: 'BET ACTIVE', betQueuedBtn: 'BET QUEUED', pleaseWait: 'Please wait...', betNextRound: '🚀 Bet Next Round' },
             ru: { gameHub: '❄️ Игровой центр', rocket: 'Rocket Ice', rocketDesc: 'Мультиплеерная игра • Ставки и вывод', live: '❄️ В прямом эфире', comingSoon: 'Скоро', soon: 'Скоро', back: '← Назад', giftsTitle: '🎁 Подарки', giftsSub: 'Ваши подарки Telegram', noGiftsTitle: 'Нет подарков!', noGiftsDesc: 'Вы ещё не выиграли ни одного подарка. Продолжайте играть!', giftValue: 'Ценность', betWithGift: 'Ставка подарком', balance: 'Баланс', deposit: '+ Пополнить TON', vipLevels: '💎 VIP уровни', turnover: 'Оборот', next: 'Следующий', at: 'на', rounds: 'Раунды', wins: 'Победы', wallet: 'Кошелек', notConnected: 'Не подключен', connectWallet: '💎 Подключить / изменить TON кошелек', depositTon: '💰 Пополнить TON', language: '🌍 Язык', telegramPlayer: 'Telegram Player', home: 'Главная', top: 'Лидеры', profile: 'Профиль', gifts: 'Подарки', earn: 'Заработок', placeBet: 'Сделать ставку', availableBalance: 'Доступный баланс', betAmount: 'Сумма ставки', chooseGift: 'Выберите подарок для ставки', selectGift: 'Выберите подарок из вашей коллекции', noGiftsToBet: 'У вас нет подарков для ставки', placeTonBet: 'Ставка TON 🚀', placeGiftBet: 'Ставка подарком 🎁', depositTitle: 'Пополнить TON', depositInfo: 'Отправьте TON из вашего кошелька на игровой счет.', depositAmount: 'Сумма пополнения', depositButton: 'Пополнить TON 🚀', connectWalletBtn: 'Подключить TON кошелек', changeWalletBtn: 'Изменить TON кошелек', players: 'Игроки', topTitle: '🏆 Лидеры', topEmpty: 'Нет данных', giftsModalTitle: '🎁 Подарки', giftsModalContent: 'Раздел подарков готов для интерфейса.', autoCashout: 'Автовывод', giftSelected: 'Подарок выбран для ставки', noGiftSelected: 'Пожалуйста, выберите подарок', giftBetPlaced: 'Ставка подарком размещена', giftBetFailed: 'Ставка подарком не удалась', giftWon: '🎁 Вы выиграли подарок!', giftLost: '💔 Вы потеряли подарок', maxLevel: 'МАКСИМУМ', depositPending: 'Создание запроса на пополнение...', depositDetected: '✅ Транзакция найдена.', depositConfirmed: '✅ Транзакция подтверждена.', depositCredited: '✅ Пополнение успешно!', depositFailed: 'Пополнение не удалось', depositTimeout: 'Время пополнения истекло', common: 'Обычный', rare: 'Редкий', epic: 'Эпический', legendary: 'Легендарный', walletConnected: 'Подключен', walletDisconnected: 'Не подключен', roundStarts: 'Раунд начнется через', roundLive: 'Раунд в процессе', roundCrashed: '🚀 Раунд завершен', connecting: 'Подключение...', betOpen: 'Ставки открыты', betActive: 'Следите за множителем и нажмите Cash Out', betQueued: 'Ваша ставка в очереди на следующий раунд', roundInProgress: 'Раунд в процессе', waitingNext: 'Ожидание следующего раунда', roundLabel: 'РАУНД #', multiplier: 'x', placeBetBtn: 'Сделать ставку', cashOut: 'ВЫВОД', betActiveBtn: 'СТАВКА АКТИВНА', betQueuedBtn: 'СТАВКА В ОЧЕРЕДИ', pleaseWait: 'Пожалуйста, подождите...', betNextRound: '🚀 Ставка в следующем раунде' }
         };
+
+        Object.assign(translations.ar, { noActivePlayers: 'لا يوجد لاعبون نشطون', guestPlayer: 'ضيف', playerActive: 'نشط', playerWon: 'فائز', playerLost: 'خسر' });
+        Object.assign(translations.en, { noActivePlayers: 'No active players', guestPlayer: 'Guest', playerActive: 'Active', playerWon: 'Won', playerLost: 'Lost' });
+        Object.assign(translations.ru, { noActivePlayers: 'Нет активных игроков', guestPlayer: 'Гость', playerActive: 'Активен', playerWon: 'Выиграл', playerLost: 'Проиграл' });
 
         function getTranslation(key) {
             return translations[currentLanguage]?.[key] || translations.ar[key] || key;
@@ -2383,6 +2421,13 @@
                 return;
             }
             const t = translations[currentLanguage] || translations.ar;
+            document.documentElement.lang = currentLanguage;
+            document.documentElement.dir = LANGUAGE_DIR[currentLanguage] || 'rtl';
+            const label = safeGetElement('language-current-label');
+            if (label) label.textContent = LANGUAGE_LABELS[currentLanguage] || LANGUAGE_LABELS.ar;
+            document.querySelectorAll(".language-menu-item").forEach(function(btn) {
+                btn.classList.toggle("active", btn.dataset.lang === currentLanguage);
+            });
             
             const gameHubTitle = safeGetElement('game-hub-title');
             if (gameHubTitle) gameHubTitle.innerHTML = '❄️ <span class="ice">' + t.gameHub + '</span>';
@@ -2549,6 +2594,7 @@
                 currentBetId = null;
                 playedThisRound = false;
                 isQueuedForNextRound = false;
+                livePlayers = [];
             }
             if (state.phase === "CRASH") {
                 hasBet = false;
@@ -2595,7 +2641,9 @@
             }
             gamePhase = state.phase;
             globalHistory = state.history || [];
+            livePlayers = Array.isArray(state.players) ? state.players : [];
             renderHistory();
+            renderPlayers();
             updateMainBetButton();
         }
 
@@ -2689,7 +2737,7 @@
             if (!list) return;
             if (count) count.textContent = String(livePlayers.length);
             if (!livePlayers.length) {
-                list.innerHTML = `<div class="empty-players">${getTranslation('noGiftsToBet')}</div>`;
+                list.innerHTML = `<div class="empty-players">${getTranslation('noActivePlayers')}</div>`;
                 return;
             }
             list.innerHTML = "";
@@ -2700,7 +2748,8 @@
                 const isLoser = status === "LOST";
                 row.className = "player-row";
                 if (isWinner) row.classList.add("player-winner");
-                if (isLoser) row.classList.add("player-loser");
+                else if (isLoser) row.classList.add("player-loser");
+                else row.classList.add("player-active");
                 let multiplierValue = Number(currentMultiplier) || 1;
                 if (status === "CASHED_OUT" && Number.isFinite(Number(player.multiplier)) && Number(player.multiplier) > 0) {
                     multiplierValue = Number(player.multiplier);
@@ -2710,11 +2759,12 @@
                 const avatarClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const nameClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const valueClass = isWinner ? "winner" : isLoser ? "loser" : "";
-                const statusText = isWinner ? "فائز" : isLoser ? "خسر" : "نشط";
+                const statusText = isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive');
+                const displayName = player.name || getTranslation('guestPlayer');
                 let currentValue = amount * multiplierValue;
                 if (isLoser) currentValue = 0;
                 row.innerHTML =
-                    `<div class="player-left"><img class="player-avatar ${avatarClass}" src="${escapeHtmlAttribute(avatar)}" alt=""><div class="player-info"><div class="player-name ${nameClass}">${escapeHtml(player.name || "اللاعب")}</div><div class="player-status">${statusText}</div><div class="player-bet-line"><span class="player-bet-amount ${valueClass}">💎 ${amount.toFixed(2)}</span><span class="player-live-multiplier ${valueClass}">×${multiplierValue.toFixed(2)}</span></div></div></div><div class="player-current-value ${valueClass}">${isLoser ? "خسر" : "💎 " + currentValue.toFixed(2)}</div>`;
+                    `<div class="player-left"><img class="player-avatar ${avatarClass}" src="${escapeHtmlAttribute(avatar)}" alt=""><div class="player-info"><div class="player-name ${nameClass}">${escapeHtml(displayName)}</div><div class="player-status">${statusText}</div><div class="player-bet-line"><span class="player-bet-amount ${valueClass}">💎 ${amount.toFixed(2)}</span><span class="player-live-multiplier ${valueClass}">×${multiplierValue.toFixed(2)}</span></div></div></div><div class="player-current-value ${valueClass}">${isLoser ? statusText : "💎 " + currentValue.toFixed(2)}</div>`;
                 list.appendChild(row);
             });
         }
@@ -3405,9 +3455,13 @@
 
         function setLanguage(lang) {
             currentLanguage = lang;
-            document.querySelectorAll(".language-btn").forEach(function(btn) {
+            localStorage.setItem('rocketLanguage', lang);
+            document.querySelectorAll(".language-menu-item").forEach(function(btn) {
                 btn.classList.toggle("active", btn.dataset.lang === lang);
             });
+            const label = document.getElementById("language-current-label");
+            if (label) label.textContent = LANGUAGE_LABELS[lang] || LANGUAGE_LABELS.ar;
+            closeLanguageMenu();
             applyLanguage();
             renderGiftsPage();
             updateGiftSelectionInModal();
@@ -3415,7 +3469,24 @@
             updateProfilePage();
             updateMainBetButton();
             updateModalBetButton();
+            renderPlayers();
+            renderTopList();
         }
+
+        function toggleLanguageMenu() {
+            const menu = document.getElementById("language-menu");
+            if (menu) menu.classList.toggle("show");
+        }
+
+        function closeLanguageMenu() {
+            const menu = document.getElementById("language-menu");
+            if (menu) menu.classList.remove("show");
+        }
+
+        document.addEventListener("click", function(event) {
+            const container = document.querySelector(".language-selector-globe");
+            if (container && !container.contains(event.target)) closeLanguageMenu();
+        });
 
         function renderGiftsPage() {
             const collection = document.getElementById("gifts-collection");
@@ -3515,10 +3586,13 @@
                 const isLoser = status === "LOST";
                 row.className = "player-row";
                 if (isWinner) row.classList.add("player-winner");
-                if (isLoser) row.classList.add("player-loser");
+                else if (isLoser) row.classList.add("player-loser");
+                else row.classList.add("player-active");
                 const multiplier = isWinner ? Number(player.multiplier || 0) : Number(currentMultiplier || 1);
                 const avatar = makeAvatar(player);
-                row.innerHTML = `<div class="player-left"><div style="width:22px;text-align:center;font-size:10px;font-weight:900;">#${index + 1}</div><img class="player-avatar ${isWinner ? "winner" : isLoser ? "loser" : ""}" src="${escapeHtmlAttribute(avatar)}" alt=""><div class="player-info"><div class="player-name ${isWinner ? "winner" : isLoser ? "loser" : ""}">${escapeHtml(player.name || "اللاعب")}</div><div class="player-status">${isWinner ? "فائز" : isLoser ? "خسر" : "نشط"}</div></div></div><div class="player-current-value ${isWinner ? "winner" : isLoser ? "loser" : ""}">×${multiplier.toFixed(2)}</div>`;
+                const displayName = player.name || getTranslation('guestPlayer');
+                const statusText = isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive');
+                row.innerHTML = `<div class="player-left"><div style="width:22px;text-align:center;font-size:10px;font-weight:900;">#${index + 1}</div><img class="player-avatar ${isWinner ? "winner" : isLoser ? "loser" : ""}" src="${escapeHtmlAttribute(avatar)}" alt=""><div class="player-info"><div class="player-name ${isWinner ? "winner" : isLoser ? "loser" : ""}">${escapeHtml(displayName)}</div><div class="player-status">${statusText}</div></div></div><div class="player-current-value ${isWinner ? "winner" : isLoser ? "loser" : ""}">×${multiplier.toFixed(2)}</div>`;
                 list.appendChild(row);
             });
         }

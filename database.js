@@ -480,6 +480,24 @@ async function getActiveBetsForRound(roundNumber) {
     `, [roundNumber, roundNumber]);
 }
 
+// Server-authoritative live player list for the current round (no telegram_id exposed).
+async function getRoundPlayers(roundNumber) {
+    return await query(`
+        SELECT tb.id AS bet_id, tb.user_id, tb.amount AS amount, tb.status,
+               tb.cashout_multiplier AS multiplier, u.first_name, u.last_name, 'TON' AS bet_type
+        FROM ton_bets tb
+        JOIN users u ON u.id = tb.user_id
+        WHERE tb.round_id = ?
+        UNION ALL
+        SELECT gb.id AS bet_id, gb.user_id, gb.gift_value_at_bet AS amount, gb.status,
+               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, 'GIFT' AS bet_type
+        FROM gift_bets gb
+        JOIN users u ON u.id = gb.user_id
+        WHERE gb.round_id = ?
+        ORDER BY bet_id ASC
+    `, [roundNumber, roundNumber]);
+}
+
 async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
     const config = type === 'TON'
         ? { table: 'ton_bets', amountColumn: 'amount', payoutColumn: 'payout' }
@@ -988,6 +1006,7 @@ module.exports = {
     getRoundByNumber,
     updateRoundState,
     getActiveBetsForRound,
+    getRoundPlayers,
     cashoutBet,
     crashRound,
     
