@@ -2027,7 +2027,7 @@
                 <div id="deposit-form" style="margin-top:15px;">
                     <div style="font-size:14px;font-weight:800;margin-bottom:9px;" id="deposit-amount-label">مبلغ الإيداع</div>
                     <div class="modal-amount-box" style="height:82px;">
-                        <input id="deposit-amount-input" class="modal-amount-input" type="number" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="0.00">
+                        <input id="deposit-amount-input" class="modal-amount-input" type="text" inputmode="decimal" min="0.01" step="0.01" value="1.00" placeholder="0.00">
                         <span class="amount-ton-icon">💎</span>
                     </div>
                     <button id="deposit-send-button" class="wallet-connect" type="button" onclick="startTonDeposit()" style="margin-top:14px;">
@@ -2990,9 +2990,13 @@
             autoCashoutEnabled = switchButton?.classList.contains("on") || false;
         }
 
+        function normalizeTonAmount(value) {
+            return Number(String(value ?? '').trim().replace(',', '.'));
+        }
+
         function readBetAmount() {
             const input = document.getElementById("modal-amount-input");
-            const value = Number(String(input?.value || "").trim().replace(',', '.'));
+            const value = normalizeTonAmount(input?.value);
             if (!Number.isFinite(value) || value < 0.1) return null;
             return Number(value.toFixed(9));
         }
@@ -3206,6 +3210,8 @@
                 currentBetId = null;
                 playedThisRound = true;
                 updateAutoCashoutUI();
+                if (typeof data.balance === 'number') { tonBalance = data.balance; updateTonWalletUI(); }
+                else { await fetchBalance(); }
                 showToast(t.cashOut);
             } catch (error) {
                 console.error("CASHOUT ERROR:", error);
@@ -3561,7 +3567,7 @@
 
         function readDepositAmount() {
             const input = document.getElementById("deposit-amount-input");
-            const amount = Number(input?.value);
+            const amount = normalizeTonAmount(input?.value);
             if (!Number.isFinite(amount) || amount < 0.01) return null;
             if (amount > 100000) return null;
             return Number(amount.toFixed(9));
@@ -3721,7 +3727,7 @@
         function escapeHtmlAttribute(value) { return escapeHtml(value); }
 
         document.getElementById("modal-amount-input")?.addEventListener("input", function() {
-            const value = Number(this.value);
+            const value = normalizeTonAmount(this.value);
             if (Number.isFinite(value) && value > 0) userBetAmount = value;
         });
 
@@ -3732,7 +3738,7 @@
         });
 
         document.getElementById("deposit-amount-input")?.addEventListener("input", function() {
-            let value = Number(this.value);
+            const value = normalizeTonAmount(this.value);
             if (Number.isFinite(value) && value > 100000) this.value = "100000";
         });
 

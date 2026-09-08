@@ -563,6 +563,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
 
         const multiplier = currentGameState.multiplier;
         const result = await cashoutBet('GIFT', betId, req.user.id, currentGameState.roundId, multiplier);
+        const balance = await getUserBalance(req.user.id);
         
         // إنشاء إشعار
         await createNotification(
@@ -576,7 +577,8 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
             ok: true, 
             payout: result.payout, 
             multiplier: result.multiplier,
-            giftValue: result.giftValue
+            giftValue: result.giftValue,
+            balance: balance
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
@@ -627,6 +629,7 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
 
         const multiplier = currentGameState.multiplier;
         const result = await cashoutBet('TON', betId, req.user.id, currentGameState.roundId, multiplier);
+        const balance = await getUserBalance(req.user.id);
         
         // إنشاء إشعار
         await createNotification(
@@ -640,7 +643,8 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
             ok: true, 
             payout: result.payout, 
             multiplier: result.multiplier,
-            amount: result.amount
+            amount: result.amount,
+            balance: balance
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
@@ -681,7 +685,7 @@ app.post('/api/lootbox/open', authenticate, async (req, res) => {
 app.post('/api/deposit/create', authenticate, async (req, res) => {
     try {
         const { walletAddress, amount, payload } = req.body;
-        const normalizedAmount = Number(amount);
+        const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
         
         if (!walletAddress || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0 || normalizedAmount > 100000) {
             return res.status(400).json({ ok: false, error: 'Invalid deposit data' });
