@@ -36,6 +36,10 @@ const {
     updateGiftStatus,
     getUserCollectibles,
     createOrGetImportIntent,
+    getLatestImportIntentForUser,
+    getPendingIntentByTelegramSenderId,
+    isCollectibleAlreadyCredited,
+    creditVerifiedCollectible,
     placeGiftBet,
     cashoutGiftBet,
     placeTonBet,
@@ -74,6 +78,20 @@ const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const TON_DEPOSIT_RECEIVER = process.env.TON_DEPOSIT_RECEIVER || '';
 const TONCENTER_API_URL = process.env.TONCENTER_API_URL || 'https://toncenter.com/api/v2';
 const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
+// Phase 3B: server-only config for the managed Telegram business account that receives collectibles.
+// Never exposed to the frontend. Real verification only runs once this is configured on the Telegram side.
+const TELEGRAM_BUSINESS_CONNECTION_ID = process.env.TELEGRAM_BUSINESS_CONNECTION_ID || '';
+const ADMIN_TELEGRAM_ID = '7385640899';
+
+// In-memory only (does not survive a restart): populated by /telegram-webhook once a real
+// business_connection update arrives. No database migration performed for this yet.
+let runtimeBusinessConnection = {
+    id: null,
+    businessUserId: null,
+    canViewGiftsAndStars: false,
+    isEnabled: false,
+    updatedAt: null
+};
 
 function requestJson(urlString) {
     return new Promise((resolve, reject) => {
@@ -217,8 +235,168 @@ function verifyTelegramData(initData) {
 }
 
 // =========================================================
-// 2. Middleware للمصادقة
+// 1.1 Phase 3B: Telegram Business Account collectible verification (server-only)
+// Official mechanism: Bot API business-connection gifts (getBusinessAccountGifts),
+// requires the business bot to have the "can_view_gifts_and_stars" right.
+// Never invents endpoints; never trusts client-provided gift data.
 // =========================================================
+function callTelegramBotApi(method, payload = {}) {
+    return new Promise((resolve, reject) => {
+        if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
+            reject(new Error('BOT_TOKEN is not configured'));
+            return;
+        }
+        const body = JSON.stringify(payload);
+        const request = https.request({
+            hostname: 'api.telegram.org',
+            path: `/bot${BOT_TOKEN}/${method}`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(body)
+            }
+        }, response => {
+            let raw = '';
+            response.setEncoding('utf8');
+            response.on('data', chunk => { raw += chunk; });
+            response.on('end', () => {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (!parsed.ok) {
+                        reject(new Error(`Telegram API error: ${parsed.description || 'unknown error'}`));
+                        return;
+                    }
+                    resolve(parsed.result);
+                } catch (error) { reject(error); }
+            });
+        });
+        request.setTimeout(10000, () => request.destroy(new Error('Telegram API timeout')));
+        request.on('error', reject);
+        request.write(body);
+        request.end();
+    });
+}
+
+// يجلب الهدايا المملوكة لحساب اللعبة التجاري على Telegram عبر الـ Business API الرسمي فقط.
+async function fetchBusinessAccountGifts() {
+    const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
+    if (!connectionId) {
+        throw new Error('TELEGRAM_BUSINESS_CONNECTION_ID is not configured');
+    }
+    const result = await callTelegramBotApi('getBusinessAccountGifts', {
+        business_connection_id: connectionId
+    });
+    return Array.isArray(result?.gifts) ? result.gifts : [];
+}
+
+// يستخرج الهوية الفريدة الرسمية لهدية Telegram Collectible فقط (يتجاهل النجوم/الهدايا العادية).
+function extractUniqueCollectibleIdentity(ownedGift) {
+    const uniqueGift = ownedGift?.gift;
+    if (!ownedGift || ownedGift.type !== 'unique' || !uniqueGift) return null;
+    if (!uniqueGift.name || !Number.isFinite(uniqueGift.number)) return null;
+
+    return {
+        uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
+        telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
+        collectibleNumber: uniqueGift.number,
+        senderTelegramId: ownedGift.sender_user?.id || null,
+        telegramGiftModel: {
+            telegramGiftId: uniqueGift.base_name || uniqueGift.name,
+            name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name,
+            slug: `${uniqueGift.name}-${uniqueGift.number}`,
+            imageUrl: uniqueGift.model?.sticker?.thumbnail?.file_id || null,
+            collection: uniqueGift.backdrop?.name || null,
+            rarity: 'common',
+            value: 0,
+            totalSupply: 0
+        },
+        verifiedMetadata: JSON.stringify({
+            name: uniqueGift.name,
+            number: uniqueGift.number,
+            model: uniqueGift.model?.name || null,
+            symbol: uniqueGift.symbol?.name || null,
+            backdrop: uniqueGift.backdrop?.name || null
+        })
+    };
+}
+
+// مسح دوري يطابق الهدايا الواردة الحقيقية بأصحاب intents المعلّقة عبر sender_user.id فقط (لا تخمين).
+async function runCollectibleVerificationSweep() {
+    if (!TELEGRAM_BUSINESS_CONNECTION_ID && !runtimeBusinessConnection.id) {
+        return { configured: false, credited: 0, unmatched: 0 };
+    }
+    const ownedGifts = await fetchBusinessAccountGifts();
+    let credited = 0;
+    let unmatched = 0;
+
+    for (const ownedGift of ownedGifts) {
+        const identity = extractUniqueCollectibleIdentity(ownedGift);
+        if (!identity) continue;
+
+        const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
+        if (alreadyCredited) continue;
+
+        if (!identity.senderTelegramId) { unmatched++; continue; }
+
+        const intent = await getPendingIntentByTelegramSenderId(identity.senderTelegramId);
+        if (!intent) { unmatched++; continue; }
+
+        await creditVerifiedCollectible({
+            intentId: intent.id,
+            userId: intent.user_id,
+            telegramGiftModel: identity.telegramGiftModel,
+            uniqueCollectibleId: identity.uniqueCollectibleId,
+            telegramGiftInstanceId: identity.telegramGiftInstanceId,
+            collectibleNumber: identity.collectibleNumber,
+            verifiedMetadata: identity.verifiedMetadata
+        });
+        credited++;
+    }
+
+    return { configured: true, credited, unmatched };
+}
+
+// ===== Telegram Business Connection webhook (Phase 3B) =====
+// Receives ONLY the official business_connection update; ignores every other Telegram update type.
+// Never invents/hardcodes a connection id — it only stores whatever Telegram itself sends.
+app.post('/telegram-webhook', (req, res) => {
+    res.status(200).json({ ok: true }); // Telegram requires a fast 200 regardless of internal handling.
+
+    try {
+        const update = req.body || {};
+        const connection = update.business_connection;
+        if (!connection) {
+            const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
+            console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+            return;
+        }
+
+        const canViewGiftsAndStars = !!connection.rights?.can_view_gifts_and_stars;
+        runtimeBusinessConnection = {
+            id: connection.id || null,
+            businessUserId: connection.user?.id || null,
+            canViewGiftsAndStars,
+            isEnabled: !!connection.is_enabled,
+            updatedAt: new Date().toISOString()
+        };
+
+        // Never log BOT_TOKEN, secrets, or the raw update payload — presence/flags only.
+        console.log('🔗 Telegram business_connection update:', JSON.stringify({
+            updateType: 'business_connection',
+            hasConnectionId: !!runtimeBusinessConnection.id,
+            businessUserId: runtimeBusinessConnection.businessUserId,
+            canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+            isEnabled: runtimeBusinessConnection.isEnabled
+        }));
+
+        if (!canViewGiftsAndStars) {
+            console.warn('⚠️ Business connection is missing can_view_gifts_and_stars — collectible verification cannot use it yet.');
+        }
+    } catch (error) {
+        console.error('Telegram webhook handling error:', error.message);
+    }
+});
+
 async function authenticate(req, res, next) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -569,6 +747,90 @@ app.post('/api/collectibles/import-intent', authenticate, async (req, res) => {
             ok: true,
             intentId: intent.intent_token,
             expiresAt: intent.expires_at
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.3 حالة التحقق الحقيقي من Telegram (Phase 3B) — لا تمنح ملكية أبداً من هنا =====
+app.get('/api/collectibles/verification-status', authenticate, async (req, res) => {
+    try {
+        if (!TELEGRAM_BUSINESS_CONNECTION_ID && !runtimeBusinessConnection.id) {
+            res.json({ ok: true, configured: false, status: 'not_configured' });
+            return;
+        }
+
+        try {
+            await runCollectibleVerificationSweep();
+        } catch (sweepError) {
+            console.error('Collectible verification sweep failed:', sweepError.message);
+            res.json({ ok: true, configured: true, status: 'error' });
+            return;
+        }
+
+        const intent = await getLatestImportIntentForUser(req.user.id);
+        if (!intent) { res.json({ ok: true, configured: true, status: 'none' }); return; }
+        if (intent.status === 'CONSUMED') { res.json({ ok: true, configured: true, status: 'verified' }); return; }
+        if (intent.status === 'PENDING' && new Date(intent.expires_at) > new Date()) {
+            res.json({ ok: true, configured: true, status: 'pending' });
+            return;
+        }
+        res.json({ ok: true, configured: true, status: 'expired' });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.4 حالة اتصال Business (محمي/إداري فقط) — لا يكشف قيمة business_connection_id أبداً =====
+app.get('/api/admin/business-connection-status', authenticate, async (req, res) => {
+    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        res.status(403).json({ ok: false, error: 'Forbidden' });
+        return;
+    }
+    res.json({
+        ok: true,
+        envConfigured: !!TELEGRAM_BUSINESS_CONNECTION_ID,
+        runtimeDiscovered: !!runtimeBusinessConnection.id,
+        businessUserId: runtimeBusinessConnection.businessUserId,
+        canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+        isEnabled: runtimeBusinessConnection.isEnabled,
+        updatedAt: runtimeBusinessConnection.updatedAt
+    });
+});
+
+// ===== 5.3.5 إعداد Telegram webhook (محمي/إداري فقط) — لا يكشف BOT_TOKEN أبداً =====
+const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
+
+app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
+    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        res.status(403).json({ ok: false, error: 'Forbidden' });
+        return;
+    }
+    try {
+        await callTelegramBotApi('setWebhook', { url: TELEGRAM_WEBHOOK_URL });
+        res.json({ ok: true, success: true, url: TELEGRAM_WEBHOOK_URL });
+    } catch (error) {
+        // callTelegramBotApi never includes BOT_TOKEN in its error messages.
+        res.status(400).json({ ok: false, success: false, error: error.message });
+    }
+});
+
+app.get('/api/admin/telegram-webhook-status', authenticate, async (req, res) => {
+    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        res.status(403).json({ ok: false, error: 'Forbidden' });
+        return;
+    }
+    try {
+        const info = await callTelegramBotApi('getWebhookInfo', {});
+        res.json({
+            ok: true,
+            hasUrl: !!info.url,
+            expectedUrl: TELEGRAM_WEBHOOK_URL,
+            urlMatches: info.url === TELEGRAM_WEBHOOK_URL,
+            pendingUpdateCount: info.pending_update_count,
+            lastErrorMessage: info.last_error_message || null,
+            hasCustomCertificate: !!info.has_custom_certificate
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
