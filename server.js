@@ -476,6 +476,12 @@ app.post('/telegram-webhook', async (req, res) => {
 
     try {
         const update = req.body || {};
+        const updateId = Number.isFinite(update.update_id) ? update.update_id : null;
+        const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
+        const hasBusinessConnection = !!update.business_connection;
+
+        // Diagnostic only — safe fields exclusively (no BOT_TOKEN, secret, connection_id, user IDs, file_id).
+        console.log('🔎 Webhook diagnostic: update received', JSON.stringify({ updateId, updateType, hasBusinessConnection }));
 
         // Idempotency: Telegram may redeliver the same update_id on timeout/retry.
         if (Number.isFinite(update.update_id)) {
@@ -488,7 +494,6 @@ app.post('/telegram-webhook', async (req, res) => {
 
         const connection = update.business_connection;
         if (!connection) {
-            const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
             console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
             await markWebhookUpdateProcessed(update.update_id);
             res.status(200).json({ ok: true });
@@ -505,19 +510,25 @@ app.post('/telegram-webhook', async (req, res) => {
         };
 
         // Persist across restarts — public connection metadata only, never a secret.
-        await savePersistedBusinessConnection({
-            connectionId: runtimeBusinessConnection.id,
-            businessUserId: runtimeBusinessConnection.businessUserId,
-            canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
-            isEnabled: runtimeBusinessConnection.isEnabled
-        });
+        console.log('🔎 Webhook diagnostic: calling savePersistedBusinessConnection', JSON.stringify({ updateId }));
+        try {
+            await savePersistedBusinessConnection({
+                connectionId: runtimeBusinessConnection.id,
+                businessUserId: runtimeBusinessConnection.businessUserId,
+                canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+                isEnabled: runtimeBusinessConnection.isEnabled
+            });
+            console.log('🔎 Webhook diagnostic: savePersistedBusinessConnection succeeded', JSON.stringify({ updateId }));
+        } catch (persistError) {
+            console.error('🔎 Webhook diagnostic: savePersistedBusinessConnection FAILED', JSON.stringify({ updateId, reason: persistError.message }));
+            throw persistError;
+        }
         await markWebhookUpdateProcessed(update.update_id);
 
-        // Never log BOT_TOKEN, secrets, or the raw update payload — presence/flags only.
+        // Never log BOT_TOKEN, secrets, connection_id, or Telegram user IDs — presence/flags only.
         console.log('🔗 Telegram business_connection update:', JSON.stringify({
             updateType: 'business_connection',
             hasConnectionId: !!runtimeBusinessConnection.id,
-            businessUserId: runtimeBusinessConnection.businessUserId,
             canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
             isEnabled: runtimeBusinessConnection.isEnabled
         }));
