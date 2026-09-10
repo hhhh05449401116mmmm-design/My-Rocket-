@@ -65,6 +65,126 @@ function transaction(callback) {
     return operation;
 }
 
+// هجرة آمنة وذرية بالكامل: تُزيل UNIQUE(user_id, gift_id) القديم فقط إن كان موجودًا،
+// خطوة بخطوة مع تحقق صريح بعد كل خطوة، وROLLBACK فوري عند أي فشل قبل أي COMMIT.
+async function migrateUserGiftsConstraint() {
+    const tableInfo = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_gifts'");
+    if (!tableInfo || !tableInfo.sql || !tableInfo.sql.includes('UNIQUE(user_id, gift_id)')) {
+        return; // لا يوجد قيد قديم لإزالته — لا حاجة لأي تغيير.
+    }
+
+    // دفاعي: تأكد أن الجدول المصدر يحتوي كل الأعمدة التي سننسخها، بغض النظر عن ترتيب الاستدعاء
+    // (مثلاً إن استُدعيت هذه الدالة مباشرة قبل إتمام إضافات الأعمدة الإضافية المعتادة في initDatabase).
+    const existingColumns = await query('PRAGMA table_info(user_gifts)');
+    const existingColumnNames = new Set(existingColumns.map(col => col.name));
+    const requiredColumns = [
+        ['unique_collectible_id', 'TEXT'],
+        ['telegram_gift_instance_id', 'TEXT'],
+        ['collectible_number', 'INTEGER'],
+        ['ownership_verified', 'INTEGER DEFAULT 0'],
+        ['verified_metadata', 'TEXT'],
+        ['telegram_thumbnail_file_id', 'TEXT']
+    ];
+    for (const [name, type] of requiredColumns) {
+        if (!existingColumnNames.has(name)) {
+            await run(`ALTER TABLE user_gifts ADD COLUMN ${name} ${type}`);
+        }
+    }
+
+    console.log('🔄 Migrating user_gifts schema to remove UNIQUE(user_id, gift_id)...');
+
+    const originalCount = await get('SELECT COUNT(*) AS count FROM user_gifts');
+    const originalMax = await get('SELECT MAX(id) AS maxId FROM user_gifts');
+
+    await run('BEGIN IMMEDIATE TRANSACTION');
+    try {
+        await run(`
+            CREATE TABLE user_gifts_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                gift_id INTEGER NOT NULL,
+                status TEXT DEFAULT 'OWNED' CHECK(status IN ('OWNED', 'LOCKED', 'IN_BET', 'WON', 'LOST', 'SENT', 'SOLD')),
+                received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                unique_collectible_id TEXT,
+                telegram_gift_instance_id TEXT,
+                collectible_number INTEGER,
+                ownership_verified INTEGER DEFAULT 0,
+                verified_metadata TEXT,
+                telegram_thumbnail_file_id TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE
+            )
+        `);
+
+        await run(`
+            INSERT INTO user_gifts_new (
+                id, user_id, gift_id, status, received_at, updated_at,
+                unique_collectible_id, telegram_gift_instance_id, collectible_number,
+                ownership_verified, verified_metadata, telegram_thumbnail_file_id
+            )
+            SELECT
+                id, user_id, gift_id, status, received_at, updated_at,
+                unique_collectible_id, telegram_gift_instance_id, collectible_number,
+                ownership_verified, verified_metadata, telegram_thumbnail_file_id
+            FROM user_gifts
+        `);
+
+        // يجب التحقق من الجدول الجديد قبل لمس الجدول الأصلي إطلاقًا.
+        const newCount = await get('SELECT COUNT(*) AS count FROM user_gifts_new');
+        if (!originalCount || !newCount || newCount.count !== originalCount.count) {
+            throw new Error(`Row count mismatch after copy: original=${originalCount && originalCount.count}, new=${newCount && newCount.count}`);
+        }
+        const newMax = await get('SELECT MAX(id) AS maxId FROM user_gifts_new');
+        const originalMaxId = originalMax ? originalMax.maxId : null;
+        const newMaxId = newMax ? newMax.maxId : null;
+        if (originalMaxId !== newMaxId) {
+            throw new Error(`MAX(id) mismatch after copy: original=${originalMaxId}, new=${newMaxId}`);
+        }
+
+        await run('DROP TABLE user_gifts');
+        await run('ALTER TABLE user_gifts_new RENAME TO user_gifts');
+
+        // Backfill telegram_thumbnail_file_id from legacy verified_metadata JSON where the
+        // dedicated column is still empty (older rows only ever stored it inside the JSON blob).
+        const rowsNeedingBackfill = await query(`
+            SELECT id, verified_metadata FROM user_gifts
+            WHERE telegram_thumbnail_file_id IS NULL AND verified_metadata IS NOT NULL
+        `);
+        for (const row of rowsNeedingBackfill) {
+            try {
+                const metadata = JSON.parse(row.verified_metadata);
+                if (metadata && metadata.stickerFileId) {
+                    await run('UPDATE user_gifts SET telegram_thumbnail_file_id = ? WHERE id = ?', [metadata.stickerFileId, row.id]);
+                }
+            } catch { /* malformed legacy metadata — nothing to backfill */ }
+        }
+
+        await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_unique_collectible
+            ON user_gifts(unique_collectible_id) WHERE unique_collectible_id IS NOT NULL`);
+        await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
+            ON user_gifts(telegram_gift_instance_id) WHERE telegram_gift_instance_id IS NOT NULL`);
+        await run(`CREATE INDEX IF NOT EXISTS idx_user_gifts_user_gift_lookup
+            ON user_gifts(user_id, gift_id)`);
+
+        const fkViolations = await query('PRAGMA foreign_key_check');
+        if (fkViolations && fkViolations.length > 0) {
+            throw new Error(`foreign_key_check reported ${fkViolations.length} violation(s) after migration`);
+        }
+
+        await run('COMMIT');
+        console.log(`✅ user_gifts schema migration completed safely (rows preserved: ${newCount.count})`);
+    } catch (error) {
+        try {
+            await run('ROLLBACK');
+            console.error('❌ user_gifts migration failed — rolled back safely, no changes applied:', error.message);
+        } catch (rollbackError) {
+            console.error('❌ user_gifts migration failed AND rollback also failed — manual review required:', error.message, rollbackError.message);
+        }
+        throw error;
+    }
+}
+
 // =========================================================
 // 3. إنشاء جميع الجداول
 // =========================================================
@@ -116,8 +236,7 @@ function initDatabase() {
                     received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
-                    UNIQUE(user_id, gift_id)
+                    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE
                 )
             `);
 
@@ -309,7 +428,8 @@ function initDatabase() {
                 ['telegram_gift_instance_id', 'TEXT'],
                 ['collectible_number', 'INTEGER'],
                 ['ownership_verified', 'INTEGER DEFAULT 0'],
-                ['verified_metadata', 'TEXT']
+                ['verified_metadata', 'TEXT'],
+                ['telegram_thumbnail_file_id', 'TEXT']
             ];
             userGiftColumns.forEach(([name, type]) => {
                 db.run(`ALTER TABLE user_gifts ADD COLUMN ${name} ${type}`, error => {
@@ -340,12 +460,41 @@ function initDatabase() {
                 )
             `);
 
+            // Persists the Telegram Business Connection across server restarts (single row, id=1).
+            // Stores only public connection metadata — never BOT_TOKEN or any secret.
+            db.run(`
+                CREATE TABLE IF NOT EXISTS telegram_business_connection (
+                    id INTEGER PRIMARY KEY CHECK(id = 1),
+                    connection_id TEXT,
+                    business_user_id TEXT,
+                    can_view_gifts_and_stars INTEGER DEFAULT 0,
+                    is_enabled INTEGER DEFAULT 0,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            // Idempotency guard for Telegram webhook retries (Telegram may redeliver the same update_id).
+            db.run(`
+                CREATE TABLE IF NOT EXISTS telegram_webhook_updates (
+                    update_id INTEGER PRIMARY KEY,
+                    processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
             db.run('SELECT 1', error => {
-                if (error) reject(error);
-                else {
-                    console.log('✅ All database tables created/verified');
-                    resolve();
-                }
+                if (error) { reject(error); return; }
+                // Schema creation/ALTERs above are queued on the same serialized connection,
+                // so this callback only fires after all of them have completed.
+                migrateUserGiftsConstraint()
+                    .catch(migrationError => {
+                        // Already rolled back safely inside migrateUserGiftsConstraint(); never
+                        // block server startup on this — the old UNIQUE constraint simply stays in place.
+                        console.error('⚠️ Continuing startup without the user_gifts migration:', migrationError.message);
+                    })
+                    .then(() => {
+                        console.log('✅ All database tables created/verified');
+                        resolve();
+                    });
             });
         });
     });
@@ -791,6 +940,123 @@ async function createOrGetImportIntent(userId, ttlSeconds = 600) {
     });
 }
 
+// أحدث intent (أي حالة) للمستخدم — تُستخدم لعرض حالة التحقق في الواجهة فقط.
+async function getLatestImportIntentForUser(userId) {
+    return await get(`
+        SELECT * FROM collectible_import_intents
+        WHERE user_id = ?
+        ORDER BY created_at DESC LIMIT 1
+    `, [userId]);
+}
+
+// أحدث intent معلّق (PENDING وغير منتهٍ) يخص مستخدم Rocket المرتبط بـ telegram_id للمرسل الفعلي على Telegram.
+// هذا هو آلية الربط الوحيدة المعتمدة بين الهدية الواردة وحساب اللاعب الصحيح — لا تخمين، لا مطابقة بالاسم.
+async function getPendingIntentByTelegramSenderId(telegramSenderId) {
+    if (!telegramSenderId) return null;
+    return await get(`
+        SELECT cii.*
+        FROM collectible_import_intents cii
+        JOIN users u ON u.id = cii.user_id
+        WHERE u.telegram_id = ? AND cii.status = 'PENDING' AND cii.expires_at > CURRENT_TIMESTAMP
+        ORDER BY cii.created_at DESC LIMIT 1
+    `, [String(telegramSenderId)]);
+}
+
+// تحقق هل هذه القطعة الفريدة تم اعتمادها من قبل (idempotency ضد تكرار الاستطلاع/polling).
+async function isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId) {
+    const existing = await get(
+        'SELECT * FROM user_gifts WHERE unique_collectible_id = ? OR telegram_gift_instance_id = ?',
+        [uniqueCollectibleId, telegramGiftInstanceId]
+    );
+    return existing || null;
+}
+
+// اعتماد قطعة Telegram الحقيقية ذريًا: تُنشئ/تُحدّث user_gifts، تضبط ownership_verified=1، وتُستهلك الـ intent.
+// معلومات gift model تأتي حصرًا من بيانات Telegram الرسمية التي تم التحقق منها من السيرفر (لا مدخلات عميل).
+async function creditVerifiedCollectible({
+    intentId,
+    userId,
+    telegramGiftModel,
+    uniqueCollectibleId,
+    telegramGiftInstanceId,
+    collectibleNumber,
+    verifiedMetadata,
+    stickerFileId
+}) {
+    return await transaction(async () => {
+        const already = await isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId);
+        if (already) return { alreadyCredited: true, userGift: already };
+
+        let giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftModel.telegramGiftId]);
+        if (!giftRow) {
+            const inserted = await run(`
+                INSERT INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                telegramGiftModel.telegramGiftId,
+                telegramGiftModel.name,
+                telegramGiftModel.slug || null,
+                telegramGiftModel.emoji || null,
+                telegramGiftModel.imageUrl || null,
+                telegramGiftModel.collection || null,
+                telegramGiftModel.rarity || 'common',
+                telegramGiftModel.value || 0,
+                telegramGiftModel.totalSupply || 0
+            ]);
+            giftRow = await get('SELECT * FROM gifts WHERE id = ?', [inserted.lastID]);
+        }
+
+        const inserted = await run(`
+            INSERT INTO user_gifts (user_id, gift_id, status, unique_collectible_id, telegram_gift_instance_id, collectible_number, ownership_verified, verified_metadata, telegram_thumbnail_file_id)
+            VALUES (?, ?, 'OWNED', ?, ?, ?, 1, ?, ?)
+        `, [userId, giftRow.id, uniqueCollectibleId, telegramGiftInstanceId, collectibleNumber, verifiedMetadata, stickerFileId || null]);
+
+        const userGiftId = inserted.lastID;
+
+        if (intentId) {
+            await run(`UPDATE collectible_import_intents SET status = 'CONSUMED' WHERE id = ? AND status = 'PENDING'`, [intentId]);
+        }
+
+        return { alreadyCredited: false, userGift: await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]) };
+    });
+}
+
+// حفظ/تحديث حالة اتصال Telegram Business بشكل دائم (صف واحد ثابت id=1). لا تُخزَّن أي أسرار هنا.
+async function savePersistedBusinessConnection({ connectionId, businessUserId, canViewGiftsAndStars, isEnabled }) {
+    await run(`
+        INSERT INTO telegram_business_connection (id, connection_id, business_user_id, can_view_gifts_and_stars, is_enabled, updated_at)
+        VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(id) DO UPDATE SET
+            connection_id = excluded.connection_id,
+            business_user_id = excluded.business_user_id,
+            can_view_gifts_and_stars = excluded.can_view_gifts_and_stars,
+            is_enabled = excluded.is_enabled,
+            updated_at = CURRENT_TIMESTAMP
+    `, [connectionId || null, businessUserId || null, canViewGiftsAndStars ? 1 : 0, isEnabled ? 1 : 0]);
+    return await getPersistedBusinessConnection();
+}
+
+// يقرأ آخر حالة اتصال Business محفوظة (تُستخدم عند إقلاع السيرفر لاستعادة الحالة بعد إعادة التشغيل).
+async function getPersistedBusinessConnection() {
+    return await get('SELECT * FROM telegram_business_connection WHERE id = 1');
+}
+
+// حماية idempotency ضد إعادة إرسال Telegram لنفس update_id عند فشل/تأخر الاستجابة.
+async function hasProcessedWebhookUpdate(updateId) {
+    if (!Number.isFinite(updateId)) return false;
+    const existing = await get('SELECT update_id FROM telegram_webhook_updates WHERE update_id = ?', [updateId]);
+    return !!existing;
+}
+
+async function markWebhookUpdateProcessed(updateId) {
+    if (!Number.isFinite(updateId)) return;
+    try {
+        await run('INSERT INTO telegram_webhook_updates (update_id) VALUES (?)', [updateId]);
+    } catch (error) {
+        if (!error.message.includes('UNIQUE constraint failed')) throw error;
+    }
+}
+
 // ===== 5.3 نظام الرهان بالهدايا =====
 async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
     const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
@@ -798,37 +1064,40 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
         const round = await getRoundByNumber(roundId);
         if (!round || round.phase !== 'COUNTDOWN') throw new Error('Betting is closed for this round');
 
-        // The client supplies only an identifier; value always comes from gifts.
-        const gift = await getGiftById(giftId);
-        if (!gift) throw new Error('Gift not found');
-
-        // 1. التحقق من ملكية الهدية
-        const userGift = await get(`
-            SELECT * FROM user_gifts 
-            WHERE user_id = ? AND gift_id = ? AND status = 'OWNED'
-        `, [userId, gift.id]);
+        // giftId can be user_gift.id, unique_collectible_id, or gift.id/telegram_gift_id
+        let userGift = await get(`
+            SELECT ug.*, g.name AS gift_name, g.value AS gift_value
+            FROM user_gifts ug
+            JOIN gifts g ON ug.gift_id = g.id
+            WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ? OR g.id = ? OR g.telegram_gift_id = ?) AND ug.status = 'OWNED'
+            ORDER BY ug.ownership_verified DESC, ug.id DESC LIMIT 1
+        `, [userId, giftId, giftId, giftId, giftId]);
         
         if (!userGift) throw new Error('Gift not owned or not available');
+
+        const giftValue = userGift.gift_value || 0;
         
         // 3. قفل الهدية
-        await run(`
+        const update = await run(`
             UPDATE user_gifts 
             SET status = 'IN_BET', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
+            WHERE id = ? AND status = 'OWNED'
         `, [userGift.id]);
+
+        if (update.changes !== 1) throw new Error('Collectible was reserved concurrently');
         
         // 4. إنشاء سجل الرهان
         const result = await run(`
             INSERT INTO gift_bets 
             (user_id, user_gift_id, round_id, gift_value_at_bet, auto_cashout_target)
             VALUES (?, ?, ?, ?, ?)
-        `, [userId, userGift.id, roundId, gift.value, normalizedAutoCashoutTarget]);
+        `, [userId, userGift.id, roundId, giftValue, normalizedAutoCashoutTarget]);
         
         return {
             betId: result.lastID,
             userGiftId: userGift.id,
-            giftName: gift.name,
-            giftValue: gift.value,
+            giftName: userGift.gift_name,
+            giftValue: giftValue,
             roundId: roundId
         };
     });
@@ -1173,6 +1442,15 @@ module.exports = {
     releaseCollectible,
     markCollectibleSold,
     createOrGetImportIntent,
+    getLatestImportIntentForUser,
+    getPendingIntentByTelegramSenderId,
+    isCollectibleAlreadyCredited,
+    creditVerifiedCollectible,
+    savePersistedBusinessConnection,
+    getPersistedBusinessConnection,
+    hasProcessedWebhookUpdate,
+    markWebhookUpdateProcessed,
+    migrateUserGiftsConstraint,
     
     // الرهان بالهدايا
     placeGiftBet,

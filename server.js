@@ -40,6 +40,11 @@ const {
     getPendingIntentByTelegramSenderId,
     isCollectibleAlreadyCredited,
     creditVerifiedCollectible,
+    savePersistedBusinessConnection,
+    getPersistedBusinessConnection,
+    hasProcessedWebhookUpdate,
+    markWebhookUpdateProcessed,
+    getCollectibleByUniqueId,
     placeGiftBet,
     cashoutGiftBet,
     placeTonBet,
@@ -82,6 +87,9 @@ const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
 // Never exposed to the frontend. Real verification only runs once this is configured on the Telegram side.
 const TELEGRAM_BUSINESS_CONNECTION_ID = process.env.TELEGRAM_BUSINESS_CONNECTION_ID || '';
 const ADMIN_TELEGRAM_ID = '7385640899';
+// Optional but recommended: Telegram's official secret_token mechanism for webhook authenticity.
+// Never logged. When unset, the webhook still works but cannot verify the caller is really Telegram.
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 
 // In-memory only (does not survive a restart): populated by /telegram-webhook once a real
 // business_connection update arrives. No database migration performed for this yet.
@@ -295,6 +303,10 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     if (!ownedGift || ownedGift.type !== 'unique' || !uniqueGift) return null;
     if (!uniqueGift.name || !Number.isFinite(uniqueGift.number)) return null;
 
+    // Raw Telegram file_id — NOT a browser-usable URL. Resolved on-demand via the
+    // /api/collectible-media proxy, never sent to the frontend directly.
+    const stickerFileId = uniqueGift.model?.sticker?.file_id || uniqueGift.model?.sticker?.thumbnail?.file_id || null;
+
     return {
         uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
         telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
@@ -304,7 +316,7 @@ function extractUniqueCollectibleIdentity(ownedGift) {
             telegramGiftId: uniqueGift.base_name || uniqueGift.name,
             name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name,
             slug: `${uniqueGift.name}-${uniqueGift.number}`,
-            imageUrl: uniqueGift.model?.sticker?.thumbnail?.file_id || null,
+            imageUrl: null, // real media is resolved server-side through the media proxy only
             collection: uniqueGift.backdrop?.name || null,
             rarity: 'common',
             value: 0,
@@ -315,17 +327,21 @@ function extractUniqueCollectibleIdentity(ownedGift) {
             number: uniqueGift.number,
             model: uniqueGift.model?.name || null,
             symbol: uniqueGift.symbol?.name || null,
-            backdrop: uniqueGift.backdrop?.name || null
-        })
+            backdrop: uniqueGift.backdrop?.name || null,
+            stickerFileId
+        }),
+        stickerFileId
     };
 }
 
 // مسح دوري يطابق الهدايا الواردة الحقيقية بأصحاب intents المعلّقة عبر sender_user.id فقط (لا تخمين).
-async function runCollectibleVerificationSweep() {
-    if (!TELEGRAM_BUSINESS_CONNECTION_ID && !runtimeBusinessConnection.id) {
+// fetchGiftsFn قابل للحقن للاختبارات فقط (افتراضيًا يستخدم استدعاء Telegram الحقيقي).
+async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
+    const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
+    if (!connectionId) {
         return { configured: false, credited: 0, unmatched: 0 };
     }
-    const ownedGifts = await fetchBusinessAccountGifts();
+    const ownedGifts = await fetchGiftsFn();
     let credited = 0;
     let unmatched = 0;
 
@@ -338,17 +354,20 @@ async function runCollectibleVerificationSweep() {
 
         if (!identity.senderTelegramId) { unmatched++; continue; }
 
+        const user = await get('SELECT * FROM users WHERE telegram_id = ?', [String(identity.senderTelegramId)]);
+        if (!user) { unmatched++; continue; }
+
         const intent = await getPendingIntentByTelegramSenderId(identity.senderTelegramId);
-        if (!intent) { unmatched++; continue; }
 
         await creditVerifiedCollectible({
-            intentId: intent.id,
-            userId: intent.user_id,
+            intentId: intent ? intent.id : null,
+            userId: user.id,
             telegramGiftModel: identity.telegramGiftModel,
             uniqueCollectibleId: identity.uniqueCollectibleId,
             telegramGiftInstanceId: identity.telegramGiftInstanceId,
             collectibleNumber: identity.collectibleNumber,
-            verifiedMetadata: identity.verifiedMetadata
+            verifiedMetadata: identity.verifiedMetadata,
+            stickerFileId: identity.stickerFileId
         });
         credited++;
     }
@@ -356,14 +375,75 @@ async function runCollectibleVerificationSweep() {
     return { configured: true, credited, unmatched };
 }
 
+// ===== Phase 3B: Real Telegram collectible media resolution (server-only, no BOT_TOKEN leakage) =====
+// In-memory cache only (file_path is not a secret, no token stored): fileId -> { filePath, expiresAt }.
+const telegramFileCache = new Map();
+const TELEGRAM_FILE_CACHE_TTL_MS = 60 * 60 * 1000;
+
+async function resolveTelegramFilePath(fileId) {
+    const cached = telegramFileCache.get(fileId);
+    if (cached && cached.expiresAt > Date.now()) return cached.filePath;
+
+    const result = await callTelegramBotApi('getFile', { file_id: fileId });
+    if (!result || !result.file_path) throw new Error('Telegram getFile returned no file_path');
+
+    telegramFileCache.set(fileId, { filePath: result.file_path, expiresAt: Date.now() + TELEGRAM_FILE_CACHE_TTL_MS });
+    return result.file_path;
+}
+
+// يبث بايتات ملف Telegram الحقيقي دون كشف BOT_TOKEN للعميل أبداً (الطلب يبقى سيرفر-إلى-سيرفر فقط).
+function streamTelegramFile(filePath, res) {
+    return new Promise((resolve, reject) => {
+        const request = https.request({
+            hostname: 'api.telegram.org',
+            path: `/file/bot${BOT_TOKEN}/${filePath}`,
+            method: 'GET'
+        }, telegramRes => {
+            if (telegramRes.statusCode < 200 || telegramRes.statusCode >= 300) {
+                telegramRes.resume();
+                reject(new Error(`Telegram file HTTP ${telegramRes.statusCode}`));
+                return;
+            }
+            res.setHeader('Content-Type', telegramRes.headers['content-type'] || 'application/octet-stream');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            telegramRes.pipe(res);
+            telegramRes.on('end', resolve);
+        });
+        request.setTimeout(10000, () => request.destroy(new Error('Telegram file timeout')));
+        request.on('error', reject);
+        request.end();
+    });
+}
+
 // ===== Telegram Business Connection webhook (Phase 3B) =====
 // Receives ONLY the official business_connection update; ignores every other Telegram update type.
 // Never invents/hardcodes a connection id — it only stores whatever Telegram itself sends.
-app.post('/telegram-webhook', (req, res) => {
+app.post('/telegram-webhook', async (req, res) => {
+    // Official Telegram secret_token check (set via setWebhook secret_token). If configured on our
+    // side but the header is missing/wrong, reject before doing anything else — never processed.
+    if (TELEGRAM_WEBHOOK_SECRET) {
+        const providedSecret = req.headers['x-telegram-bot-api-secret-token'] || '';
+        const expected = Buffer.from(TELEGRAM_WEBHOOK_SECRET);
+        const provided = Buffer.from(String(providedSecret));
+        const isValid = provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+        if (!isValid) {
+            res.status(401).end();
+            return;
+        }
+    }
+
     res.status(200).json({ ok: true }); // Telegram requires a fast 200 regardless of internal handling.
 
     try {
         const update = req.body || {};
+
+        // Idempotency: Telegram may redeliver the same update_id on timeout/retry.
+        if (Number.isFinite(update.update_id)) {
+            const alreadyProcessed = await hasProcessedWebhookUpdate(update.update_id);
+            if (alreadyProcessed) return;
+            await markWebhookUpdateProcessed(update.update_id);
+        }
+
         const connection = update.business_connection;
         if (!connection) {
             const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
@@ -379,6 +459,14 @@ app.post('/telegram-webhook', (req, res) => {
             isEnabled: !!connection.is_enabled,
             updatedAt: new Date().toISOString()
         };
+
+        // Persist across restarts — public connection metadata only, never a secret.
+        await savePersistedBusinessConnection({
+            connectionId: runtimeBusinessConnection.id,
+            businessUserId: runtimeBusinessConnection.businessUserId,
+            canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+            isEnabled: runtimeBusinessConnection.isEnabled
+        });
 
         // Never log BOT_TOKEN, secrets, or the raw update payload — presence/flags only.
         console.log('🔗 Telegram business_connection update:', JSON.stringify({
@@ -612,6 +700,32 @@ function stopGameLoop() {
     if (roundTransitionTimer) clearTimeout(roundTransitionTimer);
     gameLoopTimer = null;
     roundTransitionTimer = null;
+    stopCollectibleReconciliationWorker();
+}
+
+// مسح دوري خلفي (لا يعتمد على فتح المستخدم لصفحة الحقيبة) لاعتماد المقتنيات الواردة تلقائيًا.
+let collectibleReconciliationTimer = null;
+let collectibleReconciliationBusy = false;
+const COLLECTIBLE_RECONCILIATION_INTERVAL_MS = 45000;
+
+function startCollectibleReconciliationWorker() {
+    if (collectibleReconciliationTimer) return;
+    collectibleReconciliationTimer = setInterval(async () => {
+        if (collectibleReconciliationBusy) return; // never allow overlapping sweeps
+        collectibleReconciliationBusy = true;
+        try {
+            await runCollectibleVerificationSweep();
+        } catch (error) {
+            console.error('Background collectible reconciliation failed:', error.message);
+        } finally {
+            collectibleReconciliationBusy = false;
+        }
+    }, COLLECTIBLE_RECONCILIATION_INTERVAL_MS);
+}
+
+function stopCollectibleReconciliationWorker() {
+    if (collectibleReconciliationTimer) clearInterval(collectibleReconciliationTimer);
+    collectibleReconciliationTimer = null;
 }
 
 // =========================================================
@@ -715,27 +829,76 @@ app.get('/api/gifts', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.3.1 جلب مقتنيات Telegram الحقيقية الموثّقة فقط (Phase 3A) =====
+// ===== 5.3.1 جلب مقتنيات Telegram الحقيقية الموثّقة فقط (Phase 3A/3B) =====
 app.get('/api/collectibles', authenticate, async (req, res) => {
     try {
+        try {
+            await runCollectibleVerificationSweep();
+        } catch (sweepErr) {
+            // Sweep failure logged silently so user can still view already verified collectibles
+            console.error('Sweep error on GET /api/collectibles:', sweepErr.message);
+        }
+
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
             .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
-            .map(row => ({
-                id: row.unique_collectible_id,
-                userGiftId: row.user_gift_id,
-                name: row.name,
-                imageUrl: row.image_url,
-                collectibleNumber: row.collectible_number,
-                rarity: row.rarity,
-                value: row.value,
-                status: row.ownership_status,
-                verifiedMetadata: row.verified_metadata,
-                receivedAt: row.received_at
-            }));
+            .map(row => {
+                let hasStickerMedia = false;
+                try {
+                    const metadata = row.verified_metadata ? JSON.parse(row.verified_metadata) : null;
+                    hasStickerMedia = !!(metadata && metadata.stickerFileId);
+                } catch { /* malformed metadata simply means no media available */ }
+
+                return {
+                    id: row.unique_collectible_id,
+                    userGiftId: row.user_gift_id,
+                    name: row.name,
+                    imageUrl: hasStickerMedia
+                        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+                        : null,
+                    collectibleNumber: row.collectible_number,
+                    rarity: row.rarity,
+                    value: row.value,
+                    status: row.ownership_status,
+                    verifiedMetadata: row.verified_metadata,
+                    receivedAt: row.received_at
+                };
+            });
         res.json({ ok: true, collectibles });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.1.1 وسيط وسائط المقتنى الحقيقي (Phase 3B) — لا يقبل أي file_id من العميل إطلاقًا =====
+// المُدخل الوحيد المقبول هو unique_collectible_id (نفس المعرّف العلني المستخدم في الرهان)،
+// ويُتحقق أنه ينتمي فعلًا لقطعة verified في قاعدتنا قبل أي اتصال بـ Telegram. لا يُكشف BOT_TOKEN أبداً.
+app.get('/api/collectible-media/:uniqueCollectibleId', async (req, res) => {
+    try {
+        const collectible = await getCollectibleByUniqueId(req.params.uniqueCollectibleId);
+        if (!collectible || collectible.ownership_verified !== 1) {
+            res.status(404).end();
+            return;
+        }
+
+        let stickerFileId = collectible.telegram_thumbnail_file_id || null;
+        if (!stickerFileId) {
+            try {
+                const metadata = collectible.verified_metadata ? JSON.parse(collectible.verified_metadata) : null;
+                stickerFileId = metadata ? metadata.stickerFileId : null;
+            } catch { /* malformed metadata → no media */ }
+        }
+
+        if (!stickerFileId) {
+            res.status(404).end();
+            return;
+        }
+
+        const filePath = await resolveTelegramFilePath(stickerFileId);
+        await streamTelegramFile(filePath, res);
+    } catch (error) {
+        console.error('collectible-media error:', error.message);
+        if (!res.headersSent) res.status(502).end();
     }
 });
 
@@ -808,8 +971,10 @@ app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => 
         return;
     }
     try {
-        await callTelegramBotApi('setWebhook', { url: TELEGRAM_WEBHOOK_URL });
-        res.json({ ok: true, success: true, url: TELEGRAM_WEBHOOK_URL });
+        const payload = { url: TELEGRAM_WEBHOOK_URL };
+        if (TELEGRAM_WEBHOOK_SECRET) payload.secret_token = TELEGRAM_WEBHOOK_SECRET;
+        await callTelegramBotApi('setWebhook', payload);
+        res.json({ ok: true, success: true, url: TELEGRAM_WEBHOOK_URL, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET });
     } catch (error) {
         // callTelegramBotApi never includes BOT_TOKEN in its error messages.
         res.status(400).json({ ok: false, success: false, error: error.message });
@@ -1167,6 +1332,23 @@ async function startServer(port = PORT) {
         await seedDatabase();
         console.log('✅ Database initialized and seeded');
 
+        // استعادة حالة Telegram Business Connection المحفوظة (إن وُجدت) بعد إعادة تشغيل السيرفر.
+        try {
+            const persisted = await getPersistedBusinessConnection();
+            if (persisted && persisted.connection_id) {
+                runtimeBusinessConnection = {
+                    id: persisted.connection_id,
+                    businessUserId: persisted.business_user_id,
+                    canViewGiftsAndStars: !!persisted.can_view_gifts_and_stars,
+                    isEnabled: !!persisted.is_enabled,
+                    updatedAt: persisted.updated_at
+                };
+                console.log('🔗 Restored persisted Telegram business connection state from database.');
+            }
+        } catch (error) {
+            console.error('Failed to restore persisted business connection:', error.message);
+        }
+
         const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
         const nextRoundNumber = Number(latestRound?.round_number || 0) + 1;
         await startRound(nextRoundNumber);
@@ -1174,6 +1356,7 @@ async function startServer(port = PORT) {
         // بدء حلقة اللعبة
         startGameLoop();
         console.log('🎮 Game loop started');
+        startCollectibleReconciliationWorker();
 
         // بدء السيرفر
         return await new Promise((resolve, reject) => {
@@ -1221,5 +1404,10 @@ module.exports = {
     processAutoCashouts,
     crashCurrentRound,
     getGameStateSnapshot,
-    updateGameState
+    updateGameState,
+    // Exported for tests only — real request handling never uses these directly.
+    extractUniqueCollectibleIdentity,
+    runCollectibleVerificationSweep,
+    startCollectibleReconciliationWorker,
+    stopCollectibleReconciliationWorker
 };

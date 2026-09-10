@@ -1089,59 +1089,6 @@
         .gifts-header { text-align: center; padding: 16px 0; }
         .gifts-header h2 { font-size: 24px; font-weight: 900; margin: 0; color: #e8f4ff; }
         .gifts-header p { color: #7a9bcb; font-size: 13px; margin: 6px 0 0; }
-        .gifts-collection {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 16px;
-        }
-        .gift-card {
-            background: linear-gradient(145deg, #0f2847, #0a1a30);
-            border-radius: 16px;
-            padding: 14px 10px;
-            text-align: center;
-            border: 1px solid rgba(100, 200, 255, 0.06);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .gift-card:active { transform: scale(0.95); }
-        .gift-card .emoji { font-size: 36px; display: block; margin-bottom: 4px; }
-        .gift-card .name {
-            font-size: 11px;
-            font-weight: 700;
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #c8e6ff;
-        }
-        .gift-card .value { font-size: 10px; color: #7a9bcb; display: block; margin-top: 2px; }
-        .gift-card .rarity {
-            font-size: 9px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 4px;
-        }
-        .gift-card .rarity.common { background: rgba(255, 255, 255, 0.04); color: #5a7a9a; }
-        .gift-card .rarity.rare { background: rgba(56, 210, 123, 0.08); color: #4de18a; }
-        .gift-card .rarity.epic { background: rgba(163, 86, 255, 0.08); color: #b986ff; }
-        .gift-card .rarity.legendary { background: rgba(255, 215, 0, 0.08); color: #ffd700; }
-        .gift-card .bet-btn {
-            background: linear-gradient(135deg, #1a5a9c, #0f3a7a);
-            color: #fff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 700;
-            margin-top: 6px;
-            width: 100%;
-            border: 1px solid rgba(100, 200, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        .gift-card .bet-btn:active { transform: scale(0.95); }
-        .gift-card .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .empty-gifts { text-align: center; padding: 60px 20px; color: #7a9bcb; }
         .empty-gifts .icon { font-size: 64px; display: block; margin-bottom: 16px; }
         .empty-gifts h3 { font-size: 20px; color: #e8f4ff; margin: 0 0 8px; }
@@ -1230,6 +1177,12 @@
             font-weight: 700;
             cursor: not-allowed;
             opacity: 0.5;
+        }
+        .collectible-card .actions button:not([disabled]) {
+            background: linear-gradient(135deg, #1a5a9c, #0f3a7a);
+            color: #fff;
+            cursor: pointer;
+            opacity: 1;
         }
         #empty-collectibles { padding: 24px 20px; }
         #empty-collectibles .icon { font-size: 40px; margin-bottom: 8px; }
@@ -2008,12 +1961,6 @@
                     <p id="no-collectibles-desc"></p>
                 </div>
             </div>
-            <div id="gifts-collection" class="gifts-collection"></div>
-            <div id="empty-gifts" class="empty-gifts" style="display:none;">
-                <span class="icon">🎒</span>
-                <h3 id="empty-gifts-title">لا توجد هدايا</h3>
-                <p id="empty-gifts-desc">لم تقم بربح أي هدية بعد. استمر باللعب للفوز بهدية!</p>
-            </div>
         </div>
 
         <!-- =========================================================
@@ -2307,14 +2254,7 @@
         function openLootBox(box) {
             const t = translations[currentLanguage] || translations.ar;
             if (box.id === 'free') {
-                showToast(t.openedFreeBox);
-                const randomGift = TELEGRAM_GIFTS[Math.floor(Math.random() * TELEGRAM_GIFTS.length)];
-                if (randomGift && !userGifts.includes(randomGift.id)) {
-                    userGifts.push(randomGift.id);
-                    renderGiftsPage();
-                    updateGiftSelectionInModal();
-                    showToast(t.wonPrefix + ' ' + randomGift.emoji + ' ' + randomGift.name);
-                }
+                showToast(getTranslation('comingSoon'));
                 return;
             }
 
@@ -2463,46 +2403,6 @@
         let currentVipLevel = 0;
 
         /* =========================================================
-           TELEGRAM GIFTS
-        ========================================================= */
-        const TELEGRAM_GIFTS = [
-            { id: 'nail_bracelet', name: 'Nail Bracelet', emoji: '📿', value: 117.53, rarity: 'epic' },
-            { id: 'bonded_ring', name: 'Bonded Ring', emoji: '💍', value: 41.66, rarity: 'rare' },
-            { id: 'signet_ring', name: 'Signet Ring', emoji: '🔮', value: 33.44, rarity: 'rare' },
-            { id: 'diamond_ring', name: 'Diamond Ring', emoji: '💎', value: 30.32, rarity: 'epic' },
-            { id: 'backpack', name: 'Backpack', emoji: '🎒', value: 22.47, rarity: 'common' },
-            { id: 'love_you', name: 'LOVE YOU', emoji: '❤️', value: 1.11, rarity: 'rare' },
-            { id: 'b_day', name: 'B-DAY', emoji: '🎂', value: 2.70, rarity: 'rare' },
-            { id: 'space', name: 'SPACE', emoji: '🚀', value: 0.91, rarity: 'common' },
-            { id: 'movie', name: 'MOVIE', emoji: '🎬', value: 1.65, rarity: 'common' },
-            { id: 'punk42', name: 'PUNK42', emoji: '👾', value: 2.97, rarity: 'epic' },
-            { id: 'homer', name: 'HOMER', emoji: '🍩', value: 1.79, rarity: 'common' },
-            { id: 'crypto', name: 'CRYPTO', emoji: '₿', value: 1.02, rarity: 'common' },
-            { id: 'free24', name: 'FREE24', emoji: '🎁', value: 2.19, rarity: 'epic' },
-            { id: 'telegram', name: 'TELEGRAM', emoji: '✈️', value: 1.07, rarity: 'common' },
-            { id: 'invite', name: 'INVITE', emoji: '📨', value: 2.01, rarity: 'common' },
-            { id: 'earn', name: 'EARN', emoji: '💰', value: 1.33, rarity: 'common' },
-            { id: 'space_nft', name: 'SPACE NFT', emoji: '🌌', value: 1.72, rarity: 'legendary' },
-            { id: 'adult', name: '18+', emoji: '🔞', value: 1.26, rarity: 'epic' },
-            { id: 'free', name: 'FREE', emoji: '🆓', value: 0.50, rarity: 'common' },
-            { id: 'hot', name: 'HOT', emoji: '🔥', value: 1.98, rarity: 'rare' },
-            { id: 'new', name: 'NEW', emoji: '✨', value: 0.75, rarity: 'common' }
-        ];
-
-        let userGifts = [];
-
-        function addTestGifts() {
-            const testGifts = ['nail_bracelet', 'bonded_ring', 'signet_ring', 'diamond_ring', 'backpack', 'love_you', 'space', 'punk42'];
-            testGifts.forEach(giftId => {
-                if (!userGifts.includes(giftId)) {
-                    userGifts.push(giftId);
-                }
-            });
-            renderGiftsPage();
-            updateGiftSelectionInModal();
-        }
-
-        /* =========================================================
            LANGUAGE SYSTEM
         ========================================================= */
         let currentLanguage = localStorage.getItem('rocketLanguage') || 'ar';
@@ -2519,19 +2419,27 @@
         Object.assign(translations.ru, { noActivePlayers: 'Нет активных игроков', guestPlayer: 'Гость', playerActive: 'Активен', playerWon: 'Выиграл', playerLost: 'Проиграл' });
 
         Object.assign(translations.ar, {
+            giftsTitle: '🎁 الحقيبة',
+            giftsSub: 'المقتنيات الحقيقية من Telegram',
             depositCollectibleBtn: '🎁 إرسال مقتنى',
-            collectibleDepositText: 'يمكنك إرسال مقتناتك من Telegram إلى حساب اللعبة الموضح أدناه. لن يظهر المقتنى في الحقيبة إلا بعد التحقق من السيرفر.',
+            collectibleDepositText: 'يمكنك إرسال مقتناك من Telegram إلى حساب اللعبة الموضح أدناه وسوف يظهر في حقيبتك تلقائيًا بعد التحقق.',
             collectiblesTitle: 'المقتنيات الموثّقة',
-            noCollectiblesTitle: 'لا توجد مقتنيات موثقة بعد',
-            noCollectiblesDesc: 'اضغط «إرسال مقتنى» لإرسال مقتناك إلى حساب اللعبة على Telegram.',
+            noCollectiblesTitle: 'الحقيبة فارغة',
+            noCollectiblesDesc: 'أرسل مقتنى إلى @v_rray وسوف يظهر هنا تلقائيًا.',
             collectibleImportFailed: 'تعذّر فتح حساب اللعبة على Telegram',
+            collectibleVerifying: 'جاري التحقق من المقتنى...',
             collectibleIntentCreated: 'تم إنشاء طلب الإرسال، يمكنك المتابعة في Telegram',
             collectibleLoading: 'جاري التحضير...',
             collectibleNumberLabel: 'الرقم التسلسلي',
             collectibleActionUnavailable: 'غير متاح بعد (المرحلة القادمة)',
             keepCollectible: 'احتفاظ',
-            sellCollectible: 'بيع',
+            withdrawCollectible: 'سحب',
             betCollectible: 'رهان',
+            withdrawUnavailable: 'السحب غير متاح حاليًا',
+            collectibleKept: 'بقي المقتنى في حقيبتك 🎒',
+            noGiftsToBet: 'لا توجد مقتنيات موثّقة للرهان بها',
+            giftBalanceLabel: 'المقتنيات المتاحة: {count}',
+            selectGift: 'اختر مقتنى من حقيبتك للرهان به',
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'صناديق الحظ',
             comingSoonDesc: 'ألعاب جديدة قريباً',
@@ -2541,26 +2449,33 @@
             wonPrefix: '🎉 ربحت:',
             insufficientBalance: '❌ رصيدك غير كافٍ!',
             openingBox: '🔄 جاري فتح الصندوق...',
-            giftBalanceLabel: '🎒 لديك {count} هدية',
-            noGiftSelectedYet: 'لم تختر هدية بعد',
-            connectWalletForGifts: '🔒 قم بربط محفظتك لعرض هداياك',
-            giftValueLabel: '💎 قيمة الهدية:',
+            noGiftSelectedYet: 'لم تختر مقتنى بعد',
+            connectWalletForGifts: '🔒 أرسل مقتنى لتتمكن من الرهان به',
+            giftValueLabel: '💎 القيمة:',
             vipStart: 'بداية'
         });
         Object.assign(translations.en, {
+            giftsTitle: '🎁 Backpack',
+            giftsSub: 'Real Telegram Collectibles',
             depositCollectibleBtn: '🎁 Send Collectible',
-            collectibleDepositText: 'You can send your collectible from Telegram to the game’s account shown below. It will only appear in your Backpack after server verification.',
+            collectibleDepositText: 'You can send your collectible from Telegram to the game’s account shown below and it will appear in your Backpack automatically after verification.',
             collectiblesTitle: 'Verified Collectibles',
-            noCollectiblesTitle: 'No verified collectibles yet',
-            noCollectiblesDesc: 'Tap "Send Collectible" to send your collectible to the game’s Telegram account.',
+            noCollectiblesTitle: 'Your Backpack is empty',
+            noCollectiblesDesc: 'Send a collectible to @v_rray and it will appear here automatically.',
             collectibleImportFailed: 'Could not open the game’s Telegram account',
+            collectibleVerifying: 'Verifying collectible...',
             collectibleIntentCreated: 'Deposit request created — continue in Telegram',
             collectibleLoading: 'Preparing...',
             collectibleNumberLabel: 'Serial Number',
             collectibleActionUnavailable: 'Not available yet (next phase)',
             keepCollectible: 'Keep',
-            sellCollectible: 'Sell',
+            withdrawCollectible: 'Withdraw',
             betCollectible: 'Bet',
+            withdrawUnavailable: 'Withdrawal unavailable right now',
+            collectibleKept: 'This collectible stays in your Backpack 🎒',
+            noGiftsToBet: 'No verified collectibles to bet with',
+            giftBalanceLabel: 'Available collectibles: {count}',
+            selectGift: 'Select a collectible from your backpack',
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'Loot Boxes',
             comingSoonDesc: 'New games arriving soon',
@@ -2570,26 +2485,33 @@
             wonPrefix: '🎉 You won:',
             insufficientBalance: '❌ Insufficient balance!',
             openingBox: '🔄 Opening the box...',
-            giftBalanceLabel: '🎒 You have {count} gifts',
-            noGiftSelectedYet: 'No gift selected yet',
-            connectWalletForGifts: '🔒 Connect your wallet to view your gifts',
-            giftValueLabel: '💎 Gift value:',
+            noGiftSelectedYet: 'No collectible selected yet',
+            connectWalletForGifts: '🔒 Send a collectible to use it for betting',
+            giftValueLabel: '💎 Value:',
             vipStart: 'Start'
         });
         Object.assign(translations.ru, {
+            giftsTitle: '🎁 Рюкзак',
+            giftsSub: 'Настоящие коллекционные подарки Telegram',
             depositCollectibleBtn: '🎁 Отправить коллекционный подарок',
-            collectibleDepositText: 'Вы можете отправить свой коллекционный подарок из Telegram на аккаунт игры, указанный ниже. Он появится в рюкзаке только после проверки сервером.',
+            collectibleDepositText: 'Вы можете отправить свой коллекционный подарок из Telegram на аккаунт игры, указанный ниже, и он появится в рюкзаке автоматически после проверки.',
             collectiblesTitle: 'Проверенные коллекционные подарки',
-            noCollectiblesTitle: 'Пока нет подтверждённых коллекционных подарков',
-            noCollectiblesDesc: 'Нажмите «Отправить коллекционный подарок», чтобы отправить его на Telegram-аккаунт игры.',
+            noCollectiblesTitle: 'Рюкзак пуст',
+            noCollectiblesDesc: 'Отправьте коллекционный подарок на @v_rray, и он появится здесь автоматически.',
             collectibleImportFailed: 'Не удалось открыть аккаунт игры в Telegram',
+            collectibleVerifying: 'Проверяем коллекционный подарок...',
             collectibleIntentCreated: 'Запрос на отправку создан — продолжите в Telegram',
             collectibleLoading: 'Подготовка...',
             collectibleNumberLabel: 'Серийный номер',
             collectibleActionUnavailable: 'Пока недоступно (следующий этап)',
             keepCollectible: 'Оставить',
-            sellCollectible: 'Продать',
+            withdrawCollectible: 'Вывести',
             betCollectible: 'Ставка',
+            withdrawUnavailable: 'Вывод пока недоступен',
+            collectibleKept: 'Этот подарок остаётся в вашем рюкзаке 🎒',
+            noGiftsToBet: 'Нет проверенных подарков для ставки',
+            giftBalanceLabel: 'Доступные подарки: {count}',
+            selectGift: 'Выберите подарок из вашего рюкзака',
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'Сундуки удачи',
             comingSoonDesc: 'Новые игры уже скоро',
@@ -2599,10 +2521,9 @@
             wonPrefix: '🎉 Вы выиграли:',
             insufficientBalance: '❌ Недостаточно средств!',
             openingBox: '🔄 Открытие сундука...',
-            giftBalanceLabel: '🎒 У вас {count} подарков',
             noGiftSelectedYet: 'Подарок ещё не выбран',
-            connectWalletForGifts: '🔒 Подключите кошелек, чтобы увидеть свои подарки',
-            giftValueLabel: '💎 Ценность подарка:',
+            connectWalletForGifts: '🔒 Отправьте подарок, чтобы использовать его для ставок',
+            giftValueLabel: '💎 Ценность:',
             vipStart: 'Старт'
         });
 
@@ -2708,10 +2629,6 @@
             if (giftsPageTitle) giftsPageTitle.textContent = t.giftsTitle;
             const giftsPageSub = safeGetElement('gifts-page-sub');
             if (giftsPageSub) giftsPageSub.textContent = t.giftsSub;
-            const emptyGiftsTitle = safeGetElement('empty-gifts-title');
-            if (emptyGiftsTitle) emptyGiftsTitle.textContent = t.noGiftsTitle;
-            const emptyGiftsDesc = safeGetElement('empty-gifts-desc');
-            if (emptyGiftsDesc) emptyGiftsDesc.textContent = t.noGiftsDesc;
             const collectiblesTitle = safeGetElement('collectibles-title');
             if (collectiblesTitle) collectiblesTitle.textContent = t.collectiblesTitle;
             const depositCollectibleBtn = safeGetElement('collectible-send-btn');
@@ -2737,7 +2654,6 @@
             updateMainBetButton();
             updateModalBetButton();
             updateVipUI();
-            renderGiftsPage();
             renderCollectibles();
             renderLootBoxes();
             updateGiftSelectionInModal();
@@ -3085,7 +3001,7 @@
                 placeButton.textContent = t.placeGiftBet;
                 const info = document.getElementById("gift-selection-info");
                 if (info) {
-                    if (userGifts.length === 0) info.textContent = t.connectWalletForGifts;
+                    if (verifiedCollectibles.length === 0) info.textContent = t.connectWalletForGifts;
                     else info.textContent = t.selectGift;
                 }
             } else {
@@ -3103,13 +3019,14 @@
             const selectedDisplay = document.getElementById("selected-gift-display");
             const valueDisplay = document.getElementById("gift-value-display");
             const t = translations[currentLanguage] || translations.ar;
+            const available = verifiedCollectibles.filter(c => c.status !== "IN_BET");
 
-            if (countDisplay) countDisplay.textContent = userGifts.length;
-            if (balanceText) balanceText.textContent = t.giftBalanceLabel.replace('{count}', userGifts.length);
+            if (countDisplay) countDisplay.textContent = available.length;
+            if (balanceText) balanceText.textContent = t.giftBalanceLabel.replace('{count}', available.length);
             if (!grid) return;
             grid.innerHTML = "";
 
-            if (userGifts.length === 0) {
+            if (available.length === 0) {
                 grid.style.display = 'none';
                 if (selectedDisplay) selectedDisplay.innerHTML = `<span style="color:#7a9bcb;">${t.connectWalletForGifts}</span>`;
                 if (valueDisplay) valueDisplay.textContent = "0.00";
@@ -3122,18 +3039,17 @@
             const info = document.getElementById("gift-selection-info");
             if (info) info.textContent = t.selectGift;
 
-            userGifts.forEach(function(giftId) {
-                const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);
-                if (!gift) return;
+            available.forEach(function(gift) {
                 const item = document.createElement("div");
-                const isSelected = selectedGiftId === giftId;
+                const isSelected = selectedGiftId === gift.id;
                 item.className = "gift-select-item" + (isSelected ? " selected" : "");
+                const giftValue = Number(gift.value || 0);
                 item.onclick = function() {
                     if (selectedBetType !== "GIFT") selectBetType("GIFT");
-                    selectedGiftId = giftId;
+                    selectedGiftId = gift.id;
                     selectedGiftForBet = gift;
                     updateGiftSelectionInModal();
-                    showToast(t.giftSelected + ': ' + gift.emoji + ' ' + gift.name);
+                    showToast(t.giftSelected + ': ' + (gift.name || ''));
                     const btn = document.getElementById("modal-place-button");
                     if (btn) {
                         btn.className = "modal-place-button gift";
@@ -3141,24 +3057,20 @@
                         btn.disabled = false;
                     }
                     if (selectedDisplay) {
-                        const rarityLabels = { 'common': t.common, 'rare': t.rare, 'epic': t.epic, 'legendary': t.legendary };
                         selectedDisplay.innerHTML = `
                             <div class="selected-gift">
-                                <span class="emoji">${gift.emoji}</span>
-                                <span class="name">${gift.name}</span>
-                                <span class="value">${gift.value.toFixed(2)} TON</span>
-                                <span class="rarity ${gift.rarity}">${rarityLabels[gift.rarity] || t.common}</span>
+                                <span class="emoji">🎁</span>
+                                <span class="name">${gift.name || ''}</span>
+                                <span class="value">${giftValue.toFixed(2)} TON</span>
                             </div>
                         `;
                     }
-                    if (valueDisplay) valueDisplay.textContent = gift.value.toFixed(2);
+                    if (valueDisplay) valueDisplay.textContent = giftValue.toFixed(2);
                 };
-                const rarityMap = { 'common': t.common, 'rare': t.rare, 'epic': t.epic, 'legendary': t.legendary };
-                const rarityText = rarityMap[gift.rarity] || t.common;
                 item.innerHTML = `
-                    <span class="emoji">${gift.emoji}</span>
-                    <span class="name">${gift.name}</span>
-                    <span class="value">${gift.value.toFixed(2)} TON</span>
+                    <span class="emoji">🎁</span>
+                    <span class="name">${gift.name || ''}</span>
+                    <span class="value">${giftValue.toFixed(2)} TON</span>
                     <span class="check">✅</span>
                 `;
                 grid.appendChild(item);
@@ -3196,7 +3108,7 @@
             const t = translations[currentLanguage] || translations.ar;
             if (selectedBetType === "GIFT") {
                 button.className = "modal-place-button gift";
-                if (userGifts.length === 0 || !selectedGiftId) {
+                if (verifiedCollectibles.length === 0 || !selectedGiftId) {
                     button.disabled = true;
                     button.textContent = t.noGiftsToBet;
                 } else {
@@ -3290,7 +3202,7 @@
 
             if (selectedBetType === "GIFT") {
                 if (!selectedGiftId || !selectedGiftForBet) { showToast(t.noGiftSelected); return; }
-                if (!userGifts.includes(selectedGiftId)) {
+                if (!verifiedCollectibles.some(c => c.id === selectedGiftId)) {
                     showToast(t.noGiftsToBet);
                     selectedGiftId = null;
                     selectedGiftForBet = null;
@@ -3345,12 +3257,7 @@
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.giftBetFailed);
-                const index = userGifts.indexOf(giftId);
-                if (index > -1) {
-                    userGifts.splice(index, 1);
-                    renderGiftsPage();
-                    updateGiftSelectionInModal();
-                }
+                await fetchCollectibles();
                 hasBet = true;
                 currentBetId = data.bet?.betId || null;
                 currentBetType = "GIFT";
@@ -3690,7 +3597,7 @@
             if (label) label.textContent = LANGUAGE_LABELS[lang] || LANGUAGE_LABELS.ar;
             closeLanguageMenu();
             applyLanguage();
-            renderGiftsPage();
+            renderCollectibles();
             updateGiftSelectionInModal();
             updateVipUI();
             updateProfilePage();
@@ -3715,43 +3622,6 @@
             if (container && !container.contains(event.target)) closeLanguageMenu();
         });
 
-        function renderGiftsPage() {
-            const collection = document.getElementById("gifts-collection");
-            const empty = document.getElementById("empty-gifts");
-            const t = translations[currentLanguage] || translations.ar;
-            if (!collection) return;
-            collection.innerHTML = "";
-            if (!userGifts || userGifts.length === 0) {
-                collection.style.display = "none";
-                empty.style.display = "block";
-                const emptyTitle = safeGetElement('empty-gifts-title');
-                if (emptyTitle) emptyTitle.textContent = t.noGiftsTitle;
-                const emptyDesc = safeGetElement('empty-gifts-desc');
-                if (emptyDesc) emptyDesc.textContent = t.noGiftsDesc;
-                return;
-            }
-            collection.style.display = "grid";
-            empty.style.display = "none";
-            userGifts.forEach(function(giftId) {
-                const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);
-                if (!gift) return;
-                const card = document.createElement("div");
-                card.className = "gift-card";
-                const rarityMap = { 'common': 'common', 'rare': 'rare', 'epic': 'epic', 'legendary': 'legendary' };
-                const rarityClass = rarityMap[gift.rarity] || 'common';
-                const rarityLabels = { 'ar': { 'common': 'عادية', 'rare': 'نادرة', 'epic': 'أسطورية', 'legendary': 'خرافية' }, 'en': { 'common': 'Common', 'rare': 'Rare', 'epic': 'Epic', 'legendary': 'Legendary' }, 'ru': { 'common': 'Обычный', 'rare': 'Редкий', 'epic': 'Эпический', 'legendary': 'Легендарный' } };
-                const rarityText = rarityLabels[currentLanguage]?.[gift.rarity] || rarityLabels['en'][gift.rarity] || 'Common';
-                card.innerHTML = `
-                    <span class="emoji">${gift.emoji}</span>
-                    <span class="name">${gift.name}</span>
-                    <span class="value">${t.giftValue}: ${gift.value.toFixed(2)} TON</span>
-                    <span class="rarity ${rarityClass}">${rarityText}</span>
-                    <button class="bet-btn" onclick="betWithGift('${gift.id}')">${t.betWithGift}</button>
-                `;
-                collection.appendChild(card);
-            });
-        }
-
         let verifiedCollectibles = [];
         let collectibleImportBusy = false;
 
@@ -3762,6 +3632,7 @@
                 if (data.ok) {
                     verifiedCollectibles = data.collectibles || [];
                     renderCollectibles();
+                    updateGiftSelectionInModal();
                 }
             } catch (error) { console.error('fetchCollectibles error:', error); }
         }
@@ -3786,17 +3657,21 @@
             verifiedCollectibles.forEach(function(item) {
                 const card = document.createElement("div");
                 card.className = "collectible-card";
-                const imageHtml = item.imageUrl
-                    ? `<img src="${item.imageUrl}" alt="${item.name || ''}">`
+                // Only ever render a real http(s) URL provided by the backend; never a fake/generated image.
+                const hasRealImage = typeof item.imageUrl === "string" && /^https?:\/\//i.test(item.imageUrl);
+                const imageHtml = hasRealImage
+                    ? `<img src="${item.imageUrl}" alt="${item.name || ''}" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
+                const isInBet = item.status === "IN_BET";
+                const betDisabledAttr = isInBet ? "disabled" : "";
                 card.innerHTML = `
                     ${imageHtml}
                     <span class="name">${item.name || ''}</span>
                     ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
                     <div class="actions">
-                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.keepCollectible}</button>
-                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.sellCollectible}</button>
-                        <button type="button" title="${t.collectibleActionUnavailable}" disabled>${t.betCollectible}</button>
+                        <button type="button" onclick="keepCollectible('${item.id}')">${t.keepCollectible}</button>
+                        <button type="button" title="${t.withdrawUnavailable}" disabled>${t.withdrawCollectible}</button>
+                        <button type="button" ${betDisabledAttr} onclick="betWithCollectible('${item.id}')">${t.betCollectible}</button>
                     </div>
                 `;
                 list.appendChild(card);
@@ -3820,6 +3695,7 @@
                 } else {
                     window.open(telegramUrl, '_blank');
                 }
+                if (statusEl) statusEl.textContent = t.collectibleVerifying;
             } catch (error) {
                 if (statusEl) statusEl.textContent = t.collectibleImportFailed;
             } finally {
@@ -3827,18 +3703,40 @@
             }
         }
 
+        async function checkCollectibleVerificationStatus() {
+            const t = translations[currentLanguage] || translations.ar;
+            const statusEl = document.getElementById("collectible-import-status");
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/collectibles/verification-status`, { headers: getAuthHeaders() });
+                const data = await response.json();
+                if (!data.ok) return;
+                if (data.status === 'pending') {
+                    if (statusEl) statusEl.textContent = t.collectibleVerifying;
+                } else if (data.status === 'verified') {
+                    if (statusEl) statusEl.textContent = '';
+                    await fetchCollectibles();
+                } else if (statusEl) {
+                    statusEl.textContent = '';
+                }
+            } catch (error) { /* silent: status check is best-effort only */ }
+        }
+
         document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) fetchCollectibles();
+            if (!document.hidden) {
+                checkCollectibleVerificationStatus();
+                fetchCollectibles();
+            }
         });
 
-        function betWithGift(giftId) {
+
+        function betWithCollectible(uniqueCollectibleId) {
             if (actionInProgress) return;
             const t = translations[currentLanguage] || translations.ar;
-            if (!userGifts.includes(giftId)) { showToast(t.noGiftsToBet); return; }
-            const gift = TELEGRAM_GIFTS.find(g => g.id === giftId);
-            if (gift) selectedGiftForBet = gift;
+            const gift = verifiedCollectibles.find(c => c.id === uniqueCollectibleId);
+            if (!gift || gift.status === "IN_BET") { showToast(t.noGiftsToBet); return; }
+            selectedGiftForBet = gift;
             selectedBetType = "GIFT";
-            selectedGiftId = giftId;
+            selectedGiftId = uniqueCollectibleId;
             openBetModal();
             setTimeout(function() {
                 updateGiftSelectionInModal();
@@ -3849,6 +3747,15 @@
                 showBetTypeSection("GIFT");
                 updateModalBetButton();
             }, 100);
+        }
+
+        // Keep is a no-op by design: the collectible already stays in the Backpack unless the
+        // player explicitly bets it. This just gives clear confirmation feedback.
+        function keepCollectible(uniqueCollectibleId) {
+            const t = translations[currentLanguage] || translations.ar;
+            const gift = verifiedCollectibles.find(c => c.id === uniqueCollectibleId);
+            if (!gift) return;
+            showToast(t.collectibleKept);
         }
 
         function showPage(page) {
@@ -3872,7 +3779,6 @@
                 document.getElementById("profile-page").classList.add("show");
             } else if (page === "gifts") {
                 document.getElementById("nav-gifts-btn").classList.add("active");
-                renderGiftsPage();
                 renderCollectibles();
                 fetchCollectibles();
                 document.getElementById("gifts-page").classList.add("show");
@@ -4165,7 +4071,6 @@
             updateModalBetButton();
             updateMainBetButton();
             updateProfilePage();
-            renderGiftsPage();
             renderLootBoxes();
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("rocket-game").classList.add("hidden");
@@ -4175,7 +4080,7 @@
             await authenticateUser();
             connectToServer();
 
-            setTimeout(addTestGifts, 1500);
+            fetchCollectibles();
         });
 
         window.addEventListener("beforeunload", function() {
