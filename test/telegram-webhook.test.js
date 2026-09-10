@@ -10,6 +10,8 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'my-rocket-webhook-'));
 process.env.DATABASE_PATH = path.join(tempDir, 'test.sqlite');
 process.env.TELEGRAM_WEBHOOK_SECRET = 'test-webhook-secret-value';
 
+require('../test-helpers/no-network');
+
 const database = require('../database');
 const serverModule = require('../server');
 

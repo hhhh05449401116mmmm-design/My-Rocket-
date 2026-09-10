@@ -4,12 +4,15 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 
 // =========================================================
 // 1. إنشاء اتصال قاعدة البيانات
 // =========================================================
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'rocket.db');
+// Ensures a mounted-volume path like /data/rocket.db works even before the directory exists.
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const db = new sqlite3.Database(dbPath);
 
 // =========================================================

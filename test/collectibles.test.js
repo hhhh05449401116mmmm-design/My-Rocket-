@@ -11,6 +11,8 @@ process.env.DATABASE_PATH = path.join(tempDir, 'test.sqlite');
 // Configured so runCollectibleVerificationSweep() proceeds without a live Telegram business connection.
 process.env.TELEGRAM_BUSINESS_CONNECTION_ID = 'test-connection-id';
 
+require('../test-helpers/no-network');
+
 const database = require('../database');
 const serverModule = require('../server');
 
