@@ -75,6 +75,9 @@ test('sweep leaves the collectible unmatched when sender identity is hidden', as
     const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
     assert.equal(result.unmatched, 1);
     assert.equal(result.credited, 0);
+    assert.equal(result.giftsReturned, 1);
+    assert.equal(result.uniqueDetected, 1);
+    assert.equal(result.reasons.missingSender, 1, 'diagnostics must report the exact unmatched reason');
 
     const anyOwner = await database.getCollectibleByUniqueId('HiddenSender-2');
     assert.equal(anyOwner, undefined, 'a collectible with no verifiable sender must never be assigned to any user');
@@ -85,6 +88,7 @@ test('sweep leaves the collectible unmatched when sender does not map to any Roc
     const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
     assert.equal(result.unmatched, 1);
     assert.equal(result.credited, 0);
+    assert.equal(result.reasons.userNotFound, 1, 'diagnostics must report userNotFound as the reason');
 });
 
 test('the same real collectible is never credited twice (duplicate prevention)', async () => {
@@ -95,6 +99,7 @@ test('the same real collectible is never credited twice (duplicate prevention)',
     const second = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
     assert.equal(first.credited, 1);
     assert.equal(second.credited, 0, 'second sweep of the same owned gift must not credit again');
+    assert.equal(second.reasons.alreadyCredited, 1, 'diagnostics must report alreadyCredited on redelivery');
 
     const rows = await database.getUserCollectibles(user.id, 'OWNED');
     const matches = rows.filter(r => r.unique_collectible_id === 'DupModel-5');

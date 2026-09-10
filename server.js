@@ -339,40 +339,82 @@ function extractUniqueCollectibleIdentity(ownedGift) {
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
     const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
     if (!connectionId) {
+        // Safe diagnostic: never logs the connection id itself, only whether one exists at all.
+        console.warn('🔍 Collectible sweep skipped: no business connection available', JSON.stringify({
+            envConfigured: !!TELEGRAM_BUSINESS_CONNECTION_ID,
+            runtimeDiscovered: !!runtimeBusinessConnection.id,
+            canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+            isEnabled: runtimeBusinessConnection.isEnabled
+        }));
         return { configured: false, credited: 0, unmatched: 0 };
     }
-    const ownedGifts = await fetchGiftsFn();
+
+    let ownedGifts;
+    try {
+        ownedGifts = await fetchGiftsFn();
+    } catch (error) {
+        console.error('🔍 Collectible sweep: getBusinessAccountGifts failed:', error.message);
+        throw error;
+    }
+
     let credited = 0;
     let unmatched = 0;
+    let uniqueDetected = 0;
+    const reasons = { missingSender: 0, userNotFound: 0, alreadyCredited: 0, creditFailed: 0, noPendingIntent: 0 };
 
     for (const ownedGift of ownedGifts) {
         const identity = extractUniqueCollectibleIdentity(ownedGift);
         if (!identity) continue;
+        uniqueDetected++;
 
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
-        if (alreadyCredited) continue;
+        if (alreadyCredited) { reasons.alreadyCredited++; continue; }
 
-        if (!identity.senderTelegramId) { unmatched++; continue; }
+        if (!identity.senderTelegramId) { unmatched++; reasons.missingSender++; continue; }
 
         const user = await get('SELECT * FROM users WHERE telegram_id = ?', [String(identity.senderTelegramId)]);
-        if (!user) { unmatched++; continue; }
+        if (!user) { unmatched++; reasons.userNotFound++; continue; }
 
         const intent = await getPendingIntentByTelegramSenderId(identity.senderTelegramId);
+        if (!intent) reasons.noPendingIntent++; // informational only — an intent is not required to credit
 
-        await creditVerifiedCollectible({
-            intentId: intent ? intent.id : null,
-            userId: user.id,
-            telegramGiftModel: identity.telegramGiftModel,
-            uniqueCollectibleId: identity.uniqueCollectibleId,
-            telegramGiftInstanceId: identity.telegramGiftInstanceId,
-            collectibleNumber: identity.collectibleNumber,
-            verifiedMetadata: identity.verifiedMetadata,
-            stickerFileId: identity.stickerFileId
-        });
-        credited++;
+        try {
+            await creditVerifiedCollectible({
+                intentId: intent ? intent.id : null,
+                userId: user.id,
+                telegramGiftModel: identity.telegramGiftModel,
+                uniqueCollectibleId: identity.uniqueCollectibleId,
+                telegramGiftInstanceId: identity.telegramGiftInstanceId,
+                collectibleNumber: identity.collectibleNumber,
+                verifiedMetadata: identity.verifiedMetadata,
+                stickerFileId: identity.stickerFileId
+            });
+            credited++;
+            // Safe: collectible identity is public game data; no secrets, no file_id, no raw sender payload.
+            console.log('✅ Collectible credited:', JSON.stringify({
+                uniqueCollectibleId: identity.uniqueCollectibleId,
+                collectibleNumber: identity.collectibleNumber,
+                userId: user.id
+            }));
+        } catch (error) {
+            unmatched++;
+            reasons.creditFailed++;
+            console.error('🔍 Collectible credit failed:', JSON.stringify({
+                uniqueCollectibleId: identity.uniqueCollectibleId,
+                reason: error.message
+            }));
+        }
     }
 
-    return { configured: true, credited, unmatched };
+    console.log('🔍 Collectible sweep summary:', JSON.stringify({
+        giftsReturned: ownedGifts.length,
+        uniqueDetected,
+        credited,
+        unmatched,
+        reasons
+    }));
+
+    return { configured: true, credited, unmatched, giftsReturned: ownedGifts.length, uniqueDetected, reasons };
 }
 
 // ===== Phase 3B: Real Telegram collectible media resolution (server-only, no BOT_TOKEN leakage) =====
@@ -964,6 +1006,9 @@ app.get('/api/admin/business-connection-status', authenticate, async (req, res) 
 
 // ===== 5.3.5 إعداد Telegram webhook (محمي/إداري فقط) — لا يكشف BOT_TOKEN أبداً =====
 const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
+// business_connection is NOT delivered by Telegram's default allowed_updates, so it must be
+// requested explicitly or the webhook never receives the connection at all.
+const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'message'];
 
 app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
     if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
@@ -971,10 +1016,16 @@ app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => 
         return;
     }
     try {
-        const payload = { url: TELEGRAM_WEBHOOK_URL };
+        const payload = { url: TELEGRAM_WEBHOOK_URL, allowed_updates: TELEGRAM_ALLOWED_UPDATES };
         if (TELEGRAM_WEBHOOK_SECRET) payload.secret_token = TELEGRAM_WEBHOOK_SECRET;
         await callTelegramBotApi('setWebhook', payload);
-        res.json({ ok: true, success: true, url: TELEGRAM_WEBHOOK_URL, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET });
+        res.json({
+            ok: true,
+            success: true,
+            url: TELEGRAM_WEBHOOK_URL,
+            allowedUpdates: TELEGRAM_ALLOWED_UPDATES,
+            secretConfigured: !!TELEGRAM_WEBHOOK_SECRET
+        });
     } catch (error) {
         // callTelegramBotApi never includes BOT_TOKEN in its error messages.
         res.status(400).json({ ok: false, success: false, error: error.message });
@@ -993,6 +1044,10 @@ app.get('/api/admin/telegram-webhook-status', authenticate, async (req, res) => 
             hasUrl: !!info.url,
             expectedUrl: TELEGRAM_WEBHOOK_URL,
             urlMatches: info.url === TELEGRAM_WEBHOOK_URL,
+            allowedUpdates: info.allowed_updates || [],
+            businessConnectionAllowed: Array.isArray(info.allowed_updates)
+                ? info.allowed_updates.includes('business_connection')
+                : false,
             pendingUpdateCount: info.pending_update_count,
             lastErrorMessage: info.last_error_message || null,
             hasCustomCertificate: !!info.has_custom_certificate
