@@ -474,22 +474,24 @@ app.post('/telegram-webhook', async (req, res) => {
         }
     }
 
-    res.status(200).json({ ok: true }); // Telegram requires a fast 200 regardless of internal handling.
-
     try {
         const update = req.body || {};
 
         // Idempotency: Telegram may redeliver the same update_id on timeout/retry.
         if (Number.isFinite(update.update_id)) {
             const alreadyProcessed = await hasProcessedWebhookUpdate(update.update_id);
-            if (alreadyProcessed) return;
-            await markWebhookUpdateProcessed(update.update_id);
+            if (alreadyProcessed) {
+                res.status(200).json({ ok: true });
+                return;
+            }
         }
 
         const connection = update.business_connection;
         if (!connection) {
             const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
             console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+            await markWebhookUpdateProcessed(update.update_id);
+            res.status(200).json({ ok: true });
             return;
         }
 
@@ -509,6 +511,7 @@ app.post('/telegram-webhook', async (req, res) => {
             canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
             isEnabled: runtimeBusinessConnection.isEnabled
         });
+        await markWebhookUpdateProcessed(update.update_id);
 
         // Never log BOT_TOKEN, secrets, or the raw update payload — presence/flags only.
         console.log('🔗 Telegram business_connection update:', JSON.stringify({
@@ -522,8 +525,10 @@ app.post('/telegram-webhook', async (req, res) => {
         if (!canViewGiftsAndStars) {
             console.warn('⚠️ Business connection is missing can_view_gifts_and_stars — collectible verification cannot use it yet.');
         }
+        res.status(200).json({ ok: true });
     } catch (error) {
         console.error('Telegram webhook handling error:', error.message);
+        if (!res.headersSent) res.status(500).json({ ok: false });
     }
 });
 
