@@ -128,7 +128,6 @@ test('webhook is idempotent for a redelivered update_id', async () => {
 test('GET /api/collectibles/verification-status never creates ownership by itself (read-only)', async () => {
     const user = await database.findOrCreateUser('verification-status-user');
     const before = await database.getUserCollectibles(user.id);
-
     const response = await fetch(`${baseUrl}/api/collectibles/verification-status`, {
         headers: { Authorization: `Bearer ${user.id}` }
     });
@@ -177,4 +176,36 @@ test('a user can never bet with another user\'s verified collectible (authorizat
     const ownerCollectibles = await database.getUserCollectibles(owner.id, 'OWNED');
     const stillOwned = ownerCollectibles.find(c => c.unique_collectible_id === 'AuthTestGift-1');
     assert.ok(stillOwned, 'the collectible must remain untouched and owned by the real owner');
+});
+
+test('business_connection_id is extracted from business-scoped updates (recovery source)', () => {
+    const extract = serverModule.extractBusinessConnectionIdFromUpdate;
+
+    assert.equal(extract({ business_message: { business_connection_id: 'conn-from-message' } }), 'conn-from-message');
+    assert.equal(extract({ edited_business_message: { business_connection_id: 'conn-from-edit' } }), 'conn-from-edit');
+    assert.equal(extract({ deleted_business_messages: { business_connection_id: 'conn-from-delete' } }), 'conn-from-delete');
+
+    // Must never invent an id for unrelated updates.
+    assert.equal(extract({ business_message_reaction: { business_connection_id: 'out-of-scope' } }), null);
+    assert.equal(extract({ message: { text: 'hello' } }), null);
+    assert.equal(extract({}), null);
+    assert.equal(extract(null), null);
+});
+
+test('a business_message update is accepted and does not crash when recovery cannot reach Telegram', async () => {
+    // Reproduces the production failure shape: the one-off business_connection update was missed,
+    // so only business-scoped updates arrive. Telegram calls are blocked in tests, so recovery
+    // must fail safely and still return 200 without throwing or corrupting state.
+    const response = await fetch(`${baseUrl}/telegram-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Telegram-Bot-Api-Secret-Token': 'test-webhook-secret-value' },
+        body: JSON.stringify({
+            update_id: 303,
+            business_message: { business_connection_id: 'conn-recovered-from-message', text: 'hi' }
+        })
+    });
+    assert.equal(response.status, 200);
+
+    const processed = await waitFor(() => database.hasProcessedWebhookUpdate(303));
+    assert.equal(processed, true, 'business-scoped updates must still be marked processed');
 });

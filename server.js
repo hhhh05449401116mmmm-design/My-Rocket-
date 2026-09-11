@@ -297,6 +297,39 @@ async function fetchBusinessAccountGifts() {
     return Array.isArray(result?.gifts) ? result.gifts : [];
 }
 
+// Every business-scoped update officially carries business_connection_id, so these act as a
+// recovery source when the one-off business_connection update was never delivered.
+function extractBusinessConnectionIdFromUpdate(update) {
+    return update?.business_message?.business_connection_id
+        || update?.edited_business_message?.business_connection_id
+        || update?.deleted_business_messages?.business_connection_id
+        || null;
+}
+
+// يستعيد بيانات الاتصال الرسمية من Telegram عبر getBusinessConnection ثم يحفظها.
+// كل الحقول تأتي من Telegram نفسه — لا اختراع ولا افتراضات محلية.
+async function recoverBusinessConnectionById(connectionId) {
+    const connection = await callTelegramBotApi('getBusinessConnection', {
+        business_connection_id: connectionId
+    });
+    if (!connection || !connection.id) throw new Error('getBusinessConnection returned no connection');
+
+    runtimeBusinessConnection = {
+        id: connection.id,
+        businessUserId: connection.user?.id || null,
+        canViewGiftsAndStars: !!connection.rights?.can_view_gifts_and_stars,
+        isEnabled: !!connection.is_enabled,
+        updatedAt: new Date().toISOString()
+    };
+    await savePersistedBusinessConnection({
+        connectionId: runtimeBusinessConnection.id,
+        businessUserId: runtimeBusinessConnection.businessUserId,
+        canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+        isEnabled: runtimeBusinessConnection.isEnabled
+    });
+    return runtimeBusinessConnection;
+}
+
 // يستخرج الهوية الفريدة الرسمية لهدية Telegram Collectible فقط (يتجاهل النجوم/الهدايا العادية).
 function extractUniqueCollectibleIdentity(ownedGift) {
     const uniqueGift = ownedGift?.gift;
@@ -494,7 +527,24 @@ app.post('/telegram-webhook', async (req, res) => {
 
         const connection = update.business_connection;
         if (!connection) {
-            console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+            // Recovery path: a business-scoped update still carries business_connection_id, which
+            // lets us re-fetch the authoritative connection if the business_connection update was missed.
+            const recoverableId = extractBusinessConnectionIdFromUpdate(update);
+            if (recoverableId && !runtimeBusinessConnection.id) {
+                try {
+                    const recovered = await recoverBusinessConnectionById(recoverableId);
+                    console.log('🔗 Recovered business connection from business update:', JSON.stringify({
+                        updateType,
+                        hasConnectionId: !!recovered.id,
+                        canViewGiftsAndStars: recovered.canViewGiftsAndStars,
+                        isEnabled: recovered.isEnabled
+                    }));
+                } catch (recoveryError) {
+                    console.error('🔎 Webhook diagnostic: business connection recovery failed', JSON.stringify({ updateId, reason: recoveryError.message }));
+                }
+            } else {
+                console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+            }
             await markWebhookUpdateProcessed(update.update_id);
             res.status(200).json({ ok: true });
             return;
@@ -1020,11 +1070,41 @@ app.get('/api/admin/business-connection-status', authenticate, async (req, res) 
     });
 });
 
+// ===== 5.3.4.1 إعادة جلب صلاحيات الاتصال من Telegram (محمي/إداري) — لا يكشف أي معرّف =====
+// يُستخدم عند تغيير الصلاحيات (مثل تفعيل View Gifts and Stars) دون الحاجة لفصل/إعادة ربط البوت.
+app.post('/api/admin/refresh-business-connection', authenticate, async (req, res) => {
+    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        res.status(403).json({ ok: false, error: 'Forbidden' });
+        return;
+    }
+    try {
+        const persisted = await getPersistedBusinessConnection();
+        const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID
+            || runtimeBusinessConnection.id
+            || (persisted ? persisted.connection_id : null);
+        if (!connectionId) {
+            res.status(409).json({ ok: false, error: 'No known business connection to refresh' });
+            return;
+        }
+
+        const refreshed = await recoverBusinessConnectionById(connectionId);
+        res.json({
+            ok: true,
+            runtimeDiscovered: !!refreshed.id,
+            canViewGiftsAndStars: refreshed.canViewGiftsAndStars,
+            isEnabled: refreshed.isEnabled,
+            updatedAt: refreshed.updatedAt
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
 // ===== 5.3.5 إعداد Telegram webhook (محمي/إداري فقط) — لا يكشف BOT_TOKEN أبداً =====
 const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
 // business_connection is NOT delivered by Telegram's default allowed_updates, so it must be
 // requested explicitly or the webhook never receives the connection at all.
-const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'message'];
+const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
 
 app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
     if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
@@ -1478,6 +1558,7 @@ module.exports = {
     updateGameState,
     // Exported for tests only — real request handling never uses these directly.
     extractUniqueCollectibleIdentity,
+    extractBusinessConnectionIdFromUpdate,
     runCollectibleVerificationSweep,
     startCollectibleReconciliationWorker,
     stopCollectibleReconciliationWorker

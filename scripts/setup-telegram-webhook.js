@@ -11,7 +11,7 @@ const WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhoo
 // Must match the TELEGRAM_WEBHOOK_SECRET the server validates, otherwise every update is rejected.
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 // business_connection is NOT part of Telegram's default allowed_updates and must be requested.
-const ALLOWED_UPDATES = ['business_connection', 'business_message', 'message'];
+const ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
 
 function callTelegramBotApi(method, payload = {}) {
     return new Promise((resolve, reject) => {
