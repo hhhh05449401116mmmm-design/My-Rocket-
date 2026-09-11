@@ -494,6 +494,12 @@ function streamTelegramFile(filePath, res) {
 // Receives ONLY the official business_connection update; ignores every other Telegram update type.
 // Never invents/hardcodes a connection id — it only stores whatever Telegram itself sends.
 app.post('/telegram-webhook', async (req, res) => {
+    // Diagnostic log before secret validation — booleans only (never secret values, tokens, or personal data).
+    console.log('🔎 Webhook diagnostic: Telegram webhook request received', JSON.stringify({
+        hasSecretHeader: !!req.headers['x-telegram-bot-api-secret-token'],
+        secretConfiguredOnServer: !!TELEGRAM_WEBHOOK_SECRET
+    }));
+
     // Official Telegram secret_token check (set via setWebhook secret_token). If configured on our
     // side but the header is missing/wrong, reject before doing anything else — never processed.
     if (TELEGRAM_WEBHOOK_SECRET) {
@@ -502,6 +508,7 @@ app.post('/telegram-webhook', async (req, res) => {
         const provided = Buffer.from(String(providedSecret));
         const isValid = provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
         if (!isValid) {
+            console.warn('🔎 Webhook diagnostic: secret token mismatch or missing header - rejected 401');
             res.status(401).end();
             return;
         }
