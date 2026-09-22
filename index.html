@@ -206,27 +206,262 @@
         .deposit-button:active { transform: scale(0.91); }
 
         /* =========================================================
+           TEST BALANCE DISPLAY (QA ONLY — never confused with TON)
+        ========================================================= */
+        .test-balance-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 12px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 165, 0, 0.5);
+        }
+        .test-balance-badge {
+            font-size: 10px;
+            font-weight: 700;
+            color: #ffa500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .test-balance-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffa500;
+        }
+        .test-balance-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .test-balance-btn:hover { background: rgba(255, 165, 0, 0.4); }
+        .test-balance-btn:active { transform: scale(0.85); }
+
+        /* =========================================================
            GAME HUB - PREMIUM WITH LOOT BOXES
         ========================================================= */
         .game-hub {
             display: block;
             padding: 10px 12px;
         }
-        .game-hub.hidden { display: none; }
-        .game-hub-title {
-            font-size: 24px;
-            font-weight: 900;
-            margin-bottom: 18px;
-            color: #fff;
-            text-align: center;
-            text-shadow: 0 0 30px rgba(100, 200, 255, 0.2);
-            letter-spacing: 1px;
-        }
-        .game-hub-title .ice {
-            background: linear-gradient(135deg, #4fc3f7, #00bcd4, #4dd0e1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+         /* =========================================================
+            HOME - LIVE STRIP, BANNERS, GRID, REWARDS
+         ========================================================= */
+         .live-strip {
+             background: linear-gradient(145deg, #0f2847, #0a1a30);
+             border-radius: 24px;
+             padding: 8px 16px;
+             margin-bottom: 0;
+             border: 1px solid rgba(100, 200, 255, 0.08);
+             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+             display: flex;
+             align-items: center;
+             gap: 12px;
+             overflow: hidden;
+         }
+         .live-strip-title {
+             font-size: 12px;
+             font-weight: 800;
+             color: #ff6b6b;
+             white-space: nowrap;
+             flex-shrink: 0;
+         }
+         .live-strip-scroll {
+             flex: 1;
+             overflow: hidden;
+             position: relative;
+             color: #7a9bcb;
+             font-size: 12px;
+         }
+         .live-strip-scroll::after {
+             content: '';
+             position: absolute;
+             right: -4px;
+             top: 0;
+             bottom: 0;
+             width: 60px;
+             background: linear-gradient(to right, rgba(15, 24, 39, 0.9), transparent);
+             pointer-events: none;
+         }
+         @keyframes scroll-left {
+             0% { transform: translateX(100%); }
+             100% { transform: translateX(-100%); }
+         }
+         .live-strip-item {
+             display: inline-block;
+             animation: scroll-left 12s linear infinite;
+             white-space: nowrap;
+         }
+
+         /* Rocket Banner */
+         .rocket-banner {
+             background: linear-gradient(135deg, #0f2847 0%, #1a3a6c 100%);
+             border-radius: 28px;
+             margin-bottom: 0;
+             cursor: pointer;
+             position: relative;
+             overflow: hidden;
+             border: 2px solid rgba(100, 200, 255, 0.3);
+             box-shadow: 0 12px 40px rgba(50, 150, 255, 0.25);
+             transition: all 0.3s ease;
+         }
+         .rocket-banner:hover {
+             border-color: rgba(50, 200, 255, 0.5);
+             box-shadow: 0 16px 50px rgba(50, 150, 255, 0.4);
+             transform: translateY(-2px);
+         }
+         .rocket-banner-content {
+             padding: 24px 20px 20px;
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             text-align: center;
+             position: relative;
+             z-index: 2;
+         }
+         .rocket-banner-badge {
+             background: linear-gradient(135deg, #ff6b6b, #ff4757);
+             color: #fff;
+             font-size: 11px;
+             font-weight: 800;
+             padding: 4px 14px;
+             border-radius: 20px;
+             margin-bottom: 8px;
+             border: 1px solid rgba(255, 255, 255, 0.2);
+         }
+         .rocket-banner-icon {
+             font-size: 60px;
+             margin-bottom: 8px;
+         }
+         .rocket-banner-title {
+             font-size: 32px;
+             font-weight: 900;
+             color: #e8f4ff;
+             letter-spacing: 1px;
+             text-shadow: 0 0 20px rgba(50, 150, 255, 0.5);
+         }
+         .rocket-banner-desc {
+             font-size: 13px;
+             color: #7a9bcb;
+             margin: 4px 0;
+         }
+         .rocket-banner-multiplier {
+             font-size: 28px;
+             font-weight: 900;
+             background: linear-gradient(135deg, #ffd700, #f0a500);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+         }
+
+         /* PvP Banner */
+         .pvp-banner {
+             background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
+             border-radius: 28px;
+             padding: 20px 20px 16px;
+             margin-bottom: 0;
+             cursor: pointer;
+             border: 2px solid rgba(255, 215, 0, 0.5);
+             box-shadow: 0 12px 40px rgba(128, 0, 255, 0.3);
+             transition: all 0.3s ease;
+             position: relative;
+             overflow: hidden;
+         }
+         .pvp-banner:hover {
+             border-color: rgba(255, 215, 0, 0.7);
+             box-shadow: 0 16px 50px rgba(128, 0, 255, 0.5);
+             transform: translateY(-2px);
+         }
+         .pvp-banner-content {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             text-align: center;
+             position: relative;
+             z-index: 2;
+         }
+         .pvp-banner-icon {
+             font-size: 46px;
+             margin-bottom: 8px;
+         }
+         .pvp-banner-title {
+             font-size: 30px;
+             font-weight: 900;
+             color: #ffd700;
+             letter-spacing: 2px;
+             text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+         }
+         .pvp-banner-desc {
+             font-size: 13px;
+             color: #ce93d8;
+             margin: 4px 0;
+         }
+         .pvp-banner-players {
+             display: flex;
+             gap: 4px;
+             margin-top: 4px;
+         }
+         .pvp-player {
+             font-size: 18px;
+         }
+
+         /* Game Grid (2-column) */
+          .game-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 14px;
+              margin-bottom: 14px;
+          }
+
+          /* Reward Section */
+          .reward-section {
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+              margin-bottom: 14px;
+          }
+          .reward-card {
+             background: linear-gradient(135deg, #2a1470 0%, #1a0f4a 100%);
+             border-radius: 24px;
+             padding: 18px;
+             border: 2px solid rgba(255, 215, 0, 0.3);
+             box-shadow: 0 8px 30px rgba(128, 0, 255, 0.25);
+             cursor: pointer;
+             transition: all 0.3s ease;
+             position: relative;
+             overflow: hidden;
+         }
+         .reward-card:hover {
+             border-color: rgba(255, 215, 0, 0.6);
+             box-shadow: 0 12px 35px rgba(128, 0, 255, 0.4);
+             transform: translateY(-2px);
+         }
+         .reward-card-content {
+             display: flex;
+             align-items: center;
+             gap: 12px;
+         }
+         .reward-card-title {
+             font-size: 20px;
+             font-weight: 900;
+             color: #ffd700;
+             white-space: nowrap;
+         }
+         .reward-card-desc {
+             font-size: 13px;
+             color: #ce93d8;
+         }
+
+         .game-hub.hidden { display: none; }
 
         /* Game Cards */
         .game-card-hub {
@@ -236,7 +471,7 @@
             border: 1px solid rgba(100, 200, 255, 0.12);
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-bottom: 14px;
+            margin-bottom: 0;
             display: flex;
             align-items: center;
             gap: 16px;
@@ -1508,7 +1743,7 @@
             padding: 8px;
             border-radius: 23px;
             background: rgba(10, 26, 48, 0.4);
-            margin-bottom: 14px;
+            margin-bottom: 0;
             direction: ltr;
             border: 1px solid rgba(100, 200, 255, 0.04);
         }
@@ -1863,119 +2098,148 @@
                 </div>
             </div>
             <div class="wallet-area">
-                <button id="ton-wallet-box" class="wallet-balance" type="button" onclick="openTonWallet()">
-                    <span class="ton-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="tonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style="stop-color:#4fc3f7"/>
-                                    <stop offset="100%" style="stop-color:#0288d1"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-5.5H7.5l3.5-7 3.5 7H13v5.5h-2zm5-5.5h-2.5l-2.5-5h2.5l2.5 5z"/>
-                        </svg>
-                    </span>
-                    <span id="ton-balance">0.00</span>
-                    <span style="font-size:10px;color:#5a7a9a;font-weight:700;">TON</span>
-                </button>
-                <button class="deposit-button" type="button" onclick="openDeposit()">+</button>
+                 <button id="ton-wallet-box" class="wallet-balance" type="button" onclick="openTonWallet()">
+                     <span class="ton-icon">
+                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                             <defs>
+                                 <linearGradient id="tonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                     <stop offset="0%" style="stop-color:#4fc3f7"/>
+                                     <stop offset="100%" style="stop-color:#0288d1"/>
+                                 </linearGradient>
+                             </defs>
+                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-5.5H7.5l3.5-7 3.5 7H13v5.5h-2zm5-5.5h-2.5l-2.5-5h2.5l2.5 5z"/>
+                         </svg>
+                     </span>
+                     <span id="ton-balance">0.00</span>
+                     <span style="font-size:10px;color:#5a7a9a;font-weight:700;">TON</span>
+                 </button>
+                 <button class="deposit-button" type="button" onclick="openDeposit()">+</button>
+                 <div id="test-balance-container" class="test-balance-container" style="display:none;">
+                     <span id="test-balance-badge" class="test-balance-badge">TEST</span>
+                     <span id="test-balance-value" class="test-balance-value">0</span>
+                     <button id="test-balance-add-btn" class="test-balance-btn" type="button" onclick="adminAddTestBalance()">+</button>
+                     <button id="test-balance-reset-btn" class="test-balance-btn" type="button" onclick="adminResetTestBalance()">↻</button>
+                 </div>
             </div>
         </header>
 
-        <!-- =========================================================
-           GAME HUB - WITH LOOT BOXES
-        ========================================================= -->
-        <div id="game-hub" class="game-hub">
-            <div class="game-hub-title">❄️ <span class="ice">Game Hub</span></div>
+         <!-- =========================================================
+            GAME HUB
+         ========================================================= -->
+         <div id="game-hub" class="game-hub">
+             <!-- ==== Live Strip ==== -->
+             <div class="live-strip" id="live-strip">
+                 <div class="live-strip-title">🔴 LIVE</div>
+                 <div class="live-strip-scroll" id="live-strip-scroll">
+                     <span class="live-strip-item">🎁 Gifts arriving...</span>
+                 </div>
+             </div>
 
-            <!-- Rocket Game -->
-            <div class="game-card-hub" onclick="openRocketGame()">
-                <div class="game-card-hub-icon">🚀</div>
-                <div class="game-card-hub-info">
-                    <h3 id="rocket-game-title">Rocket Ice</h3>
-                    <p id="rocket-game-desc">Multiplayer crash game • Bet & Cash Out</p>
-                </div>
-                <div class="game-card-hub-badge" id="rocket-game-badge">❄️ Live</div>
-            </div>
+             <!-- ==== Rocket Banner ==== -->
+             <div class="rocket-banner" onclick="openRocketGame()">
+                 <div class="rocket-banner-bg"></div>
+                 <div class="rocket-banner-content">
+                     <div class="rocket-banner-badge">🔥 HOT</div>
+                     <div class="rocket-banner-icon">🚀</div>
+                     <div class="rocket-banner-title">ROCKET</div>
+                     <div class="rocket-banner-desc">Multiplayer crash • Bet & Cash Out</div>
+                     <div class="rocket-banner-multiplier">220x Max</div>
+                 </div>
+             </div>
 
-            <!-- =========================================================
-               LOOT BOXES SECTION
-            ========================================================= -->
-            <div class="loot-section">
-                <div class="loot-title">🎁 <span class="highlight" id="loot-title-text">صناديق الحظ</span></div>
-                <div class="loot-grid" id="loot-grid">
-                    <!-- سيتم إنشاؤها بواسطة JavaScript -->
-                </div>
-            </div>
+             <!-- ==== PvP Banner ==== -->
+             <div class="pvp-banner" onclick="openPvpGame()">
+                 <div class="pvp-banner-bg"></div>
+                 <div class="pvp-banner-content">
+                     <div class="pvp-banner-icon">⚔️</div>
+                     <div class="pvp-banner-title">PVP</div>
+                     <div class="pvp-banner-desc">Battle other players head-to-head</div>
+                     <div class="pvp-banner-players">
+                         <span class="pvp-player">👤</span>
+                         <span class="pvp-player">👤</span>
+                         <span class="pvp-player">👤</span>
+                     </div>
+                 </div>
+             </div>
 
-             <!-- =========================================================
-                NEW GAMES SECTION
-             ========================================================= -->
-              <!-- Mines -->
-              <div class="game-card-hub" onclick="openMinesGame()">
-                  <div class="game-card-hub-icon">💣</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="mines-title">Mines</h3>
-                      <p data-key="mines-desc">Clear tiles without hitting mines</p>
-                  </div>
-                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-              </div>
+             <!-- ==== Game Grid (2-column) ==== -->
+             <div class="game-grid">
+                 <div class="game-card-hub" onclick="openUpgradeGame()" style="opacity:0.5;cursor:default;">
+                     <div class="game-card-hub-icon">🔧</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="upgrade-title">Upgrade</h3>
+                         <p data-key="upgrade-desc">Upgrade your collectibles</p>
+                     </div>
+                     <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+                 </div>
 
-              <!-- Plinko -->
-              <div class="game-card-hub" onclick="openPlinkoGame()">
-                  <div class="game-card-hub-icon">🔷</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="plinko-title">Plinko</h3>
-                      <p data-key="plinko-desc">Drop the chip and win multipliers</p>
-                  </div>
-                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-              </div>
+                 <div class="game-card-hub" onclick="openMinesGame()">
+                     <div class="game-card-hub-icon">💣</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="mines-title">Mines</h3>
+                         <p data-key="mines-desc">Clear tiles without hitting mines</p>
+                     </div>
+                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                 </div>
 
-              <!-- Crafts -->
-              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
-                  <div class="game-card-hub-icon">🔨</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="crafts-title">Crafts</h3>
-                      <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
-                  </div>
-                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-              </div>
+                 <div class="game-card-hub" onclick="openPlinkoGame()">
+                     <div class="game-card-hub-icon">🔷</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="plinko-title">Plinko</h3>
+                         <p data-key="plinko-desc">Drop the chip and win multipliers</p>
+                     </div>
+                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                 </div>
 
-              <!-- Dice -->
-              <div class="game-card-hub" onclick="openDiceGame()">
-                  <div class="game-card-hub-icon">🎲</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="dice-title">Dice</h3>
-                      <p data-key="dice-desc">Roll the dice for instant wins</p>
-                  </div>
-                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-              </div>
+                 <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                     <div class="game-card-hub-icon">🔨</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="crafts-title">Crafts</h3>
+                         <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
+                     </div>
+                     <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+                 </div>
 
-              <!-- PvP -->
-              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
-                  <div class="game-card-hub-icon">⚔️</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="pvp-title">PvP</h3>
-                      <p data-key="pvp-desc">Battle other players head-to-head</p>
-                  </div>
-                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-              </div>
+                 <div class="game-card-hub" onclick="openDiceGame()">
+                     <div class="game-card-hub-icon">🎲</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="dice-title">Dice</h3>
+                         <p data-key="dice-desc">Roll the dice for instant wins</p>
+                     </div>
+                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                 </div>
 
-              <!-- Upgrade -->
-              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
-                  <div class="game-card-hub-icon">🔧</div>
-                  <div class="game-card-hub-info">
-                      <h3 data-key="upgrade-title">Upgrade</h3>
-                      <p data-key="upgrade-desc">Upgrade your collectibles</p>
-                  </div>
-                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-              </div>
-          </div>
+                 <div class="game-card-hub" onclick="openLotteryGame()">
+                     <div class="game-card-hub-icon">🎰</div>
+                     <div class="game-card-hub-info">
+                         <h3 data-key="lottery-title">Lottery</h3>
+                         <p data-key="lottery-desc">Pick the numbers &amp; Win</p>
+                     </div>
+                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                 </div>
+             </div>
 
-        <!-- =========================================================
-           ROCKET GAME
-        ========================================================= -->
-        <div id="rocket-game" class="rocket-game-container hidden">
+             <!-- ==== Reward Cards ==== -->
+             <div class="reward-section">
+                 <div class="reward-card" onclick="openDailyReward()">
+                     <div class="reward-card-content">
+                         <div class="reward-card-title">🎁 FREE24</div>
+                         <div class="reward-card-desc">Daily gift — claim every 24h</div>
+                     </div>
+                 </div>
+                 <div class="reward-card" onclick="openFreeGift()">
+                     <div class="reward-card-content">
+                         <div class="reward-card-title">🎁 FREE</div>
+                         <div class="reward-card-desc">Free collectible pack</div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+
+         <!-- =========================================================
+            ROCKET GAME
+         ========================================================= -->
+         <div id="rocket-game" class="rocket-game-container hidden">
             <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
                 <button class="back-button show" type="button" onclick="closeRocketGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;" id="back-to-hub-btn">
                     ← Back
@@ -2187,6 +2451,36 @@
         </div>
 
         <!-- =========================================================
+            LOTTERY GAME
+        ========================================================= -->
+        <div id="lottery-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closeLotteryGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🎰 Lottery</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="lottery-result" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:20px;" data-key="lottery-draw">Draw Result</div>
+                        <div id="lottery-numbers" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">
+                            <!-- Generated by JS -->
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;align-items:center;">
+                            <input id="lottery-bet-input" type="number" min="0.1" step="0.1" value="1" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;text-align:center;">
+                            <span style="font-size:14px;color:#7a9bcb;" data-key="lottery-bet">TON</span>
+                        </div>
+                        <button id="lottery-play-btn" class="place-bet-main" type="button" onclick="playLottery()" style="width:100%;max-width:200px;" data-key="lottery-draw">Play</button>
+                        <div id="lottery-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="lottery-pick">Pick 5 numbers from 1-50</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
             GIFTS PAGE
         ========================================================= -->
         <div id="gifts-page" class="gifts-page">
@@ -2294,6 +2588,7 @@
                 <div class="modal-tabs">
                     <button id="modal-gift-tab" class="modal-tab gift-tab" type="button" onclick="selectBetType('GIFT')">🎁 Gifts</button>
                     <button id="modal-ton-tab" class="modal-tab ton active" type="button" onclick="selectBetType('TON')">💎 TON</button>
+                    <button id="modal-test-tab" class="modal-tab" type="button" onclick="selectBetType('TEST')" style="display:none;">🧪 TEST</button>
                 </div>
                 <div class="modal-bet-card">
                     <div class="available-balance">
@@ -2337,6 +2632,11 @@
                         </div>
                         <span class="auto-x">x</span>
                         <button id="auto-plus" class="auto-number-control" type="button" onclick="changeAutoTarget(0.01)">+</button>
+                    </div>
+                    <div id="test-bet-section" style="display:none;text-align:center;padding:10px;">
+                        <div style="font-size:12px;color:#ffa500;font-weight:700;">TEST BALANCE: <span id="test-balance-display-modal">0</span></div>
+                        <div style="font-size:10px;color:#7a9bcb;margin-top:4px;">Non-withdrawable demo balance</div>
+                        <button class="modal-place-button ton" type="button" onclick="adminAddTestBalance()" style="font-size:12px;padding:6px;margin-top:8px;background:rgba(255,165,0,0.2);color:#ffa500;border:1px solid rgba(255,165,0,0.5);border-radius:8px;">+100000 TEST</button>
                     </div>
                     <button id="modal-place-button" class="modal-place-button ton" type="button" onclick="handleModalBet()">Place TON Bet 🚀</button>
                 </div>
@@ -2609,6 +2909,9 @@
         let autoCashoutTarget = 2.00;
         let userBetAmount = 1.00;
         let tonBalance = 0;
+        let testBalance = 0;
+        let testBalanceEnabled = false;
+        let isOwner = false;
         let pendingNextBet = null;
         let pendingNextBetSubmitted = false;
         let selectedBetType = "TON";
@@ -2704,6 +3007,12 @@
             noGiftSelectedYet: 'لم تختر مقتنى بعد',
             connectWalletForGifts: '🔒 أرسل مقتنى لتتمكن من الرهان به',
             giftValueLabel: '💎 القيمة:',
+            testBalanceLabel: 'رصيد الاختبار',
+            testBalanceBadge: 'TEST',
+            testBalanceValue: '0',
+            testBalanceBtnAdd: 'إضافة 100000 TEST',
+            testBalanceBtnReset: 'إعادة تعيين TEST',
+            testBalanceDisabled: 'رصيد الاختبار غير مفعل',
             vipStart: 'بداية'
         });
         Object.assign(translations.en, {
@@ -2741,6 +3050,12 @@
             noGiftSelectedYet: 'No collectible selected yet',
             connectWalletForGifts: '🔒 Send a collectible to use it for betting',
             giftValueLabel: '💎 Value:',
+            testBalanceLabel: 'Test Balance',
+            testBalanceBadge: 'TEST',
+            testBalanceValue: '0',
+            testBalanceBtnAdd: 'Add 100000 TEST',
+            testBalanceBtnReset: 'Reset TEST Balance',
+            testBalanceDisabled: 'Test balance is disabled',
             vipStart: 'Start'
         });
         Object.assign(translations.ru, {
@@ -2778,6 +3093,12 @@
             noGiftSelectedYet: 'Подарок ещё не выбран',
             connectWalletForGifts: '🔒 Отправьте подарок, чтобы использовать его для ставок',
             giftValueLabel: '💎 Ценность:',
+            testBalanceLabel: 'Тестовый баланс',
+            testBalanceBadge: 'TEST',
+            testBalanceValue: '0',
+            testBalanceBtnAdd: 'Добавить 100000 TEST',
+            testBalanceBtnReset: 'Сбросить TEST баланс',
+            testBalanceDisabled: 'Тестовый баланс отключен',
             vipStart: 'Старт'
          });
 
@@ -2832,13 +3153,25 @@
              invalidTarget: 'هدف غير صالح',
              minesWonMsg: '🎉 ربحت ',
              plinkoWonMsg: '🎉 ربحت ',
-             diceWonMsg: '🎉 ربحت '
+              diceWonMsg: '🎉 ربحت ',
+              lotteryTitle: '🎰 اللوتري',
+              lotteryDesc: 'اختر الأرقام وربح الجائزة',
+              lotteryPick: 'اختر 5 أرقام من 1-50',
+              lotteryDraw: 'سحب النتيجة',
+              lotteryWon: '🎉 ربحت!',
+              lotteryLost: '❌ خسرت',
+              lotteryMatch3: '🎉 3 مطابقات! ربحت',
+              lotteryMatch4: '🎉🎉 4 مطابقات! ربحت',
+              lotteryMatch5: '🎉🎉🎉 5 مطابقات! الجائزة الكبرى!',
+              lotteryBetPrompt: 'مبلغ الرهان (TON):',
+              lotteryInvalid: 'أرقام غير صالحة',
+              lotteryDuplicate: 'الأرقام المكررة غير مسموحة'
          });
 
          Object.assign(translations.en, {
-            minesTitle: '💣 Mines',
-            minesDesc: 'Clear tiles without hitting mines',
-            plinkoTitle: '🔷 Plinko',
+              minesTitle: '💣 Mines',
+              minesDesc: 'Clear tiles without hitting mines',
+              plinkoTitle: '🔷 Plinko',
             plinkoDesc: 'Drop the chip and win multipliers',
             diceTitle: '🎲 Dice',
             diceDesc: 'Roll the dice for instant wins',
@@ -2886,11 +3219,23 @@
              invalidTarget: 'Invalid target',
              minesWonMsg: '🎉 You won ',
              plinkoWonMsg: '🎉 You won ',
-             diceWonMsg: '🎉 You won '
-         });
+              diceWonMsg: '🎉 You won ',
+              lotteryTitle: '🎰 Lottery',
+              lotteryDesc: 'Pick the numbers & Win',
+              lotteryPick: 'Pick 5 numbers from 1-50',
+              lotteryDraw: 'Draw Result',
+              lotteryWon: '🎉 You won!',
+              lotteryLost: '❌ You lost',
+              lotteryMatch3: '🎉 3 matches! Won',
+              lotteryMatch4: '🎉🎉 4 matches! Won',
+              lotteryMatch5: '🎉🎉🎉 5 matches! Jackpot!',
+              lotteryBetPrompt: 'Enter bet amount (TON):',
+              lotteryInvalid: 'Invalid numbers',
+              lotteryDuplicate: 'Duplicate numbers not allowed'
+          });
 
-         Object.assign(translations.ru, {
-            minesTitle: '💣 Мины',
+          Object.assign(translations.ru, {
+             minesTitle: '💣 Мины',
             minesDesc: 'Открывайте плитки, не наступая на минки',
             plinkoTitle: '🔷 Плинко',
             plinkoDesc: 'Запустите фишку и выигрывайте множители',
@@ -2940,7 +3285,19 @@
              invalidTarget: 'Неверная цель',
              minesWonMsg: '🎉 Вы выиграли ',
              plinkoWonMsg: '🎉 Вы выиграли ',
-             diceWonMsg: '🎉 Вы выиграли '
+              diceWonMsg: '🎉 Вы выиграли ',
+              lotteryTitle: '🎰 Лотерея',
+              lotteryDesc: 'Выберите числа и выиграйте',
+              lotteryPick: 'Выберите 5 чисел от 1 до 50',
+              lotteryDraw: 'Результат розыгыша',
+              lotteryWon: '🎉 Вы выиграли!',
+              lotteryLost: '❌ Вы проиграли',
+              lotteryMatch3: '🎉 3 совпадения! Выиграли',
+              lotteryMatch4: '🎉🎉 4 совпадения! Выиграли',
+              lotteryMatch5: '🎉🎉🎉 5 совпадений! Джекпот!',
+              lotteryBetPrompt: 'Введите сумму ставки (TON):',
+              lotteryInvalid: 'Неверные числа',
+              lotteryDuplicate: 'Повторяющиеся числа не допускаются'
          });
 
         function getTranslation(key) {
@@ -3441,6 +3798,8 @@
             updateModalBetButton();
             showBetTypeSection(selectedBetType);
             updateGiftSelectionInModal();
+            const testTab = document.getElementById("modal-test-tab");
+            if (testTab) testTab.style.display = (testBalanceEnabled && isOwner) ? 'block' : 'none';
             const modal = document.getElementById("bet-modal");
             if (modal) modal.classList.add("show");
         }
@@ -3448,11 +3807,13 @@
         function showBetTypeSection(type) {
             const tonSection = document.getElementById("ton-bet-section");
             const giftSection = document.getElementById("gift-bet-section");
+            const testSection = document.getElementById("test-bet-section");
             const placeButton = document.getElementById("modal-place-button");
             const t = translations[currentLanguage] || translations.ar;
             if (type === "GIFT") {
                 tonSection.style.display = "none";
                 giftSection.style.display = "block";
+                if (testSection) testSection.style.display = "none";
                 placeButton.className = "modal-place-button gift";
                 placeButton.textContent = t.placeGiftBet;
                 const info = document.getElementById("gift-selection-info");
@@ -3460,9 +3821,18 @@
                     if (verifiedCollectibles.length === 0) info.textContent = t.connectWalletForGifts;
                     else info.textContent = t.selectGift;
                 }
+            } else if (type === "TEST") {
+                tonSection.style.display = "none";
+                giftSection.style.display = "none";
+                if (testSection) testSection.style.display = "block";
+                const testDisplay = document.getElementById("test-balance-display-modal");
+                if (testDisplay) testDisplay.textContent = Number(testBalance).toFixed(2) + ' TEST';
+                placeButton.className = "modal-place-button ton";
+                placeButton.textContent = gamePhase === "FLIGHT" ? t.betNextRound : '🧪 Place TEST Bet';
             } else {
                 tonSection.style.display = "block";
                 giftSection.style.display = "none";
+                if (testSection) testSection.style.display = "none";
                 placeButton.className = "modal-place-button ton";
                 placeButton.textContent = gamePhase === "FLIGHT" ? t.betNextRound : t.placeTonBet;
             }
@@ -3548,11 +3918,14 @@
         }
 
         function selectBetType(type) {
-            selectedBetType = type === "GIFT" ? "GIFT" : "TON";
+            selectedBetType = type === "GIFT" ? "GIFT" : type === "TEST" ? "TEST" : "TON";
             const tonTab = document.getElementById("modal-ton-tab");
             const giftTab = document.getElementById("modal-gift-tab");
+            const testTab = document.getElementById("modal-test-tab");
             if (tonTab) tonTab.classList.toggle("active", selectedBetType === "TON");
             if (giftTab) giftTab.classList.toggle("active", selectedBetType === "GIFT");
+            if (testTab) tonTab.classList.toggle("active", selectedBetType === "TEST");
+            if (testTab) testTab.classList.toggle("active", selectedBetType === "TEST");
             showBetTypeSection(selectedBetType);
             updateModalBetButton();
             if (selectedBetType === "GIFT") updateGiftSelectionInModal();
@@ -3570,6 +3943,14 @@
                 } else {
                     button.disabled = false;
                     button.textContent = t.placeGiftBet + ' 🎁';
+                }
+            } else if (selectedBetType === "TEST") {
+                button.className = "modal-place-button ton";
+                button.disabled = !testBalanceEnabled;
+                if (gamePhase === "FLIGHT") {
+                    button.textContent = t.betNextRound;
+                } else {
+                    button.textContent = '🧪 Place TEST Bet';
                 }
             } else {
                 button.className = "modal-place-button ton";
@@ -3667,6 +4048,17 @@
                 }
                 readAutoCashout();
                 await placeGiftBet(selectedGiftId, selectedGiftForBet.value);
+                return;
+            }
+
+            if (selectedBetType === "TEST") {
+                if (!testBalanceEnabled) { showToast(t.testBalanceDisabled); return; }
+                const amount = readBetAmount();
+                if (amount === null) { showToast(t.betAmount); return; }
+                if (amount > Number(testBalance)) { showToast(t.betAmount); return; }
+                readAutoCashout();
+                await sendTestBet(amount, currentRoundId, autoCashoutEnabled, autoCashoutTarget);
+                closeModal("bet-modal");
                 return;
             }
 
@@ -3812,6 +4204,53 @@
             }
         }
 
+        async function sendTestBet(amount, roundIdToUse, autoCashout, autoTarget) {
+            if (actionInProgress) return false;
+            const t = translations[currentLanguage] || translations.ar;
+            actionInProgress = true;
+            updateMainBetButton();
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/bet/test`, {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ amount: amount, autoCashoutTarget: autoCashout ? autoTarget : null })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || t.placeBet);
+                userBetAmount = amount;
+                hasBet = true;
+                currentBetId = data.bet?.betId || null;
+                currentBetType = "TEST";
+                playedThisRound = true;
+                isQueuedForNextRound = false;
+                pendingNextBet = null;
+                pendingNextBetSubmitted = false;
+                updateMainBetButton();
+                updateAutoCashoutUI();
+                await fetchBalance();
+                showToast(t.placeBet);
+                return true;
+            } catch (error) {
+                console.error("TEST BET ERROR:", error);
+                const message = String(error.message || "");
+                if (gamePhase === "FLIGHT") {
+                    pendingNextBet = { type: "TEST", amount: amount, autoCashout: autoCashout, autoTarget: autoTarget };
+                    pendingNextBetSubmitted = false;
+                    isQueuedForNextRound = true;
+                    hasBet = false;
+                    updateMainBetButton();
+                    showToast(t.betQueued);
+                } else {
+                    showToast(message || t.placeBet);
+                }
+                return false;
+            } finally {
+                actionInProgress = false;
+                updateMainBetButton();
+                updateAutoCashoutUI();
+            }
+        }
+
         function trySubmitQueuedBet() {
             if (!pendingNextBet || pendingNextBetSubmitted || hasBet || gamePhase !== "COUNTDOWN" || !serverConnected || actionInProgress) return;
             pendingNextBetSubmitted = true;
@@ -3819,6 +4258,12 @@
             if (queued.type === "GIFT") {
                 sendGiftBet(queued.giftId, queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success) {
                     if (success) { pendingNextBet = null; pendingNextBetSubmitted = false; isQueuedForNextRound = false; selectedGiftId = null; selectedGiftForBet = null; }
+                    else { pendingNextBetSubmitted = false; if (gamePhase !== "COUNTDOWN") { pendingNextBet = null; isQueuedForNextRound = false; } }
+                    updateMainBetButton();
+                });
+            } else if (queued.type === "TEST") {
+                sendTestBet(queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success) {
+                    if (success) { pendingNextBet = null; pendingNextBetSubmitted = false; isQueuedForNextRound = false; }
                     else { pendingNextBetSubmitted = false; if (gamePhase !== "COUNTDOWN") { pendingNextBet = null; isQueuedForNextRound = false; } }
                     updateMainBetButton();
                 });
@@ -3838,7 +4283,14 @@
             actionInProgress = true;
             updateMainBetButton();
             try {
-                const endpoint = currentBetType === "GIFT" ? "/api/cashout/gift" : "/api/cashout/ton";
+                let endpoint;
+                if (currentBetType === "TEST") {
+                    endpoint = "/api/cashout/test";
+                } else if (currentBetType === "GIFT") {
+                    endpoint = "/api/cashout/gift";
+                } else {
+                    endpoint = "/api/cashout/ton";
+                }
                 const response = await fetch(`${BACKEND_URL}${endpoint}`, {
                     method: "POST",
                     headers: getAuthHeaders(),
@@ -3924,6 +4376,7 @@
             if (box) box.innerHTML = `<span id="ton-balance">${Number(tonBalance).toFixed(2)}</span> TON`;
             const modalBalance = document.getElementById("modal-balance");
             if (modalBalance) modalBalance.textContent = Number(tonBalance).toFixed(2);
+            updateTestBalanceUI();
         }
 
         function updateProfileWalletUI() {
@@ -3963,7 +4416,8 @@
                 else avatar.src = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" rx="50" fill="#182137"/><text x="50" y="58" text-anchor="middle" fill="#ffffff" font-size="42">${(firstName || "ل").charAt(0)}</text></svg>`);
             }
             const admin = document.getElementById("admin-badge");
-            if (admin && telegramId === ADMIN_TELEGRAM_ID) admin.style.display = "block";
+            isOwner = (telegramId === ADMIN_TELEGRAM_ID);
+            if (admin) admin.style.display = isOwner ? "block" : "none";
             const profileAvatar = document.getElementById("profile-page-avatar");
             if (profileAvatar) {
                 if (userPhoto) profileAvatar.src = userPhoto;
@@ -4309,7 +4763,7 @@
         }
 
         function closeAllGames() {
-            ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game'].forEach(function(id) {
+            ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.classList.add("hidden");
             });
@@ -4375,33 +4829,162 @@
             hideAllPages();
         }
 
-        function openPvPGame() {
-            hideAllPages();
-            closeAllGames();
-            document.getElementById("game-hub").classList.add("hidden");
-            document.getElementById("pvp-game").classList.remove("hidden");
-            initPvPGame();
-        }
-
-        function closePvPGame() {
-            document.getElementById("pvp-game").classList.add("hidden");
-            document.getElementById("game-hub").classList.remove("hidden");
-            hideAllPages();
-        }
-
-        function openUpgradeGame() {
-            hideAllPages();
-            closeAllGames();
-            document.getElementById("game-hub").classList.add("hidden");
-            document.getElementById("upgrade-game").classList.remove("hidden");
-            loadUpgradeInventory();
-        }
-
-        function closeUpgradeGame() {
-            document.getElementById("upgrade-game").classList.add("hidden");
-            document.getElementById("game-hub").classList.remove("hidden");
-            hideAllPages();
+         function openPvpGame() {
+             hideAllPages();
+             closeAllGames();
+             document.getElementById("game-hub").classList.add("hidden");
+             document.getElementById("pvp-game").classList.remove("hidden");
+             initPvPGame();
          }
+
+         function closePvpGame() {
+             document.getElementById("pvp-game").classList.add("hidden");
+             document.getElementById("game-hub").classList.remove("hidden");
+             hideAllPages();
+         }
+
+         function openUpgradeGame() {
+             hideAllPages();
+             closeAllGames();
+             document.getElementById("game-hub").classList.add("hidden");
+             document.getElementById("upgrade-game").classList.remove("hidden");
+             loadUpgradeInventory();
+         }
+
+         function closeUpgradeGame() {
+            document.getElementById("upgrade-game").classList.add("hidden");
+             document.getElementById("lottery-game").classList.add("hidden");
+             document.getElementById("game-hub").classList.remove("hidden");
+             hideAllPages();
+         }
+
+         function openLotteryGame() {
+             hideAllPages();
+             closeAllGames();
+             document.getElementById("game-hub").classList.add("hidden");
+             document.getElementById("lottery-game").classList.remove("hidden");
+             initLotteryGame();
+         }
+
+         function closeLotteryGame() {
+             document.getElementById("lottery-game").classList.add("hidden");
+             document.getElementById("game-hub").classList.remove("hidden");
+             hideAllPages();
+         }
+
+         var lotteryState = { selected: [], drawn: null, betAmount: 1, statusEl: null };
+
+         function initLotteryGame() {
+             lotteryState = { selected: [], drawn: null, betAmount: 1, statusEl: document.getElementById('lottery-status') };
+             var numbersDiv = document.getElementById('lottery-numbers');
+             numbersDiv.innerHTML = '';
+             for (var i = 1; i <= 50; i++) {
+                 var btn = document.createElement('button');
+                 btn.className = 'lottery-number-btn';
+                 btn.textContent = i;
+                 btn.style.cssText = 'width:44px;height:44px;border-radius:10px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;cursor:pointer;transition:all 0.2s;';
+                 btn.onclick = function() { selectLotteryNumber(parseInt(this.textContent)); };
+                 numbersDiv.appendChild(btn);
+             }
+             updateLotteryStatus('Pick 5 numbers from 1-50');
+         }
+
+         function selectLotteryNumber(num) {
+             if (lotteryState.drawn) return;
+             var idx = lotteryState.selected.indexOf(num);
+             if (idx >= 0) {
+                 lotteryState.selected.splice(idx, 1);
+             } else if (lotteryState.selected.length < 5) {
+                 lotteryState.selected.push(num);
+             }
+             renderLotteryNumbers();
+         }
+
+         function renderLotteryNumbers() {
+             var btns = document.querySelectorAll('#lottery-numbers .lottery-number-btn');
+             btns.forEach(function(btn) {
+                 var num = parseInt(btn.textContent);
+                 if (lotteryState.selected.includes(num)) {
+                     btn.style.background = 'linear-gradient(135deg,#4fc3f7,#00bcd4)';
+                     btn.style.color = '#0a1a30';
+                     btn.style.borderColor = 'rgba(50,200,255,0.4)';
+                 } else {
+                     btn.style.background = 'rgba(15,40,71,0.6)';
+                     btn.style.color = '#e8f4ff';
+                     btn.style.borderColor = 'rgba(100,200,255,0.2)';
+                 }
+             });
+             if (lotteryState.selected.length === 5) {
+                 updateLotteryStatus('Good! Press Play');
+             }
+         }
+
+         function updateLotteryStatus(msg) {
+             if (lotteryState.statusEl) lotteryState.statusEl.textContent = msg;
+         }
+
+         function playLottery() {
+             if (lotteryState.selected.length !== 5) {
+                 updateLotteryStatus('Select 5 numbers first');
+                 return;
+             }
+             lotteryState.betAmount = parseFloat(document.getElementById('lottery-bet-input').value) || 1;
+             if (lotteryState.betAmount < 0.1) {
+                 updateLotteryStatus('Minimum bet: 0.1 TON');
+                 return;
+             }
+             fetch('/api/lottery/bet', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ amount: lotteryState.betAmount, currency: 'TON', playerNumbers: lotteryState.selected })
+             })
+             .then(r => r.json())
+              .then(data => {
+                  if (!data.ok && data.error) { updateLotteryStatus(data.error); return; }
+                  lotteryState.drawn = data.drawnNumbers;
+                  var resultEl = document.getElementById('lottery-result');
+                  if (data.won) {
+                      resultEl.innerHTML = '🎉 You won! Payout: ' + data.payout + ' TON (' + data.matchCount + ' matches)';
+                      resultEl.style.color = '#4caf50';
+                  } else {
+                      resultEl.innerHTML = '❌ No match (' + data.matchCount + ' matches)';
+                      resultEl.style.color = '#ff6b6b';
+                  }
+                  renderLotteryResult();
+                  updateLotteryStatus('');
+              })
+              .catch(err => updateLotteryStatus('Network error'));
+         }
+
+         function renderLotteryResult() {
+             if (!lotteryState.drawn) return;
+             var btns = document.querySelectorAll('#lottery-numbers .lottery-number-btn');
+             btns.forEach(function(btn) {
+                 var num = parseInt(btn.textContent);
+                 if (lotteryState.drawn.includes(num)) {
+                     btn.style.background = 'linear-gradient(135deg,#ffd700,#f0a500)';
+                     btn.style.color = '#0a1a30';
+                 }
+             });
+         }
+
+          function openDailyReward() {
+              var modal = document.getElementById('daily-reward-modal');
+              if (modal) modal.classList.add('show');
+          }
+
+          function openFreeGift() {
+              var modal = document.getElementById('free-gift-modal');
+              if (modal) modal.classList.add('show');
+          }
+
+          function initLiveStrip() {
+              var scroll = document.getElementById('live-strip-scroll');
+              if (!scroll) return;
+              if (window.liveGamesCount) {
+                  scroll.innerHTML = '<span class="live-strip-item">🎮 ' + window.liveGamesCount + ' live games • 🎁 Daily gifts • 💰 Jackpot active</span>';
+              }
+          }
 
          /* =========================================================
             MINES GAME
@@ -4860,8 +5443,70 @@
             try {
                 const response = await fetch(`${BACKEND_URL}/api/balance`, { headers: getAuthHeaders() });
                 const data = await response.json();
-                if (data.ok) { tonBalance = data.balance; updateTonWalletUI(); }
+                if (data.ok) {
+                    tonBalance = data.balance;
+                    testBalance = data.test_balance || 0;
+                    testBalanceEnabled = data.testBalanceEnabled || false;
+                    updateTonWalletUI();
+                }
             } catch (error) {}
+        }
+
+        function updateTestBalanceUI() {
+            const container = document.getElementById("test-balance-container");
+            const badge = document.getElementById("test-balance-badge");
+            const value = document.getElementById("test-balance-value");
+            const addBtn = document.getElementById("test-balance-add-btn");
+            const resetBtn = document.getElementById("test-balance-reset-btn");
+
+            if (testBalanceEnabled && typeof ADMIN_TELEGRAM_ID !== 'undefined') {
+                const t = translations[currentLanguage] || translations.ar;
+                if (container) container.style.display = 'flex';
+                if (badge) badge.textContent = t.testBalanceBadge;
+                if (value) value.textContent = Number(testBalance).toFixed(2);
+                if (addBtn) addBtn.style.display = String(telegramId) === ADMIN_TELEGRAM_ID ? 'flex' : 'none';
+                if (resetBtn) resetBtn.style.display = String(telegramId) === ADMIN_TELEGRAM_ID ? 'flex' : 'none';
+            } else {
+                if (container) container.style.display = 'none';
+            }
+        }
+
+        async function adminAddTestBalance() {
+            const t = translations[currentLanguage] || translations.ar;
+            if (String(telegramId) !== ADMIN_TELEGRAM_ID) { showToast(t.testBalanceDisabled); return; }
+            if (!testBalanceEnabled) { showToast(t.testBalanceDisabled); return; }
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/test-balance`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ action: 'add', amount: 100000 })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    testBalance = data.test_balance;
+                    updateTestBalanceUI();
+                    showToast(t.testBalanceBtnAdd);
+                } else { showToast(data.error || t.betFailed); }
+            } catch (error) { showToast('Error'); }
+        }
+
+        async function adminResetTestBalance() {
+            const t = translations[currentLanguage] || translations.ar;
+            if (String(telegramId) !== ADMIN_TELEGRAM_ID) { showToast(t.testBalanceDisabled); return; }
+            if (!testBalanceEnabled) { showToast(t.testBalanceDisabled); return; }
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/test-balance`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ action: 'reset' })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    testBalance = data.test_balance;
+                    updateTestBalanceUI();
+                    showToast(t.testBalanceBtnReset);
+                } else { showToast(data.error || t.betFailed); }
+            } catch (error) { showToast('Error'); }
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -4869,15 +5514,15 @@
             initTonConnect();
             renderHistory();
             renderPlayers();
+            fetchBalance();
             updateTonWalletUI();
             updateProfileWalletUI();
             updateDepositWalletUI();
             updateAutoCashoutUI();
-            updateModalBetButton();
-            updateMainBetButton();
-            updateProfilePage();
-            renderLootBoxes();
-            document.getElementById("game-hub").classList.remove("hidden");
+             updateModalBetButton();
+             updateMainBetButton();
+             updateProfilePage();
+             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
@@ -4892,6 +5537,7 @@
             connectToServer();
 
             fetchCollectibles();
+            initLiveStrip();
         });
 
         window.addEventListener("beforeunload", function() {

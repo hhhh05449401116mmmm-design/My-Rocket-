@@ -30,8 +30,12 @@ const {
     run,
     transaction,
     findOrCreateUser,
-    getUserBalance,
-    updateUserBalance,
+     getUserBalance,
+     updateUserBalance,
+     getUserTestBalance,
+     setTestBalance,
+     resetTestBalance,
+     getUserTestBalanceRaw,
     getUserGifts,
     getGiftById,
     addGiftToUser,
@@ -51,6 +55,9 @@ const {
     placeGiftBet,
     placeTonBet,
     cashoutTonBet,
+    placeTestBet,
+    cashoutTestBet,
+    settleTestBetLoss,
     openLootbox,
     createDeposit,
     saveDepositBoc,
@@ -79,7 +86,8 @@ const {
     createPlinkoGame,
     dropPlinkoChip,
     createDiceGame,
-    getMiniGame
+    getMiniGame,
+    createLotteryGame
 } = require('./database');
 
 const app = express();
@@ -106,6 +114,10 @@ const TELEGRAM_BUSINESS_CONNECTION_ID = process.env.TELEGRAM_BUSINESS_CONNECTION
 // Never logged. When unset, the webhook still works but cannot verify the caller is really Telegram.
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || null;
+
+// TEST BALANCE: opt-in fake balance for QA only. Disabled by default.
+// When disabled, the test_balance field is never read or written for gameplay.
+const ENABLE_TEST_BALANCE = process.env.ENABLE_TEST_BALANCE === 'true';
 
 // In-memory only (does not survive a restart): populated by /telegram-webhook once a real
 // business_connection update arrives. No database migration performed for this yet.
@@ -1259,7 +1271,113 @@ app.get('/api/admin/telegram-webhook-status', authenticate, async (req, res) => 
 app.get('/api/balance', authenticate, async (req, res) => {
     try {
         const balance = await getUserBalance(req.user.id);
-        res.json({ ok: true, balance });
+        const response = { ok: true, balance };
+        if (ENABLE_TEST_BALANCE) {
+            response.test_balance = await getUserTestBalance(req.user.id);
+            response.testBalanceEnabled = true;
+        } else {
+            response.test_balance = 0;
+            response.testBalanceEnabled = false;
+        }
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.4b إدارة رصيد الاختبار (TEST BALANCE) — ADMIN ONLY =====
+// This endpoint is server-authoritative and never exposed to non-admins.
+// Test balance is completely isolated from real TON balance and collectibles.
+app.post('/api/admin/test-balance', authenticate, async (req, res) => {
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        return res.status(403).json({ ok: false, error: 'Admin access required' });
+    }
+
+    if (!ENABLE_TEST_BALANCE) {
+        return res.status(503).json({ ok: false, error: 'Test balance is not enabled. Set ENABLE_TEST_BALANCE=true to use this feature.' });
+    }
+
+    try {
+        const { action, amount, targetUserId } = req.body;
+
+        if (action === 'add') {
+            const targetId = targetUserId || req.user.id;
+            const testAmount = Number(amount) || 0;
+            if (testAmount <= 0 || testAmount > 1000000) {
+                return res.status(400).json({ ok: false, error: 'Invalid test amount. Must be between 1 and 1000000 TEST.' });
+            }
+            const testBalance = await setTestBalance(targetId, testAmount);
+            const realBalance = await getUserBalance(targetId);
+            res.json({
+                ok: true,
+                action: 'add',
+                test_balance: testBalance,
+                real_balance: realBalance,
+                message: 'TEST balance added — not withdrawable, not convertible to TON'
+            });
+        } else if (action === 'reset') {
+            const targetId = targetUserId || req.user.id;
+            const testBalance = await resetTestBalance(targetId);
+            const realBalance = await getUserBalance(targetId);
+            res.json({
+                ok: true,
+                action: 'reset',
+                test_balance: testBalance,
+                real_balance: realBalance,
+                message: 'TEST balance reset to 0 — real balance unaffected'
+            });
+        } else if (action === 'set') {
+            const targetId = targetUserId || req.user.id;
+            const testAmount = Number(amount) || 0;
+            const testBalance = await setTestBalance(targetId, testAmount);
+            const realBalance = await getUserBalance(targetId);
+            res.json({
+                ok: true,
+                action: 'set',
+                test_balance: testBalance,
+                real_balance: realBalance
+            });
+        } else {
+            return res.status(400).json({ ok: false, error: 'Action must be "add", "reset", or "set"' });
+        }
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// GET endpoint for frontend to check test balance status (admin-only read).
+app.get('/api/admin/test-balance/:userId?', authenticate, async (req, res) => {
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+        return res.status(403).json({ ok: false, error: 'Admin access required' });
+    }
+
+    if (!ENABLE_TEST_BALANCE) {
+        return res.status(503).json({ ok: false, error: 'Test balance is not enabled' });
+    }
+
+    try {
+        const targetId = req.params.userId ? Number(req.params.userId) : req.user.id;
+        const realBalance = await getUserBalance(targetId);
+        const testBalance = await getUserTestBalance(targetId);
+        res.json({
+            ok: true,
+            real_balance: realBalance,
+            test_balance: testBalance,
+            enabled: true
+        });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.4c Get test balance for current user (read-only, test mode only) =====
+app.get('/api/test/balance', authenticate, async (req, res) => {
+    if (!ENABLE_TEST_BALANCE) {
+        return res.status(503).json({ ok: false, error: 'Test balance is not enabled' });
+    }
+    try {
+        const testBalance = await getUserTestBalance(req.user.id);
+        res.json({ ok: true, test_balance: testBalance, isTest: true });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }
@@ -1540,7 +1658,10 @@ app.post('/api/mines/bet', authenticate, async (req, res) => {
     try {
         const { amount, currency, giftId } = req.body;
         const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
-        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+        if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
+            return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+        }
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : currency === 'TEST' ? 'TEST' : 'TON';
 
         const result = await createMinesGame(req.user.id, betAmount, betCurrency, giftId);
         res.json({
@@ -1595,7 +1716,10 @@ app.post('/api/plinko/bet', authenticate, async (req, res) => {
     try {
         const { amount, currency, giftId } = req.body;
         const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
-        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+        if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
+            return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+        }
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : currency === 'TEST' ? 'TEST' : 'TON';
 
         const result = await createPlinkoGame(req.user.id, betAmount, betCurrency, giftId);
         res.json({
@@ -1625,7 +1749,10 @@ app.post('/api/dice/bet', authenticate, async (req, res) => {
     try {
         const { amount, currency, giftId, target } = req.body;
         const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
-        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+        if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
+            return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+        }
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : currency === 'TEST' ? 'TEST' : 'TON';
         const targetNum = Number(target);
 
         const result = await createDiceGame(req.user.id, betAmount, betCurrency, giftId, targetNum);
@@ -1638,6 +1765,37 @@ app.post('/api/dice/bet', authenticate, async (req, res) => {
             won: result.won,
             payout: result.payout,
             target: result.target
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// --- LOTTERY ---
+app.post('/api/lottery/bet', authenticate, async (req, res) => {
+    try {
+        const { amount, currency, playerNumbers } = req.body;
+        const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+        if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
+            return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+        }
+        const betCurrency = currency === 'TEST' ? 'TEST' : 'TON';
+
+        if (!Array.isArray(playerNumbers) || playerNumbers.length !== 5) {
+            return res.status(400).json({ ok: false, error: 'You must select exactly 5 numbers' });
+        }
+
+        const result = await createLotteryGame(req.user.id, betAmount, betCurrency, null, playerNumbers);
+        res.json({
+            ok: true,
+            gameId: result.gameId,
+            serverSeedHash: result.serverSeedHash,
+            clientSeed: result.clientSeed,
+            drawnNumbers: result.drawnNumbers,
+            matches: result.matches,
+            matchCount: result.matchCount,
+            payout: result.payout,
+            won: result.won
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
@@ -1706,6 +1864,82 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
             multiplier: result.multiplier,
             amount: result.amount,
             balance: balance
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.7b صرف الاختبار (TEST BET) — Rocket game using TEST balance ONLY =====
+// Test balance is completely isolated from real TON. Cannot be withdrawn,
+// converted to TON, or affect collectible ownership.
+app.post('/api/bet/test', authenticate, async (req, res) => {
+    if (!ENABLE_TEST_BALANCE) {
+        return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+    }
+
+    try {
+        const { amount, autoCashoutTarget } = req.body;
+        const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount < 1) {
+            return res.status(400).json({ ok: false, error: 'Invalid test amount (minimum 1 TEST)' });
+        }
+
+        if (currentGameState.phase !== 'COUNTDOWN') {
+            return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN' });
+        }
+
+        const roundId = currentGameState.roundId;
+        const result = await placeTestBet(req.user.id, normalizedAmount, roundId, autoCashoutTarget);
+        await refreshRoundPlayers();
+
+        res.json({
+            ok: true,
+            bet: result,
+            roundId: roundId,
+            isTest: true
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/cashout/test', authenticate, async (req, res) => {
+    if (!ENABLE_TEST_BALANCE) {
+        return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
+    }
+
+    try {
+        const { betId } = req.body;
+
+        if (!betId) {
+            return res.status(400).json({ ok: false, error: 'betId required' });
+        }
+
+        if (currentGameState.phase !== 'FLIGHT') {
+            return res.status(400).json({ ok: false, error: 'Cashout only allowed during FLIGHT' });
+        }
+
+        const multiplier = currentGameState.multiplier;
+        const result = await cashoutTestBet(betId, req.user.id, multiplier);
+        const testBalance = await getUserTestBalance(req.user.id);
+        await refreshRoundPlayers();
+
+        await createNotification(
+            req.user.id,
+            'BET_WON',
+            `TEST cashout: ${result.payout.toFixed(2)} TEST`,
+            { betId, payout: result.payout, multiplier: result.multiplier }
+        );
+
+        res.json({
+            ok: true,
+            payout: result.payout,
+            multiplier: result.multiplier,
+            amount: result.amount,
+            test_balance: testBalance,
+            isTest: true
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
@@ -1971,6 +2205,7 @@ module.exports = {
     getGameStateSnapshot,
     updateGameState,
     MAX_CRASH_MULTIPLIER,
+    ENABLE_TEST_BALANCE,
     // Exported for tests only — real request handling never uses these directly.
     extractUniqueCollectibleIdentity,
     extractBusinessConnectionIdFromUpdate,

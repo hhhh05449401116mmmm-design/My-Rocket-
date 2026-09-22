@@ -205,6 +205,7 @@ function initDatabase() {
                     avatar_url TEXT,
                     init_data TEXT,
                     balance REAL DEFAULT 0,
+                    test_balance REAL DEFAULT 0,
                     total_turnover REAL DEFAULT 0,
                     vip_level INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -270,6 +271,7 @@ function initDatabase() {
                     round_id INTEGER NOT NULL,
                     amount REAL NOT NULL,
                     auto_cashout_target REAL,
+                    bet_currency TEXT DEFAULT 'TON' CHECK(bet_currency IN ('TON', 'TEST')),
                     status TEXT DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'CASHED_OUT', 'LOST')),
                     cashout_multiplier REAL,
                     payout REAL,
@@ -278,6 +280,12 @@ function initDatabase() {
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             `);
+            // Migration: add bet_currency column for existing databases (default TON, never affects real balance).
+            db.run(`ALTER TABLE ton_bets ADD COLUMN bet_currency TEXT DEFAULT 'TON' CHECK(bet_currency IN ('TON', 'TEST'))`, error => {
+                if (error && !error.message.includes('duplicate column name')) {
+                    console.error('Failed to add ton_bets.bet_currency:', error.message);
+                }
+            });
 
             // ===== 3.6 جدول الإيداعات =====
             db.run(`
@@ -451,6 +459,13 @@ function initDatabase() {
                 if (error) console.error('Failed to index telegram_gift_instance_id:', error.message);
             });
 
+            // Migration: add test_balance column for existing databases (default 0, never affects real balance).
+            db.run(`ALTER TABLE users ADD COLUMN test_balance REAL DEFAULT 0`, error => {
+                if (error && !error.message.includes('duplicate column name')) {
+                    console.error('Failed to add users.test_balance:', error.message);
+                }
+            });
+
             // Short-lived server-side import intents (Phase 3A). No ownership is granted here.
             db.run(`
                 CREATE TABLE IF NOT EXISTS collectible_import_intents (
@@ -544,9 +559,9 @@ function initDatabase() {
                 CREATE TABLE IF NOT EXISTS mini_games (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
-                    game_type TEXT NOT NULL CHECK(game_type IN ('MINES', 'PLINKO', 'DICE')),
+                     game_type TEXT NOT NULL CHECK(game_type IN ('MINES', 'PLINKO', 'DICE', 'LOTTERY')),
                     bet_amount REAL NOT NULL,
-                    bet_currency TEXT NOT NULL CHECK(bet_currency IN ('TON', 'GIFT')),
+                    bet_currency TEXT NOT NULL CHECK(bet_currency IN ('TON', 'TEST', 'GIFT')),
                     game_data TEXT,
                     server_seed TEXT NOT NULL,
                     server_seed_hash TEXT NOT NULL,
@@ -687,6 +702,26 @@ async function findOrCreateUser(telegramId, userData = {}) {
 async function getUserBalance(userId) {
     const user = await get('SELECT balance FROM users WHERE id = ?', [userId]);
     return user ? user.balance : 0;
+}
+
+async function getUserTestBalance(userId) {
+    const user = await get('SELECT test_balance FROM users WHERE id = ?', [userId]);
+    return user ? user.test_balance : 0;
+}
+
+async function setTestBalance(userId, amount) {
+    const testBalance = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+    await run('UPDATE users SET test_balance = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [testBalance, userId]);
+    return testBalance;
+}
+
+async function resetTestBalance(userId) {
+    await run('UPDATE users SET test_balance = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [userId]);
+    return 0;
+}
+
+async function getUserTestBalanceRaw(userId) {
+    return await get('SELECT balance, test_balance FROM users WHERE id = ?', [userId]);
 }
 
 async function updateUserBalance(userId, amount, operation = 'add') {
@@ -1577,7 +1612,84 @@ async function cashoutTonBet(betId, userId, multiplier) {
     });
 }
 
-// ===== 5.5 نظام الصناديق =====
+// ===== 5.4b صرف الاختبار (TEST BET) — uses test_balance, NEVER real TON balance =====
+// This function is completely isolated from real TON. Test balance cannot be
+// withdrawn, converted to TON, or affect collectible ownership.
+async function placeTestBet(userId, amount, roundId, autoCashoutTarget) {
+    const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
+    return await transaction(async () => {
+        const round = await getRoundByNumber(roundId);
+        if (!round || round.phase !== 'COUNTDOWN') throw new Error('Betting is closed for this round');
+
+        // Test balance check — uses test_balance column, never real balance
+        if (!Number.isFinite(amount) || amount < 1) throw new Error('Invalid test bet amount (minimum 1 TEST)');
+        const testBalance = await getUserTestBalance(userId);
+        if (testBalance < amount) throw new Error('Insufficient test balance');
+
+        const update = await run(
+            'UPDATE users SET test_balance = test_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND test_balance >= ?',
+            [amount, userId, amount]
+        );
+        if (update.changes !== 1) throw new Error('Insufficient test balance');
+
+        const result = await run(`
+            INSERT INTO ton_bets
+            (user_id, round_id, amount, auto_cashout_target, bet_currency)
+            VALUES (?, ?, ?, ?, 'TEST')
+        `, [userId, roundId, amount, normalizedAutoCashoutTarget]);
+
+        return {
+            betId: result.lastID,
+            amount,
+            roundId
+        };
+    });
+}
+
+async function cashoutTestBet(betId, userId, multiplier) {
+    return await transaction(async () => {
+        const bet = await get(`
+            SELECT * FROM ton_bets
+            WHERE id = ? AND user_id = ? AND status = 'ACTIVE' AND bet_currency = 'TEST'
+        `, [betId, userId]);
+
+        if (!bet) throw new Error('Test bet not found or already settled');
+
+        const payout = bet.amount * multiplier;
+
+        await run(`
+            UPDATE ton_bets
+            SET status = 'CASHED_OUT', cashout_multiplier = ?, payout = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `, [multiplier, payout, betId]);
+
+        // Add payout to test_balance — NEVER real balance
+        await run('UPDATE users SET test_balance = test_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [payout, userId]);
+
+        await updateUserStats(userId, 'win', payout);
+
+        return {
+            payout,
+            multiplier,
+            amount: bet.amount,
+            isTest: true
+        };
+    });
+}
+
+async function settleTestBetLoss(betId, userId) {
+    const bet = await get(`
+        SELECT * FROM ton_bets
+        WHERE id = ? AND user_id = ? AND status = 'ACTIVE' AND bet_currency = 'TEST'
+    `, [betId, userId]);
+    if (!bet) return;
+    await run(`
+        UPDATE ton_bets
+        SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    `, [betId]);
+}
 async function openLootbox(userId, boxId) {
     return await transaction(async () => {
         // 1. الحصول على بيانات الصندوق
@@ -1804,6 +1916,15 @@ async function createMinesGame(userId, betAmount, betCurrency, betGiftId) {
                 [betAmount, userId, betAmount]
             );
             if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'TEST') {
+            if (betAmount < 1) throw new Error('Invalid test bet amount');
+            const testBalance = await getUserTestBalance(userId);
+            if (testBalance < betAmount) throw new Error('Insufficient test balance');
+            const update = await run(
+                'UPDATE users SET test_balance = test_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND test_balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient test balance');
         } else if (betCurrency === 'GIFT') {
             if (!betGiftId) throw new Error('giftId required for GIFT bet');
             const gift = await get(`
@@ -1897,6 +2018,9 @@ async function cashoutMinesGame(gameId, userId) {
         if (game.bet_currency === 'TON') {
             await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
             payoutDetail = { currency: 'TON', amount: payout, multiplier };
+        } else if (game.bet_currency === 'TEST') {
+            await run('UPDATE users SET test_balance = test_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+            payoutDetail = { currency: 'TEST', amount: payout, multiplier, isTest: true };
         } else {
             payoutDetail = { currency: 'GIFT', collectibleReturned: true, multiplier };
             // For GIFT bets, the collectible is returned (player chose to cash out before hitting a mine)
@@ -1923,6 +2047,15 @@ async function createPlinkoGame(userId, betAmount, betCurrency, betGiftId) {
                 [betAmount, userId, betAmount]
             );
             if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'TEST') {
+            if (betAmount < 1) throw new Error('Invalid test bet amount');
+            const testBalance = await getUserTestBalance(userId);
+            if (testBalance < betAmount) throw new Error('Insufficient test balance');
+            const update = await run(
+                'UPDATE users SET test_balance = test_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND test_balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient test balance');
         } else if (betCurrency === 'GIFT') {
             if (!betGiftId) throw new Error('giftId required');
             const gift = await get(`
@@ -1975,6 +2108,9 @@ async function dropPlinkoChip(gameId, userId) {
         if (game.bet_currency === 'TON') {
             await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
             payoutDetail = { currency: 'TON', amount: payout, multiplier, slotIndex };
+        } else if (game.bet_currency === 'TEST') {
+            await run('UPDATE users SET test_balance = test_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+            payoutDetail = { currency: 'TEST', amount: payout, multiplier, slotIndex, isTest: true };
         } else {
             if (multiplier >= 1.0) {
                 payoutDetail = { currency: 'GIFT', collectibleWon: true, multiplier, slotIndex };
@@ -2004,6 +2140,15 @@ async function createDiceGame(userId, betAmount, betCurrency, betGiftId, target)
                 [betAmount, userId, betAmount]
             );
             if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'TEST') {
+            if (betAmount < 1) throw new Error('Invalid test bet amount');
+            const testBalance = await getUserTestBalance(userId);
+            if (testBalance < betAmount) throw new Error('Insufficient test balance');
+            const update = await run(
+                'UPDATE users SET test_balance = test_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND test_balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient test balance');
         } else if (betCurrency === 'GIFT') {
             if (!betGiftId) throw new Error('giftId required');
             const gift = await get(`
@@ -2045,6 +2190,9 @@ async function createDiceGame(userId, betAmount, betCurrency, betGiftId, target)
             if (betCurrency === 'TON') {
                 await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
                 payoutDetail = { currency: 'TON', amount: payout, roll, target };
+            } else if (betCurrency === 'TEST') {
+                await run('UPDATE users SET test_balance = test_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+                payoutDetail = { currency: 'TEST', amount: payout, roll, target, isTest: true };
             } else {
                 payoutDetail = { currency: 'GIFT', collectibleWon: true, roll, target };
             }
@@ -2082,7 +2230,136 @@ async function getMiniGame(gameId, userId) {
             result.tilesRevealed = gameData.revealed ? gameData.revealed.length : 0;
         } catch { /* ignore parse errors */ }
     }
+    if (game.game_type === 'LOTTERY') {
+        try {
+            const gameData = JSON.parse(game.game_data);
+            result.playerNumbers = gameData.playerNumbers;
+            result.drawnNumbers = gameData.drawnNumbers;
+            result.matches = gameData.matches;
+            result.matchCount = gameData.matchCount;
+        } catch { /* ignore parse errors */ }
+    }
     return result;
+}
+
+// ===== LOTTERY GAME =====
+// Pick 5 numbers from 1-50. Server draws 5 unique numbers. Prizes based on matches.
+const LOTTERY_NUMBERS = 50;
+const LOTTERY_PICK_COUNT = 5;
+const LOTTERY_PRIZE_TABLE = {
+    5: 1000000,
+    4: 10000,
+    3: 100,
+    2: 5,
+    1: 0,
+    0: 0
+};
+
+function getLotteryPrize(matchCount, betAmount) {
+    const multiplier = LOTTERY_PRIZE_TABLE[matchCount] || 0;
+    return betAmount * multiplier;
+}
+
+async function createLotteryGame(userId, betAmount, betCurrency, betGiftId, playerNumbers) {
+    return await transaction(async () => {
+        const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
+        if (!user) throw new Error('User not found');
+
+        // Validate player numbers — must be exactly 5 unique numbers from 1-50
+        if (!Array.isArray(playerNumbers) || playerNumbers.length !== LOTTERY_PICK_COUNT) {
+            throw new Error(`You must select exactly ${LOTTERY_PICK_COUNT} numbers`);
+        }
+
+        const seen = new Set();
+        for (const num of playerNumbers) {
+            if (!Number.isInteger(num) || num < 1 || num > LOTTERY_NUMBERS) {
+                throw new Error(`Numbers must be integers between 1 and ${LOTTERY_NUMBERS}`);
+            }
+            if (seen.has(num)) {
+                throw new Error('Duplicate numbers not allowed');
+            }
+            seen.add(num);
+        }
+
+        if (betCurrency === 'TON') {
+            if (betAmount < 0.1) throw new Error('Invalid bet amount');
+            const balance = await getUserBalance(userId);
+            if (balance < betAmount) throw new Error('Insufficient balance');
+            const update = await run(
+                'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'TEST') {
+            if (betAmount < 1) throw new Error('Invalid test bet amount');
+            const testBalance = await getUserTestBalance(userId);
+            if (testBalance < betAmount) throw new Error('Insufficient test balance');
+            const update = await run(
+                'UPDATE users SET test_balance = test_balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND test_balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient test balance');
+        } else {
+            throw new Error('Invalid bet currency for Lottery');
+        }
+
+        const serverSeed = generateGameServerSeed();
+        const serverSeedHash = hashGameServerSeed(serverSeed);
+        const clientSeed = crypto.randomBytes(8).toString('hex');
+
+        // Server-authoritative draw: pick 5 unique numbers from 1-50 using crypto.randomInt
+        const drawnNumbers = new Set();
+        while (drawnNumbers.size < LOTTERY_PICK_COUNT) {
+            drawnNumbers.add(crypto.randomInt(1, LOTTERY_NUMBERS + 1));
+        }
+        const drawn = Array.from(drawnNumbers).sort((a, b) => a - b);
+
+        // Sort player numbers for comparison
+        const sortedPlayer = [...playerNumbers].sort((a, b) => a - b);
+        const matches = sortedPlayer.filter(n => drawn.includes(n));
+        const matchCount = matches.length;
+        const payout = getLotteryPrize(matchCount, betAmount);
+
+        const gameData = JSON.stringify({
+            playerNumbers: sortedPlayer,
+            drawnNumbers: drawn,
+            matches: matches,
+            matchCount: matchCount,
+            serverSeedHash: serverSeedHash,
+            clientSeed: clientSeed
+        });
+
+        let payoutDetail = {};
+        if (payout > 0) {
+            if (betCurrency === 'TON') {
+                await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+                payoutDetail = { currency: 'TON', amount: payout, matchCount, matches, drawnNumbers: drawn };
+            } else if (betCurrency === 'TEST') {
+                await run('UPDATE users SET test_balance = test_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+                payoutDetail = { currency: 'TEST', amount: payout, matchCount, matches, drawnNumbers: drawn, isTest: true };
+            }
+        } else {
+            payoutDetail = { currency: betCurrency, matchCount, matches, drawnNumbers: drawn };
+        }
+
+        const result = await run(`
+            INSERT INTO mini_games
+            (user_id, game_type, bet_amount, bet_currency, game_data, server_seed, server_seed_hash, result_multiplier, payout, result_detail, status, completed_at)
+            VALUES (?, 'LOTTERY', ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP)
+        `, [userId, betAmount, betCurrency, gameData, serverSeed, serverSeedHash, matchCount, payout, JSON.stringify(payoutDetail)]);
+
+        return {
+            gameId: result.lastID,
+            serverSeedHash,
+            clientSeed,
+            drawnNumbers: drawn,
+            playerNumbers: sortedPlayer,
+            matches: matches,
+            matchCount: matchCount,
+            payout: payout,
+            won: payout > 0
+        };
+    });
 }
 
 module.exports = {
@@ -2099,10 +2376,14 @@ module.exports = {
     initDatabase,
     seedDatabase,
     
-    // إدارة المستخدمين
-    findOrCreateUser,
-    getUserBalance,
-    updateUserBalance,
+     // إدارة المستخدمين
+     findOrCreateUser,
+     getUserBalance,
+     updateUserBalance,
+     getUserTestBalance,
+     setTestBalance,
+     resetTestBalance,
+     getUserTestBalanceRaw,
     createRoundRecord,
     getRoundByNumber,
     updateRoundState,
@@ -2144,6 +2425,11 @@ module.exports = {
     placeTonBet,
     cashoutTonBet,
     
+    // صرف الاختبار (TEST BET) — uses test_balance only, never real TON
+    placeTestBet,
+    cashoutTestBet,
+    settleTestBetLoss,
+    
     // الصناديق
     openLootbox,
     
@@ -2181,5 +2467,7 @@ module.exports = {
     createPlinkoGame,
     dropPlinkoChip,
     createDiceGame,
-    getMiniGame
+    getMiniGame,
+    createLotteryGame,
+    getLotteryPrize
 };
