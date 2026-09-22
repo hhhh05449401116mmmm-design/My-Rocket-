@@ -632,24 +632,48 @@
             position: absolute;
             left: 15%;
             bottom: 74px;
-            width: 75px;
-            height: 75px;
+            width: 80px;
+            height: 80px;
             transform: rotate(-12deg);
-            transition: left 0.1s linear, bottom 0.1s linear, transform 0.1s linear;
+            transition: left 0.08s linear, bottom 0.08s linear, transform 0.08s linear, filter 0.3s ease;
             z-index: 5;
             display: flex;
             align-items: center;
             justify-content: center;
+            filter: drop-shadow(0 0 15px rgba(100, 200, 255, 0.3));
+        }
+        .rocket:hover {
+            filter: drop-shadow(0 0 25px rgba(100, 200, 255, 0.5));
         }
         .rocket svg {
             width: 100%;
             height: 100%;
-            filter: drop-shadow(0 10px 40px rgba(100, 200, 255, 0.4));
+            filter: drop-shadow(0 10px 40px rgba(100, 200, 255, 0.4)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+            animation: rocketGlow 3s ease-in-out infinite;
+        }
+        @keyframes rocketGlow {
+            0%, 100% { filter: drop-shadow(0 10px 40px rgba(100, 200, 255, 0.4)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.5)); }
+            50% { filter: drop-shadow(0 15px 50px rgba(79, 195, 247, 0.6)) drop-shadow(0 0 30px rgba(100, 200, 255, 0.7)); }
         }
         .rocket.crashed { animation: crashRocket 0.6s ease forwards; }
         @keyframes crashRocket {
-            0% { opacity: 1; transform: rotate(-12deg) scale(1) translateY(0); }
-            100% { opacity: 0; transform: translate(80px, 90px) rotate(45deg) scale(0.3); }
+            0% { opacity: 1; transform: rotate(-12deg) scale(1) translateY(0); filter: drop-shadow(0 0 30px rgba(100, 200, 255, 0.5)); }
+            50% { transform: rotate(-12deg) scale(1.3) translate(-20px, -30px); }
+            100% { opacity: 0; transform: translate(80px, 90px) rotate(45deg) scale(0.3); filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0)); }
+        }
+
+        /* =========================================================
+            PARTICLE EFFECTS
+        ========================================================= */
+        .rocket-particles {
+            position: absolute;
+            left: 15%;
+            bottom: 74px;
+            width: 80px;
+            height: 80px;
+            pointer-events: none;
+            z-index: 2;
+            overflow: visible;
         }
 
         /* =========================================================
@@ -659,7 +683,7 @@
             position: absolute;
             left: calc(15% - 8px);
             bottom: 64px;
-            width: 26px;
+            width: 28px;
             height: 40px;
             border-radius: 50% 50% 65% 65%;
             background: linear-gradient(180deg, #4fc3f7, #00bcd4, #0288d1);
@@ -669,6 +693,11 @@
             z-index: 4;
             box-shadow: 0 0 50px rgba(79, 195, 247, 0.4);
             transition: all 0.3s ease;
+            animation: flamePulse 0.3s ease-in-out infinite alternate;
+        }
+        @keyframes flamePulse {
+            0% { height: 40px; width: 28px; }
+            100% { height: 42px; width: 30px; }
         }
 
         /* =========================================================
@@ -1071,6 +1100,15 @@
             .loot-grid { gap: 6px; }
             .loot-box { padding: 10px 8px; }
             .loot-box .loot-emoji { font-size: 26px; }
+            .game-card-hub { flex-direction: row; }
+            .game-card-hub-info { flex: 1; }
+            .mines-tile { width: 32px !important; height: 32px !important; }
+        }
+
+        @media(max-width:768px) {
+            .game-card-hub { flex-direction: row; }
+            .game-card-hub-icon { font-size: 24px; width: 48px; height: 48px; }
+            .mines-tile { width: 36px; height: 36px; }
         }
 
         @media(prefers-reduced-motion:reduce) {
@@ -1870,16 +1908,69 @@
                 </div>
             </div>
 
-            <!-- Coming Soon -->
-            <div class="game-card-hub" style="opacity:0.5;cursor:default;">
-                <div class="game-card-hub-icon">🎰</div>
-                <div class="game-card-hub-info">
-                    <h3 id="coming-soon-title">Coming Soon</h3>
-                    <p id="coming-soon-desc">New games arriving soon</p>
-                </div>
-                <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" id="soon-badge">Soon</div>
-            </div>
-        </div>
+             <!-- =========================================================
+                NEW GAMES SECTION
+             ========================================================= -->
+              <!-- Mines -->
+              <div class="game-card-hub" onclick="openMinesGame()">
+                  <div class="game-card-hub-icon">💣</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="mines-title">Mines</h3>
+                      <p data-key="mines-desc">Clear tiles without hitting mines</p>
+                  </div>
+                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+              </div>
+
+              <!-- Plinko -->
+              <div class="game-card-hub" onclick="openPlinkoGame()">
+                  <div class="game-card-hub-icon">🔷</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="plinko-title">Plinko</h3>
+                      <p data-key="plinko-desc">Drop the chip and win multipliers</p>
+                  </div>
+                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+              </div>
+
+              <!-- Crafts -->
+              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                  <div class="game-card-hub-icon">🔨</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="crafts-title">Crafts</h3>
+                      <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
+                  </div>
+                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+              </div>
+
+              <!-- Dice -->
+              <div class="game-card-hub" onclick="openDiceGame()">
+                  <div class="game-card-hub-icon">🎲</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="dice-title">Dice</h3>
+                      <p data-key="dice-desc">Roll the dice for instant wins</p>
+                  </div>
+                  <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+              </div>
+
+              <!-- PvP -->
+              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                  <div class="game-card-hub-icon">⚔️</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="pvp-title">PvP</h3>
+                      <p data-key="pvp-desc">Battle other players head-to-head</p>
+                  </div>
+                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+              </div>
+
+              <!-- Upgrade -->
+              <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                  <div class="game-card-hub-icon">🔧</div>
+                  <div class="game-card-hub-info">
+                      <h3 data-key="upgrade-title">Upgrade</h3>
+                      <p data-key="upgrade-desc">Upgrade your collectibles</p>
+                  </div>
+                  <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+              </div>
+          </div>
 
         <!-- =========================================================
            ROCKET GAME
@@ -1915,10 +2006,11 @@
 
                     <div class="rocket-area">
                         <div id="flight-line" class="flight-line"></div>
-                        <div id="rocket-trail" class="rocket-trail"></div>
-                        <div id="flame" class="flame"></div>
-                        <div id="rocket" class="rocket"></div>
-                    </div>
+                         <div id="rocket-trail" class="rocket-trail"></div>
+                         <div id="flame" class="flame"></div>
+                         <div id="rocket" class="rocket"></div>
+                         <div id="rocket-particles" class="rocket-particles"></div>
+                     </div>
                     <div id="status-message" class="status-message">الاتصال بالسيرفر...</div>
                 </section>
                 <section id="history" class="history"></section>
@@ -1932,11 +2024,170 @@
                     </div>
                     <div id="players-list" class="players-list"></div>
                 </section>
+         </main>
+        </div>
+
+        <!-- =========================================================
+            MINES GAME
+        ========================================================= -->
+        <div id="mines-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closeMinesGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">💣 Mines</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="mines-bet-amount" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:16px;">💎 1.00</div>
+                         <div id="mines-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:280px;margin:0 auto 16px;">
+                         </div>
+                         <button id="mines-bet-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;margin-bottom:8px;" data-key="minesBetBtn">Place Bet</button>
+                         <button id="mines-cashout-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" disabled data-key="mines-cashout">Cash Out</button>
+                        <div id="mines-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="mines-status">Place your bet to start</div>
+                    </div>
+                </section>
             </main>
         </div>
 
         <!-- =========================================================
-           GIFTS PAGE
+            PLINKO GAME
+        ========================================================= -->
+        <div id="plinko-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closePlinkoGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🔷 Plinko</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="plinko-board" style="position:relative;width:100%;max-width:300px;height:300px;margin:0 auto 16px;border-left:2px solid rgba(100,200,255,0.2);border-right:2px solid rgba(100,200,255,0.2);">
+                        </div>
+                         <button id="plinko-bet-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;margin-bottom:8px;" data-key="plinkoBetBtn">Place Bet</button>
+                         <button id="plinko-drop-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" data-key="plinko-drop">Drop Chip</button>
+                        <div id="plinko-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="plinko-status">Select bet and drop the chip</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
+            DICE GAME
+        ========================================================= -->
+        <div id="dice-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closeDiceGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🎲 Dice</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div style="font-size:48px;font-weight:900;color:#e8f4ff;margin-bottom:16px;" id="dice-result">🎲</div>
+                        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;">
+                            <input id="dice-target-input" type="number" min="1" max="99" value="49" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;text-align:center;">
+                            <span style="font-size:14px;color:#7a9bcb;padding-top:8px;">or less</span>
+                        </div>
+                        <button id="dice-roll-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" data-key="dice-roll">Roll</button>
+                        <div id="dice-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="dice-status">Set your target and roll</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
+            CRAFTS GAME
+        ========================================================= -->
+        <div id="crafts-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closeCraftsGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🔨 Crafts</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="crafts-inventory" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;min-height:100px;align-items:center;">
+                        </div>
+                        <button id="craft-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" data-key="craft-btn">Craft</button>
+                        <div id="crafts-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="crafts-status">Select collectibles to craft</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
+            PVP GAME
+        ========================================================= -->
+        <div id="pvp-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closePvPGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">⚔️ PvP</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="pvp-opponent" style="font-size:18px;color:#7a9bcb;margin-bottom:16px;" data-key="pvp-waiting">Searching for opponent...</div>
+                        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;">
+                            <div style="text-align:center;">
+                                <div style="font-size:14px;color:#7a9bcb;">You</div>
+                                <div id="pvp-player-score" style="font-size:24px;font-weight:900;color:#4fc3f7;">0.00x</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div id="pvp-opponent-name" style="font-size:14px;color:#7a9bcb;">VS</div>
+                                <div id="pvp-opponent-score" style="font-size:24px;font-weight:900;color:#ff6b6b;">0.00x</div>
+                            </div>
+                        </div>
+                        <button id="pvp-ready-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" data-key="pvp-ready">Ready</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
+            UPGRADE GAME
+        ========================================================= -->
+        <div id="upgrade-game" class="rocket-game-container hidden">
+            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
+                <button class="back-button show" type="button" onclick="closeUpgradeGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                    ← Back
+                </button>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🔧 Upgrade</span>
+            </div>
+            <main>
+                <section class="game-card">
+                    <div class="stars"></div>
+                    <div class="fog-effect"></div>
+                    <div style="padding:20px;text-align:center;">
+                        <div id="upgrade-source" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:16px;" data-key="upgrade-source">Select collectibles to upgrade</div>
+                        <div id="upgrade-inventory" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;min-height:100px;align-items:center;">
+                        </div>
+                        <button id="upgrade-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" disabled data-key="upgrade-btn">Upgrade</button>
+                        <div id="upgrade-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="upgrade-status">Combine to create higher rarity</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- =========================================================
+            GIFTS PAGE
         ========================================================= -->
         <div id="gifts-page" class="gifts-page">
             <div class="gifts-header">
@@ -2437,6 +2688,7 @@
             betCollectible: 'رهان',
             withdrawUnavailable: 'السحب غير متاح حاليًا',
             collectibleKept: 'بقي المقتنى في حقيبتك 🎒',
+            giftsWithdrawn: '🎁 تم إرسال المقتنى إلى حساب Telegram الخاص بك!',
             noGiftsToBet: 'لا توجد مقتنيات موثّقة للرهان بها',
             giftBalanceLabel: 'المقتنيات المتاحة: {count}',
             selectGift: 'اختر مقتنى من حقيبتك للرهان به',
@@ -2473,6 +2725,7 @@
             betCollectible: 'Bet',
             withdrawUnavailable: 'Withdrawal unavailable right now',
             collectibleKept: 'This collectible stays in your Backpack 🎒',
+            giftsWithdrawn: '🎁 Collectible sent to your Telegram account!',
             noGiftsToBet: 'No verified collectibles to bet with',
             giftBalanceLabel: 'Available collectibles: {count}',
             selectGift: 'Select a collectible from your backpack',
@@ -2500,6 +2753,7 @@
             noCollectiblesDesc: 'Отправьте коллекционный подарок на @v_rray, и он появится здесь автоматически.',
             collectibleImportFailed: 'Не удалось открыть аккаунт игры в Telegram',
             collectibleVerifying: 'Проверяем коллекционный подарок...',
+            giftsWithdrawn: '🎁 Подарок отправлен на ваш Telegram счёт!',
             collectibleIntentCreated: 'Запрос на отправку создан — продолжите в Telegram',
             collectibleLoading: 'Подготовка...',
             collectibleNumberLabel: 'Серийный номер',
@@ -2525,7 +2779,169 @@
             connectWalletForGifts: '🔒 Отправьте подарок, чтобы использовать его для ставок',
             giftValueLabel: '💎 Ценность:',
             vipStart: 'Старт'
-        });
+         });
+
+         Object.assign(translations.ar, {
+            minesTitle: '💣 المينا',
+            minesDesc: 'كشف البلاط دون الوقوع على المينا',
+            plinkoTitle: '🔷 بلينكو',
+            plinkoDesc: 'أطلق الرقائق واربح مكافآت',
+            diceTitle: '🎲 النرد',
+            diceDesc: 'أطرح النرد للربح الفوري',
+            craftsTitle: '🔨 الحرف',
+            craftsDesc: 'اصنع مقتنيات وجمع الندرة',
+            pvpTitle: '⚔️ المواجهة',
+            pvpDesc: 'حارب لاعلين آخرين',
+            upgradeTitle: '🔧 التطوير',
+            upgradeDesc: 'طور مقتنياتك',
+            minesCashout: 'سحب',
+            minesStatus: 'ضع رهانك للبدء',
+            minesWon: '🎉 ربحت!',
+            minesBoom: '💥 خسرت، ضربت مينا',
+            plinkoDrop: 'أطلق الرقاقة',
+            plinkoStatus: 'حدد الرهان وأطلق الرقاقة',
+            diceRoll: 'أطرح',
+            diceStatus: 'حدد الهدف وأطرح النرد',
+            diceWon: '🎉 ربحت!',
+            diceLost: '❌ خسرت',
+            craftBtn: 'اصنع',
+            craftsStatus: 'اختر مقتنيات للصنع',
+            pvpWaiting: 'يبحث عن منافس...',
+            pvpReady: 'جاهز',
+            pvpStatus: 'كلاكما جاهز!',
+             upgradeBtn: 'طور',
+             upgradeStatus: 'اجمع لخلق ندرة أعلى',
+             minesBetPrompt: 'أدخل مبلغ الرهان (TON):',
+             minesGameReady: 'تم بدء لعبة المينا!',
+             minesGameOver: 'نهاية اللعبة',
+             minesWon: '🎉 ربحت!',
+             plinkoBetPrompt: 'أدخل مبلغ الرهان (TON):',
+             plinkoGameReady: 'لعبة بلينكو جاهزة!',
+             plinkoWon: '🎉 ربحت!',
+             diceBetPrompt: 'أدخل مبلغ الرهان (TON):',
+             diceTargetPrompt: 'أدخل الهدف (1-99)، تفوز إذا كان النتيجة ≤ الهدف:',
+             diceWon: '🎉 ربحت!',
+             diceLost: '❌ خسرت',
+             craftsComingSoon: 'قريباً',
+             pvpComingSoon: 'قريباً',
+             upgradeComingSoon: 'قريباً',
+             errorGeneric: 'خطأ',
+             betFailed: 'فشل الرهان',
+             cashoutFailed: 'فشل السحب',
+             gameError: 'خطأ في اللعبة',
+             invalidTarget: 'هدف غير صالح',
+             minesWonMsg: '🎉 ربحت ',
+             plinkoWonMsg: '🎉 ربحت ',
+             diceWonMsg: '🎉 ربحت '
+         });
+
+         Object.assign(translations.en, {
+            minesTitle: '💣 Mines',
+            minesDesc: 'Clear tiles without hitting mines',
+            plinkoTitle: '🔷 Plinko',
+            plinkoDesc: 'Drop the chip and win multipliers',
+            diceTitle: '🎲 Dice',
+            diceDesc: 'Roll the dice for instant wins',
+            craftsTitle: '🔨 Crafts',
+            craftsDesc: 'Craft collectibles and combine rarity',
+            pvpTitle: '⚔️ PvP',
+            pvpDesc: 'Battle other players head-to-head',
+            upgradeTitle: '🔧 Upgrade',
+            upgradeDesc: 'Upgrade your collectibles',
+            minesCashout: 'Cash Out',
+            minesStatus: 'Place your bet to start',
+            minesWon: '🎉 You won!',
+            minesBoom: '💥 Game over! You hit a mine',
+            plinkoDrop: 'Drop Chip',
+            plinkoStatus: 'Select bet and drop the chip',
+            diceRoll: 'Roll',
+            diceStatus: 'Set your target and roll',
+            diceWon: '🎉 You won!',
+            diceLost: '❌ You lost',
+            craftBtn: 'Craft',
+            craftsStatus: 'Select collectibles to craft',
+            pvpWaiting: 'Searching for opponent...',
+            pvpReady: 'Ready',
+            pvpStatus: 'Both players ready!',
+             upgradeBtn: 'Upgrade',
+             upgradeStatus: 'Combine to create higher rarity',
+             minesBetPrompt: 'Enter bet amount (TON):',
+             minesGameReady: 'Mines game started!',
+             minesGameOver: 'Game Over',
+             minesWon: '🎉 You won!',
+             plinkoBetPrompt: 'Enter bet amount (TON):',
+             plinkoGameReady: 'Plinko game ready!',
+             plinkoWon: '🎉 You won!',
+             diceBetPrompt: 'Enter bet amount (TON):',
+             diceTargetPrompt: 'Enter target (1-99), win if roll <= target:',
+             diceWon: '🎉 You won!',
+             diceLost: '❌ You lost',
+             craftsComingSoon: 'Coming Soon',
+             pvpComingSoon: 'Coming Soon',
+             upgradeComingSoon: 'Coming Soon',
+             errorGeneric: 'Error',
+             betFailed: 'Bet failed',
+             cashoutFailed: 'Cashout failed',
+             gameError: 'Game error',
+             invalidTarget: 'Invalid target',
+             minesWonMsg: '🎉 You won ',
+             plinkoWonMsg: '🎉 You won ',
+             diceWonMsg: '🎉 You won '
+         });
+
+         Object.assign(translations.ru, {
+            minesTitle: '💣 Мины',
+            minesDesc: 'Открывайте плитки, не наступая на минки',
+            plinkoTitle: '🔷 Плинко',
+            plinkoDesc: 'Запустите фишку и выигрывайте множители',
+            diceTitle: '🎲 Диc',
+            diceDesc: 'Бросайте кости для мгновенных выигрышей',
+            craftsTitle: '🔨 Ремесло',
+            craftsDesc: 'Создавайте коллекционные предметы',
+            pvpTitle: '⚔️ PvP',
+            pvpDesc: 'Сражайтесь с другими игроками',
+            upgradeTitle: '🔧 Улучшение',
+            upgradeDesc: 'Улучшайте свои предметы',
+            minesCashout: 'Вывести',
+            minesStatus: 'Поставьте ставку для начала',
+            minesWon: '🎉 Вы выиграли!',
+            minesBoom: '💥 Игра окончена! Вы наступили на мину',
+            plinkoDrop: 'Запустить фишку',
+            plinkoStatus: 'Выберите ставку и запустите фишку',
+            diceRoll: 'Бросить',
+            diceStatus: 'Установите цель и бросьте',
+            diceWon: '🎉 Вы выиграли!',
+            diceLost: '❌ Вы проиграли',
+            craftBtn: 'Создать',
+            craftsStatus: 'Выберите предметы для создания',
+            pvpWaiting: 'Поиск соперника...',
+            pvpReady: 'Готов',
+            pvpStatus: 'Оба игрока готовы!',
+             upgradeBtn: 'Улучшить',
+             upgradeStatus: 'Соберите для более высокого редкого уровня',
+             minesBetPrompt: 'Введите сумму ставки (TON):',
+             minesGameReady: 'Игра в Мины началась!',
+             minesGameOver: 'Игра окончена',
+             minesWon: '🎉 Вы выиграли!',
+             plinkoBetPrompt: 'Введите сумму ставки (TON):',
+             plinkoGameReady: 'Плинко готов!',
+             plinkoWon: '🎉 Вы выиграли!',
+             diceBetPrompt: 'Введите сумму ставки (TON):',
+             diceTargetPrompt: 'Введите цель (1-99), выигрываете если бросок ≤ цель:',
+             diceWon: '🎉 Вы выиграли!',
+             diceLost: '❌ Вы проиграли',
+             craftsComingSoon: 'Скоро',
+             pvpComingSoon: 'Скоро',
+             upgradeComingSoon: 'Скоро',
+             errorGeneric: 'Ошибка',
+             betFailed: 'Ставка не удалась',
+             cashoutFailed: 'Вывод не удался',
+             gameError: 'Ошибка игры',
+             invalidTarget: 'Неверная цель',
+             minesWonMsg: '🎉 Вы выиграли ',
+             plinkoWonMsg: '🎉 Вы выиграли ',
+             diceWonMsg: '🎉 Вы выиграли '
+         });
 
         function getTranslation(key) {
             return translations[currentLanguage]?.[key] || translations.ar[key] || key;
@@ -2649,9 +3065,18 @@
             if (giftValueLabelText) giftValueLabelText.textContent = t.giftValueLabel;
             const noGiftSelectedText = safeGetElement('no-gift-selected-text');
             if (noGiftSelectedText) noGiftSelectedText.textContent = t.noGiftSelectedYet;
-            const statusMessage = safeGetElement('status-message');
-            if (statusMessage) statusMessage.textContent = serverConnected ? t.roundLive : t.connecting;
-            updateMainBetButton();
+             const statusMessage = safeGetElement('status-message');
+             if (statusMessage) statusMessage.textContent = serverConnected ? t.roundLive : t.connecting;
+
+             const backButtons = document.querySelectorAll('.back-button');
+             backButtons.forEach(function(btn) { btn.textContent = t.back; });
+
+             document.querySelectorAll('[data-key]').forEach(function(el) {
+                var key = el.getAttribute('data-key');
+                if (t[key]) el.textContent = t[key];
+             });
+
+             updateMainBetButton();
             updateModalBetButton();
             updateVipUI();
             renderCollectibles();
@@ -2825,14 +3250,45 @@
             const rocket = document.getElementById("rocket");
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
+            const particles = document.getElementById("rocket-particles");
             if(!rocket) return;
             
             rocket.style.left = `${15 + progress * 58}%`;
             rocket.style.bottom = `${74 + progress * 120}px`;
             rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-            if (flame) flame.style.display = "block";
-            if (trail) trail.classList.add("active");
+            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
+            if (flame) {
+                flame.style.display = "block";
+                flame.style.height = `${40 + progress * 20}px`;
+                flame.style.opacity = `${0.5 + progress * 0.5}`;
+            }
+            if (trail) {
+                trail.classList.add("active");
+                trail.style.width = `${140 + progress * 60}px`;
+                trail.style.opacity = `${0.3 + progress * 0.7}`;
+            }
+            if (particles) {
+                particles.style.left = rocket.style.left;
+                particles.style.bottom = rocket.style.bottom;
+                createParticle(particles, progress);
+            }
         }
+
+        var lastParticleTime = 0;
+        function createParticle(container, progress) {
+            var now = Date.now();
+            if (now - lastParticleTime < 50) return;
+            lastParticleTime = now;
+            var p = document.createElement('div');
+            p.style.cssText = `position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(100,200,255,${0.4 + progress * 0.6});pointer-events:none;box-shadow:0 0 10px rgba(100,200,255,0.5);animation:particleFloat 1s ease-out forwards;`;
+            p.style.left = '50%';
+            p.style.top = '50%';
+            container.appendChild(p);
+            setTimeout(function() { if (p.parentNode) p.parentNode.removeChild(p); }, 1000);
+        }
+        var particleStyle = document.createElement('style');
+        particleStyle.textContent = '@keyframes particleFloat { to { transform: translate(-50%, -100px) scale(0.5); opacity: 0; } }';
+        document.head.appendChild(particleStyle);
 
         /* =========================================================
            HISTORY
@@ -3670,7 +4126,7 @@
                     ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
                     <div class="actions">
                         <button type="button" onclick="keepCollectible('${item.id}')">${t.keepCollectible}</button>
-                        <button type="button" title="${t.withdrawUnavailable}" disabled>${t.withdrawCollectible}</button>
+                        <button type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet ? 'disabled title="' + t.withdrawUnavailable + '"' : ''}>${t.withdrawCollectible}</button>
                         <button type="button" ${betDisabledAttr} onclick="betWithCollectible('${item.id}')">${t.betCollectible}</button>
                     </div>
                 `;
@@ -3751,12 +4207,36 @@
 
         // Keep is a no-op by design: the collectible already stays in the Backpack unless the
         // player explicitly bets it. This just gives clear confirmation feedback.
-        function keepCollectible(uniqueCollectibleId) {
+         function keepCollectible(uniqueCollectibleId) {
             const t = translations[currentLanguage] || translations.ar;
             const gift = verifiedCollectibles.find(c => c.id === uniqueCollectibleId);
             if (!gift) return;
             showToast(t.collectibleKept);
-        }
+         }
+
+         async function withdrawCollectible(uniqueCollectibleId) {
+            const t = translations[currentLanguage] || translations.ar;
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/collectibles/withdraw`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ collectibleId: uniqueCollectibleId })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    showToast(t.giftsWithdrawn || '🎁 Collectible sent to your Telegram account!');
+                    fetchCollectibles();
+                } else {
+                    if (data.reason === 'missing_can_view_gifts_and_stars') {
+                        showToast(t.withdrawUnavailable);
+                    } else {
+                        showToast(t.giftBetFailed || '❌ Withdrawal failed');
+                    }
+                }
+            } catch(e) {
+                showToast(t.giftBetFailed || '❌ Withdrawal failed');
+            }
+         }
 
         function showPage(page) {
             document.querySelectorAll(".nav-button").forEach(function(button) { button.classList.remove("active"); });
@@ -3821,15 +4301,340 @@
             document.getElementById("nav-home").classList.add("active");
         }
 
-        function closeRocketGame() {
+         function closeRocketGame() {
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
         }
 
-        /* =========================================================
-           DEPOSIT FUNCTIONS
+        function closeAllGames() {
+            ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.add("hidden");
+            });
+        }
+
+        function hideAllPages() {
+            document.getElementById("profile-page").classList.remove("show");
+            document.getElementById("gifts-page").classList.remove("show");
+        }
+
+        function openMinesGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("mines-game").classList.remove("hidden");
+            initMinesGame();
+        }
+
+        function closeMinesGame() {
+            document.getElementById("mines-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+        }
+
+        function openPlinkoGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("plinko-game").classList.remove("hidden");
+            initPlinkoGame();
+        }
+
+        function closePlinkoGame() {
+            document.getElementById("plinko-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+        }
+
+        function openDiceGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("dice-game").classList.remove("hidden");
+        }
+
+        function closeDiceGame() {
+            document.getElementById("dice-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+        }
+
+        function openCraftsGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("crafts-game").classList.remove("hidden");
+            loadCraftsInventory();
+        }
+
+        function closeCraftsGame() {
+            document.getElementById("crafts-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+        }
+
+        function openPvPGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("pvp-game").classList.remove("hidden");
+            initPvPGame();
+        }
+
+        function closePvPGame() {
+            document.getElementById("pvp-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+        }
+
+        function openUpgradeGame() {
+            hideAllPages();
+            closeAllGames();
+            document.getElementById("game-hub").classList.add("hidden");
+            document.getElementById("upgrade-game").classList.remove("hidden");
+            loadUpgradeInventory();
+        }
+
+        function closeUpgradeGame() {
+            document.getElementById("upgrade-game").classList.add("hidden");
+            document.getElementById("game-hub").classList.remove("hidden");
+            hideAllPages();
+         }
+
+         /* =========================================================
+            MINES GAME
+         ========================================================= */
+         var minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON' };
+         function initMinesGame() {
+            minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON' };
+            var grid = document.getElementById('mines-grid');
+            grid.innerHTML = '';
+            for (var i = 0; i < 25; i++) {
+                var tile = document.createElement('button');
+                tile.className = 'mines-tile';
+                tile.style.cssText = 'width:40px;height:40px;border-radius:6px;border:1px solid rgba(100,200,255,0.1);background:rgba(15,40,71,0.4);font-size:18px;cursor:pointer;';
+                tile.dataset.idx = i;
+                tile.onclick = function() { revealMineTile(parseInt(this.dataset.idx)); };
+                grid.appendChild(tile);
+            }
+            document.getElementById('mines-bet-btn').onclick = function() { placeMinesBet(); };
+            document.getElementById('mines-cashout-btn').onclick = function() { cashoutMines(); };
+            document.getElementById('mines-cashout-btn').disabled = true;
+            var t = translations[currentLanguage] || translations.ar;
+            document.getElementById('mines-status').textContent = t.minesStatus;
+         }
+         async function placeMinesBet() {
+            var t = translations[currentLanguage] || translations.ar;
+            var amountInput = prompt(t.minesBetPrompt || 'Enter bet amount (TON):', '1');
+            if (!amountInput) return;
+            var betAmount = Number(amountInput);
+            if (!Number.isFinite(betAmount) || betAmount < 0.1) { showToast(t.insufficientBalance || '❌ Invalid amount'); return; }
+            try {
+               var response = await fetch(`${BACKEND_URL}/api/mines/bet`, {
+                  method: 'POST', headers: getAuthHeaders(),
+                  body: JSON.stringify({ amount: betAmount, currency: 'TON' })
+               });
+               var data = await response.json();
+               if (data.ok) {
+                  minesState.gameId = data.gameId;
+                  minesState.betAmount = data.betAmount;
+                  minesState.currency = data.currency;
+                  minesState.multiplier = 1.0;
+                  document.getElementById('mines-bet-amount').textContent = '💎 ' + minesState.multiplier.toFixed(2) + 'x';
+                  document.getElementById('mines-cashout-btn').disabled = false;
+                  showToast((t.minesGameReady || 'Mines game started!'));
+               } else {
+                  showToast(data.error || (t.giftBetFailed || '❌ Bet failed'));
+               }
+            } catch(e) { showToast(t.giftBetFailed || '❌ Bet failed'); }
+         }
+         async function revealMineTile(idx) {
+            if (!minesState.gameId || minesState.mineHit) return;
+            var t = translations[currentLanguage] || translations.ar;
+            try {
+               var response = await fetch(`${BACKEND_URL}/api/mines/reveal`, {
+                  method: 'POST', headers: getAuthHeaders(),
+                  body: JSON.stringify({ gameId: minesState.gameId, tileIndex: idx })
+               });
+               var data = await response.json();
+               if (data.ok) {
+                  minesState.revealed.push(idx);
+                  var grid = document.getElementById('mines-grid');
+                  var tiles = grid.querySelectorAll('.mines-tile');
+                  if (data.hitMine) {
+                     tiles[idx].textContent = '💣';
+                     minesState.mineHit = true;
+                     document.getElementById('mines-cashout-btn').disabled = true;
+                     showToast((t.minesBoom || '💥 BOOM! You hit a mine'));
+                     var statusEl = document.getElementById('mines-status');
+                      if (statusEl) statusEl.textContent = (t.minesGameOver || 'نهاية اللعبة');
+                  } else {
+                     tiles[idx].textContent = '✅';
+                     tiles[idx].style.background = 'rgba(77,225,139,0.2)';
+                     minesState.multiplier = data.multiplier;
+                     document.getElementById('mines-bet-amount').textContent = '💎 ' + minesState.multiplier.toFixed(2) + 'x';
+                  }
+                } else {
+                   showToast(data.error || (t.errorGeneric || '❌ Error'));
+                }
+            } catch(e) { showToast((t.giftBetFailed || '❌ Action failed')); }
+         }
+         async function cashoutMines() {
+            if (!minesState.gameId || minesState.mineHit) return;
+            var t = translations[currentLanguage] || translations.ar;
+            try {
+               var response = await fetch(`${BACKEND_URL}/api/mines/cashout`, {
+                  method: 'POST', headers: getAuthHeaders(),
+                  body: JSON.stringify({ gameId: minesState.gameId })
+               });
+               var data = await response.json();
+               if (data.ok) {
+                   showToast((t.minesWonMsg || '🎉 You won ') + data.payout.toFixed(2) + ' TON!');
+                   document.getElementById('mines-cashout-btn').disabled = true;
+                   minesState.gameId = null;
+                } else {
+                   showToast(data.error || (t.cashoutFailed || '❌ Cashout failed'));
+                }
+            } catch(e) { showToast((t.giftBetFailed || '❌ Cashout failed')); }
+         }
+
+         /* =========================================================
+            PLINKO GAME
+         ========================================================= */
+         var plinkoState = { gameId: null, serverSeedHash: '', clientSeed: '', slotMultiplier: 1 };
+         function initPlinkoGame() {
+            plinkoState = { gameId: null, serverSeedHash: '', clientSeed: '', slotMultiplier: 1 };
+            var board = document.getElementById('plinko-board');
+            board.innerHTML = '';
+            for (var row = 0; row < 10; row++) {
+               for (var col = 0; col <= row; col++) {
+                  var peg = document.createElement('div');
+                  peg.style.cssText = 'position:absolute;width:8px;height:8px;border-radius:50%;background:rgba(100,200,255,0.4);';
+                  peg.style.left = (30 + col * 24 - row * 12) + 'px';
+                  peg.style.top = (30 + row * 24) + 'px';
+                  board.appendChild(peg);
+               }
+            }
+            document.getElementById('plinko-bet-btn').onclick = function() { placePlinkoBet(); };
+            document.getElementById('plinko-drop-btn').onclick = function() { dropPlinkoChip(); };
+         }
+         async function placePlinkoBet() {
+            var t = translations[currentLanguage] || translations.ar;
+            var amountInput = prompt(t.plinkoBetPrompt || 'Enter bet amount (TON):', '1');
+            if (!amountInput) return;
+            var betAmount = Number(amountInput);
+            if (!Number.isFinite(betAmount) || betAmount < 0.1) { showToast(t.insufficientBalance || '❌ Invalid amount'); return; }
+            try {
+               var response = await fetch(`${BACKEND_URL}/api/plinko/bet`, {
+                  method: 'POST', headers: getAuthHeaders(),
+                  body: JSON.stringify({ amount: betAmount, currency: 'TON' })
+               });
+               var data = await response.json();
+               if (data.ok) {
+                  plinkoState.gameId = data.gameId;
+                  plinkoState.serverSeedHash = data.serverSeedHash;
+                  plinkoState.clientSeed = data.clientSeed;
+                  showToast((t.plinkoGameReady || 'Plinko game ready!'));
+                } else {
+                   showToast(data.error || (t.betFailed || '❌ Bet failed'));
+                }
+             } catch(e) { showToast((t.betFailed || '❌ Bet failed')); }
+          }
+          async function dropPlinkoChip() {
+            if (!plinkoState.gameId) { placePlinkoBet(); return; }
+            var t = translations[currentLanguage] || translations.ar;
+            try {
+               var response = await fetch(`${BACKEND_URL}/api/plinko/drop`, {
+                  method: 'POST', headers: getAuthHeaders(),
+                  body: JSON.stringify({ gameId: plinkoState.gameId })
+               });
+               var data = await response.json();
+               if (data.ok) {
+                   showToast((t.plinkoWonMsg || '🎉 You won ') + data.payout.toFixed(2) + ' TON! (' + data.multiplier + 'x)');
+                  plinkoState.gameId = null;
+                } else {
+                   showToast(data.error || (t.gameError || '❌ Game error'));
+                }
+             } catch(e) { showToast((t.gameError || '❌ Game error')); }
+         }
+
+         /* =========================================================
+            DICE GAME
+         ========================================================= */
+         var diceState = { gameId: null, serverSeedHash: '', clientSeed: '' };
+         function initDiceGame() {
+            diceState = { gameId: null, serverSeedHash: '', clientSeed: '' };
+            document.getElementById('dice-roll-btn').onclick = function() { rollDice(); };
+            document.getElementById('dice-target-input').value = '49';
+         }
+         async function rollDice() {
+            var t = translations[currentLanguage] || translations.ar;
+            if (!diceState.gameId) {
+               var amountInput = prompt(t.diceBetPrompt || 'Enter bet amount (TON):', '1');
+               if (!amountInput) return;
+               var betAmount = Number(amountInput);
+               if (!Number.isFinite(betAmount) || betAmount < 0.1) { showToast(t.insufficientBalance || '❌ Invalid amount'); return; }
+               var targetInput = prompt(t.diceTargetPrompt || 'Enter target (1-99), win if roll <= target:', '49');
+               if (!targetInput) return;
+               var target = parseInt(targetInput);
+                if (!Number.isInteger(target) || target < 1 || target > 99) { showToast(t.invalidTarget || '❌ Invalid target'); return; }
+               try {
+                  var response = await fetch(`${BACKEND_URL}/api/dice/bet`, {
+                     method: 'POST', headers: getAuthHeaders(),
+                     body: JSON.stringify({ amount: betAmount, currency: 'TON', target: target })
+                  });
+                  var data = await response.json();
+                  if (data.ok) {
+                     diceState.gameId = data.gameId;
+                     diceState.serverSeedHash = data.serverSeedHash;
+                     diceState.clientSeed = data.clientSeed;
+                     var resultEl = document.getElementById('dice-result');
+                     resultEl.textContent = data.roll < 10 ? '🎲 0' + data.roll : '🎲 ' + data.roll;
+                     if (data.won) {
+                         showToast((t.diceWonMsg || '🎉 You won ') + data.payout.toFixed(2) + ' TON!');
+                     } else {
+                        showToast((t.diceLost || '❌ You lost'));
+                     }
+                     diceState.gameId = null;
+                   } else {
+                      showToast(data.error || (t.betFailed || '❌ Bet failed'));
+                   }
+                } catch(e) { showToast((t.betFailed || '❌ Bet failed')); }
+            }
+         }
+
+         /* =========================================================
+            CRAFTS GAME (Coming Soon)
+         ========================================================= */
+         async function loadCraftsInventory() {
+            var t = translations[currentLanguage] || translations.ar;
+            var inventory = document.getElementById('crafts-inventory');
+            inventory.innerHTML = '<span style="color:#7a9bcb;">' + (t.craftsComingSoon || 'Coming Soon') + '</span>';
+         }
+
+         /* =========================================================
+            PVP GAME (Coming Soon)
+         ========================================================= */
+         function initPvPGame() {
+            var t = translations[currentLanguage] || translations.ar;
+            document.getElementById('pvp-opponent').textContent = (t.pvpComingSoon || 'Coming Soon');
+            document.getElementById('pvp-ready-btn').disabled = true;
+            document.getElementById('pvp-ready-btn').textContent = (t.pvpComingSoon || 'Coming Soon');
+         }
+
+         /* =========================================================
+            UPGRADE GAME (Coming Soon)
+         ========================================================= */
+         async function loadUpgradeInventory() {
+            var t = translations[currentLanguage] || translations.ar;
+            var inventory = document.getElementById('upgrade-inventory');
+            inventory.innerHTML = '<span style="color:#7a9bcb;">' + (t.upgradeComingSoon || 'Coming Soon') + '</span>';
+         }
+
+         /* =========================================================
+            DEPOSIT FUNCTIONS
         ========================================================= */
         function openDeposit() {
             const modal = document.getElementById("deposit-modal");
@@ -4076,6 +4881,12 @@
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
+            document.getElementById("mines-game").classList.add("hidden");
+            document.getElementById("plinko-game").classList.add("hidden");
+            document.getElementById("dice-game").classList.add("hidden");
+            document.getElementById("crafts-game").classList.add("hidden");
+            document.getElementById("pvp-game").classList.add("hidden");
+            document.getElementById("upgrade-game").classList.add("hidden");
 
             await authenticateUser();
             connectToServer();

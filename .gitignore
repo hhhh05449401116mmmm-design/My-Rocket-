@@ -1,0 +1,24 @@
+# Local runtime databases
+rocket.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if not already committed/pinned)
+# node_modules/
+
+# Vercel
+.vercel

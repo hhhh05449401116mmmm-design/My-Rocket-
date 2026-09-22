@@ -52,6 +52,13 @@ function callTelegramBotApi(method, payload = {}) {
 
 (async () => {
     try {
+        const me = await callTelegramBotApi('getMe', {});
+        console.log('ℹ️ getMe:', JSON.stringify({
+            id: me.id,
+            username: me.username,
+            first_name: me.first_name
+        }));
+
         const payload = { url: WEBHOOK_URL, allowed_updates: ALLOWED_UPDATES };
         if (WEBHOOK_SECRET) payload.secret_token = WEBHOOK_SECRET;
         await callTelegramBotApi('setWebhook', payload);

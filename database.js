@@ -432,7 +432,8 @@ function initDatabase() {
                 ['collectible_number', 'INTEGER'],
                 ['ownership_verified', 'INTEGER DEFAULT 0'],
                 ['verified_metadata', 'TEXT'],
-                ['telegram_thumbnail_file_id', 'TEXT']
+                ['telegram_thumbnail_file_id', 'TEXT'],
+                ['market_value_snapshot', 'REAL']
             ];
             userGiftColumns.forEach(([name, type]) => {
                 db.run(`ALTER TABLE user_gifts ADD COLUMN ${name} ${type}`, error => {
@@ -471,6 +472,7 @@ function initDatabase() {
                     connection_id TEXT,
                     business_user_id TEXT,
                     can_view_gifts_and_stars INTEGER DEFAULT 0,
+                    can_transfer_and_upgrade_gifts INTEGER DEFAULT 0,
                     is_enabled INTEGER DEFAULT 0,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
@@ -483,6 +485,82 @@ function initDatabase() {
                     processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
+
+            // Store inventory of real collectibles available as crash rewards.
+            // These are real Telegram unique gifts (verified) that the game holds in reserve
+            // to grant as prizes when a player cashes out above 1.10x.
+            db.run(`
+                CREATE TABLE IF NOT EXISTS collectible_inventory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    unique_collectible_id TEXT NOT NULL,
+                    telegram_gift_instance_id TEXT,
+                    collectible_number INTEGER,
+                    gift_id INTEGER NOT NULL,
+                    model_name TEXT,
+                    collection_name TEXT,
+                    symbol_name TEXT,
+                    backdrop_name TEXT,
+                    verified_metadata TEXT,
+                    telegram_thumbnail_file_id TEXT,
+                    market_value REAL NOT NULL,
+                    ownership_status TEXT DEFAULT 'AVAILABLE' CHECK(ownership_status IN ('AVAILABLE', 'LOCKED', 'IN_BET', 'SENT', 'SOLD', 'CONSUMED')),
+                    reserved_for_user_id INTEGER,
+                    reserved_until DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
+                    FOREIGN KEY (reserved_for_user_id) REFERENCES users(id) ON DELETE SET NULL
+                )
+            `);
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_unique_collectible
+                ON collectible_inventory(unique_collectible_id)`);
+
+            // Audit trail for every collectible gift movement (deposit, bet, cashout, reward, withdrawal, crash).
+            db.run(`
+                CREATE TABLE IF NOT EXISTS gift_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    user_gift_id INTEGER,
+                    transaction_type TEXT NOT NULL CHECK(transaction_type IN (
+                        'DEPOSIT', 'BET', 'CASHOUT_RETURN', 'CASHOUT_REWARD',
+                        'REWARD_GRANT', 'CRASH_LOSE', 'WITHDRAWAL', 'PENDING_PAYOUT'
+                    )),
+                    amount REAL NOT NULL,
+                    related_collectible_id TEXT,
+                    related_bet_id INTEGER,
+                    status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'FAILED', 'ROLLED_BACK')),
+                    reason TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_gift_id) REFERENCES user_gifts(id) ON DELETE SET NULL
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_gift_transactions_user ON gift_transactions(user_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_gift_transactions_collectible ON gift_transactions(related_collectible_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_gift_transactions_status ON gift_transactions(status)`);
+
+            // ===== 5.10 نظام ألعاب الواجهة الخلفية (Mines, Plinko, Dice) =====
+            db.run(`
+                CREATE TABLE IF NOT EXISTS mini_games (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    game_type TEXT NOT NULL CHECK(game_type IN ('MINES', 'PLINKO', 'DICE')),
+                    bet_amount REAL NOT NULL,
+                    bet_currency TEXT NOT NULL CHECK(bet_currency IN ('TON', 'GIFT')),
+                    game_data TEXT,
+                    server_seed TEXT NOT NULL,
+                    server_seed_hash TEXT NOT NULL,
+                    result_multiplier REAL,
+                    result_detail TEXT,
+                    payout REAL,
+                    status TEXT NOT NULL CHECK(status IN ('ACTIVE', 'COMPLETED', 'CANCELLED')),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    completed_at DATETIME DEFAULT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_mini_games_user ON mini_games(user_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_mini_games_status ON mini_games(status)`);
 
             db.run('SELECT 1', error => {
                 if (error) { reject(error); return; }
@@ -720,18 +798,102 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
 
         if (type === 'TON') {
             await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+            await updateUserStats(userId, 'win', payout);
+            return {
+                payout,
+                multiplier,
+                amount: bet[config.amountColumn],
+                giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined
+            };
         } else {
-            await run(`UPDATE user_gifts SET status = 'WON', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [bet.user_gift_id]);
+            return await settleGiftCashout(bet, userId, betId, multiplier, payout);
         }
+    });
+}
 
+async function settleGiftCashout(bet, userId, betId, multiplier, payout) {
+    const userGift = await get('SELECT * FROM user_gifts WHERE id = ?', [bet.user_gift_id]);
+
+    if (!userGift.unique_collectible_id) {
+        await run('UPDATE user_gifts SET status = \'WON\', updated_at = CURRENT_TIMESTAMP WHERE id = ?', [bet.user_gift_id]);
         await updateUserStats(userId, 'win', payout);
         return {
             payout,
             multiplier,
-            amount: bet[config.amountColumn],
-            giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined
+            amount: bet.gift_value_at_bet,
+            giftValue: bet.gift_value_at_bet
         };
-    });
+    }
+
+    if (multiplier <= 1.10) {
+        await run(`
+            UPDATE user_gifts
+            SET status = 'OWNED', market_value_snapshot = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `, [bet.gift_value_at_bet, userGift.id]);
+        await run(`
+            INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status)
+            VALUES (?, ?, 'CASHOUT_RETURN', 0, ?, 'COMPLETED')
+        `, [userId, userGift.id, betId]);
+        await updateUserStats(userId, 'win', 0);
+        return {
+            payout: 0,
+            multiplier,
+            amount: bet.gift_value_at_bet,
+            giftValue: bet.gift_value_at_bet,
+            collectibleReturned: true,
+            originalCollectibleId: userGift.unique_collectible_id,
+            message: 'Collectible returned at <=1.10x'
+        };
+    }
+
+    const targetPayoutValue = bet.gift_value_at_bet * multiplier;
+    await run(`
+        UPDATE user_gifts
+        SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'IN_BET'
+    `, [userGift.id]);
+    await run(`
+        INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status)
+        VALUES (?, ?, 'BET', ?, ?, 'COMPLETED')
+    `, [userId, userGift.id, bet.gift_value_at_bet, betId]);
+
+    const reward = await selectRewardFromInventory(targetPayoutValue);
+    if (reward) {
+        await consumeInventoryReward(reward, userId, betId);
+        await run(`
+            INSERT INTO gift_transactions (user_id, transaction_type, amount, related_collectible_id, related_bet_id, status)
+            VALUES (?, 'REWARD_GRANT', ?, ?, ?, 'COMPLETED')
+        `, [userId, reward.market_value, reward.unique_collectible_id, betId]);
+        await updateUserStats(userId, 'win', 0);
+        const rewardGift = await get('SELECT * FROM user_gifts WHERE unique_collectible_id = ?', [reward.unique_collectible_id]);
+        return {
+            payout: 0,
+            multiplier,
+            amount: reward.market_value,
+            giftValue: bet.gift_value_at_bet,
+            rewardGranted: true,
+            rewardCollectibleId: reward.unique_collectible_id,
+            rewardUserGiftId: rewardGift ? rewardGift.id : null,
+            originalCollectibleId: userGift.unique_collectible_id,
+            message: 'Collectible consumed, reward granted from inventory'
+        };
+    }
+
+    await run(`
+        INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status, reason)
+        VALUES (?, ?, 'PENDING_PAYOUT', ?, ?, 'PENDING', 'No suitable inventory collectible found')
+    `, [userId, userGift.id, targetPayoutValue, betId]);
+    await updateUserStats(userId, 'win', 0);
+    return {
+        payout: 0,
+        multiplier,
+        amount: 0,
+        giftValue: bet.gift_value_at_bet,
+        payoutPending: true,
+        originalCollectibleId: userGift.unique_collectible_id,
+        message: 'Payout pending - no suitable reward in inventory'
+    };
 }
 
 async function crashRound(roundNumber, multiplier) {
@@ -740,8 +902,11 @@ async function crashRound(roundNumber, multiplier) {
         if (!round || round.phase === 'CRASH') return { settled: false, alreadySettled: true };
 
         const giftBets = await query(`
-            SELECT user_gift_id FROM gift_bets
-            WHERE round_id = ? AND status = 'ACTIVE'
+            SELECT gb.id AS bet_id, gb.user_id, gb.user_gift_id, gb.gift_value_at_bet,
+                   ug.unique_collectible_id
+            FROM gift_bets gb
+            JOIN user_gifts ug ON ug.id = gb.user_gift_id
+            WHERE gb.round_id = ? AND gb.status = 'ACTIVE'
         `, [roundNumber]);
 
         const roundUpdate = await run(`
@@ -761,10 +926,16 @@ async function crashRound(roundNumber, multiplier) {
         `, [roundNumber]);
 
         for (const bet of giftBets) {
-            await run(`
+            const update = await run(`
                 UPDATE user_gifts SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND status = 'IN_BET'
             `, [bet.user_gift_id]);
+            if (update.changes === 1 && bet.unique_collectible_id) {
+                await run(`
+                    INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status, reason)
+                    VALUES (?, ?, 'CRASH_LOSE', ?, ?, 'COMPLETED', 'Crashed before cashout')
+                `, [bet.user_id, bet.user_gift_id, bet.gift_value_at_bet, bet.bet_id]);
+            }
         }
 
         return {
@@ -1025,17 +1196,18 @@ async function creditVerifiedCollectible({
 }
 
 // حفظ/تحديث حالة اتصال Telegram Business بشكل دائم (صف واحد ثابت id=1). لا تُخزَّن أي أسرار هنا.
-async function savePersistedBusinessConnection({ connectionId, businessUserId, canViewGiftsAndStars, isEnabled }) {
+async function savePersistedBusinessConnection({ connectionId, businessUserId, canViewGiftsAndStars, canTransferAndUpgradeGifts, isEnabled }) {
     await run(`
-        INSERT INTO telegram_business_connection (id, connection_id, business_user_id, can_view_gifts_and_stars, is_enabled, updated_at)
-        VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO telegram_business_connection (id, connection_id, business_user_id, can_view_gifts_and_stars, can_transfer_and_upgrade_gifts, is_enabled, updated_at)
+        VALUES (1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(id) DO UPDATE SET
             connection_id = excluded.connection_id,
             business_user_id = excluded.business_user_id,
             can_view_gifts_and_stars = excluded.can_view_gifts_and_stars,
+            can_transfer_and_upgrade_gifts = excluded.can_transfer_and_upgrade_gifts,
             is_enabled = excluded.is_enabled,
             updated_at = CURRENT_TIMESTAMP
-    `, [connectionId || null, businessUserId || null, canViewGiftsAndStars ? 1 : 0, isEnabled ? 1 : 0]);
+    `, [connectionId || null, businessUserId || null, canViewGiftsAndStars ? 1 : 0, canTransferAndUpgradeGifts ? 1 : 0, isEnabled ? 1 : 0]);
     return await getPersistedBusinessConnection();
 }
 
@@ -1060,6 +1232,14 @@ async function markWebhookUpdateProcessed(updateId) {
     }
 }
 
+// Update the market value of a collectible's gift model row.
+async function updateCollectibleMarketValue(telegramGiftId, marketValue) {
+    return await run(`
+        UPDATE gifts SET value = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE telegram_gift_id = ?
+    `, [marketValue, telegramGiftId]);
+}
+
 // ===== 5.3 نظام الرهان بالهدايا =====
 async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
     const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
@@ -1078,14 +1258,24 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
         
         if (!userGift) throw new Error('Gift not owned or not available');
 
+        const isCollectible = !!userGift.unique_collectible_id;
+        if (isCollectible) {
+            if (userGift.ownership_verified !== 1) {
+                throw new Error('Only verified Telegram collectibles can be bet');
+            }
+            if (!Number.isFinite(userGift.gift_value) || userGift.gift_value <= 0) {
+                throw new Error('Collectible has no valid market valuation — cannot bet');
+            }
+        }
+
         const giftValue = userGift.gift_value || 0;
         
         // 3. قفل الهدية
         const update = await run(`
             UPDATE user_gifts 
-            SET status = 'IN_BET', updated_at = CURRENT_TIMESTAMP 
+            SET status = 'IN_BET', market_value_snapshot = ?, updated_at = CURRENT_TIMESTAMP 
             WHERE id = ? AND status = 'OWNED'
-        `, [userGift.id]);
+        `, [giftValue, userGift.id]);
 
         if (update.changes !== 1) throw new Error('Collectible was reserved concurrently');
         
@@ -1142,6 +1332,181 @@ async function cashoutGiftBet(betId, userId, multiplier) {
             giftValue: bet.gift_value_at_bet
         };
     });
+}
+
+// ===== 5.9 نظام مخزون الهدايا (Store Inventory) =====
+
+// اختيار أفضل مكافأة من المخزون بناءً على القيمة المستهدفة.
+// يجد القطعة الأقرب للقيمة المستهدفة دون تجاوزها.
+// استعلام بسيط (بدون transaction) — يُستدعى داخل معاملة cashoutBet.
+async function selectRewardFromInventory(targetValue) {
+    if (!Number.isFinite(targetValue) || targetValue <= 0) return null;
+    return await get(`
+        SELECT * FROM collectible_inventory
+        WHERE ownership_status = 'AVAILABLE'
+          AND market_value <= ?
+        ORDER BY ABS(market_value - ?) ASC, id ASC
+        LIMIT 1
+    `, [targetValue, targetValue]);
+}
+
+// استهلاك قطعة مخزون وإنشاء user_gifts للمستخدم.
+// يُستدعى داخل معاملة حالية (cashoutBet) — يستخدم run/get مباشرة.
+async function consumeInventoryReward(reward, userId, betId) {
+    const update = await run(`
+        UPDATE collectible_inventory
+        SET ownership_status = 'CONSUMED',
+            reserved_for_user_id = ?,
+            reserved_until = datetime('now', '+1 minute'),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND ownership_status = 'AVAILABLE'
+    `, [userId, reward.id]);
+    if (update.changes !== 1) throw new Error('Inventory collectible was reserved concurrently');
+
+    await run(`
+        INSERT INTO user_gifts (
+            user_id, gift_id, status, unique_collectible_id, telegram_gift_instance_id,
+            collectible_number, ownership_verified, verified_metadata,
+            telegram_thumbnail_file_id, market_value_snapshot
+        ) SELECT
+            ?, gift_id, 'OWNED', unique_collectible_id, telegram_gift_instance_id,
+            collectible_number, 1, verified_metadata,
+            telegram_thumbnail_file_id, market_value
+        FROM collectible_inventory WHERE id = ?
+    `, [userId, reward.id]);
+}
+
+// قائمة مخزون الهدايا المتاحة (للمدير/الواجهة الخلفية).
+async function getInventoryCollectibles(ownershipStatus = 'AVAILABLE') {
+    const sql = `
+        SELECT ci.*, g.name AS gift_name
+        FROM collectible_inventory ci
+        JOIN gifts g ON ci.gift_id = g.id
+        WHERE ci.ownership_status = ?
+        ORDER BY ci.market_value DESC, ci.created_at DESC
+    `;
+    if (ownershipStatus) return await query(sql, [ownershipStatus]);
+    return await query(
+        `SELECT ci.*, g.name AS gift_name FROM collectible_inventory ci JOIN gifts g ON ci.gift_id = g.id ORDER BY ci.market_value DESC, ci.created_at DESC`
+    );
+}
+
+// إضافة قطعة إلى مخزون المتجر (للاستخدام من قبل المسؤول).
+async function addCollectibleToInventory({
+    uniqueCollectibleId, telegramGiftInstanceId, collectibleNumber,
+    giftId, modelName, collectionName, symbolName, backdropName,
+    verifiedMetadata, telegramThumbnailFileId, marketValue
+}) {
+    const result = await run(`
+        INSERT INTO collectible_inventory (
+            unique_collectible_id, telegram_gift_instance_id, collectible_number,
+            gift_id, model_name, collection_name, symbol_name, backdrop_name,
+            verified_metadata, telegram_thumbnail_file_id, market_value
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+        uniqueCollectibleId, telegramGiftInstanceId, collectibleNumber,
+        giftId, modelName, collectionName, symbolName, backdropName,
+        verifiedMetadata, telegramThumbnailFileId, marketValue
+    ]);
+    return await get('SELECT * FROM collectible_inventory WHERE id = ?', [result.lastID]);
+}
+
+// ===== 5.10 سحب هدايا =====
+
+// حجز قطعة للسحب ذريًا: OWNED -> LOCKED لمدة قصيرة.
+// يُستخدم قبل استدعاء Telegram API لنقل الهدية.
+async function reserveCollectibleForWithdrawal(userId, uniqueCollectibleId) {
+    return await transaction(async () => {
+        const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
+        if (!collectible) throw new Error('Collectible not found');
+        if (collectible.user_id !== userId) throw new Error('Collectible not owned by this user');
+        if (!collectible.unique_collectible_id) throw new Error('Not a unique collectible');
+        if (collectible.ownership_status !== 'OWNED') {
+            throw new Error(`Collectible is not available for withdrawal (status: ${collectible.ownership_status})`);
+        }
+
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = 'LOCKED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'OWNED'
+        `, [collectible.user_gift_id]);
+        if (update.changes !== 1) throw new Error('Collectible was reserved concurrently');
+
+        await run(`
+            INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_collectible_id, status)
+            VALUES (?, ?, 'WITHDRAWAL', 0, ?, 'PENDING')
+        `, [userId, collectible.user_gift_id, uniqueCollectibleId]);
+
+        return await getCollectibleByUniqueId(uniqueCollectibleId);
+    });
+}
+
+// إكمال سحب الهدية بعد نجاح Telegram API.
+async function confirmGiftWithdrawal(userId, uniqueCollectibleId, transactionHash) {
+    return await transaction(async () => {
+        const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
+        if (!collectible || collectible.user_id !== userId) throw new Error('Collectible not found or not owned');
+        if (collectible.ownership_status !== 'LOCKED') throw new Error('Collectible is not reserved for withdrawal');
+
+        await run(`
+            UPDATE user_gifts
+            SET status = 'SENT', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'LOCKED'
+        `, [collectible.user_gift_id]);
+
+        await run(`
+            UPDATE gift_transactions
+            SET status = 'COMPLETED', reason = ?
+            WHERE user_id = ? AND related_collectible_id = ? AND transaction_type = 'WITHDRAWAL' AND status = 'PENDING'
+        `, [transactionHash, userId, uniqueCollectibleId]);
+
+        return await getCollectibleByUniqueId(uniqueCollectibleId);
+    });
+}
+
+// إرجاع القطعة إلى OWNED إذا فشل النقل في Telegram.
+async function rollbackGiftWithdrawal(userId, uniqueCollectibleId, failureReason) {
+    return await transaction(async () => {
+        const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
+        if (!collectible || collectible.user_id !== userId) throw new Error('Collectible not found or not owned');
+
+        await run(`
+            UPDATE user_gifts
+            SET status = 'OWNED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'LOCKED'
+        `, [collectible.user_gift_id]);
+
+        await run(`
+            UPDATE gift_transactions
+            SET status = 'ROLLED_BACK', reason = ?
+            WHERE user_id = ? AND related_collectible_id = ? AND transaction_type = 'WITHDRAWAL' AND status = 'PENDING'
+        `, [failureReason, userId, uniqueCollectibleId]);
+
+        return await getCollectibleByUniqueId(uniqueCollectibleId);
+    });
+}
+
+// ===== 5.11 معاملات الهدايا =====
+
+async function getGiftTransactions(userId, limit = 50) {
+    return await query(`
+        SELECT gt.*, ug.unique_collectible_id
+        FROM gift_transactions gt
+        LEFT JOIN user_gifts ug ON ug.id = gt.user_gift_id
+        WHERE gt.user_id = ?
+        ORDER BY gt.created_at DESC
+        LIMIT ?
+    `, [userId, limit]);
+}
+
+async function getPendingPayouts(userId) {
+    return await query(`
+        SELECT gt.*, ug.unique_collectible_id
+        FROM gift_transactions gt
+        LEFT JOIN user_gifts ug ON ug.id = gt.user_gift_id
+        WHERE gt.user_id = ? AND gt.status = 'PENDING'
+        ORDER BY gt.created_at DESC
+    `, [userId]);
 }
 
 // ===== 5.4 نظام الرهان بـ TON =====
@@ -1405,6 +1770,321 @@ async function getNotifications(userId, limit = 20) {
 // =========================================================
 // 6. تصدير الدوال
 // =========================================================
+
+// ===== 5.11 نظام ألعاب الواجهة الخلفية =====
+
+// Generate a provably-fair server seed for mini-games using crypto.randomBytes.
+function generateGameServerSeed() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+function hashGameServerSeed(seed) {
+    return crypto.createHash('sha256').update(seed, 'utf8').digest('hex');
+}
+
+// SHA-256 hash of seed:clientSeed message, returns uniform [0,1).
+function deriveGameUniform(serverSeed, clientSeed, nonce) {
+    const message = `${clientSeed}:${nonce}`;
+    const digest = crypto.createHmac('sha256', serverSeed).update(message, 'utf8').digest();
+    const value = BigInt('0x' + digest.toString('hex').substring(0, 13));
+    return Number(value) / Number(2n ** 52n);
+}
+
+async function createMinesGame(userId, betAmount, betCurrency, betGiftId) {
+    return await transaction(async () => {
+        const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
+        if (!user) throw new Error('User not found');
+
+        if (betCurrency === 'TON') {
+            if (betAmount < 0.1) throw new Error('Invalid bet amount');
+            const balance = await getUserBalance(userId);
+            if (balance < betAmount) throw new Error('Insufficient balance');
+            const update = await run(
+                'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'GIFT') {
+            if (!betGiftId) throw new Error('giftId required for GIFT bet');
+            const gift = await get(`
+                SELECT ug.*, g.value AS gift_value, g.name AS gift_name
+                FROM user_gifts ug
+                JOIN gifts g ON ug.gift_id = g.id
+                WHERE ug.user_id = ? AND (ug.unique_collectible_id = ? OR ug.id = ? OR g.telegram_gift_id = ?)
+                AND ug.status = 'OWNED' AND ug.ownership_verified = 1
+                ORDER BY ug.ownership_verified DESC, ug.id DESC LIMIT 1
+            `, [userId, betGiftId, betGiftId, betGiftId]);
+            if (!gift) throw new Error('Gift not owned or not available');
+            if (!Number.isFinite(gift.gift_value) || gift.gift_value <= 0) {
+                throw new Error('Collectible has no valid market valuation');
+            }
+            await run('UPDATE user_gifts SET status = \'IN_BET\' WHERE id = ? AND status = \'OWNED\'', [gift.id]);
+            betAmount = gift.gift_value;
+        } else {
+            throw new Error('Invalid bet currency');
+        }
+
+        const serverSeed = generateGameServerSeed();
+        const serverSeedHash = hashGameServerSeed(serverSeed);
+
+        // Generate mine positions using crypto — server only, never client.
+        const minePositions = new Set();
+        let nonce = 0;
+        while (minePositions.size < 5) {
+            const byte = crypto.randomInt(0, 25);
+            minePositions.add(byte);
+        }
+
+        const gameData = JSON.stringify({
+            boardSize: 25,
+            mineCount: 5,
+            minePositions: Array.from(minePositions),
+            clientSeed: crypto.randomBytes(8).toString('hex')
+        });
+
+        const result = await run(`
+            INSERT INTO mini_games (user_id, game_type, bet_amount, bet_currency, game_data, server_seed, server_seed_hash, status)
+            VALUES (?, 'MINES', ?, ?, ?, ?, ?, 'ACTIVE')
+        `, [userId, betAmount, betCurrency, gameData, serverSeed, serverSeedHash]);
+
+        return { gameId: result.lastID, serverSeedHash, clientSeed: JSON.parse(gameData).clientSeed };
+    });
+}
+
+async function revealMinesTile(gameId, userId, tileIndex) {
+    return await transaction(async () => {
+        const game = await get('SELECT * FROM mini_games WHERE id = ? AND user_id = ?', [gameId, userId]);
+        if (!game) throw new Error('Game not found');
+        if (game.status !== 'ACTIVE') throw new Error('Game already completed');
+
+        const gameData = JSON.parse(game.game_data);
+        if (tileIndex < 0 || tileIndex >= gameData.boardSize) throw new Error('Invalid tile index');
+        if (gameData.revealed && gameData.revealed.includes(tileIndex)) throw new Error('Tile already revealed');
+
+        const hitMine = gameData.minePositions.includes(tileIndex);
+        if (!gameData.revealed) gameData.revealed = [];
+        gameData.revealed.push(tileIndex);
+        gameData.lastTile = tileIndex;
+        gameData.hitMine = hitMine;
+        gameData.tilesRevealed = gameData.revealed.length;
+
+        if (hitMine) {
+            gameData.multiplier = gameData.baseMultiplier || 1.0;
+            await run('UPDATE mini_games SET game_data = ?, status = \'COMPLETED\', result_detail = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ? AND status = \'ACTIVE\'',
+                [JSON.stringify(gameData), JSON.stringify({ multiplier: gameData.multiplier, hitMine: true }), gameId]);
+            return { hitMine: true, multiplier: gameData.multiplier };
+        }
+
+        // Multiplier grows as more safe tiles are revealed: 2^(tilesRevealed/5) capped at ~10x
+        const multiplier = Math.min(Math.pow(2, gameData.revealed.length / 5), 10.0);
+        gameData.multiplier = Number(multiplier.toFixed(2));
+        await run('UPDATE mini_games SET game_data = ? WHERE id = ?', [JSON.stringify(gameData), gameId]);
+        return { hitMine: false, multiplier: gameData.multiplier, tilesRevealed: gameData.revealed.length };
+    });
+}
+
+async function cashoutMinesGame(gameId, userId) {
+    return await transaction(async () => {
+        const game = await get('SELECT * FROM mini_games WHERE id = ? AND user_id = ?', [gameId, userId]);
+        if (!game) throw new Error('Game not found');
+        if (game.status !== 'ACTIVE') throw new Error('Game already completed');
+
+        const gameData = JSON.parse(game.game_data);
+        const multiplier = gameData.multiplier || 1.0;
+        const payout = game.bet_amount * multiplier;
+
+        let payoutDetail = {};
+        if (game.bet_currency === 'TON') {
+            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+            payoutDetail = { currency: 'TON', amount: payout, multiplier };
+        } else {
+            payoutDetail = { currency: 'GIFT', collectibleReturned: true, multiplier };
+            // For GIFT bets, the collectible is returned (player chose to cash out before hitting a mine)
+            await run('UPDATE user_gifts SET status = \'OWNED\', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND status = \'IN_BET\'', [userId]);
+        }
+
+        await run('UPDATE mini_games SET status = \'COMPLETED\', result_multiplier = ?, payout = ?, result_detail = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ? AND status = \'ACTIVE\'',
+            [multiplier, payout, JSON.stringify(payoutDetail), gameId]);
+        return { gameId, paidOut: true, payout, multiplier, currency: game.bet_currency };
+    });
+}
+
+async function createPlinkoGame(userId, betAmount, betCurrency, betGiftId) {
+    return await transaction(async () => {
+        const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
+        if (!user) throw new Error('User not found');
+
+        if (betCurrency === 'TON') {
+            if (betAmount < 0.1) throw new Error('Invalid bet amount');
+            const balance = await getUserBalance(userId);
+            if (balance < betAmount) throw new Error('Insufficient balance');
+            const update = await run(
+                'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'GIFT') {
+            if (!betGiftId) throw new Error('giftId required');
+            const gift = await get(`
+                SELECT ug.*, g.value AS gift_value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id
+                WHERE ug.user_id = ? AND (ug.unique_collectible_id = ? OR ug.id = ? OR g.telegram_gift_id = ?)
+                AND ug.status = 'OWNED' AND ug.ownership_verified = 1
+                ORDER BY ug.id DESC LIMIT 1
+            `, [userId, betGiftId, betGiftId, betGiftId]);
+            if (!gift) throw new Error('Gift not owned or not available');
+            if (!Number.isFinite(gift.gift_value) || gift.gift_value <= 0) throw new Error('No valid market valuation');
+            await run('UPDATE user_gifts SET status = \'IN_BET\' WHERE id = ? AND status = \'OWNED\'', [gift.id]);
+            betAmount = gift.gift_value;
+        } else {
+            throw new Error('Invalid bet currency');
+        }
+
+        const serverSeed = generateGameServerSeed();
+        const serverSeedHash = hashGameServerSeed(serverSeed);
+        const clientSeed = crypto.randomBytes(8).toString('hex');
+
+        // 12 slots at the bottom, each with a multiplier
+        const slots = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 2.0, 1.0, 0.5, 0.2, 0.1];
+        const gameData = JSON.stringify({ serverSeed, serverSeedHash, clientSeed, slots, nonce: 0 });
+
+        const result = await run(`
+            INSERT INTO mini_games (user_id, game_type, bet_amount, bet_currency, game_data, server_seed, server_seed_hash, status)
+            VALUES (?, 'PLINKO', ?, ?, ?, ?, ?, 'ACTIVE')
+        `, [userId, betAmount, betCurrency, gameData, serverSeed, serverSeedHash]);
+
+        // Pre-compute result using HMAC — server only
+        const uniform = deriveGameUniform(serverSeed, clientSeed, 0);
+        const slotIndex = Math.floor(uniform * slots.length);
+        return { gameId: result.lastID, serverSeedHash, clientSeed, slotMultiplier: slots[slotIndex] };
+    });
+}
+
+async function dropPlinkoChip(gameId, userId) {
+    return await transaction(async () => {
+        const game = await get('SELECT * FROM mini_games WHERE id = ? AND user_id = ?', [gameId, userId]);
+        if (!game) throw new Error('Game not found');
+        if (game.status !== 'ACTIVE') throw new Error('Game already completed');
+
+        const gameData = JSON.parse(game.game_data);
+        const uniform = deriveGameUniform(game.server_seed, gameData.clientSeed, gameData.nonce);
+        const slotIndex = Math.floor(uniform * gameData.slots.length);
+        const multiplier = gameData.slots[slotIndex];
+        const payout = game.bet_amount * multiplier;
+
+        let payoutDetail = {};
+        if (game.bet_currency === 'TON') {
+            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+            payoutDetail = { currency: 'TON', amount: payout, multiplier, slotIndex };
+        } else {
+            if (multiplier >= 1.0) {
+                payoutDetail = { currency: 'GIFT', collectibleWon: true, multiplier, slotIndex };
+            } else {
+                payoutDetail = { currency: 'GIFT', collectibleLost: true, multiplier, slotIndex };
+                await run('UPDATE user_gifts SET status = \'LOST\', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND status = \'IN_BET\'', [userId]);
+            }
+        }
+
+        await run('UPDATE mini_games SET status = \'COMPLETED\', result_multiplier = ?, payout = ?, result_detail = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ? AND status = \'ACTIVE\'',
+            [multiplier, payout, JSON.stringify(payoutDetail), gameId]);
+        return { gameId, paidOut: multiplier >= 1.0, payout, multiplier, slotIndex };
+    });
+}
+
+async function createDiceGame(userId, betAmount, betCurrency, betGiftId, target) {
+    return await transaction(async () => {
+        const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
+        if (!user) throw new Error('User not found');
+
+        if (betCurrency === 'TON') {
+            if (betAmount < 0.1) throw new Error('Invalid bet amount');
+            const balance = await getUserBalance(userId);
+            if (balance < betAmount) throw new Error('Insufficient balance');
+            const update = await run(
+                'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+                [betAmount, userId, betAmount]
+            );
+            if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'GIFT') {
+            if (!betGiftId) throw new Error('giftId required');
+            const gift = await get(`
+                SELECT ug.*, g.value AS gift_value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id
+                WHERE ug.user_id = ? AND (ug.unique_collectible_id = ? OR ug.id = ? OR g.telegram_gift_id = ?)
+                AND ug.status = 'OWNED' AND ug.ownership_verified = 1
+                ORDER BY ug.id DESC LIMIT 1
+            `, [userId, betGiftId, betGiftId, betGiftId]);
+            if (!gift) throw new Error('Gift not owned or not available');
+            if (!Number.isFinite(gift.gift_value) || gift.gift_value <= 0) throw new Error('No valid market valuation');
+            await run('UPDATE user_gifts SET status = \'IN_BET\' WHERE id = ? AND status = \'OWNED\'', [gift.id]);
+            betAmount = gift.gift_value;
+        } else {
+            throw new Error('Invalid bet currency');
+        }
+
+        if (!Number.isInteger(target) || target < 1 || target > 99) {
+            throw new Error('Target must be an integer between 1 and 99');
+        }
+
+        const serverSeed = generateGameServerSeed();
+        const serverSeedHash = hashGameServerSeed(serverSeed);
+        const clientSeed = crypto.randomBytes(8).toString('hex');
+        const nonce = 0;
+
+        // Server-authoritative roll using HMAC
+        const uniform = deriveGameUniform(serverSeed, clientSeed, nonce);
+        const roll = Math.floor(uniform * 100) + 1;
+
+        // House edge 5%: win chance = target/100 * 0.95
+        const winChance = (target / 100) * 0.95;
+        const won = roll <= target;
+
+        // Payout = bet / winChance when won
+        const payout = won ? betAmount / winChance : 0;
+
+        let payoutDetail = {};
+        if (won) {
+            if (betCurrency === 'TON') {
+                await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
+                payoutDetail = { currency: 'TON', amount: payout, roll, target };
+            } else {
+                payoutDetail = { currency: 'GIFT', collectibleWon: true, roll, target };
+            }
+        } else {
+            if (betCurrency === 'GIFT') {
+                await run('UPDATE user_gifts SET status = \'LOST\', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND status = \'IN_BET\'', [userId]);
+            }
+            payoutDetail = { currency: betCurrency, collectibleLost: betCurrency === 'GIFT', roll, target };
+        }
+
+        const result = await run(`
+            INSERT INTO mini_games (user_id, game_type, bet_amount, bet_currency, game_data, server_seed, server_seed_hash, result_multiplier, payout, result_detail, status, completed_at)
+            VALUES (?, 'DICE', ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP)
+        `, [userId, betAmount, betCurrency, JSON.stringify({ clientSeed, target }), serverSeed, serverSeedHash, roll, payout, JSON.stringify(payoutDetail)]);
+
+        return { gameId: result.lastID, serverSeedHash, clientSeed, roll, won, payout, target };
+    });
+}
+
+async function getMiniGame(gameId, userId) {
+    const game = await get('SELECT * FROM mini_games WHERE id = ? AND user_id = ?', [gameId, userId]);
+    if (!game) return null;
+    const result = {
+        gameId: game.id,
+        gameType: game.game_type,
+        betAmount: game.bet_amount,
+        betCurrency: game.bet_currency,
+        status: game.status,
+        resultMultiplier: game.result_multiplier,
+        payout: game.payout
+    };
+    if (game.status === 'ACTIVE' && game.game_type === 'MINES') {
+        try {
+            const gameData = JSON.parse(game.game_data);
+            result.tilesRevealed = gameData.revealed ? gameData.revealed.length : 0;
+        } catch { /* ignore parse errors */ }
+    }
+    return result;
+}
+
 module.exports = {
     // اتصال قاعدة البيانات
     db,
@@ -1444,6 +2124,7 @@ module.exports = {
     reserveCollectibleForBet,
     releaseCollectible,
     markCollectibleSold,
+    updateCollectibleMarketValue,
     createOrGetImportIntent,
     getLatestImportIntentForUser,
     getPendingIntentByTelegramSenderId,
@@ -1466,6 +2147,17 @@ module.exports = {
     // الصناديق
     openLootbox,
     
+    // المخزون والسحب
+    selectRewardFromInventory,
+    consumeInventoryReward,
+    getInventoryCollectibles,
+    addCollectibleToInventory,
+    reserveCollectibleForWithdrawal,
+    confirmGiftWithdrawal,
+    rollbackGiftWithdrawal,
+    getGiftTransactions,
+    getPendingPayouts,
+    
     // الإيداعات
     createDeposit,
     saveDepositBoc,
@@ -1477,5 +2169,17 @@ module.exports = {
     
     // الإشعارات
     createNotification,
-    getNotifications
+    getNotifications,
+
+    // ألعاب الواجهة الخلفية (Mines, Plinko, Dice)
+    generateGameServerSeed,
+    hashGameServerSeed,
+    deriveGameUniform,
+    createMinesGame,
+    revealMinesTile,
+    cashoutMinesGame,
+    createPlinkoGame,
+    dropPlinkoChip,
+    createDiceGame,
+    getMiniGame
 };

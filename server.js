@@ -13,8 +13,10 @@ require('dotenv').config();
 const {
     DEFAULT_CLIENT_SEED,
     createFairRound,
-    shouldAutoCashout
+    shouldAutoCashout,
+    MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
+const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
 
 // =========================================================
 // استيراد قاعدة البيانات
@@ -40,13 +42,13 @@ const {
     getPendingIntentByTelegramSenderId,
     isCollectibleAlreadyCredited,
     creditVerifiedCollectible,
+    updateCollectibleMarketValue,
     savePersistedBusinessConnection,
     getPersistedBusinessConnection,
     hasProcessedWebhookUpdate,
     markWebhookUpdateProcessed,
     getCollectibleByUniqueId,
     placeGiftBet,
-    cashoutGiftBet,
     placeTonBet,
     cashoutTonBet,
     openLootbox,
@@ -63,7 +65,21 @@ const {
     getActiveBetsForRound,
     getRoundPlayers,
     cashoutBet,
-    crashRound
+    crashRound,
+    selectRewardFromInventory,
+    getInventoryCollectibles,
+    reserveCollectibleForWithdrawal,
+    confirmGiftWithdrawal,
+    rollbackGiftWithdrawal,
+    getGiftTransactions,
+    getPendingPayouts,
+    createMinesGame,
+    revealMinesTile,
+    cashoutMinesGame,
+    createPlinkoGame,
+    dropPlinkoChip,
+    createDiceGame,
+    getMiniGame
 } = require('./database');
 
 const app = express();
@@ -86,10 +102,10 @@ const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
 // Phase 3B: server-only config for the managed Telegram business account that receives collectibles.
 // Never exposed to the frontend. Real verification only runs once this is configured on the Telegram side.
 const TELEGRAM_BUSINESS_CONNECTION_ID = process.env.TELEGRAM_BUSINESS_CONNECTION_ID || '';
-const ADMIN_TELEGRAM_ID = '7385640899';
 // Optional but recommended: Telegram's official secret_token mechanism for webhook authenticity.
 // Never logged. When unset, the webhook still works but cannot verify the caller is really Telegram.
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
+const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || null;
 
 // In-memory only (does not survive a restart): populated by /telegram-webhook once a real
 // business_connection update arrives. No database migration performed for this yet.
@@ -97,9 +113,15 @@ let runtimeBusinessConnection = {
     id: null,
     businessUserId: null,
     canViewGiftsAndStars: false,
+    canTransferAndUpgradeGifts: false,
     isEnabled: false,
     updatedAt: null
 };
+
+// Webhook sweep protection: prevent overlapping/expansive collectible sweeps.
+let collectibleSweepInProgress = false;
+let lastCollectibleSweepTime = 0;
+const COLLECTIBLE_SWEEP_COOLDOWN_MS = 2 * 60 * 1000; // 2-minute minimum between sweeps
 
 function requestJson(urlString) {
     return new Promise((resolve, reject) => {
@@ -340,6 +362,13 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     // /api/collectible-media proxy, never sent to the frontend directly.
     const stickerFileId = uniqueGift.model?.sticker?.file_id || uniqueGift.model?.sticker?.thumbnail?.file_id || null;
 
+    const collectibleForPricing = {
+        name: uniqueGift.base_name || uniqueGift.name,
+        model_name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name
+    };
+    const marketValue = getCollectibleMarketValue(collectibleForPricing);
+    const giftValue = marketValue ? marketValue.floorPriceTon : 0;
+
     return {
         uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
         telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
@@ -349,10 +378,10 @@ function extractUniqueCollectibleIdentity(ownedGift) {
             telegramGiftId: uniqueGift.base_name || uniqueGift.name,
             name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name,
             slug: `${uniqueGift.name}-${uniqueGift.number}`,
-            imageUrl: null, // real media is resolved server-side through the media proxy only
+            imageUrl: null,
             collection: uniqueGift.backdrop?.name || null,
             rarity: 'common',
-            value: 0,
+            value: giftValue,
             totalSupply: 0
         },
         verifiedMetadata: JSON.stringify({
@@ -372,7 +401,6 @@ function extractUniqueCollectibleIdentity(ownedGift) {
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
     const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
     if (!connectionId) {
-        // Safe diagnostic: never logs the connection id itself, only whether one exists at all.
         console.warn('🔍 Collectible sweep skipped: no business connection available', JSON.stringify({
             envConfigured: !!TELEGRAM_BUSINESS_CONNECTION_ID,
             runtimeDiscovered: !!runtimeBusinessConnection.id,
@@ -380,6 +408,12 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             isEnabled: runtimeBusinessConnection.isEnabled
         }));
         return { configured: false, credited: 0, unmatched: 0 };
+    }
+
+    try {
+        await refreshMarketPrices();
+    } catch (priceError) {
+        console.error('🔍 Collectible sweep: market price refresh failed:', priceError.message);
     }
 
     let ownedGifts;
@@ -550,7 +584,25 @@ app.post('/telegram-webhook', async (req, res) => {
                     console.error('🔎 Webhook diagnostic: business connection recovery failed', JSON.stringify({ updateId, reason: recoveryError.message }));
                 }
             } else {
-                console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+                if (['business_message', 'edited_business_message', 'deleted_business_messages'].includes(updateType)) {
+                    if (collectibleSweepInProgress) {
+                        console.log(`ℹ️ Telegram webhook: business update received but sweep already in progress — skipping`);
+                    } else {
+                        const now = Date.now();
+                        if (now - lastCollectibleSweepTime < COLLECTIBLE_SWEEP_COOLDOWN_MS) {
+                            console.log(`ℹ️ Telegram webhook: business update received but sweep on cooldown — skipping`);
+                        } else {
+                            collectibleSweepInProgress = true;
+                            lastCollectibleSweepTime = now;
+                            console.log(`ℹ️ Telegram webhook: business-scoped update received, triggering collectible sweep`);
+                            runCollectibleVerificationSweep().catch(err =>
+                                console.error('Sweep triggered from webhook failed:', err.message)
+                            ).finally(() => { collectibleSweepInProgress = false; });
+                        }
+                    }
+                } else {
+                    console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+                }
             }
             await markWebhookUpdateProcessed(update.update_id);
             res.status(200).json({ ok: true });
@@ -558,10 +610,12 @@ app.post('/telegram-webhook', async (req, res) => {
         }
 
         const canViewGiftsAndStars = !!connection.rights?.can_view_gifts_and_stars;
+        const canTransferAndUpgradeGifts = !!connection.rights?.can_transfer_and_upgrade_gifts;
         runtimeBusinessConnection = {
             id: connection.id || null,
             businessUserId: connection.user?.id || null,
             canViewGiftsAndStars,
+            canTransferAndUpgradeGifts,
             isEnabled: !!connection.is_enabled,
             updatedAt: new Date().toISOString()
         };
@@ -573,6 +627,7 @@ app.post('/telegram-webhook', async (req, res) => {
                 connectionId: runtimeBusinessConnection.id,
                 businessUserId: runtimeBusinessConnection.businessUserId,
                 canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+                canTransferAndUpgradeGifts: runtimeBusinessConnection.canTransferAndUpgradeGifts,
                 isEnabled: runtimeBusinessConnection.isEnabled
             });
             console.log('🔎 Webhook diagnostic: savePersistedBusinessConnection succeeded', JSON.stringify({ updateId }));
@@ -587,6 +642,7 @@ app.post('/telegram-webhook', async (req, res) => {
             updateType: 'business_connection',
             hasConnectionId: !!runtimeBusinessConnection.id,
             canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+            canTransferAndUpgradeGifts: runtimeBusinessConnection.canTransferAndUpgradeGifts,
             isEnabled: runtimeBusinessConnection.isEnabled
         }));
 
@@ -985,7 +1041,45 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.3.1.1 وسيط وسائط المقتنى الحقيقي (Phase 3B) — لا يقبل أي file_id من العميل إطلاقًا =====
+// Alias for frontend compatibility — identical to GET /api/collectibles, authenticated and user-isolated.
+app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
+    try {
+        try {
+            await runCollectibleVerificationSweep();
+        } catch (sweepErr) {
+            console.error('Sweep error on GET /api/collectibles/portfolio:', sweepErr.message);
+        }
+
+        const rows = await getUserCollectibles(req.user.id);
+        const collectibles = rows
+            .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
+            .map(row => {
+                let hasStickerMedia = false;
+                try {
+                    const metadata = row.verified_metadata ? JSON.parse(row.verified_metadata) : null;
+                    hasStickerMedia = !!(metadata && metadata.stickerFileId);
+                } catch { /* malformed metadata simply means no media available */ }
+
+                return {
+                    id: row.unique_collectible_id,
+                    userGiftId: row.user_gift_id,
+                    name: row.name,
+                    imageUrl: hasStickerMedia
+                        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+                        : null,
+                    collectibleNumber: row.collectible_number,
+                    rarity: row.rarity,
+                    value: row.value,
+                    status: row.ownership_status,
+                    verifiedMetadata: row.verified_metadata,
+                    receivedAt: row.received_at
+                };
+            });
+        res.json({ ok: true, collectibles });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
 // المُدخل الوحيد المقبول هو unique_collectible_id (نفس المعرّف العلني المستخدم في الرهان)،
 // ويُتحقق أنه ينتمي فعلًا لقطعة verified في قاعدتنا قبل أي اتصال بـ Telegram. لا يُكشف BOT_TOKEN أبداً.
 app.get('/api/collectible-media/:uniqueCollectibleId', async (req, res) => {
@@ -1062,9 +1156,9 @@ app.get('/api/collectibles/verification-status', authenticate, async (req, res) 
 
 // ===== 5.3.4 حالة اتصال Business (محمي/إداري فقط) — لا يكشف قيمة business_connection_id أبداً =====
 app.get('/api/admin/business-connection-status', authenticate, async (req, res) => {
-    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
-        res.status(403).json({ ok: false, error: 'Forbidden' });
-        return;
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+         res.status(403).json({ ok: false, error: 'Forbidden' });
+         return;
     }
     res.json({
         ok: true,
@@ -1072,6 +1166,7 @@ app.get('/api/admin/business-connection-status', authenticate, async (req, res) 
         runtimeDiscovered: !!runtimeBusinessConnection.id,
         businessUserId: runtimeBusinessConnection.businessUserId,
         canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+        canTransferAndUpgradeGifts: runtimeBusinessConnection.canTransferAndUpgradeGifts,
         isEnabled: runtimeBusinessConnection.isEnabled,
         updatedAt: runtimeBusinessConnection.updatedAt
     });
@@ -1080,9 +1175,9 @@ app.get('/api/admin/business-connection-status', authenticate, async (req, res) 
 // ===== 5.3.4.1 إعادة جلب صلاحيات الاتصال من Telegram (محمي/إداري) — لا يكشف أي معرّف =====
 // يُستخدم عند تغيير الصلاحيات (مثل تفعيل View Gifts and Stars) دون الحاجة لفصل/إعادة ربط البوت.
 app.post('/api/admin/refresh-business-connection', authenticate, async (req, res) => {
-    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
-        res.status(403).json({ ok: false, error: 'Forbidden' });
-        return;
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+         res.status(403).json({ ok: false, error: 'Forbidden' });
+         return;
     }
     try {
         const persisted = await getPersistedBusinessConnection();
@@ -1114,9 +1209,9 @@ const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegr
 const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
 
 app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
-    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
-        res.status(403).json({ ok: false, error: 'Forbidden' });
-        return;
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+         res.status(403).json({ ok: false, error: 'Forbidden' });
+         return;
     }
     try {
         const payload = { url: TELEGRAM_WEBHOOK_URL, allowed_updates: TELEGRAM_ALLOWED_UPDATES };
@@ -1136,9 +1231,9 @@ app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => 
 });
 
 app.get('/api/admin/telegram-webhook-status', authenticate, async (req, res) => {
-    if (req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
-        res.status(403).json({ ok: false, error: 'Forbidden' });
-        return;
+    if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
+         res.status(403).json({ ok: false, error: 'Forbidden' });
+         return;
     }
     try {
         const info = await callTelegramBotApi('getWebhookInfo', {});
@@ -1217,11 +1312,68 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
         const balance = await getUserBalance(req.user.id);
         await refreshRoundPlayers();
         
+        if (result.collectibleReturned) {
+            await createNotification(
+                req.user.id,
+                'BET_WON',
+                'Collectible returned at low multiplier',
+                { betId, multiplier: result.multiplier, collectibleId: result.originalCollectibleId }
+            );
+            return res.json({ 
+                ok: true,
+                payout: result.payout,
+                multiplier: result.multiplier,
+                giftValue: result.giftValue,
+                collectibleReturned: true,
+                collectibleId: result.originalCollectibleId,
+                message: result.message,
+                balance: balance
+            });
+        }
+
+        if (result.rewardGranted) {
+            await createNotification(
+                req.user.id,
+                'BET_WON',
+                'Collectible prize granted!',
+                { betId, multiplier: result.multiplier, rewardId: result.rewardCollectibleId }
+            );
+            return res.json({ 
+                ok: true,
+                payout: result.payout,
+                multiplier: result.multiplier,
+                giftValue: result.giftValue,
+                rewardGranted: true,
+                rewardCollectibleId: result.rewardCollectibleId,
+                message: result.message,
+                balance: balance
+            });
+        }
+
+        if (result.payoutPending) {
+            await createNotification(
+                req.user.id,
+                'BET_WON',
+                'Prize pending - admin review needed',
+                { betId, multiplier: result.multiplier, collectibleId: result.originalCollectibleId }
+            );
+            return res.json({ 
+                ok: true,
+                payout: result.payout,
+                multiplier: result.multiplier,
+                giftValue: result.giftValue,
+                payoutPending: true,
+                collectibleId: result.originalCollectibleId,
+                message: result.message,
+                balance: balance
+            });
+        }
+
         // إنشاء إشعار
         await createNotification(
             req.user.id,
             'BET_WON',
-            `🎉 You cashed out! ${result.payout.toFixed(2)} TON from gift`,
+            `You cashed out at ${result.multiplier.toFixed(2)}x`,
             { betId, payout: result.payout, multiplier: result.multiplier }
         );
         
@@ -1237,7 +1389,262 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.7 الرهان بـ TON =====
+// ===== 5.6.1 قيمة السوق =====
+app.get('/api/collectibles/market-value', authenticate, async (req, res) => {
+    try {
+        const { collectibleId } = req.query;
+        if (!collectibleId) {
+            return res.status(400).json({ ok: false, error: 'collectibleId required' });
+        }
+        const collectible = await getCollectibleByUniqueId(collectibleId);
+        if (!collectible) {
+            return res.status(404).json({ ok: false, error: 'Collectible not found' });
+        }
+        const gift = await get('SELECT * FROM gifts WHERE id = ?', [collectible.gift_id]);
+        const marketValue = getCollectibleMarketValue({
+            name: gift ? gift.name : null,
+            base_name: gift ? gift.telegram_gift_id : null,
+            model_name: gift ? gift.name : null
+        });
+        if (!marketValue) {
+            return res.json({ ok: true, available: false, reason: 'No market data available' });
+        }
+        res.json({ ok: true, available: true, marketValue });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.6.2 مخزون المتجر =====
+app.get('/api/inventory', authenticate, async (req, res) => {
+    try {
+        const invent = await getInventoryCollectibles('AVAILABLE');
+        res.json({ ok: true, items: invent.map(item => ({
+            uniqueCollectibleId: item.unique_collectible_id,
+            marketValue: item.market_value,
+            modelName: item.model_name,
+            collectionName: item.collection_name,
+            rarity: item.rarity,
+            ownershipStatus: item.ownership_status
+        })) });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.6.3 سحب هدية =====
+app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
+    try {
+        const { collectibleId } = req.body;
+        if (!collectibleId) {
+            return res.status(400).json({ ok: false, error: 'collectibleId required' });
+        }
+
+        const collectible = await getCollectibleByUniqueId(collectibleId);
+        if (!collectible || collectible.user_id !== req.user.id) {
+            return res.status(404).json({ ok: false, error: 'Collectible not found or not owned' });
+        }
+        if (!collectible.unique_collectible_id) {
+            return res.status(400).json({ ok: false, error: 'Not a unique collectible' });
+        }
+
+        const businessConnected = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
+        if (!runtimeBusinessConnection.canViewGiftsAndStars) {
+            await createNotification(
+                req.user.id,
+                'GIFT_LOST',
+                'Withdrawal unavailable: Telegram Business Connection missing permissions',
+                { reason: 'can_view_gifts_and_stars not enabled' }
+            );
+            return res.status(403).json({
+                ok: false,
+                error: 'Withdrawal requires the bot to have can_view_gifts_and_stars permission. Contact admin to enable Telegram Business Connection permissions.',
+                reason: 'missing_can_view_gifts_and_stars'
+            });
+        }
+        if (!runtimeBusinessConnection.canTransferAndUpgradeGifts) {
+            return res.status(403).json({
+                ok: false,
+                error: 'Withdrawal requires can_transfer_and_upgrade_gifts permission on the Telegram Business Connection.',
+                reason: 'missing_can_transfer_and_upgrade_gifts'
+            });
+        }
+
+        const userTelegramId = req.user.telegram_id;
+        try {
+            const reserved = await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
+            
+            try {
+                const transferResult = await callTelegramBotApi('transferGift', {
+                    business_connection_id: businessConnected,
+                    owned_gift_id: collectible.telegram_gift_instance_id,
+                    to_user_id: Number(userTelegramId)
+                });
+
+                await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-transfer-complete');
+                await createNotification(
+                    req.user.id,
+                    'GIFT_WON',
+                    'Gift withdrawn to your Telegram account!',
+                    { collectibleId, transferResult }
+                );
+                res.json({ ok: true, status: 'SENT', collectibleId });
+            } catch (transferError) {
+                await rollbackGiftWithdrawal(req.user.id, collectibleId, transferError.message);
+                await createNotification(
+                    req.user.id,
+                    'GIFT_LOST',
+                    'Gift withdrawal failed - collectible returned to backpack',
+                    { collectibleId, error: transferError.message }
+                );
+                res.status(502).json({
+                    ok: false,
+                    error: 'Telegram gift transfer failed',
+                    reason: 'transfer_failed',
+                    detail: transferError.message,
+                    collectibleReturned: true
+                });
+            }
+        } catch (reserveError) {
+            res.status(400).json({ ok: false, error: reserveError.message });
+        }
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.6.4 معاملات الهدايا =====
+app.get('/api/collectibles/transactions', authenticate, async (req, res) => {
+    try {
+        const transactions = await getGiftTransactions(req.user.id);
+        res.json({ ok: true, transactions });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.6.5 المعاملات المعلقة =====
+app.get('/api/collectibles/pending-payouts', authenticate, async (req, res) => {
+    try {
+        const pending = await getPendingPayouts(req.user.id);
+        res.json({ ok: true, pending });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+    });
+
+// ===== 5.6.6 MINI GAMES API =====
+
+// --- MINES ---
+app.post('/api/mines/bet', authenticate, async (req, res) => {
+    try {
+        const { amount, currency, giftId } = req.body;
+        const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+
+        const result = await createMinesGame(req.user.id, betAmount, betCurrency, giftId);
+        res.json({
+            ok: true,
+            gameId: result.gameId,
+            serverSeedHash: result.serverSeedHash,
+            clientSeed: result.clientSeed,
+            betAmount: result.betAmount || betAmount,
+            currency: betCurrency
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/mines/reveal', authenticate, async (req, res) => {
+    try {
+        const { gameId, tileIndex } = req.body;
+        if (typeof tileIndex !== 'number' || tileIndex < 0 || tileIndex > 24) {
+            return res.status(400).json({ ok: false, error: 'Invalid tile index' });
+        }
+        const result = await revealMinesTile(gameId, req.user.id, tileIndex);
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/mines/cashout', authenticate, async (req, res) => {
+    try {
+        const { gameId } = req.body;
+        const result = await cashoutMinesGame(gameId, req.user.id);
+        await createNotification(req.user.id, 'BET_WON', `Mines cashout: ${result.payout.toFixed(2)} TON`, { gameId, payout: result.payout });
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.get('/api/mines/state/:gameId', authenticate, async (req, res) => {
+    try {
+        const result = await getMiniGame(req.params.gameId, req.user.id);
+        if (!result) return res.status(404).json({ ok: false, error: 'Game not found' });
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// --- PLINKO ---
+app.post('/api/plinko/bet', authenticate, async (req, res) => {
+    try {
+        const { amount, currency, giftId } = req.body;
+        const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+
+        const result = await createPlinkoGame(req.user.id, betAmount, betCurrency, giftId);
+        res.json({
+            ok: true,
+            gameId: result.gameId,
+            serverSeedHash: result.serverSeedHash,
+            clientSeed: result.clientSeed
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/plinko/drop', authenticate, async (req, res) => {
+    try {
+        const { gameId } = req.body;
+        const result = await dropPlinkoChip(gameId, req.user.id);
+        await createNotification(req.user.id, 'BET_WON', `Plinko result: ${result.multiplier}x`, { gameId, multiplier: result.multiplier });
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// --- DICE ---
+app.post('/api/dice/bet', authenticate, async (req, res) => {
+    try {
+        const { amount, currency, giftId, target } = req.body;
+        const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+        const betCurrency = currency === 'GIFT' ? 'GIFT' : 'TON';
+        const targetNum = Number(target);
+
+        const result = await createDiceGame(req.user.id, betAmount, betCurrency, giftId, targetNum);
+        res.json({
+            ok: true,
+            gameId: result.gameId,
+            serverSeedHash: result.serverSeedHash,
+            clientSeed: result.clientSeed,
+            roll: result.roll,
+            won: result.won,
+            payout: result.payout,
+            target: result.target
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// --- 5.7 الرهان بـ TON ---
 app.post('/api/bet/ton', authenticate, async (req, res) => {
     try {
         const { amount, autoCashoutTarget } = req.body;
@@ -1563,10 +1970,13 @@ module.exports = {
     crashCurrentRound,
     getGameStateSnapshot,
     updateGameState,
+    MAX_CRASH_MULTIPLIER,
     // Exported for tests only — real request handling never uses these directly.
     extractUniqueCollectibleIdentity,
     extractBusinessConnectionIdFromUpdate,
     runCollectibleVerificationSweep,
     startCollectibleReconciliationWorker,
-    stopCollectibleReconciliationWorker
+    stopCollectibleReconciliationWorker,
+    resolveTelegramFilePath,
+    streamTelegramFile
 };
