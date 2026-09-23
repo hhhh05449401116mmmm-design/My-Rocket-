@@ -303,109 +303,167 @@
              white-space: nowrap;
          }
 
-         /* Rocket Banner */
-         .rocket-banner {
-             background: linear-gradient(135deg, #0f2847 0%, #1a3a6c 100%);
-             border-radius: 28px;
-             margin-bottom: 0;
-             cursor: pointer;
-             position: relative;
-             overflow: hidden;
-             border: 2px solid rgba(100, 200, 255, 0.3);
-             box-shadow: 0 12px 40px rgba(50, 150, 255, 0.25);
-             transition: all 0.3s ease;
-         }
-         .rocket-banner:hover {
-             border-color: rgba(50, 200, 255, 0.5);
-             box-shadow: 0 16px 50px rgba(50, 150, 255, 0.4);
-             transform: translateY(-2px);
-         }
-         .rocket-banner-content {
-             padding: 24px 20px 20px;
-             display: flex;
-             flex-direction: column;
-             align-items: center;
-             text-align: center;
-             position: relative;
-             z-index: 2;
-         }
-         .rocket-banner-badge {
-             background: linear-gradient(135deg, #ff6b6b, #ff4757);
-             color: #fff;
-             font-size: 11px;
-             font-weight: 800;
-             padding: 4px 14px;
-             border-radius: 20px;
-             margin-bottom: 8px;
-             border: 1px solid rgba(255, 255, 255, 0.2);
-         }
-         .rocket-banner-icon {
-             font-size: 60px;
-             margin-bottom: 8px;
-         }
-         .rocket-banner-title {
-             font-size: 32px;
-             font-weight: 900;
-             color: #e8f4ff;
-             letter-spacing: 1px;
-             text-shadow: 0 0 20px rgba(50, 150, 255, 0.5);
-         }
-         .rocket-banner-desc {
-             font-size: 13px;
-             color: #7a9bcb;
-             margin: 4px 0;
+          /* Rocket Banner */
+          .rocket-banner {
+              width: 100%;
+              aspect-ratio: 1228 / 314;
+              background: linear-gradient(135deg, #0f2847 0%, #1a3a6c 100%);
+              border-radius: 28px;
+              margin-bottom: 0;
+              cursor: pointer;
+              position: relative;
+              overflow: hidden;
+              border: 2px solid rgba(100, 200, 255, 0.3);
+              box-shadow: 0 12px 40px rgba(50, 150, 255, 0.25);
+              transition: all 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0;
+              box-sizing: border-box;
+          }
+          .rocket-banner:hover {
+              border-color: rgba(50, 200, 255, 0.5);
+              box-shadow: 0 16px 50px rgba(50, 150, 255, 0.4);
+              transform: translateY(-2px);
+          }
+          .rocket-banner-bg {
+              position: absolute;
+              inset: 0;
+              background: radial-gradient(circle at 30% 70%, rgba(100, 200, 255, 0.15), transparent 70%);
+          }
+          .rocket-banner-rocket {
+              position: absolute;
+              left: 8%;
+              bottom: 20%;
+              width: 48px;
+              height: 64px;
+              z-index: 1;
+          }
+          .rocket-banner-rocket::before {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 0;
+              transform: translateX(-50%);
+              width: 10px;
+              height: 32px;
+              background: linear-gradient(180deg, #4fc3f7, #0288d1);
+              border-radius: 5px 5px 0 0;
+              box-shadow: 0 0 15px rgba(100, 200, 255, 0.6);
+          }
+          .rocket-banner-rocket::after {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 28px;
+              transform: translateX(-50%);
+              width: 24px;
+              height: 24px;
+              border-left: 2px solid #4fc3f7;
+              border-right: 2px solid #4fc3f7;
+              border-bottom: 2px solid #4fc3f7;
+              border-radius: 50% 50% 0 0;
+              transform: translateX(-50%) rotate(45deg);
+          }
+          .rocket-banner-content {
+              position: relative;
+              z-index: 2;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              padding: 12px;
+          }
+          .rocket-banner-title {
+              font-size: 32px;
+              font-weight: 900;
+              color: #e8f4ff;
+              letter-spacing: 1px;
+              text-shadow: 0 0 20px rgba(50, 150, 255, 0.5);
+              margin: 0;
+          }
+          .rocket-banner-desc {
+              font-size: 13px;
+              color: #7a9bcb;
+              margin: 4px 0;
           }
 
           /* PvP Banner */
-         .pvp-banner {
-             background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
-             border-radius: 28px;
-             padding: 20px 20px 16px;
-             margin-bottom: 0;
-             cursor: pointer;
-             border: 2px solid rgba(255, 215, 0, 0.5);
-             box-shadow: 0 12px 40px rgba(128, 0, 255, 0.3);
-             transition: all 0.3s ease;
-             position: relative;
-             overflow: hidden;
-         }
-         .pvp-banner:hover {
-             border-color: rgba(255, 215, 0, 0.7);
-             box-shadow: 0 16px 50px rgba(128, 0, 255, 0.5);
-             transform: translateY(-2px);
-         }
-         .pvp-banner-content {
-             display: flex;
-             flex-direction: column;
-             align-items: center;
-             text-align: center;
-             position: relative;
-             z-index: 2;
-         }
-         .pvp-banner-icon {
-             font-size: 46px;
-             margin-bottom: 8px;
-         }
-         .pvp-banner-title {
-             font-size: 30px;
-             font-weight: 900;
-             color: #ffd700;
-             letter-spacing: 2px;
-             text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-         }
-         .pvp-banner-desc {
-             font-size: 13px;
-             color: #ce93d8;
-             margin: 4px 0;
-         }
-         .pvp-banner-players {
-             display: flex;
-             gap: 4px;
-             margin-top: 4px;
-         }
-         .pvp-player {
-             font-size: 18px;
-         }
+          .pvp-banner {
+              width: 100%;
+              aspect-ratio: 1228 / 314;
+              background: linear-gradient(135deg, #b79000 0%, #ffd700 100%);
+              border-radius: 28px;
+              margin-bottom: 0;
+              cursor: pointer;
+              position: relative;
+              overflow: hidden;
+              border: 2px solid rgba(255, 215, 0, 0.5);
+              box-shadow: 0 12px 40px rgba(255, 215, 0, 0.3);
+              transition: all 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0;
+              box-sizing: border-box;
+          }
+          .pvp-banner:hover {
+              border-color: rgba(255, 215, 0, 0.7);
+              box-shadow: 0 16px 50px rgba(255, 215, 0, 0.4);
+              transform: translateY(-2px);
+          }
+          .pvp-banner-bg {
+              position: absolute;
+              inset: 0;
+              background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.15), transparent 70%);
+          }
+          .pvp-banner-wheel {
+              position: absolute;
+              right: 8%;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 72px;
+              height: 72px;
+              border-radius: 50%;
+              border: 4px solid rgba(255, 215, 0, 0.3);
+              background: conic-gradient(from 0deg, rgba(255,215,0,0.8), rgba(255,215,0,0.4), rgba(255,215,0,0.8));
+              z-index: 1;
+          }
+          .pvp-banner-wheel::before {
+              content: '';
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 12px;
+              height: 12px;
+              background: rgba(255, 215, 0, 0.9);
+              border-radius: 50%;
+              box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+          }
+          .pvp-banner-content {
+              position: relative;
+              z-index: 2;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              padding: 12px;
+          }
+          .pvp-banner-title {
+              font-size: 30px;
+              font-weight: 900;
+              color: #5a2a00;
+              letter-spacing: 2px;
+              text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+              margin: 0;
+          }
+          .pvp-banner-desc {
+              font-size: 13px;
+              color: #5a2a00;
+              margin: 4px 0;
+          }
 
           /* Game Grid (2-column) */
           .game-grid {
@@ -419,9 +477,10 @@
 
           /* Play Hub Banner */
           .playhub-banner {
+              width: 100%;
+              aspect-ratio: 1228 / 314;
               background: linear-gradient(135deg, #37474f 0%, #1a1a2e 100%);
               border-radius: 24px;
-              padding: 20px 20px 16px;
               margin-bottom: 14px;
               cursor: pointer;
               border: 1px solid rgba(144, 238, 255, 0.1);
@@ -430,6 +489,11 @@
               position: relative;
               overflow: hidden;
               text-align: center;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0;
+              box-sizing: border-box;
           }
           .playhub-banner:hover {
               border-color: rgba(176, 196, 222, 0.3);
@@ -445,10 +509,10 @@
           .playhub-banner-content {
               position: relative;
               z-index: 1;
-          }
-          .playhub-banner-icon {
-              font-size: 42px;
-              margin-bottom: 8px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
           }
           .playhub-banner-title {
               font-size: 26px;
@@ -456,18 +520,43 @@
               color: #eceff1;
               letter-spacing: 2px;
               text-transform: uppercase;
-              margin-bottom: 4px;
+              margin: 0;
           }
           .playhub-banner-desc {
               font-size: 13px;
               color: #90a4ae;
-              margin-bottom: 6px;
+              margin: 4px 0;
           }
           .playhub-banner-count {
-              font-size: 12px;
-              color: #78909c;
-              font-weight: 600;
+               font-size: 12px;
+               color: #78909c;
+               font-weight: 600;
           }
+
+          /* Play Hub Screen (dedicated screen) */
+          .playhub-screen {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              padding: 12px;
+          }
+          .playhub-screen.hidden {
+              display: none !important;
+          }
+          .playhub-screen-header {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+          }
+          .playhub-screen-title {
+              font-size: 24px;
+              font-weight: 900;
+              color: #e8f4ff;
+              margin: 0;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+          }
+
 
           /* Reward Section */
           .reward-section {
@@ -576,15 +665,11 @@
         }
 
         /* =========================================================
-           LOOT BOXES SECTION (NEW)
+            LOOT BOXES SECTION
         ========================================================= */
         .loot-section {
             margin: 14px 0;
             padding: 16px;
-            background: linear-gradient(145deg, #0f2847, #0a1a30);
-            border-radius: 24px;
-            border: 1px solid rgba(100, 200, 255, 0.08);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
         .loot-title {
             font-size: 20px;
@@ -606,18 +691,49 @@
         .loot-box {
             background: linear-gradient(145deg, #1a2a4a, #0f1a30);
             border-radius: 16px;
-            padding: 14px 12px;
-            text-align: center;
-            border: 1px solid rgba(100, 200, 255, 0.06);
+            border: 1px solid rgba(100, 200, 255, 0.12);
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            aspect-ratio: 599 / 784;
+            box-sizing: border-box;
         }
-        .loot-box:active { transform: scale(0.95); }
+        .loot-box:hover {
+            transform: translateY(-2px);
+            border-color: rgba(100, 200, 255, 0.3);
+            box-shadow: 0 8px 30px rgba(50, 150, 255, 0.15);
+        }
         .loot-box.free {
             border-color: rgba(56, 210, 123, 0.3);
             background: linear-gradient(145deg, #0f2a1a, #0a1a10);
+        }
+        .loot-box-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .loot-box-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+        .loot-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #c8e6ff;
+            white-space: nowrap;
+        }
+        .loot-box .loot-emoji {
+            font-size: 32px;
+            margin: 4px 0;
         }
         .loot-box.free .loot-emoji {
             animation: freePulse 2s ease-in-out infinite;
@@ -626,28 +742,23 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
-        .loot-box .loot-emoji {
-            font-size: 32px;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .loot-box .loot-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #c8e6ff;
-            display: block;
-        }
-        .loot-box .loot-price {
+        .loot-price-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
             font-size: 11px;
-            color: #4fc3f7;
             font-weight: 700;
-            display: block;
-            margin-top: 2px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ffd700, #f0a500);
+            color: #5a2a00;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
         }
-        .loot-box .loot-price.free {
-            color: #4de18a;
+        .loot-box.free .loot-price-badge {
+            background: linear-gradient(135deg, #38d273, #28a745);
+            color: #0a2a10;
         }
-        .loot-box .loot-badge {
+        .loot-badge {
             position: absolute;
             top: 6px;
             right: 6px;
@@ -658,11 +769,15 @@
             background: rgba(255, 215, 0, 0.15);
             color: #ffd700;
         }
-        .loot-box .loot-badge.free-badge {
+        .loot-badge.free-badge {
             background: rgba(56, 210, 123, 0.15);
             color: #4de18a;
         }
-        .loot-box .loot-badge.popular {
+        .loot-badge.special-badge {
+            background: rgba(168, 86, 255, 0.15);
+            color: #a856ff;
+        }
+        .loot-badge.popular {
             background: rgba(255, 79, 103, 0.15);
             color: #ff6b6b;
         }
@@ -2185,9 +2300,8 @@
               <!-- ==== Rocket Banner ==== -->
               <div class="rocket-banner" onclick="openRocketGame()">
                   <div class="rocket-banner-bg"></div>
+                  <div class="rocket-banner-rocket"></div>
                   <div class="rocket-banner-content">
-                      <div class="rocket-banner-badge">🔥 HOT</div>
-                      <div class="rocket-banner-icon">🚀</div>
                       <div class="rocket-banner-title">ROCKET</div>
                       <div class="rocket-banner-desc">Multiplayer crash • Bet & Cash Out</div>
                   </div>
@@ -2196,14 +2310,14 @@
               <!-- ==== PvP Banner ==== -->
               <div class="pvp-banner" onclick="openPvpGame()">
                   <div class="pvp-banner-bg"></div>
+                  <div class="pvp-banner-wheel"></div>
                   <div class="pvp-banner-content">
-                      <div class="pvp-banner-icon">⚔️</div>
                       <div class="pvp-banner-title">PVP</div>
                       <div class="pvp-banner-desc">Battle other players head-to-head</div>
                       <div class="pvp-banner-players">
-                          <span class="pvp-player">👤</span>
-                          <span class="pvp-player">👤</span>
-                          <span class="pvp-player">👤</span>
+                          <span class="pvp-player">⚪</span>
+                          <span class="pvp-player">⚪</span>
+                          <span class="pvp-player">⚪</span>
                       </div>
                   </div>
               </div>
@@ -2212,15 +2326,31 @@
               <div class="playhub-banner" onclick="openPlayHub()">
                   <div class="playhub-banner-bg"></div>
                   <div class="playhub-banner-content">
-                      <div class="playhub-banner-icon">📁</div>
                       <div class="playhub-banner-title" data-key="playhub-title">PLAY HUB</div>
                       <div class="playhub-banner-desc" data-key="playhub-desc">Mines • Plinko • Crafts • Dice • Lottery • Upgrade</div>
                       <div class="playhub-banner-count" data-key="playhub-count">6 games</div>
                   </div>
               </div>
 
-              <!-- ==== Game Grid - Hidden until Play Hub opened ==== -->
-              <div id="playhub-grid" class="game-grid hidden">
+               <!-- ==== Lucky Gift Boxes ==== -->
+               <div class="loot-section">
+                   <div class="loot-title">🎁 <span class="highlight" id="loot-title-text" data-key="lootBoxesTitle">صناديق الحظ</span></div>
+                   <div class="loot-grid" id="loot-grid">
+                   </div>
+               </div>
+           </div>
+
+          <!-- =========================================================
+             PLAY HUB SCREEN (dedicated screen, Home is hidden while open)
+          ========================================================= -->
+          <div id="playhub-screen" class="playhub-screen hidden">
+              <div class="playhub-screen-header">
+                  <button type="button" onclick="closePlayHub()" class="back-button show" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
+                      ← Back
+                  </button>
+                  <h2 class="playhub-screen-title" data-key="playhub-title">PLAY HUB</h2>
+              </div>
+              <div id="playhub-grid" class="game-grid">
                   <div class="game-card-hub" onclick="openMinesGame()">
                       <div class="game-card-hub-icon">💣</div>
                       <div class="game-card-hub-info">
@@ -2239,13 +2369,13 @@
                       <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
                   </div>
 
-                  <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                  <div class="game-card-hub" onclick="openCraftsGame()">
                       <div class="game-card-hub-icon">🔨</div>
                       <div class="game-card-hub-info">
                           <h3 data-key="crafts-title">Crafts</h3>
                           <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
                       </div>
-                      <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
                   </div>
 
                   <div class="game-card-hub" onclick="openDiceGame()">
@@ -2266,36 +2396,13 @@
                       <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
                   </div>
 
-                  <div class="game-card-hub" onclick="openUpgradeGame()" style="opacity:0.5;cursor:default;">
+                  <div class="game-card-hub" onclick="openUpgradeGame()">
                       <div class="game-card-hub-icon">🔧</div>
                       <div class="game-card-hub-info">
                           <h3 data-key="upgrade-title">Upgrade</h3>
                           <p data-key="upgrade-desc">Upgrade your collectibles</p>
                       </div>
-                      <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-                  </div>
-              </div>
-
-             <!-- ==== Reward Cards ==== -->
-             <div class="reward-section">
-                 <div class="reward-card" onclick="openDailyReward()">
-                     <div class="reward-card-content">
-                         <div class="reward-card-title">🎁 FREE24</div>
-                         <div class="reward-card-desc">Daily gift — claim every 24h</div>
-                     </div>
-                 </div>
-                  <div class="reward-card" onclick="openFreeGift()">
-                      <div class="reward-card-content">
-                          <div class="reward-card-title">🎁 FREE</div>
-                          <div class="reward-card-desc">Free collectible pack</div>
-                      </div>
-                  </div>
-              </div>
-
-              <!-- ==== Lucky Gift Boxes ==== -->
-              <div class="loot-section">
-                  <div class="loot-title">🎁 <span class="highlight" id="loot-title-text" data-key="lootBoxesTitle">صناديق الحظ</span></div>
-                  <div class="loot-grid" id="loot-grid">
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
                   </div>
               </div>
           </div>
@@ -2857,17 +2964,19 @@
            LOOT BOXES DATA
         ========================================================= */
         const LOOT_BOXES = [
-            { id: 'free', name: 'FREE', emoji: '🎁', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
-            { id: 'box_100', name: '100 TON', emoji: '💎', price: 100, badgeType: 'vip', badgeClass: 'popular' },
-            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: 'vip', badgeClass: 'popular' },
-            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: 'rare', badgeClass: '' },
-            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badgeType: 'rare', badgeClass: '' },
-            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badgeType: 'rare', badgeClass: '' },
-            { id: 'box_5', name: '5 TON', emoji: '💎', price: 5, badgeType: null, badgeClass: '' },
+            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
+            { id: 'free24', nameKey: 'free24Label', emoji: '🎁', price: 0, badgeType: 'special', badgeClass: 'special-badge' },
+            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' },
             { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
-            { id: 'box_1', name: '1 TON', emoji: '💎', price: 1, badgeType: null, badgeClass: '' },
-            { id: 'box_0_5', name: '0.5 TON', emoji: '💎', price: 0.5, badgeType: null, badgeClass: '' },
-            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' }
+            { id: 'box_2_5', name: '2.5 TON', emoji: '💎', price: 2.5, badgeType: null, badgeClass: '' },
+            { id: 'box_5', name: '5 TON', emoji: '💎', price: 5, badgeType: null, badgeClass: '' },
+            { id: 'box_8', name: '8 TON', emoji: '💎', price: 8, badgeType: null, badgeClass: '' },
+            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badgeType: null, badgeClass: '' },
+            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badgeType: null, badgeClass: '' },
+            { id: 'box_20', name: '20 TON', emoji: '💎', price: 20, badgeType: null, badgeClass: '' },
+            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: null, badgeClass: '' },
+            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: null, badgeClass: '' },
+            { id: 'box_100', name: '100 TON', emoji: '💎', price: 100, badgeType: 'vip', badgeClass: 'popular' }
         ];
 
         function renderLootBoxes() {
@@ -2878,39 +2987,48 @@
 
             LOOT_BOXES.forEach(function(box) {
                 const div = document.createElement('div');
-                div.className = 'loot-box' + (box.id === 'free' ? ' free' : '');
+                div.className = 'loot-box ' + (box.price === 0 ? 'free' : '');
+                div.dataset.boxId = box.id;
                 div.onclick = function() { openLootBox(box); };
 
+                const nameText = box.nameKey ? t[box.nameKey] : box.name;
                 const priceDisplay = box.price === 0 ? t.freeLabel : box.price + ' TON';
-                const priceClass = box.price === 0 ? 'free' : '';
-                const badgeLabels = { free: t.freeLabel, vip: '🔥 VIP', rare: '⭐ ' + t.rareLabel };
+                const badgeLabels = { free: t.freeLabel, special: '⭐ ' + t.free24Label || 'FREE24', vip: '🔥 VIP', rare: '⭐ ' + t.rareLabel };
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
                 div.innerHTML = `
-                    <span class="loot-emoji">${box.emoji}</span>
-                    <span class="loot-name">${box.name}</span>
-                    <span class="loot-price ${priceClass}">${priceDisplay}</span>
-                    ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
+                    <div class="loot-box-inner">
+                        <div class="loot-box-header">
+                            <span class="loot-name">${nameText}</span>
+                            ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
+                        </div>
+                        <span class="loot-emoji">${box.emoji}</span>
+                        <span class="loot-price-badge">${priceDisplay}</span>
+                    </div>
                 `;
                 grid.appendChild(div);
             });
         }
 
-        function openLootBox(box) {
-            const t = translations[currentLanguage] || translations.ar;
-            if (box.id === 'free') {
-                showToast(getTranslation('comingSoon'));
-                return;
-            }
+         function openLootBox(box) {
+             const t = translations[currentLanguage] || translations.ar;
+             if (box.id === 'free') {
+                 openFreeGift();
+                 return;
+             }
+             if (box.id === 'free24') {
+                 openDailyReward();
+                 return;
+             }
 
-            if (tonBalance < box.price) {
-                showToast(t.insufficientBalance);
-                openDeposit();
-                return;
-            }
+             if (tonBalance < box.price) {
+                 showToast(t.insufficientBalance);
+                 openDeposit();
+                 return;
+             }
 
-            showToast(t.openingBox);
-        }
+             showToast(t.openingBox);
+         }
 
         /* =========================================================
            ROCKET VARIANTS
@@ -3092,7 +3210,8 @@
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'صناديق الحظ',
             comingSoonDesc: 'ألعاب جديدة قريباً',
-            freeLabel: 'مجاني',
+             freeLabel: 'مجاني',
+             free24Label: 'مجاناً 24س',
             rareLabel: 'نادر',
             openedFreeBox: '🎁 فتحت صندوقاً مجانياً!',
             wonPrefix: '🎉 ربحت:',
@@ -3135,7 +3254,8 @@
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'Loot Boxes',
             comingSoonDesc: 'New games arriving soon',
-            freeLabel: 'Free',
+             freeLabel: 'Free',
+             free24Label: 'FREE24',
             rareLabel: 'Rare',
             openedFreeBox: '🎁 You opened a free box!',
             wonPrefix: '🎉 You won:',
@@ -3178,7 +3298,8 @@
             adminBadge: 'ADMIN',
             lootBoxesTitle: 'Сундуки удачи',
             comingSoonDesc: 'Новые игры уже скоро',
-            freeLabel: 'Бесплатно',
+             freeLabel: 'Бесплатно',
+             free24Label: 'Бесплатно 24ч',
             rareLabel: 'Редкий',
             openedFreeBox: '🎁 Вы открыли бесплатный сундук!',
             wonPrefix: '🎉 Вы выиграли:',
@@ -4870,6 +4991,11 @@
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("rocket-game").classList.add("hidden");
+            document.getElementById("playhub-screen").classList.add("hidden");
+            ['mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.add("hidden");
+            });
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
             if (page === "home") {
@@ -4919,6 +5045,9 @@
         }
 
         function openRocketGame() {
+            hideAllPages();
+            closeAllGames();
+            closePlayHub();
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("rocket-game").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
@@ -4928,9 +5057,10 @@
             document.getElementById("nav-home").classList.add("active");
         }
 
-         function closeRocketGame() {
+        function closeRocketGame() {
             if (gameInterval) clearInterval(gameInterval);
             document.getElementById("rocket-game").classList.add("hidden");
+            document.getElementById("playhub-screen").classList.add("hidden");
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
@@ -4939,23 +5069,21 @@
         function closeAllGames() {
             ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
                 var el = document.getElementById(id);
-                if (el) {
-                    el.classList.add("hidden");
-                    el.style.display = 'none';
-                }
+                if (el) el.classList.add("hidden");
             });
         }
 
         function openPlayHub() {
             hideAllPages();
             closeAllGames();
-            var grid = document.getElementById('playhub-grid');
-            if (grid) grid.classList.remove('hidden');
+            document.getElementById("game-hub").classList.add("hidden");
+            var screen = document.getElementById('playhub-screen');
+            if (screen) screen.classList.remove('hidden');
         }
 
         function closePlayHub() {
-            var grid = document.getElementById('playhub-grid');
-            if (grid) grid.classList.add('hidden');
+            var screen = document.getElementById('playhub-screen');
+            if (screen) screen.classList.add('hidden');
         }
 
         function hideAllPages() {
@@ -4974,8 +5102,7 @@
 
         function closeMinesGame() {
             document.getElementById("mines-game").classList.add("hidden");
-            document.getElementById("mines-game").style.display = 'none';
-            document.getElementById("game-hub").classList.remove("hidden");
+            document.getElementById("game-hub").classList.add("hidden");
             openPlayHub();
             hideAllPages();
         }
@@ -4991,8 +5118,7 @@
 
         function closePlinkoGame() {
             document.getElementById("plinko-game").classList.add("hidden");
-            document.getElementById("plinko-game").style.display = 'none';
-            document.getElementById("game-hub").classList.remove("hidden");
+            document.getElementById("game-hub").classList.add("hidden");
             openPlayHub();
             hideAllPages();
         }
@@ -5007,8 +5133,7 @@
 
         function closeDiceGame() {
             document.getElementById("dice-game").classList.add("hidden");
-            document.getElementById("dice-game").style.display = 'none';
-            document.getElementById("game-hub").classList.remove("hidden");
+            document.getElementById("game-hub").classList.add("hidden");
             openPlayHub();
             hideAllPages();
         }
@@ -5024,8 +5149,7 @@
 
         function closeCraftsGame() {
             document.getElementById("crafts-game").classList.add("hidden");
-            document.getElementById("crafts-game").style.display = 'none';
-            document.getElementById("game-hub").classList.remove("hidden");
+            document.getElementById("game-hub").classList.add("hidden");
             openPlayHub();
             hideAllPages();
         }
@@ -5042,9 +5166,8 @@
          function closePvpGame() {
              if (pvpState && pvpState.timer) clearInterval(pvpState.timer);
              document.getElementById("pvp-game").classList.add("hidden");
-             document.getElementById("pvp-game").style.display = 'none';
+             document.getElementById("playhub-screen").classList.add("hidden");
              document.getElementById("game-hub").classList.remove("hidden");
-             openPlayHub();
              hideAllPages();
          }
 
@@ -5058,11 +5181,8 @@
          }
 
          function closeUpgradeGame() {
-            document.getElementById("upgrade-game").classList.add("hidden");
-            document.getElementById("lottery-game").classList.add("hidden");
-            document.getElementById("playhub-grid").classList.add("hidden");
-             document.getElementById("upgrade-game").style.display = 'none';
-             document.getElementById("game-hub").classList.remove("hidden");
+             document.getElementById("upgrade-game").classList.add("hidden");
+             document.getElementById("game-hub").classList.add("hidden");
              openPlayHub();
              hideAllPages();
          }
@@ -5076,13 +5196,12 @@
              initLotteryGame();
          }
 
-         function closeLotteryGame() {
-             document.getElementById("lottery-game").classList.add("hidden");
-             document.getElementById("lottery-game").style.display = 'none';
-             document.getElementById("game-hub").classList.remove("hidden");
-             openPlayHub();
-             hideAllPages();
-         }
+          function closeLotteryGame() {
+              document.getElementById("lottery-game").classList.add("hidden");
+              document.getElementById("game-hub").classList.add("hidden");
+              openPlayHub();
+              hideAllPages();
+          }
 
          var lotteryState = { selected: [], drawn: null, betAmount: 1, statusEl: null };
 
@@ -5851,12 +5970,14 @@
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
-            document.getElementById("mines-game").classList.add("hidden");
-            document.getElementById("plinko-game").classList.add("hidden");
-            document.getElementById("dice-game").classList.add("hidden");
-            document.getElementById("crafts-game").classList.add("hidden");
-            document.getElementById("pvp-game").classList.add("hidden");
-            document.getElementById("upgrade-game").classList.add("hidden");
+              document.getElementById("mines-game").classList.add("hidden");
+             document.getElementById("plinko-game").classList.add("hidden");
+             document.getElementById("dice-game").classList.add("hidden");
+             document.getElementById("crafts-game").classList.add("hidden");
+             document.getElementById("pvp-game").classList.add("hidden");
+             document.getElementById("upgrade-game").classList.add("hidden");
+             document.getElementById("lottery-game").classList.add("hidden");
+             document.getElementById("playhub-screen").classList.add("hidden");
 
             await authenticateUser();
             connectToServer();
