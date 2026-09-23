@@ -354,16 +354,9 @@
              font-size: 13px;
              color: #7a9bcb;
              margin: 4px 0;
-         }
-         .rocket-banner-multiplier {
-             font-size: 28px;
-             font-weight: 900;
-             background: linear-gradient(135deg, #ffd700, #f0a500);
-             -webkit-background-clip: text;
-             -webkit-text-fill-color: transparent;
-         }
+          }
 
-         /* PvP Banner */
+          /* PvP Banner */
          .pvp-banner {
              background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
              border-radius: 28px;
@@ -414,12 +407,66 @@
              font-size: 18px;
          }
 
-         /* Game Grid (2-column) */
+          /* Game Grid (2-column) */
           .game-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
               gap: 14px;
               margin-bottom: 14px;
+          }
+          .game-grid.hidden,
+          .hidden { display: none !important; }
+
+          /* Play Hub Banner */
+          .playhub-banner {
+              background: linear-gradient(135deg, #37474f 0%, #1a1a2e 100%);
+              border-radius: 24px;
+              padding: 20px 20px 16px;
+              margin-bottom: 14px;
+              cursor: pointer;
+              border: 1px solid rgba(144, 238, 255, 0.1);
+              box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+              transition: all 0.3s ease;
+              position: relative;
+              overflow: hidden;
+              text-align: center;
+          }
+          .playhub-banner:hover {
+              border-color: rgba(176, 196, 222, 0.3);
+              box-shadow: 0 12px 40px rgba(120, 120, 140, 0.3);
+              transform: translateY(-2px);
+          }
+          .playhub-banner-bg {
+              position: absolute;
+              inset: 0;
+              background: radial-gradient(circle at 50% 50%, rgba(255, 206, 84, 0.05), transparent 70%);
+              pointer-events: none;
+          }
+          .playhub-banner-content {
+              position: relative;
+              z-index: 1;
+          }
+          .playhub-banner-icon {
+              font-size: 42px;
+              margin-bottom: 8px;
+          }
+          .playhub-banner-title {
+              font-size: 26px;
+              font-weight: 900;
+              color: #eceff1;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              margin-bottom: 4px;
+          }
+          .playhub-banner-desc {
+              font-size: 13px;
+              color: #90a4ae;
+              margin-bottom: 6px;
+          }
+          .playhub-banner-count {
+              font-size: 12px;
+              color: #78909c;
+              font-weight: 600;
           }
 
           /* Reward Section */
@@ -2135,89 +2182,99 @@
                  </div>
              </div>
 
-             <!-- ==== Rocket Banner ==== -->
-             <div class="rocket-banner" onclick="openRocketGame()">
-                 <div class="rocket-banner-bg"></div>
-                 <div class="rocket-banner-content">
-                     <div class="rocket-banner-badge">🔥 HOT</div>
-                     <div class="rocket-banner-icon">🚀</div>
-                     <div class="rocket-banner-title">ROCKET</div>
-                     <div class="rocket-banner-desc">Multiplayer crash • Bet & Cash Out</div>
-                     <div class="rocket-banner-multiplier">220x Max</div>
-                 </div>
-             </div>
+              <!-- ==== Rocket Banner ==== -->
+              <div class="rocket-banner" onclick="openRocketGame()">
+                  <div class="rocket-banner-bg"></div>
+                  <div class="rocket-banner-content">
+                      <div class="rocket-banner-badge">🔥 HOT</div>
+                      <div class="rocket-banner-icon">🚀</div>
+                      <div class="rocket-banner-title">ROCKET</div>
+                      <div class="rocket-banner-desc">Multiplayer crash • Bet & Cash Out</div>
+                  </div>
+              </div>
 
-             <!-- ==== PvP Banner ==== -->
-             <div class="pvp-banner" onclick="openPvpGame()">
-                 <div class="pvp-banner-bg"></div>
-                 <div class="pvp-banner-content">
-                     <div class="pvp-banner-icon">⚔️</div>
-                     <div class="pvp-banner-title">PVP</div>
-                     <div class="pvp-banner-desc">Battle other players head-to-head</div>
-                     <div class="pvp-banner-players">
-                         <span class="pvp-player">👤</span>
-                         <span class="pvp-player">👤</span>
-                         <span class="pvp-player">👤</span>
-                     </div>
-                 </div>
-             </div>
+              <!-- ==== PvP Banner ==== -->
+              <div class="pvp-banner" onclick="openPvpGame()">
+                  <div class="pvp-banner-bg"></div>
+                  <div class="pvp-banner-content">
+                      <div class="pvp-banner-icon">⚔️</div>
+                      <div class="pvp-banner-title">PVP</div>
+                      <div class="pvp-banner-desc">Battle other players head-to-head</div>
+                      <div class="pvp-banner-players">
+                          <span class="pvp-player">👤</span>
+                          <span class="pvp-player">👤</span>
+                          <span class="pvp-player">👤</span>
+                      </div>
+                  </div>
+              </div>
 
-             <!-- ==== Game Grid (2-column) ==== -->
-             <div class="game-grid">
-                 <div class="game-card-hub" onclick="openUpgradeGame()" style="opacity:0.5;cursor:default;">
-                     <div class="game-card-hub-icon">🔧</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="upgrade-title">Upgrade</h3>
-                         <p data-key="upgrade-desc">Upgrade your collectibles</p>
-                     </div>
-                     <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-                 </div>
+              <!-- ==== Play Hub (Folder) ==== -->
+              <div class="playhub-banner" onclick="openPlayHub()">
+                  <div class="playhub-banner-bg"></div>
+                  <div class="playhub-banner-content">
+                      <div class="playhub-banner-icon">📁</div>
+                      <div class="playhub-banner-title" data-key="playhub-title">PLAY HUB</div>
+                      <div class="playhub-banner-desc" data-key="playhub-desc">Mines • Plinko • Crafts • Dice • Lottery • Upgrade</div>
+                      <div class="playhub-banner-count" data-key="playhub-count">6 games</div>
+                  </div>
+              </div>
 
-                 <div class="game-card-hub" onclick="openMinesGame()">
-                     <div class="game-card-hub-icon">💣</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="mines-title">Mines</h3>
-                         <p data-key="mines-desc">Clear tiles without hitting mines</p>
-                     </div>
-                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                 </div>
+              <!-- ==== Game Grid - Hidden until Play Hub opened ==== -->
+              <div id="playhub-grid" class="game-grid hidden">
+                  <div class="game-card-hub" onclick="openMinesGame()">
+                      <div class="game-card-hub-icon">💣</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="mines-title">Mines</h3>
+                          <p data-key="mines-desc">Clear tiles without hitting mines</p>
+                      </div>
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                  </div>
 
-                 <div class="game-card-hub" onclick="openPlinkoGame()">
-                     <div class="game-card-hub-icon">🔷</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="plinko-title">Plinko</h3>
-                         <p data-key="plinko-desc">Drop the chip and win multipliers</p>
-                     </div>
-                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                 </div>
+                  <div class="game-card-hub" onclick="openPlinkoGame()">
+                      <div class="game-card-hub-icon">🔷</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="plinko-title">Plinko</h3>
+                          <p data-key="plinko-desc">Drop the chip and win multipliers</p>
+                      </div>
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                  </div>
 
-                 <div class="game-card-hub" style="opacity:0.5;cursor:default;">
-                     <div class="game-card-hub-icon">🔨</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="crafts-title">Crafts</h3>
-                         <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
-                     </div>
-                     <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
-                 </div>
+                  <div class="game-card-hub" style="opacity:0.5;cursor:default;">
+                      <div class="game-card-hub-icon">🔨</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="crafts-title">Crafts</h3>
+                          <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
+                      </div>
+                      <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+                  </div>
 
-                 <div class="game-card-hub" onclick="openDiceGame()">
-                     <div class="game-card-hub-icon">🎲</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="dice-title">Dice</h3>
-                         <p data-key="dice-desc">Roll the dice for instant wins</p>
-                     </div>
-                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                 </div>
+                  <div class="game-card-hub" onclick="openDiceGame()">
+                      <div class="game-card-hub-icon">🎲</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="dice-title">Dice</h3>
+                          <p data-key="dice-desc">Roll the dice for instant wins</p>
+                      </div>
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                  </div>
 
-                 <div class="game-card-hub" onclick="openLotteryGame()">
-                     <div class="game-card-hub-icon">🎰</div>
-                     <div class="game-card-hub-info">
-                         <h3 data-key="lottery-title">Lottery</h3>
-                         <p data-key="lottery-desc">Pick the numbers &amp; Win</p>
-                     </div>
-                     <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                 </div>
-             </div>
+                  <div class="game-card-hub" onclick="openLotteryGame()">
+                      <div class="game-card-hub-icon">🎰</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="lottery-title">Lottery</h3>
+                          <p data-key="lottery-desc">Pick the numbers &amp; Win</p>
+                      </div>
+                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
+                  </div>
+
+                  <div class="game-card-hub" onclick="openUpgradeGame()" style="opacity:0.5;cursor:default;">
+                      <div class="game-card-hub-icon">🔧</div>
+                      <div class="game-card-hub-info">
+                          <h3 data-key="upgrade-title">Upgrade</h3>
+                          <p data-key="upgrade-desc">Upgrade your collectibles</p>
+                      </div>
+                      <div class="game-card-hub-badge" style="background:rgba(255,255,255,0.04);color:#5a7a9a;" data-key="soon">Soon</div>
+                  </div>
+              </div>
 
              <!-- ==== Reward Cards ==== -->
              <div class="reward-section">
@@ -2227,14 +2284,21 @@
                          <div class="reward-card-desc">Daily gift — claim every 24h</div>
                      </div>
                  </div>
-                 <div class="reward-card" onclick="openFreeGift()">
-                     <div class="reward-card-content">
-                         <div class="reward-card-title">🎁 FREE</div>
-                         <div class="reward-card-desc">Free collectible pack</div>
-                     </div>
-                 </div>
-             </div>
-         </div>
+                  <div class="reward-card" onclick="openFreeGift()">
+                      <div class="reward-card-content">
+                          <div class="reward-card-title">🎁 FREE</div>
+                          <div class="reward-card-desc">Free collectible pack</div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- ==== Lucky Gift Boxes ==== -->
+              <div class="loot-section">
+                  <div class="loot-title">🎁 <span class="highlight" id="loot-title-text" data-key="lootBoxesTitle">صناديق الحظ</span></div>
+                  <div class="loot-grid" id="loot-grid">
+                  </div>
+              </div>
+          </div>
 
          <!-- =========================================================
             ROCKET GAME
@@ -2396,34 +2460,64 @@
         <!-- =========================================================
             PVP GAME
         ========================================================= -->
-        <div id="pvp-game" class="rocket-game-container hidden">
+         <div id="pvp-game" class="rocket-game-container hidden">
             <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
                 <button class="back-button show" type="button" onclick="closePvPGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
                     ← Back
                 </button>
-                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">⚔️ PvP</span>
+                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">⚔️ PVP</span>
             </div>
             <main>
                 <section class="game-card">
                     <div class="stars"></div>
                     <div class="fog-effect"></div>
                     <div style="padding:20px;text-align:center;">
-                        <div id="pvp-opponent" style="font-size:18px;color:#7a9bcb;margin-bottom:16px;" data-key="pvp-waiting">Searching for opponent...</div>
-                        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;">
-                            <div style="text-align:center;">
-                                <div style="font-size:14px;color:#7a9bcb;">You</div>
-                                <div id="pvp-player-score" style="font-size:24px;font-weight:900;color:#4fc3f7;">0.00x</div>
-                            </div>
-                            <div style="text-align:center;">
-                                <div id="pvp-opponent-name" style="font-size:14px;color:#7a9bcb;">VS</div>
-                                <div id="pvp-opponent-score" style="font-size:24px;font-weight:900;color:#ff6b6b;">0.00x</div>
+                        <div id="pvp-round-info" style="font-size:14px;color:#7a9bcb;margin-bottom:12px;">
+                            <span id="pvp-round-number" data-key="pvpRound">Round</span>
+                            <span id="pvp-round-number-val">1</span> •
+                            <span id="pvp-state-label" data-key="pvpStateWaiting">Waiting</span>
+                        </div>
+
+                        <!-- Battle Wheel -->
+                        <div id="pvp-wheel-container" style="width:180px;height:180px;margin:0 auto 20px;border-radius:50%;border:3px solid rgba(255,215,0,0.3);position:relative;overflow:hidden;">
+                            <div id="pvp-wheel" style="width:100%;height:100%;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,215,0,0.8),rgba(142,36,170,0.8),rgba(255,215,0,0.8));display:flex;align-items:center;justify-content:center;">
+                                <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,215,0,0.9);box-shadow:0 0 15px rgba(255,215,0,0.6);"></div>
                             </div>
                         </div>
-                        <button id="pvp-ready-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" data-key="pvp-ready">Ready</button>
+
+                        <!-- Countdown / Status -->
+                        <div id="pvp-countdown" style="font-size:48px;font-weight:900;color:#ffd700;margin-bottom:16px;text-shadow:0 0 20px rgba(255,215,0,0.4);" data-key="pvpWaitingPlayers">بنك بانتظار اللاعبين...</div>
+
+                        <!-- Participant Strip -->
+                        <div id="pvp-participants" style="display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin-bottom:16px;min-height:60px;align-items:center;justify-content:center;border:1px solid rgba(255,215,0,0.1);border-radius:12px;background:rgba(15,40,71,0.4);">
+                            <!-- Participant avatars populated by JS -->
+                        </div>
+
+                        <!-- Your participation -->
+                        <div id="pvp-your-participation" style="display:none;margin-bottom:16px;font-size:14px;color:#7a9bcb;">
+                            <div style="font-weight:700;color:#4fc3f7;" data-key="pvpYourWager">Your wager</div>
+                            <div id="pvp-your-wager-val" style="font-size:18px;color:#e8f4ff;margin-top:4px;"></div>
+                            <div style="font-weight:700;color:#4fc3f7;margin-top:8px;" data-key="pvpYourPercent">Your %</div>
+                            <div id="pvp-your-percent-val" style="font-size:18px;color:#ffd700;"></div>
+                        </div>
+
+                        <!-- Bet Panel -->
+                        <div id="pvp-bet-panel" style="display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:16px;">
+                            <input id="pvp-bet-input" type="number" min="0.1" step="0.1" value="1" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;text-align:center;">
+                            <span style="font-size:14px;color:#7a9bcb;">TON</span>
+                            <button id="pvp-join-btn" class="place-bet-main" type="button" onclick="joinPvpRound()" style="width:100%;max-width:160px;" data-key="pvpBetButton">Bet &amp; Join</button>
+                        </div>
+
+                        <!-- Pool -->
+                        <div id="pvp-pool" style="font-size:14px;color:#7a9bcb;">
+                            <span data-key="pvpTotalPool">Total pool</span>:
+                            <span id="pvp-pool-ton-val" style="color:#4fc3f7;font-weight:700;">0.00</span> TON
+                            <span id="pvp-pool-gift-val" style="color:#ffd700;font-weight:700;margin-left:10px;"></span>
+                        </div>
                     </div>
                 </section>
             </main>
-        </div>
+         </div>
 
         <!-- =========================================================
             UPGRADE GAME
@@ -3103,7 +3197,26 @@
          });
 
          Object.assign(translations.ar, {
-            minesTitle: '💣 المينا',
+            playhubTitle: 'محطة اللعب',
+            playhubDesc: 'ماينز • بلينكو • الحرف • النرد • اللوتري • التطوير',
+            playhubCount: '6 ألعاب',
+            pvpStateWaiting: 'في الانتظار',
+            pvpStateCountdown: 'العد التنازلي',
+            pvpStateLive: 'مباشر',
+            pvpStateResult: 'النتيجة',
+            pvpEnterTon: 'أدخل مبلغ TON',
+            pvpEnterGift: 'اختر مقتنى',
+            pvpJoined: 'انضممت!',
+            pvpFull: 'الجولة ممتلئة',
+            pvpStarted: 'الجولة بدأت',
+            pvpWaitingPlayers: 'بنك بانتظار اللاعبين...',
+            pvpYourWager: 'رهانك',
+            pvpYourPercent: 'نسبتك',
+             pvpTotalPool: 'إجمالي البلاستين',
+             pvpRound: 'جولة',
+             pvpPlayers: 'لاعب',
+             pvpMaxPlayers: '75 كحد أقصى',
+             minesTitle: '💣 المينا',
             minesDesc: 'كشف البلاط دون الوقوع على المينا',
             plinkoTitle: '🔷 بلينكو',
             plinkoDesc: 'أطلق الرقائق واربح مكافآت',
@@ -3231,8 +3344,39 @@
               lotteryMatch5: '🎉🎉🎉 5 matches! Jackpot!',
               lotteryBetPrompt: 'Enter bet amount (TON):',
               lotteryInvalid: 'Invalid numbers',
-              lotteryDuplicate: 'Duplicate numbers not allowed'
-          });
+              lotteryDuplicate: 'Duplicate numbers not allowed',
+              playhubTitle: 'Play Hub',
+              playhubDesc: 'Mines • Plinko • Crafts • Dice • Lottery • Upgrade',
+              playhubCount: '6 games',
+              pvpStateWaiting: 'Waiting',
+              pvpStateCountdown: 'Countdown',
+              pvpStateLive: 'Live',
+              pvpStateResult: 'Result',
+              pvpEnterTon: 'Enter TON amount',
+              pvpEnterGift: 'Select collectible',
+              pvpJoined: 'Joined!',
+              pvpFull: 'Round full',
+              pvpStarted: 'Round started',
+              pvpWaitingPlayers: 'Waiting for more players...',
+              pvpYourWager: 'Your wager',
+              pvpYourPercent: 'Your %',
+              pvpTotalPool: 'Total pool',
+              pvpWheelTitle: 'Battle Wheel',
+              pvpRound: 'Round',
+              pvpPlayers: 'players',
+              pvpMaxPlayers: '75 max',
+              pvpSelectToWin: 'Select your win amount',
+              pvpBetButton: 'Bet & Join',
+              pvpWaitingOpponents: 'Waiting for opponents...',
+              pvpBattleWon: 'You won the battle!',
+              pvpBattleLost: 'You lost the battle',
+              pvpBetFailed: 'Bet failed',
+              pvpSelectCollectible: 'Select collectible to bet',
+              pvpMinTon: 'Min bet: 0.1 TON',
+              pvpRoundEnded: 'Round ended',
+              pvpClaimReward: 'Claim reward',
+              pvpRewardClaimed: 'Reward claimed!'
+           });
 
           Object.assign(translations.ru, {
              minesTitle: '💣 Мины',
@@ -3297,8 +3441,39 @@
               lotteryMatch5: '🎉🎉🎉 5 совпадений! Джекпот!',
               lotteryBetPrompt: 'Введите сумму ставки (TON):',
               lotteryInvalid: 'Неверные числа',
-              lotteryDuplicate: 'Повторяющиеся числа не допускаются'
-         });
+              lotteryDuplicate: 'Повторяющиеся числа не допускаются',
+              playhubTitle: 'Игровой центр',
+              playhubDesc: 'Мины • Плинко • Ремесло • Кости • Лотерея • Улучшение',
+              playhubCount: '6 игр',
+              pvpStateWaiting: 'Ожидание',
+              pvpStateCountdown: 'Обратный отсчёт',
+              pvpStateLive: 'Прямой эфир',
+              pvpStateResult: 'Результат',
+              pvpEnterTon: 'Введите сумму TON',
+              pvpEnterGift: 'Выберите предмет',
+              pvpJoined: 'Присоединились!',
+              pvpFull: 'Раунд заполнен',
+              pvpStarted: 'Раунд начался',
+              pvpWaitingPlayers: 'Ожидание игроков...',
+              pvpYourWager: 'Ваша ставка',
+              pvpYourPercent: 'Ваш %',
+              pvpTotalPool: 'Общий банк',
+              pvpWheelTitle: 'Боевое колесо',
+              pvpRound: 'Раунд',
+              pvpPlayers: 'игроков',
+              pvpMaxPlayers: '75 макс',
+              pvpSelectToWin: 'Выберите сумму выигрыша',
+              pvpBetButton: 'Поставить и присоединиться',
+              pvpWaitingOpponents: 'Ожидание противников...',
+              pvpBattleWon: 'Вы выиграли битву!',
+              pvpBattleLost: 'Вы проиграли битву',
+              pvpBetFailed: 'Ставка не удалась',
+              pvpSelectCollectible: 'Выберите предмет для ставки',
+              pvpMinTon: 'Мин. ставка: 0.1 TON',
+              pvpRoundEnded: 'Раунд завершён',
+              pvpClaimReward: 'Получить награду',
+              pvpRewardClaimed: 'Награда получена!'
+           });
 
         function getTranslation(key) {
             return translations[currentLanguage]?.[key] || translations.ar[key] || key;
@@ -3311,7 +3486,7 @@
         }
 
         function applyLanguage() {
-            if (!document.getElementById('game-hub-title')) {
+            if (!document.getElementById('game-hub')) {
                 setTimeout(applyLanguage, 100);
                 return;
             }
@@ -3320,13 +3495,11 @@
             document.documentElement.dir = LANGUAGE_DIR[currentLanguage] || 'rtl';
             const label = safeGetElement('language-current-label');
             if (label) label.textContent = LANGUAGE_LABELS[currentLanguage] || LANGUAGE_LABELS.ar;
-            document.querySelectorAll(".language-menu-item").forEach(function(btn) {
-                btn.classList.toggle("active", btn.dataset.lang === currentLanguage);
-            });
-            
-            const gameHubTitle = safeGetElement('game-hub-title');
-            if (gameHubTitle) gameHubTitle.innerHTML = '❄️ <span class="ice">' + t.gameHub + '</span>';
-            const rocketTitle = safeGetElement('rocket-game-title');
+             document.querySelectorAll(".language-menu-item").forEach(function(btn) {
+                 btn.classList.toggle("active", btn.dataset.lang === currentLanguage);
+             });
+             
+             const rocketTitle = safeGetElement('rocket-game-title');
             if (rocketTitle) rocketTitle.textContent = t.rocket;
             const rocketDesc = safeGetElement('rocket-game-desc');
             if (rocketDesc) rocketDesc.textContent = t.rocketDesc;
@@ -4756,6 +4929,7 @@
         }
 
          function closeRocketGame() {
+            if (gameInterval) clearInterval(gameInterval);
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
@@ -4765,8 +4939,23 @@
         function closeAllGames() {
             ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
                 var el = document.getElementById(id);
-                if (el) el.classList.add("hidden");
+                if (el) {
+                    el.classList.add("hidden");
+                    el.style.display = 'none';
+                }
             });
+        }
+
+        function openPlayHub() {
+            hideAllPages();
+            closeAllGames();
+            var grid = document.getElementById('playhub-grid');
+            if (grid) grid.classList.remove('hidden');
+        }
+
+        function closePlayHub() {
+            var grid = document.getElementById('playhub-grid');
+            if (grid) grid.classList.add('hidden');
         }
 
         function hideAllPages() {
@@ -4777,6 +4966,7 @@
         function openMinesGame() {
             hideAllPages();
             closeAllGames();
+            closePlayHub();
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("mines-game").classList.remove("hidden");
             initMinesGame();
@@ -4784,13 +4974,16 @@
 
         function closeMinesGame() {
             document.getElementById("mines-game").classList.add("hidden");
+            document.getElementById("mines-game").style.display = 'none';
             document.getElementById("game-hub").classList.remove("hidden");
+            openPlayHub();
             hideAllPages();
         }
 
         function openPlinkoGame() {
             hideAllPages();
             closeAllGames();
+            closePlayHub();
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("plinko-game").classList.remove("hidden");
             initPlinkoGame();
@@ -4798,26 +4991,32 @@
 
         function closePlinkoGame() {
             document.getElementById("plinko-game").classList.add("hidden");
+            document.getElementById("plinko-game").style.display = 'none';
             document.getElementById("game-hub").classList.remove("hidden");
+            openPlayHub();
             hideAllPages();
         }
 
         function openDiceGame() {
             hideAllPages();
             closeAllGames();
+            closePlayHub();
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("dice-game").classList.remove("hidden");
         }
 
         function closeDiceGame() {
             document.getElementById("dice-game").classList.add("hidden");
+            document.getElementById("dice-game").style.display = 'none';
             document.getElementById("game-hub").classList.remove("hidden");
+            openPlayHub();
             hideAllPages();
         }
 
         function openCraftsGame() {
             hideAllPages();
             closeAllGames();
+            closePlayHub();
             document.getElementById("game-hub").classList.add("hidden");
             document.getElementById("crafts-game").classList.remove("hidden");
             loadCraftsInventory();
@@ -4825,27 +5024,34 @@
 
         function closeCraftsGame() {
             document.getElementById("crafts-game").classList.add("hidden");
+            document.getElementById("crafts-game").style.display = 'none';
             document.getElementById("game-hub").classList.remove("hidden");
+            openPlayHub();
             hideAllPages();
         }
 
          function openPvpGame() {
              hideAllPages();
              closeAllGames();
+             closePlayHub();
              document.getElementById("game-hub").classList.add("hidden");
              document.getElementById("pvp-game").classList.remove("hidden");
              initPvPGame();
          }
 
          function closePvpGame() {
+             if (pvpState && pvpState.timer) clearInterval(pvpState.timer);
              document.getElementById("pvp-game").classList.add("hidden");
+             document.getElementById("pvp-game").style.display = 'none';
              document.getElementById("game-hub").classList.remove("hidden");
+             openPlayHub();
              hideAllPages();
          }
 
          function openUpgradeGame() {
              hideAllPages();
              closeAllGames();
+             closePlayHub();
              document.getElementById("game-hub").classList.add("hidden");
              document.getElementById("upgrade-game").classList.remove("hidden");
              loadUpgradeInventory();
@@ -4853,14 +5059,18 @@
 
          function closeUpgradeGame() {
             document.getElementById("upgrade-game").classList.add("hidden");
-             document.getElementById("lottery-game").classList.add("hidden");
+            document.getElementById("lottery-game").classList.add("hidden");
+            document.getElementById("playhub-grid").classList.add("hidden");
+             document.getElementById("upgrade-game").style.display = 'none';
              document.getElementById("game-hub").classList.remove("hidden");
+             openPlayHub();
              hideAllPages();
          }
 
          function openLotteryGame() {
              hideAllPages();
              closeAllGames();
+             closePlayHub();
              document.getElementById("game-hub").classList.add("hidden");
              document.getElementById("lottery-game").classList.remove("hidden");
              initLotteryGame();
@@ -4868,7 +5078,9 @@
 
          function closeLotteryGame() {
              document.getElementById("lottery-game").classList.add("hidden");
+             document.getElementById("lottery-game").style.display = 'none';
              document.getElementById("game-hub").classList.remove("hidden");
+             openPlayHub();
              hideAllPages();
          }
 
@@ -5198,13 +5410,126 @@
          }
 
          /* =========================================================
-            PVP GAME (Coming Soon)
+            PVP GAME
          ========================================================= */
+         var pvpState = { timer: null, sse: null, data: null };
+
          function initPvPGame() {
-            var t = translations[currentLanguage] || translations.ar;
-            document.getElementById('pvp-opponent').textContent = (t.pvpComingSoon || 'Coming Soon');
-            document.getElementById('pvp-ready-btn').disabled = true;
-            document.getElementById('pvp-ready-btn').textContent = (t.pvpComingSoon || 'Coming Soon');
+             stopPvpTimer();
+             pvpState.data = null;
+             updatePvpUI();
+             connectPvpStream();
+         }
+
+         function stopPvpTimer() {
+             if (pvpState.timer) clearInterval(pvpState.timer);
+             pvpState.timer = null;
+         }
+
+         function connectPvpStream() {
+             if (pvpState.sse) pvpState.sse.close();
+             var token = localStorage.getItem('authToken') || '';
+             pvpState.sse = new EventSource('/api/pvp-stream?token=' + encodeURIComponent(token));
+             pvpState.sse.addEventListener('pvp-state', function(e) {
+                 try {
+                     pvpState.data = JSON.parse(e.data);
+                     updatePvpUI();
+                 } catch(err) {}
+             });
+             pvpState.sse.onerror = function() {
+                 if (pvpState.sse) pvpState.sse.close();
+                 pvpState.sse = null;
+             };
+         }
+
+         function updatePvpUI() {
+             var t = translations[currentLanguage] || translations.ar;
+             var data = pvpState.data;
+             if (!data) {
+                 document.getElementById('pvp-countdown').textContent = t.pvpWaitingPlayers;
+                 document.getElementById('pvp-join-btn').style.display = 'inline-block';
+                 document.getElementById('pvp-bet-panel').style.display = 'flex';
+                 document.getElementById('pvp-your-participation').style.display = 'none';
+                 return;
+             }
+
+             var stateLabel = safeGetElement('pvp-state-label');
+             var stateKeyMap = { WAITING: 'pvpStateWaiting', COUNTDOWN: 'pvpStateCountdown', LIVE: 'pvpStateLive', RESULT: 'pvpStateResult' };
+             if (stateLabel && stateKeyMap[data.phase]) {
+                 stateLabel.textContent = t[stateKeyMap[data.phase]] || data.phase;
+             }
+
+             var roundNum = safeGetElement('pvp-round-number-val');
+             if (roundNum) roundNum.textContent = data.roundNumber || '';
+
+             var countdown = document.getElementById('pvp-countdown');
+             if (data.phase === 'WAITING') {
+                 countdown.textContent = t.pvpWaitingPlayers;
+             } else if (data.phase === 'COUNTDOWN') {
+                 countdown.textContent = String(data.seconds).padStart(2, '0');
+             } else if (data.phase === 'LIVE') {
+                 countdown.textContent = (t.pvpStateLive || 'LIVE');
+             } else if (data.phase === 'RESULT') {
+                 countdown.textContent = (t.pvpRoundEnded || 'Round ended');
+             }
+
+             // Update pool
+             var poolTon = safeGetElement('pvp-pool-ton-val');
+             if (poolTon) poolTon.textContent = parseFloat(data.poolTon || 0).toFixed(2);
+
+             // Update participants
+             var participantsEl = document.getElementById('pvp-participants');
+             participantsEl.innerHTML = '';
+             data.participants.forEach(function(p) {
+                 var div = document.createElement('div');
+                 div.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+                 div.innerHTML = '<img src="' + (p.avatar || '') + '" style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,215,0,0.3);" alt="' + escapeHtmlAttribute(p.name || '') + '">'
+                     + '<span style="font-size:10px;color:#7a9bcb;">' + escapeHtmlAttribute(p.name || 'Guest') + '</span>'
+                     + '<span style="font-size:10px;color:#ffd700;font-weight:700;">' + p.participationPercent.toFixed(1) + '%</span>';
+                 participantsEl.appendChild(div);
+             });
+
+             // Your participation - check if you're in the participant list
+             var yourPart = document.getElementById('pvp-your-participation');
+             var joinBtn = document.getElementById('pvp-join-btn');
+             var betPanel = document.getElementById('pvp-bet-panel');
+             // The server marks your user_id; check participation via pool info
+             if (data.phase === 'WAITING' || data.phase === 'COUNTDOWN') {
+                 joinBtn.style.display = 'inline-block';
+                 betPanel.style.display = 'flex';
+                 yourPart.style.display = 'none';
+             } else if (data.phase === 'LIVE' || data.phase === 'RESULT') {
+                 joinBtn.style.display = 'none';
+                 betPanel.style.display = 'none';
+             }
+
+             // Wheel animation
+             if (data.phase === 'LIVE') {
+                 var wheel = document.getElementById('pvp-wheel');
+                 if (wheel) {
+                     var deg = (Date.now() / 15) % 360;
+                     wheel.style.transform = 'rotate(' + deg + 'deg)';
+                 }
+             }
+         }
+
+         async function joinPvpRound() {
+             var t = translations[currentLanguage] || translations.ar;
+             var betInput = document.getElementById('pvp-bet-input');
+             var betAmount = parseFloat(betInput.value) || 1;
+             if (betAmount < 0.1) { showToast(t.pvpMinTon); return; }
+
+             try {
+                 var response = await fetch('/api/pvp/join', {
+                     method: 'POST',
+                     headers: getAuthHeaders(),
+                     body: JSON.stringify({ betCurrency: 'TON', betAmount: betAmount })
+                 });
+                 var data = await response.json();
+                 if (data.error) { showToast(data.error); }
+             } catch(err) {
+                 showToast(t.pvpBetFailed);
+             }
          }
 
          /* =========================================================
@@ -5540,10 +5865,12 @@
             initLiveStrip();
         });
 
-        window.addEventListener("beforeunload", function() {
-            if (gameInterval) clearInterval(gameInterval);
-            if (depositStatusTimer) { try { clearInterval(depositStatusTimer); } catch {} }
-        });
+         window.addEventListener("beforeunload", function() {
+             if (gameInterval) clearInterval(gameInterval);
+             if (depositStatusTimer) { try { clearInterval(depositStatusTimer); } catch {} }
+             stopPvpTimer();
+             if (pvpState && pvpState.sse) { try { pvpState.sse.close(); } catch {} }
+         });
     </script>
 </body>
     </html>

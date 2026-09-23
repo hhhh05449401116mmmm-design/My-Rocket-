@@ -43,6 +43,7 @@ async function startHighRound() {
 test.before(async () => {
     httpServer = await serverModule.startServer(0);
     serverModule.stopGameLoop();
+    if (serverModule.stopPvpGameLoop) serverModule.stopPvpGameLoop();
     baseUrl = `http://127.0.0.1:${httpServer.address().port}`;
     user = await database.findOrCreateUser('http-integration-user');
     await database.updateUserBalance(user.id, 1000, 'add');
@@ -50,6 +51,7 @@ test.before(async () => {
 
 test.after(async () => {
     serverModule.stopGameLoop();
+    if (serverModule.stopPvpGameLoop) serverModule.stopPvpGameLoop();
     if (httpServer) await new Promise(resolve => httpServer.close(resolve));
     await new Promise((resolve, reject) => database.db.close(error => error ? reject(error) : resolve()));
     fs.rmSync(tempDir, { recursive: true, force: true });

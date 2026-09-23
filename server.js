@@ -87,7 +87,16 @@ const {
     dropPlinkoChip,
     createDiceGame,
     getMiniGame,
-    createLotteryGame
+    createLotteryGame,
+    getPvpActiveRound,
+    createPvpRound,
+    startPvpCountdown,
+    getPvpRoundWithParticipants,
+    getLastPvpRoundNumber,
+    crashPvpRound,
+    joinPvpRound,
+    cashoutPvpBet,
+    MAX_PVP_PLAYERS
 } = require('./database');
 
 const app = express();
@@ -912,6 +921,176 @@ function stopCollectibleReconciliationWorker() {
 }
 
 // =========================================================
+// 4.2 PvP Battle System State & Loop
+// =========================================================
+let pvpState = {
+    roundId: null,
+    roundNumber: 0,
+    phase: 'WAITING',
+    seconds: 0,
+    serverSeedHash: null,
+    serverSeed: null,
+    crashAt: null,
+    poolTon: 0,
+    poolGift: 0,
+    participants: [],
+    lastWinnerUserId: null
+};
+
+let pvpGameLoopTimer = null;
+let pvpRoundTransitionTimer = null;
+let pvpBusy = false;
+const PVP_COUNTDOWN_SECONDS = 10;
+
+function getPvpStateSnapshot() {
+    return {
+        roundId: pvpState.roundId,
+        phase: pvpState.phase,
+        seconds: pvpState.seconds,
+        poolTon: pvpState.poolTon,
+        poolGift: pvpState.poolGift,
+        participants: pvpState.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            avatar: p.avatar,
+            betCurrency: p.bet_currency,
+            betAmount: p.bet_amount,
+            participationPercent: p.participation_percent,
+            status: p.status,
+            multiplier: p.cashout_multiplier
+        })),
+        serverTime: Date.now(),
+        maxPlayers: MAX_PVP_PLAYERS
+    };
+}
+
+function buildPlayerName(user) {
+    return (user.first_name + ' ' + (user.last_name || '')).trim() || 'Unknown';
+}
+
+async function refreshPvpParticipants() {
+    if (!pvpState.roundId) return;
+    const data = await getPvpRoundWithParticipants(pvpState.roundId);
+    if (!data) return;
+    pvpState.participants = data.participants.map(p => ({
+        ...p,
+        name: buildPlayerName(p),
+        avatar: p.telegram_id ? `https://t.me/i/userpic/${p.telegram_id}.jpg` : '',
+        participation_percent: calculatePercent(p.bet_amount, data.participants.reduce((s, x) => s + x.bet_amount, 0))
+    }));
+    pvpState.poolTon = data.participants
+        .filter(p => p.bet_currency === 'TON')
+        .reduce((s, p) => s + parseFloat(p.bet_amount), 0);
+    pvpState.poolGift = data.participants
+        .filter(p => p.bet_currency === 'GIFT')
+        .reduce((s, p) => s + parseFloat(p.bet_amount), 0);
+}
+
+function calculatePercent(contrib, total) {
+    return total > 0 ? parseFloat((contrib / total * 100).toFixed(2)) : 0;
+}
+
+async function startPvpRound() {
+    if (pvpRoundTransitionTimer) clearTimeout(pvpRoundTransitionTimer);
+    pvpRoundTransitionTimer = null;
+
+    const nextRound = await getLastPvpRoundNumber() + 1;
+    const round = await createPvpRound(nextRound);
+
+    pvpState = {
+        roundId: round.id,
+        roundNumber: round.round_number,
+        phase: 'WAITING',
+        seconds: PVP_COUNTDOWN_SECONDS,
+        serverSeedHash: round.server_seed_hash,
+        serverSeed: round.server_seed,
+        crashAt: round.crash_at,
+        poolTon: 0,
+        poolGift: 0,
+        participants: [],
+        lastWinnerUserId: null
+    };
+    console.log(`🎮 PvP Round ${round.round_number} created (WAITING)`);
+}
+
+async function triggerPvpCountdown() {
+    if (!pvpState.roundId) return;
+    const round = await startPvpCountdown(pvpState.roundId);
+    pvpState.phase = 'COUNTDOWN';
+    pvpState.seconds = PVP_COUNTDOWN_SECONDS;
+    console.log(`⏰ PvP Round ${pvpState.roundNumber} COUNTDOWN started (${PVP_COUNTDOWN_SECONDS}s)`);
+}
+
+async function launchPvpRound() {
+    if (pvpState.phase !== 'COUNTDOWN') return;
+    const data = await getPvpRoundWithParticipants(pvpState.roundId);
+    if (!data || data.participants.length === 0) {
+        console.log(`🎮 PvP Round ${pvpState.roundNumber} cancelled (no players)`);
+        await startPvpRound();
+        await triggerPvpCountdown();
+        return;
+    }
+    await refreshPvpParticipants();
+    pvpState.phase = 'LIVE';
+    console.log(`🔥 PvP Round ${pvpState.roundNumber} LIVE with ${pvpState.participants.length} players`);
+}
+
+async function settlePvpRound() {
+    if (pvpState.phase !== 'LIVE' || !pvpState.roundId) return;
+    try {
+        const result = await crashPvpRound(pvpState.roundId);
+        pvpState.phase = 'RESULT';
+        pvpState.lastWinnerUserId = result.winnerUserId;
+        pvpState.crashAt = result.crashAt;
+        console.log(`💥 PvP Round ${pvpState.roundNumber} crashed at ${result.crashAt}x`);
+        await startPvpRound();
+        await triggerPvpCountdown();
+    } catch (error) {
+        console.error('PvP round settlement error:', error.message);
+    }
+}
+
+async function startPvpGameLoop() {
+    if (pvpGameLoopTimer) return pvpGameLoopTimer;
+    pvpGameLoopTimer = setInterval(async () => {
+        if (pvpBusy) return;
+        pvpBusy = true;
+        try {
+            if (pvpState.phase === 'WAITING') {
+                const participants = await getPvpRoundWithParticipants(pvpState.roundId);
+                if (participants && participants.participants.length >= 1) {
+                    await triggerPvpCountdown();
+                }
+            } else if (pvpState.phase === 'COUNTDOWN') {
+                pvpState.seconds--;
+                if (pvpState.seconds <= 0) {
+                    await launchPvpRound();
+                }
+            } else if (pvpState.phase === 'LIVE') {
+                pvpState.seconds--;
+                if (pvpState.seconds <= -15) {
+                    await settlePvpRound();
+                }
+            }
+        } catch (error) {
+            console.error('PvP game loop error:', error);
+        } finally {
+            pvpBusy = false;
+        }
+    }, 1000);
+    await startPvpRound();
+    await triggerPvpCountdown();
+    return pvpGameLoopTimer;
+}
+
+function stopPvpGameLoop() {
+    if (pvpGameLoopTimer) clearInterval(pvpGameLoopTimer);
+    if (pvpRoundTransitionTimer) clearTimeout(pvpRoundTransitionTimer);
+    pvpGameLoopTimer = null;
+    pvpRoundTransitionTimer = null;
+}
+
+// =========================================================
 // 5. API Routes
 // =========================================================
 
@@ -1000,6 +1179,73 @@ app.get('/api/game-stream', async (req, res) => {
         clearInterval(streamTimer);
         clearInterval(heartbeat);
     });
+});
+
+// =========================================================
+// 5.2.2 PvP Game State SSE
+// =========================================================
+
+app.get('/api/pvp-stream', async (req, res) => {
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    if (!token) return res.status(401).end();
+    try {
+        const user = await get('SELECT id FROM users WHERE id = ?', [token]);
+        if (!user) return res.status(401).end();
+    } catch (error) {
+        return res.status(500).end();
+    }
+
+    res.set({
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    });
+    res.flushHeaders();
+
+    const sendState = () => {
+        res.write(`event: pvp-state\ndata: ${JSON.stringify(getPvpStateSnapshot())}\n\n`);
+    };
+    sendState();
+    const streamTimer = setInterval(sendState, 500);
+    const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 15000);
+
+    req.on('close', () => {
+        clearInterval(streamTimer);
+        clearInterval(heartbeat);
+    });
+});
+
+// ===== 5.3 PvP API =====
+app.get('/api/pvp/state', authenticate, async (req, res) => {
+    try {
+        res.json({ ok: true, state: getPvpStateSnapshot() });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/pvp/join', authenticate, async (req, res) => {
+    try {
+        const { betCurrency, betAmount, giftUniqueId } = req.body;
+        const result = await joinPvpRound(req.user.id, betCurrency || 'TON', betAmount, giftUniqueId || null);
+        if (result.betCurrency === 'TON') {
+            await refreshPvpParticipants();
+        }
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/pvp/cashout', authenticate, async (req, res) => {
+    try {
+        const { participantId } = req.body;
+        const result = await cashoutPvpBet(participantId, req.user.id);
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
 });
 
 // ===== 5.3 جلب هدايا المستخدم =====
@@ -2155,6 +2401,7 @@ async function startServer(port = PORT) {
         // بدء حلقة اللعبة
         startGameLoop();
         console.log('🎮 Game loop started');
+        startPvpGameLoop();
         startCollectibleReconciliationWorker();
 
         // بدء السيرفر
@@ -2185,6 +2432,7 @@ if (require.main === module) {
     const shutdown = () => {
         console.log('\n🛑 Shutting down server...');
         stopGameLoop();
+        stopPvpGameLoop();
         db.close(() => {
             console.log('✅ Database closed');
             process.exit(0);
@@ -2212,6 +2460,8 @@ module.exports = {
     runCollectibleVerificationSweep,
     startCollectibleReconciliationWorker,
     stopCollectibleReconciliationWorker,
+    stopPvpGameLoop,
+    getPvpStateSnapshot,
     resolveTelegramFilePath,
     streamTelegramFile
 };

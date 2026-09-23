@@ -6,6 +6,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { createFairRound, DEFAULT_CLIENT_SEED } = require('./crashFair');
 
 // =========================================================
 // 1. إنشاء اتصال قاعدة البيانات
@@ -576,6 +577,66 @@ function initDatabase() {
             `);
             db.run(`CREATE INDEX IF NOT EXISTS idx_mini_games_user ON mini_games(user_id)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_mini_games_status ON mini_games(status)`);
+
+            // ===== 5.11 PvP Battle Rounds =====
+            db.run(`
+                CREATE TABLE IF NOT EXISTS pvp_rounds (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    round_number INTEGER NOT NULL UNIQUE,
+                    phase TEXT NOT NULL CHECK(phase IN ('WAITING', 'COUNTDOWN', 'LIVE', 'CRASH', 'RESULT')),
+                    seconds_remaining INTEGER DEFAULT 0,
+                    pool_ton REAL DEFAULT 0,
+                    pool_gift_value REAL DEFAULT 0,
+                    winner_user_id INTEGER,
+                    winner_multiplier REAL,
+                    crash_at REAL,
+                    server_seed TEXT NOT NULL,
+                    server_seed_hash TEXT NOT NULL,
+                    nonce INTEGER NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    started_at DATETIME,
+                    ended_at DATETIME
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_pvp_rounds_phase ON pvp_rounds(phase)`);
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS pvp_participants (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pvp_round_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    bet_currency TEXT NOT NULL CHECK(bet_currency IN ('TON', 'GIFT')),
+                    bet_amount REAL NOT NULL,
+                    gift_unique_id TEXT,
+                    participation_percent REAL NOT NULL,
+                    crash_point REAL,
+                    cashout_multiplier REAL,
+                    payout REAL DEFAULT 0,
+                    status TEXT NOT NULL CHECK(status IN ('ACTIVE', 'CASHED_OUT', 'LOST', 'WON')),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (pvp_round_id) REFERENCES pvp_rounds(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_pvp_participants_round ON pvp_participants(pvp_round_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_pvp_participants_user ON pvp_participants(user_id)`);
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_pvp_participant_unique ON pvp_participants(pvp_round_id, user_id)`);
+
+            // ===== 5.12 PvP Rewards =====
+            db.run(`
+                CREATE TABLE IF NOT EXISTS pvp_rewards (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pvp_round_id INTEGER NOT NULL,
+                    winner_user_id INTEGER NOT NULL,
+                    reward_gift_unique_id TEXT,
+                    reward_value REAL NOT NULL,
+                    claimed INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (pvp_round_id) REFERENCES pvp_rounds(id) ON DELETE CASCADE,
+                    FOREIGN KEY (winner_user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_pvp_rewards_winner ON pvp_rewards(winner_user_id)`);
 
             db.run('SELECT 1', error => {
                 if (error) { reject(error); return; }
@@ -2362,6 +2423,184 @@ async function createLotteryGame(userId, betAmount, betCurrency, betGiftId, play
     });
 }
 
+// ===== 5.12 PvP Battle System =====
+const MAX_PVP_PLAYERS = 75;
+const DEFAULT_PVP_COUNTDOWN_SECONDS = 10;
+
+async function getPvpActiveRound() {
+    return await get('SELECT * FROM pvp_rounds WHERE phase IN (?, ?, ?) ORDER BY round_number DESC LIMIT 1', ['WAITING', 'COUNTDOWN', 'LIVE']);
+}
+
+async function createPvpRound(roundNumber) {
+    const fairRound = createFairRound(roundNumber, DEFAULT_CLIENT_SEED);
+    const result = await run(`
+        INSERT INTO pvp_rounds
+        (round_number, phase, seconds_remaining, pool_ton, pool_gift_value,
+         crash_at, server_seed, server_seed_hash, nonce, created_at)
+        VALUES (?, 'WAITING', ?, 0, 0, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `, [roundNumber, DEFAULT_PVP_COUNTDOWN_SECONDS, fairRound.crashAt, fairRound.serverSeed, fairRound.serverSeedHash, fairRound.nonce]);
+
+    return await get('SELECT * FROM pvp_rounds WHERE id = ?', [result.lastID]);
+}
+
+async function startPvpCountdown(roundId) {
+    await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = ?, started_at = CURRENT_TIMESTAMP WHERE id = ?', ['COUNTDOWN', DEFAULT_PVP_COUNTDOWN_SECONDS, roundId]);
+    return await get('SELECT * FROM pvp_rounds WHERE id = ?', [roundId]);
+}
+
+function calculateParticipationPercent(playerContribution, totalPool) {
+    if (!totalPool || totalPool <= 0) return 0;
+    return parseFloat((playerContribution / totalPool * 100).toFixed(2));
+}
+
+async function getLivePoolTotals(roundId) {
+    const totals = await get(`
+        SELECT COALESCE(SUM(CASE WHEN bet_currency = 'TON' THEN bet_amount ELSE 0 END), 0) AS pool_ton,
+               COALESCE(SUM(CASE WHEN bet_currency = 'GIFT' THEN bet_amount ELSE 0 END), 0) AS pool_gift
+        FROM pvp_participants WHERE pvp_round_id = ? AND status = 'ACTIVE'
+    `, [roundId]);
+    return { poolTon: totals.pool_ton || 0, poolGift: totals.pool_gift || 0 };
+}
+
+async function joinPvpRound(userId, betCurrency, betAmount, giftUniqueId) {
+    return await transaction(async () => {
+        const activeRound = await getPvpActiveRound();
+        if (!activeRound) throw new Error('No active PvP round to join');
+        if (activeRound.phase === 'LIVE' || activeRound.phase === 'RESULT') throw new Error('Round already started');
+
+        const playerCount = await get('SELECT COUNT(*) as cnt FROM pvp_participants WHERE pvp_round_id = ? AND status = \'ACTIVE\'', [activeRound.id]);
+        if (playerCount.cnt >= MAX_PVP_PLAYERS) throw new Error('PvP round is full');
+
+        const existing = await get('SELECT * FROM pvp_participants WHERE pvp_round_id = ? AND user_id = ?', [activeRound.id, userId]);
+        if (existing && existing.status === 'ACTIVE') throw new Error('You already joined this round');
+
+        let actualBetAmount = betAmount;
+        let giftToLock = null;
+
+        if (betCurrency === 'TON') {
+            if (!Number.isFinite(betAmount) || betAmount < 0.1) throw new Error('Invalid TON bet amount (min 0.1)');
+            const balance = await getUserBalance(userId);
+            if (balance < betAmount) throw new Error('Insufficient TON balance');
+            const update = await run('UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?', [betAmount, userId, betAmount]);
+            if (update.changes !== 1) throw new Error('Insufficient balance');
+        } else if (betCurrency === 'GIFT') {
+            if (!giftUniqueId) throw new Error('Gift collectible ID required');
+            const collectible = await getCollectibleByUniqueId(giftUniqueId);
+            if (!collectible) throw new Error('Collectible not found');
+            if (collectible.user_id !== userId) throw new Error('Not your collectible');
+            if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible not available');
+            actualBetAmount = collectible.value;
+            if (actualBetAmount <= 0) throw new Error('Collectible has no value');
+            const update = await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', ['IN_BET', giftUniqueId, 'OWNED']);
+            if (update.changes !== 1) throw new Error('Could not lock collectible');
+            const verifyLock = await get('SELECT status FROM user_gifts WHERE unique_collectible_id = ?', [giftUniqueId]);
+            if (verifyLock.status !== 'IN_BET') throw new Error('Could not lock collectible');
+            giftToLock = giftUniqueId;
+        } else {
+            throw new Error('Invalid bet currency');
+        }
+
+        const { poolTon, poolGift } = await getLivePoolTotals(activeRound.id);
+        const totalPool = poolTon + poolGift + actualBetAmount;
+        const percent = calculateParticipationPercent(actualBetAmount, totalPool);
+
+        await run(`
+            INSERT INTO pvp_participants
+            (pvp_round_id, user_id, bet_currency, bet_amount, gift_unique_id,
+             participation_percent, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP)
+        `, [activeRound.id, userId, betCurrency, actualBetAmount, giftToLock, percent]);
+
+        return {
+            roundId: activeRound.id,
+            roundNumber: activeRound.round_number,
+            playerCount: playerCount.cnt + 1,
+            maxPlayers: MAX_PVP_PLAYERS,
+            participationPercent: percent,
+            betAmount: actualBetAmount,
+            betCurrency: betCurrency,
+            poolTon: poolTon + actualBetAmount,
+            poolGift: poolGift
+        };
+    });
+}
+
+async function cashoutPvpBet(participantId, userId) {
+    return await transaction(async () => {
+        const participant = await get(`
+            SELECT * FROM pvp_participants
+            WHERE id = ? AND user_id = ? AND status = 'ACTIVE'
+        `, [participantId, userId]);
+        if (!participant) throw new Error('Active PvP bet not found');
+
+        return { participantId: participant.id };
+    });
+}
+
+async function crashPvpRound(roundId) {
+    return await transaction(async () => {
+        const round = await get('SELECT * FROM pvp_rounds WHERE id = ? AND phase = \'LIVE\'', [roundId]);
+        if (!round) throw new Error('Round not in LIVE state');
+
+        await run('UPDATE pvp_rounds SET phase = ? WHERE id = ?', ['RESULT', roundId]);
+
+        const participants = await query(`
+            SELECT p.*, u.first_name, u.last_name, u.telegram_id
+            FROM pvp_participants p
+            JOIN users u ON u.id = p.user_id
+            WHERE p.pvp_round_id = ? AND p.status = 'ACTIVE'
+            ORDER BY p.bet_amount DESC, p.id ASC
+        `, [roundId]);
+
+        if (participants.length === 0) {
+            await run('UPDATE pvp_rounds SET phase = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?', ['CRASH', roundId]);
+            return { roundId, crashAt: round.crash_at, winnerUserId: null, payouts: [] };
+        }
+
+        const crashAt = round.crash_at;
+        const winner = participants[0];
+
+        await run('UPDATE pvp_participants SET status = ?, cashout_multiplier = ?, payout = ? WHERE id = ?', ['WON', crashAt, winner.bet_amount * crashAt, winner.id]);
+        await run('UPDATE pvp_participants SET status = ? WHERE pvp_round_id = ? AND id != ? AND status = ?', ['LOST', roundId, winner.id, 'ACTIVE']);
+
+        if (winner.bet_currency === 'TON') {
+            const totalPool = participants.reduce((sum, p) => sum + p.bet_amount, 0);
+            const winnerShare = totalPool - winner.bet_amount;
+            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [winnerShare, winner.user_id]);
+            await run('UPDATE pvp_rounds SET winner_user_id = ?, winner_multiplier = ?, pool_ton = ? WHERE id = ?', [winner.user_id, crashAt, totalPool, roundId]);
+        }
+
+        await run('UPDATE pvp_rounds SET phase = ?, winner_user_id = ?, winner_multiplier = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?', ['CRASH', winner.user_id, crashAt, roundId]);
+
+        return {
+            roundId,
+            crashAt,
+            winnerUserId: winner.user_id,
+            winnerMultiplier: crashAt,
+            totalPool: participants.reduce((sum, p) => sum + p.bet_amount, 0),
+            winnerPayout: winner.bet_currency === 'TON' ? winner.bet_amount * crashAt : 0
+        };
+    });
+}
+
+async function getPvpRoundWithParticipants(roundId) {
+    const round = await get('SELECT * FROM pvp_rounds WHERE id = ?', [roundId]);
+    if (!round) return null;
+    const participants = await query(`
+        SELECT p.*, u.first_name, u.last_name, u.telegram_id
+        FROM pvp_participants p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.pvp_round_id = ?
+        ORDER BY p.bet_amount DESC, p.id ASC
+    `, [roundId]);
+    return { round, participants };
+}
+
+async function getLastPvpRoundNumber() {
+    const row = await get('SELECT MAX(round_number) as max FROM pvp_rounds');
+    return row.max ? row.max : 0;
+}
+
 module.exports = {
     // اتصال قاعدة البيانات
     db,
@@ -2469,5 +2708,15 @@ module.exports = {
     createDiceGame,
     getMiniGame,
     createLotteryGame,
-    getLotteryPrize
+    getLotteryPrize,
+    getPvpActiveRound,
+    createPvpRound,
+    startPvpCountdown,
+    joinPvpRound,
+    cashoutPvpBet,
+    crashPvpRound,
+    getPvpRoundWithParticipants,
+    getLastPvpRoundNumber,
+    MAX_PVP_PLAYERS,
+    calculateParticipationPercent
 };
