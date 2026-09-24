@@ -3100,6 +3100,7 @@
         ========================================================= */
         let gameInterval = null;
         let gameStreamController = null;
+        let collectiblesEventSource = null;
         let serverConnected = false;
         let currentRoundId = 0;
         let currentMultiplier = 1.00;
@@ -3742,6 +3743,7 @@
             if (gameInterval) clearInterval(gameInterval);
             if (gameStreamController) gameStreamController.abort();
             connectToGameStream();
+            connectToCollectiblesStream();
             requestAnimationFrame(animateGameLoop);
         }
 
@@ -3781,6 +3783,31 @@
                 console.error('Game stream error:', error);
                 if (!gameInterval) gameInterval = setInterval(fetchGameState, 1000);
             }
+        }
+
+        function connectToCollectiblesStream() {
+            if (collectiblesEventSource) { try { collectiblesEventSource.close(); } catch (e) {} collectiblesEventSource = null; }
+            const token = authToken || localStorage.getItem('authToken');
+            if (!token) { fetchCollectibles(); return; }
+
+            // EventSource لا يدعم ترويسات مخصّصة، لذا يُمرّر الـ user id (token) كاستعلام —
+            // يعكس /api/game-stream و /api/pvp-stream اللذين يستخدمان ?token=.
+            const source = new EventSource(`${BACKEND_URL}/api/collectibles-stream?token=${encodeURIComponent(token)}`);
+            collectiblesEventSource = source;
+
+            source.addEventListener('collectible-credited', () => {
+                // تحديث Backpack فوري بدون إعادة تحميل الصفحة.
+                fetchCollectibles();
+            });
+
+            let lastFallback = 0;
+            source.onerror = () => {
+                const now = Date.now();
+                if (now - lastFallback < 5000) return; // لا تكرار الطلبات خلل المتصفح يعيد الاتصال تلقائياً
+                lastFallback = now;
+                // fallback آمن عند قطع/فشل الـ SSE: جلب آخر مقتنيات المستخدم.
+                fetchCollectibles();
+            };
         }
 
         function setServerStatus(connected) {
@@ -5986,11 +6013,12 @@
             initLiveStrip();
         });
 
-         window.addEventListener("beforeunload", function() {
+          window.addEventListener("beforeunload", function() {
              if (gameInterval) clearInterval(gameInterval);
              if (depositStatusTimer) { try { clearInterval(depositStatusTimer); } catch {} }
              stopPvpTimer();
              if (pvpState && pvpState.sse) { try { pvpState.sse.close(); } catch {} }
+             if (collectiblesEventSource) { try { collectiblesEventSource.close(); } catch {} }
          });
     </script>
 </body>

@@ -328,16 +328,49 @@ function callTelegramBotApi(method, payload = {}) {
     });
 }
 
+// يجلب كل صفحات getBusinessAccountGifts عبر next_offset حتى تنتهي النتائج.
+// منعطف محايد وقابل للاختبار بدون شبكة — يمنع التكرار وحلقة لا نهائية.
+// يعتمد على next_offset الرسمي من Telegram فقط ولا ينطلق بأي افتراضات.
+async function paginateCollectibleGifts(resolvePage, connectionId) {
+    const allGifts = [];
+    const seen = new Set(); // يمنع duplicate عندما يعيد Telegram صفحة تم قراءتها
+    const MAX_PAGES = 100; // حد أمان: 100 صفحة × 100 هدية = 10,000 هدية كحد أعلى
+    let offset;
+    let page = 0;
+
+    while (page < MAX_PAGES) {
+        const { gifts = [], nextOffset } = await resolvePage(offset, connectionId);
+        for (const gift of gifts) {
+            const key = gift && gift.owned_gift_id ? String(gift.owned_gift_id) : null;
+            if (!key) { allGifts.push(gift); continue; }
+            if (seen.has(key)) continue;
+            seen.add(key);
+            allGifts.push(gift);
+        }
+        page++;
+        // توقّف عندما لا يعاد هناك صفحات: لا next_offset، ولم يتقدّم الـ offset،
+        // أو صفحة فارغة تمامًا. هذه منعطفات وقف حقيقية ولا تسبب حلقة لا نهائية.
+        if (!nextOffset || nextOffset === offset || gifts.length === 0) break;
+        offset = nextOffset;
+    }
+    return allGifts;
+}
+
 // يجلب الهدايا المملوكة لحساب اللعبة التجاري على Telegram عبر الـ Business API الرسمي فقط.
 async function fetchBusinessAccountGifts() {
     const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
     if (!connectionId) {
         throw new Error('TELEGRAM_BUSINESS_CONNECTION_ID is not configured');
     }
-    const result = await callTelegramBotApi('getBusinessAccountGifts', {
-        business_connection_id: connectionId
-    });
-    return Array.isArray(result?.gifts) ? result.gifts : [];
+    return paginateCollectibleGifts(async (offset) => {
+        const payload = { business_connection_id: connectionId };
+        // Telegram يدعم offset الرسمي للترقيم الصفحي — لا نستخدمه إلا إن وُجد.
+        if (offset) payload.offset = offset;
+        const result = await callTelegramBotApi('getBusinessAccountGifts', payload);
+        const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
+        const nextOffset = (result && typeof result.next_offset !== 'undefined') ? result.next_offset : null;
+        return { gifts, nextOffset };
+    }, connectionId);
 }
 
 // Every business-scoped update officially carries business_connection_id, so these act as a
@@ -417,6 +450,38 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     };
 }
 
+// ===== Backpack حية: تسجيل عملاء SSE وإرسال إشعارات collectible-credited =====
+// خريطة userId -> مجموعة من استجابات الـ SSE المتصلة. لا تُخزّن أي أسرار أو file_id.
+const collectibleClients = new Map();
+
+function registerCollectibleClient(userId, res) {
+    if (!collectibleClients.has(userId)) collectibleClients.set(userId, new Set());
+    collectibleClients.get(userId).add(res);
+}
+
+function unregisterCollectibleClient(userId, res) {
+    const clients = collectibleClients.get(userId);
+    if (clients) {
+        clients.delete(res);
+        if (clients.size === 0) collectibleClients.delete(userId);
+    }
+}
+
+// يبثّ حدث collectible-credited لعميل Backpack المناسب فقط.
+// يُرسل هوية القطعة العلنية + الرقم فقط — لا BOT_TOKEN، لا file_id، لا بيانات مرسل خام.
+// يُستدعى من داخل المسح بعد creditVerifiedCollectible بنجاح.
+function notifyCollectibleClients(userId, payload) {
+    const clients = collectibleClients.get(userId);
+    if (!clients) return 0;
+    const data = `event: collectible-credited\ndata: ${JSON.stringify(payload)}\n\n`;
+    let sent = 0;
+    for (const res of clients) {
+        if (res.writableEnded) continue;
+        try { res.write(data); sent++; } catch { /* العميل انقطع، سيُزاله في استقبال close */ }
+    }
+    return sent;
+}
+
 // مسح دوري يطابق الهدايا الواردة الحقيقية بأصحاب intents المعلّقة عبر sender_user.id فقط (لا تخمين).
 // fetchGiftsFn قابل للحقن للاختبارات فقط (افتراضيًا يستخدم استدعاء Telegram الحقيقي).
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
@@ -467,7 +532,7 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         if (!intent) reasons.noPendingIntent++; // informational only — an intent is not required to credit
 
         try {
-            await creditVerifiedCollectible({
+            const creditResult = await creditVerifiedCollectible({
                 intentId: intent ? intent.id : null,
                 userId: user.id,
                 telegramGiftModel: identity.telegramGiftModel,
@@ -484,6 +549,15 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
                 collectibleNumber: identity.collectibleNumber,
                 userId: user.id
             }));
+            // إشعار فوري للعميل Backpack المتصل (إن وجد) — هوية علنية فقط، بعد الائتمان الفعلي.
+            if (!creditResult.alreadyCredited) {
+                notifyCollectibleClients(user.id, {
+                    type: 'collectible-credited',
+                    uniqueCollectibleId: identity.uniqueCollectibleId,
+                    collectibleNumber: identity.collectibleNumber,
+                    receivedAt: new Date().toISOString()
+                });
+            }
         } catch (error) {
             unmatched++;
             reasons.creditFailed++;
@@ -1409,6 +1483,44 @@ app.get('/api/collectibles/verification-status', authenticate, async (req, res) 
         res.json({ ok: true, configured: true, status: 'expired' });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.3.x بثّ Backpack الحي عبر SSE (collectible-credited فقط — لا يكشف أسرار/ملفات/ـpayload) =====
+app.get('/api/collectibles-stream', async (req, res) => {
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    if (!token) return res.status(401).end();
+    try {
+        const user = await get('SELECT id FROM users WHERE id = ?', [token]);
+        if (!user) return res.status(401).end();
+        const userId = Number(user.id);
+
+        res.set({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        });
+        res.flushHeaders();
+        registerCollectibleClient(userId, res);
+
+        res.write(': connected\n\n'); // comment يحافظ الاتصال دافئاً وينشئ إشارة فتح
+        const heartbeat = setInterval(() => {
+            if (!res.writableEnded) res.write(': heartbeat\n\n');
+        }, 15000);
+
+        req.on('close', () => {
+            clearInterval(heartbeat);
+            unregisterCollectibleClient(userId, res);
+            if (!res.writableEnded) res.end();
+        });
+        req.on('error', () => {
+            clearInterval(heartbeat);
+            unregisterCollectibleClient(userId, res);
+            if (!res.writableEnded) res.end();
+        });
+    } catch (error) {
+        if (!res.headersSent) res.status(500).end();
     }
 });
 
@@ -2458,6 +2570,10 @@ module.exports = {
     extractUniqueCollectibleIdentity,
     extractBusinessConnectionIdFromUpdate,
     runCollectibleVerificationSweep,
+    paginateCollectibleGifts,
+    notifyCollectibleClients,
+    registerCollectibleClient,
+    unregisterCollectibleClient,
     startCollectibleReconciliationWorker,
     stopCollectibleReconciliationWorker,
     stopPvpGameLoop,
