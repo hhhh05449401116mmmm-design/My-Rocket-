@@ -394,6 +394,7 @@ async function recoverBusinessConnectionById(connectionId) {
         id: connection.id,
         businessUserId: connection.user?.id || null,
         canViewGiftsAndStars: !!connection.rights?.can_view_gifts_and_stars,
+        canTransferAndUpgradeGifts: !!connection.rights?.can_transfer_and_upgrade_gifts,
         isEnabled: !!connection.is_enabled,
         updatedAt: new Date().toISOString()
     };
@@ -401,8 +402,37 @@ async function recoverBusinessConnectionById(connectionId) {
         connectionId: runtimeBusinessConnection.id,
         businessUserId: runtimeBusinessConnection.businessUserId,
         canViewGiftsAndStars: runtimeBusinessConnection.canViewGiftsAndStars,
+        canTransferAndUpgradeGifts: runtimeBusinessConnection.canTransferAndUpgradeGifts,
         isEnabled: runtimeBusinessConnection.isEnabled
     });
+    return runtimeBusinessConnection;
+}
+
+async function ensureRuntimeBusinessConnection() {
+    let connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
+    if (!connectionId) {
+        const persisted = await getPersistedBusinessConnection();
+        connectionId = persisted?.connection_id || null;
+        if (connectionId && !runtimeBusinessConnection.id) {
+            runtimeBusinessConnection = {
+                id: persisted.connection_id,
+                businessUserId: persisted.business_user_id,
+                canViewGiftsAndStars: !!persisted.can_view_gifts_and_stars,
+                canTransferAndUpgradeGifts: !!persisted.can_transfer_and_upgrade_gifts,
+                isEnabled: !!persisted.is_enabled,
+                updatedAt: persisted.updated_at
+            };
+        }
+    }
+    if (!connectionId) return runtimeBusinessConnection;
+
+    if (!runtimeBusinessConnection.id || !runtimeBusinessConnection.canViewGiftsAndStars || !runtimeBusinessConnection.isEnabled) {
+        try {
+            return await recoverBusinessConnectionById(connectionId);
+        } catch (error) {
+            console.error('🔗 Business connection refresh failed:', error.message);
+        }
+    }
     return runtimeBusinessConnection;
 }
 
@@ -485,6 +515,7 @@ function notifyCollectibleClients(userId, payload) {
 // مسح دوري يطابق الهدايا الواردة الحقيقية بأصحاب intents المعلّقة عبر sender_user.id فقط (لا تخمين).
 // fetchGiftsFn قابل للحقن للاختبارات فقط (افتراضيًا يستخدم استدعاء Telegram الحقيقي).
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
+    await ensureRuntimeBusinessConnection();
     const connectionId = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
     if (!connectionId) {
         console.warn('🔍 Collectible sweep skipped: no business connection available', JSON.stringify({
@@ -666,7 +697,11 @@ app.post('/telegram-webhook', async (req, res) => {
             // Recovery path: a business-scoped update still carries business_connection_id, which
             // lets us re-fetch the authoritative connection if the business_connection update was missed.
             const recoverableId = extractBusinessConnectionIdFromUpdate(update);
-            if (recoverableId && !runtimeBusinessConnection.id) {
+            if (recoverableId && (
+                !runtimeBusinessConnection.id
+                || !runtimeBusinessConnection.canViewGiftsAndStars
+                || !runtimeBusinessConnection.isEnabled
+            )) {
                 try {
                     const recovered = await recoverBusinessConnectionById(recoverableId);
                     console.log('🔗 Recovered business connection from business update:', JSON.stringify({
@@ -1577,6 +1612,28 @@ const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegr
 // business_connection is NOT delivered by Telegram's default allowed_updates, so it must be
 // requested explicitly or the webhook never receives the connection at all.
 const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
+
+async function ensureTelegramWebhookConfigured() {
+    if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') return false;
+    const info = await callTelegramBotApi('getWebhookInfo', {});
+    const currentAllowed = Array.isArray(info.allowed_updates) ? info.allowed_updates : [];
+    const allowedUpdatesMatch = TELEGRAM_ALLOWED_UPDATES.every(type => currentAllowed.includes(type))
+        && currentAllowed.length === TELEGRAM_ALLOWED_UPDATES.length;
+    const urlMatches = info.url === TELEGRAM_WEBHOOK_URL;
+    if (!urlMatches || !allowedUpdatesMatch || TELEGRAM_WEBHOOK_SECRET) {
+        const payload = { url: TELEGRAM_WEBHOOK_URL, allowed_updates: TELEGRAM_ALLOWED_UPDATES };
+        if (TELEGRAM_WEBHOOK_SECRET) payload.secret_token = TELEGRAM_WEBHOOK_SECRET;
+        await callTelegramBotApi('setWebhook', payload);
+        console.log('🔗 Telegram webhook configuration ensured:', JSON.stringify({
+            urlMatches: true, businessConnectionAllowed: true, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET
+        }));
+        return true;
+    }
+    console.log('🔗 Telegram webhook configuration already correct:', JSON.stringify({
+        urlMatches, businessConnectionAllowed: true, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET
+    }));
+    return true;
+}
 
 app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
     if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
@@ -2489,21 +2546,22 @@ async function startServer(port = PORT) {
         await seedDatabase();
         console.log('✅ Database initialized and seeded');
 
-        // استعادة حالة Telegram Business Connection المحفوظة (إن وُجدت) بعد إعادة تشغيل السيرفر.
         try {
-            const persisted = await getPersistedBusinessConnection();
-            if (persisted && persisted.connection_id) {
-                runtimeBusinessConnection = {
-                    id: persisted.connection_id,
-                    businessUserId: persisted.business_user_id,
-                    canViewGiftsAndStars: !!persisted.can_view_gifts_and_stars,
-                    isEnabled: !!persisted.is_enabled,
-                    updatedAt: persisted.updated_at
-                };
-                console.log('🔗 Restored persisted Telegram business connection state from database.');
-            }
+            const businessConnection = await ensureRuntimeBusinessConnection();
+            console.log('🔗 Telegram Business connection startup state:', JSON.stringify({
+                configured: !!TELEGRAM_BUSINESS_CONNECTION_ID,
+                discovered: !!businessConnection.id,
+                canViewGiftsAndStars: businessConnection.canViewGiftsAndStars,
+                isEnabled: businessConnection.isEnabled
+            }));
         } catch (error) {
-            console.error('Failed to restore persisted business connection:', error.message);
+            console.error('Failed to initialize Telegram business connection:', error.message);
+        }
+
+        try {
+            await ensureTelegramWebhookConfigured();
+        } catch (error) {
+            console.error('Failed to ensure Telegram webhook configuration:', error.message);
         }
 
         const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
