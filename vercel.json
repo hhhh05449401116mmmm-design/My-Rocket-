@@ -10,6 +10,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "assets/*",
+      "use": "@vercel/static"
+    },
+    {
       "src": "tonconnect-manifest.json",
       "use": "@vercel/static"
     },
@@ -29,6 +33,10 @@
     {
       "src": "/icon-180.png",
       "dest": "/icon-180.png"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
       "src": "/api/(.*)",
