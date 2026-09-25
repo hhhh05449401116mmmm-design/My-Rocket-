@@ -731,6 +731,16 @@
             color: #c8e6ff;
             white-space: nowrap;
         }
+        .loot-box .loot-image {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 14px;
+            display: block;
+            margin: 4px auto 8px;
+            border: 1px solid rgba(100, 200, 255, 0.18);
+            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.18);
+        }
         .loot-box .loot-emoji {
             font-size: 32px;
             margin: 4px 0;
@@ -2965,7 +2975,7 @@
         ========================================================= */
         const LOOT_BOXES = [
             { id: 'free', nameKey: 'freeLabel', emoji: '🎁', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
-            { id: 'free24', nameKey: 'free24Label', emoji: '🎁', price: 0, badgeType: 'special', badgeClass: 'special-badge' },
+            { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge' },
             { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' },
             { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
             { id: 'box_2_5', name: '2.5 TON', emoji: '💎', price: 2.5, badgeType: null, badgeClass: '' },
@@ -3002,7 +3012,7 @@
                             <span class="loot-name">${nameText}</span>
                             ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
                         </div>
-                        <span class="loot-emoji">${box.emoji}</span>
+                        ${box.image ? `<img class="loot-image" src="${box.image}" alt="${nameText}" loading="lazy">` : `<span class="loot-emoji">${box.emoji}</span>`}
                         <span class="loot-price-badge">${priceDisplay}</span>
                     </div>
                 `;
