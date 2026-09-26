@@ -60,6 +60,9 @@ const {
     settleTestBetLoss,
     openLootbox,
     createDeposit,
+    createWithdrawalRequest,
+    getUserWithdrawals,
+    refundFailedWithdrawal,
     saveDepositBoc,
     creditVerifiedDeposit,
     updateDepositStatus,
@@ -2497,6 +2500,62 @@ app.get('/api/deposit/status', authenticate, async (req, res) => {
                 createdAt: deposit.created_at,
                 updatedAt: deposit.updated_at
             }
+        });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.12 طلب سحب الأرباح =====
+app.post('/api/withdrawal/request', authenticate, async (req, res) => {
+    try {
+        const { walletAddress, amount } = req.body;
+        const normalizedAddress = canonicalTonAddress(walletAddress);
+        const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+
+        if (!normalizedAddress || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0 || normalizedAmount > 100000) {
+            return res.status(400).json({ ok: false, error: 'Invalid withdrawal data' });
+        }
+
+        // Test balance is never withdrawable. Only real TON balance is considered.
+        const withdrawal = await createWithdrawalRequest(
+            req.user.id,
+            normalizedAddress,
+            Number(normalizedAmount.toFixed(9))
+        );
+
+        res.json({
+            ok: true,
+            withdrawal: {
+                id: withdrawal.id,
+                amount: withdrawal.amount,
+                walletAddress: withdrawal.wallet_address,
+                status: withdrawal.status,
+                createdAt: withdrawal.created_at
+            },
+            balance: await getUserBalance(req.user.id),
+            message: 'Withdrawal request created and balance reserved for payout.'
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+app.get('/api/withdrawal/history', authenticate, async (req, res) => {
+    try {
+        const withdrawals = await getUserWithdrawals(req.user.id);
+        res.json({
+            ok: true,
+            withdrawals: withdrawals.map(item => ({
+                id: item.id,
+                amount: item.amount,
+                walletAddress: item.wallet_address,
+                status: item.status,
+                transactionHash: item.transaction_hash,
+                failureReason: item.failure_reason,
+                createdAt: item.created_at,
+                updatedAt: item.updated_at
+            }))
         });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
