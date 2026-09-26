@@ -1656,6 +1656,67 @@
         #empty-collectibles p { font-size: 12px; }
 
         /* =========================================================
+           PREMIUM IMAGE BANNERS
+        ========================================================= */
+        .image-banner { padding:0 !important; background:#07111f !important; overflow:hidden; }
+        .image-banner .banner-art { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; z-index:0; }
+        .image-banner .banner-shine { position:absolute; inset:-30%; z-index:1; pointer-events:none; background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.14) 48%, transparent 58%); transform:translateX(-60%) rotate(6deg); animation:bannerShine 5s ease-in-out infinite; }
+        @keyframes bannerShine { 0%,55%{transform:translateX(-70%) rotate(6deg);opacity:0} 65%{opacity:1} 100%{transform:translateX(70%) rotate(6deg);opacity:0} }
+
+        /* =========================================================
+           EARNINGS / WITHDRAWAL
+        ========================================================= */
+        .earn-page { display:none; padding:14px 14px 120px; }
+        .earn-page.show { display:block; }
+        .earn-hero { position:relative; overflow:hidden; text-align:center; padding:24px 18px 20px; border-radius:26px; background:radial-gradient(circle at 50% 0%,rgba(64,245,169,.22),transparent 55%),linear-gradient(145deg,#071c2e,#06111f 65%,#071b28); border:1px solid rgba(74,245,174,.2); box-shadow:0 16px 50px rgba(0,0,0,.35); }
+        .earn-orbit { position:absolute; right:18px; top:10px; color:#4de18a; font-size:28px; animation:earnFloat 2.8s ease-in-out infinite; }
+        @keyframes earnFloat { 50%{transform:translateY(8px) rotate(90deg);opacity:.7} }
+        .earn-kicker { font-size:10px; letter-spacing:3px; color:#4de18a; font-weight:900; }
+        .earn-hero h2 { margin:7px 0 4px; font-size:29px; font-weight:900; color:#fff; }
+        .earn-hero p { color:#86a9bd; font-size:12px; }
+        .earn-balance-card { margin-top:12px; display:flex; align-items:center; gap:14px; padding:20px; border-radius:22px; background:linear-gradient(145deg,#0d3151,#0a1d32); border:1px solid rgba(79,195,247,.18); box-shadow:0 12px 35px rgba(0,0,0,.25); }
+        .earn-balance-icon { width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:28px;background:linear-gradient(145deg,#1597ff,#1453b8);box-shadow:0 0 30px rgba(21,151,255,.28); }
+        .earn-label { color:#8baac1;font-size:11px; }
+        .earn-balance-value { margin-top:5px;font-size:30px;font-weight:900;color:#fff;direction:ltr;text-align:right; }
+        .earn-stats-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px; }
+        .earn-stat-card { padding:14px;border-radius:18px;background:rgba(15,40,71,.58);border:1px solid rgba(100,200,255,.07);text-align:center; }
+        .earn-stat-icon { display:block;font-size:21px;margin-bottom:6px; }
+        .earn-stat-card strong { display:block;font-size:17px;color:#e8f4ff; }
+        .earn-stat-card small { display:block;margin-top:4px;color:#6f91aa;font-size:10px; }
+        .withdraw-hero-button { width:100%; margin-top:12px; padding:15px 17px; display:flex;align-items:center;gap:12px;text-align:right;border:1px solid rgba(77,225,138,.28);border-radius:20px;background:linear-gradient(135deg,#1b9d62,#0c6f49);color:#fff;box-shadow:0 12px 30px rgba(0,180,100,.18); }
+        .withdraw-hero-button > span { width:44px;height:44px;border-radius:15px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:27px; }
+        .withdraw-hero-button div { flex:1; }
+        .withdraw-hero-button strong { display:block;font-size:16px; }
+        .withdraw-hero-button small { display:block;margin-top:3px;color:#c9f9df;font-size:10px; }
+        .withdraw-hero-button b { font-size:27px;font-weight:400; }
+        .earn-history-card { margin-top:12px;padding:15px;border-radius:20px;background:rgba(8,22,38,.75);border:1px solid rgba(100,200,255,.07); }
+        .earn-section-title { display:flex;justify-content:space-between;color:#d9efff;font-weight:800;font-size:13px;margin-bottom:10px; }
+        .earn-section-title span:last-child { color:#5d89a8;font-size:10px; }
+        .withdraw-row { display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05); }
+        .withdraw-row:last-child { border-bottom:0; }
+        .withdraw-row-icon { width:34px;height:34px;border-radius:12px;background:rgba(77,225,138,.1);display:grid;place-items:center;color:#4de18a; }
+        .withdraw-row-main { flex:1;min-width:0; }
+        .withdraw-row-main strong { display:block;color:#e8f4ff;font-size:13px; }
+        .withdraw-row-main small { display:block;color:#6587a2;font-size:9px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right; }
+        .withdraw-row-status { font-size:9px;font-weight:800;padding:5px 8px;border-radius:9px;background:rgba(255,193,7,.1);color:#ffd54f; }
+        .withdraw-empty { text-align:center;padding:20px 5px;color:#52738d;font-size:11px; }
+        .earn-note { margin:10px 3px 0;color:#59768d;font-size:9px;line-height:1.7;text-align:center; }
+        .withdrawal-modal-card { padding-bottom:28px; }
+        .withdraw-modal-balance { display:flex;align-items:center;justify-content:space-between;padding:13px 15px;margin-bottom:15px;border-radius:15px;background:rgba(77,225,138,.07);border:1px solid rgba(77,225,138,.12);color:#86aa9a;font-size:11px; }
+        .withdraw-modal-balance strong { color:#4de18a;font-size:17px;direction:ltr; }
+        .withdraw-field-label { display:block;color:#9db7c9;font-size:11px;font-weight:800;margin:12px 2px 7px; }
+        .withdraw-input { width:100%;height:50px;padding:0 14px;border-radius:15px;border:1px solid rgba(100,200,255,.12);background:#071a2d;color:#fff;outline:none;font-size:13px;direction:ltr;text-align:left; }
+        .withdraw-input:focus { border-color:rgba(77,225,138,.45);box-shadow:0 0 0 3px rgba(77,225,138,.06); }
+        .withdraw-amount-wrap { position:relative; }
+        .withdraw-amount-wrap .withdraw-input { padding-right:60px; }
+        .withdraw-amount-wrap > span { position:absolute;right:14px;top:17px;color:#4fc3f7;font-size:11px;font-weight:900; }
+        .withdraw-presets { display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px; }
+        .withdraw-presets button { height:34px;border-radius:10px;border:1px solid rgba(100,200,255,.08);background:rgba(15,40,71,.7);color:#8eb4cf;font-size:10px;font-weight:800; }
+        .withdraw-submit-button { width:100%;height:54px;margin-top:15px;border:0;border-radius:17px;background:linear-gradient(135deg,#17c979,#087a50);color:#fff;font-size:16px;font-weight:900;box-shadow:0 10px 28px rgba(0,190,110,.2); }
+        .withdraw-submit-button:disabled { opacity:.55; }
+        .withdraw-status { min-height:18px;margin-top:9px;text-align:center;color:#6f93a9;font-size:10px;line-height:1.5; }
+        
+        /* =========================================================
            PROFILE PAGE
         ========================================================= */
         .profile-page { display: none; padding: 16px 14px; }
@@ -2329,39 +2390,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner" onclick="openRocketGame()">
-                  <div class="rocket-banner-bg"></div>
-                  <div class="rocket-banner-rocket"></div>
-                  <div class="rocket-banner-content">
-                      <div class="rocket-banner-title">ROCKET</div>
-                      <div class="rocket-banner-desc">Multiplayer crash • Bet & Cash Out</div>
-                  </div>
-              </div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/rocket-banner.svg" alt="Rocket"><div class="banner-shine"></div></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner" onclick="openPvpGame()">
-                  <div class="pvp-banner-bg"></div>
-                  <div class="pvp-banner-wheel"></div>
-                  <div class="pvp-banner-content">
-                      <div class="pvp-banner-title">PVP</div>
-                      <div class="pvp-banner-desc">Battle other players head-to-head</div>
-                      <div class="pvp-banner-players">
-                          <span class="pvp-player">⚪</span>
-                          <span class="pvp-player">⚪</span>
-                          <span class="pvp-player">⚪</span>
-                      </div>
-                  </div>
-              </div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/pvp-banner.svg" alt="PVP"><div class="banner-shine"></div></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner" onclick="openPlayHub()">
-                  <div class="playhub-banner-bg"></div>
-                  <div class="playhub-banner-content">
-                      <div class="playhub-banner-title" data-key="playhub-title">PLAY HUB</div>
-                      <div class="playhub-banner-desc" data-key="playhub-desc">Mines • Plinko • Crafts • Dice • Lottery • Upgrade</div>
-                      <div class="playhub-banner-count" data-key="playhub-count">6 games</div>
-                  </div>
-              </div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/playhub-banner.svg" alt="Play Hub"><div class="banner-shine"></div></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -2741,6 +2776,18 @@
         </div>
 
         <!-- =========================================================
+           EARNINGS / WITHDRAW PAGE
+        ========================================================= -->
+        <div id="earn-page" class="earn-page">
+            <div class="earn-hero"><div class="earn-orbit">✦</div><div class="earn-kicker">CRAZY ROCKET</div><h2 id="earn-title">الأرباح</h2><p id="earn-subtitle">أرباحك الحقيقية من اللعبة</p></div>
+            <div class="earn-balance-card"><div class="earn-balance-icon">💎</div><div><div class="earn-label">الرصيد القابل للسحب</div><div class="earn-balance-value"><span id="earn-balance-value">0.00</span> TON</div></div></div>
+            <div class="earn-stats-grid"><div class="earn-stat-card"><span class="earn-stat-icon">📈</span><strong id="earn-total-profit">0.00 TON</strong><small>إجمالي الأرباح</small></div><div class="earn-stat-card"><span class="earn-stat-icon">🏆</span><strong id="earn-total-wins">0</strong><small>الانتصارات</small></div></div>
+            <button class="withdraw-hero-button" type="button" onclick="openWithdrawal()"><span>↓</span><div><strong>سحب الأرباح</strong><small>اسحب TON إلى محفظتك</small></div><b>›</b></button>
+            <div class="earn-history-card"><div class="earn-section-title"><span>آخر طلبات السحب</span><span>TON</span></div><div id="withdrawal-history" class="withdrawal-history"><div class="withdraw-empty">لا توجد طلبات سحب بعد</div></div></div>
+            <div class="earn-note">🔐 طلب السحب يُسجّل أولاً، ويتم تنفيذ التحويل من خزينة اللعبة بعد المراجعة. رصيد TEST لا يمكن سحبه.</div>
+        </div>
+
+        <!-- =========================================================
            PROFILE PAGE
         ========================================================= -->
         <div id="profile-page" class="profile-page">
@@ -2876,6 +2923,23 @@
         </div>
 
         <!-- =========================================================
+           WITHDRAWAL MODAL
+        ========================================================= -->
+        <div id="withdrawal-modal" class="modal" onclick="closeModalOutside(event,'withdrawal-modal')">
+            <div class="modal-card withdrawal-modal-card">
+                <div class="modal-head"><div class="modal-title">سحب الأرباح</div><button class="close-button" type="button" onclick="closeModal('withdrawal-modal')">×</button></div>
+                <div class="withdraw-modal-balance"><span>الرصيد المتاح</span><strong><span id="withdraw-modal-balance">0.00</span> TON</strong></div>
+                <label class="withdraw-field-label">عنوان محفظة TON</label>
+                <input id="withdraw-wallet-input" class="withdraw-input" type="text" placeholder="EQ... / UQ...">
+                <label class="withdraw-field-label">مبلغ السحب</label>
+                <div class="withdraw-amount-wrap"><input id="withdraw-amount-input" class="withdraw-input" type="text" inputmode="decimal" placeholder="0.10"><span>TON</span></div>
+                <div class="withdraw-presets"><button type="button" onclick="setWithdrawAmount(0.1)">0.1</button><button type="button" onclick="setWithdrawAmount(1)">1</button><button type="button" onclick="setWithdrawAmount(5)">5</button><button type="button" onclick="setWithdrawAmount(10)">10</button><button type="button" onclick="setWithdrawMax()">MAX</button></div>
+                <button id="withdraw-submit-button" class="withdraw-submit-button" type="button" onclick="submitWithdrawal()">سحب الآن</button>
+                <div id="withdraw-status" class="withdraw-status"></div>
+            </div>
+        </div>
+
+        <!-- =========================================================
            DEPOSIT MODAL
         ========================================================= -->
         <div id="deposit-modal" class="modal" onclick="closeModalOutside(event,'deposit-modal')">
@@ -2995,7 +3059,7 @@
            LOOT BOXES DATA
         ========================================================= */
         const LOOT_BOXES = [
-            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
+            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
             { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge' },
             { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' },
             { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
@@ -5044,6 +5108,102 @@
             }
          }
 
+        function openWithdrawal() {
+            const modal = document.getElementById('withdrawal-modal');
+            if (!modal) return;
+            updateWithdrawalUI();
+            modal.classList.add('show');
+        }
+
+        function setWithdrawAmount(amount) {
+            const input = document.getElementById('withdraw-amount-input');
+            if (input) input.value = Number(amount).toFixed(2);
+        }
+
+        function setWithdrawMax() {
+            const input = document.getElementById('withdraw-amount-input');
+            if (input) input.value = Math.max(0, Number(tonBalance || 0)).toFixed(2);
+        }
+
+        function updateWithdrawalUI() {
+            const balance = Number(tonBalance || 0);
+            const a = document.getElementById('withdraw-modal-balance');
+            if (a) a.textContent = balance.toFixed(2);
+            const wallet = document.getElementById('withdraw-wallet-input');
+            if (wallet && !wallet.value && tonWalletAddress) wallet.value = tonWalletAddress;
+        }
+
+        async function loadWithdrawalHistory() {
+            const list = document.getElementById('withdrawal-history');
+            if (!list) return;
+            try {
+                const response = await fetch(BACKEND_URL + '/api/withdrawal/history', { headers: getAuthHeaders(), cache: 'no-store' });
+                const data = await response.json();
+                if (!response.ok || !data.ok) throw new Error(data.error || 'Failed');
+                if (!data.withdrawals || !data.withdrawals.length) {
+                    list.innerHTML = '<div class="withdraw-empty">لا توجد طلبات سحب بعد</div>';
+                    return;
+                }
+                const labels = { PENDING:'قيد المراجعة', PROCESSING:'جاري التحويل', PAID:'تم التحويل', FAILED:'فشل — تم إرجاع الرصيد', CANCELLED:'ملغى' };
+                list.innerHTML = data.withdrawals.map(function(item) {
+                    const status = labels[item.status] || item.status;
+                    return '<div class="withdraw-row"><div class="withdraw-row-icon">↓</div><div class="withdraw-row-main"><strong>' + Number(item.amount).toFixed(2) + ' TON</strong><small>' + escapeHtml(item.walletAddress || '') + '</small></div><span class="withdraw-row-status">' + status + '</span></div>';
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<div class="withdraw-empty">تعذر تحميل سجل السحب</div>';
+            }
+        }
+
+        async function loadEarningsPage() {
+            await fetchBalance();
+            updateWithdrawalUI();
+            const profit = document.getElementById('earn-total-profit');
+            const wins = document.getElementById('earn-total-wins');
+            try {
+                const response = await fetch(BACKEND_URL + '/api/stats', { headers: getAuthHeaders(), cache: 'no-store' });
+                const data = await response.json();
+                const stats = data.stats || {};
+                if (profit) profit.textContent = Number(stats.total_profit || 0).toFixed(2) + ' TON';
+                if (wins) wins.textContent = Number(stats.total_wins || 0);
+            } catch (error) {}
+            const balance = document.getElementById('earn-balance-value');
+            if (balance) balance.textContent = Number(tonBalance || 0).toFixed(2);
+            await loadWithdrawalHistory();
+        }
+
+        async function submitWithdrawal() {
+            const button = document.getElementById('withdraw-submit-button');
+            const status = document.getElementById('withdraw-status');
+            const walletInput = document.getElementById('withdraw-wallet-input');
+            const amountInput = document.getElementById('withdraw-amount-input');
+            const wallet = String(walletInput && walletInput.value || '').trim();
+            const amount = Number(String(amountInput && amountInput.value || '').replace(',', '.'));
+            if (!wallet) { if(status) status.textContent='أدخل عنوان محفظة TON.'; return; }
+            if (!Number.isFinite(amount) || amount < 0.1) { if(status) status.textContent='الحد الأدنى للسحب 0.1 TON.'; return; }
+            if (amount > Number(tonBalance || 0)) { if(status) status.textContent='المبلغ أكبر من رصيدك المتاح.'; return; }
+            if (button) { button.disabled = true; button.textContent = 'جاري إنشاء طلب السحب...'; }
+            try {
+                const response = await fetch(BACKEND_URL + '/api/withdrawal/request', {
+                    method:'POST',
+                    headers:getAuthHeaders(),
+                    body:JSON.stringify({ walletAddress: wallet, amount: amount })
+                });
+                const data = await response.json().catch(function(){ return {}; });
+                if (!response.ok || !data.ok) throw new Error(data.error || 'فشل إنشاء طلب السحب');
+                tonBalance = Number(data.balance || 0);
+                updateTonWalletUI();
+                updateWithdrawalUI();
+                if(status) status.textContent='✅ تم إنشاء طلب السحب وحجز المبلغ للتحويل.';
+                showToast('✅ تم تسجيل طلب السحب');
+                await loadWithdrawalHistory();
+                setTimeout(function(){ closeModal('withdrawal-modal'); }, 900);
+            } catch(error) {
+                if(status) status.textContent=error.message || 'فشل السحب';
+            } finally {
+                if(button) { button.disabled=false; button.textContent='سحب الآن'; }
+            }
+        }
+
         function showPage(page) {
             document.querySelectorAll(".nav-button").forEach(function(button) { button.classList.remove("active"); });
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
@@ -5056,6 +5216,7 @@
             });
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
+            document.getElementById("earn-page").classList.remove("show");
             if (page === "home") {
                 document.getElementById("nav-home").classList.add("active");
                 document.getElementById("game-hub").classList.remove("hidden");
@@ -5075,7 +5236,8 @@
                 document.getElementById("gifts-page").classList.add("show");
             } else if (page === "earn") {
                 document.getElementById("nav-earn").classList.add("active");
-                showToast(getTranslation('comingSoon'));
+                document.getElementById("earn-page").classList.add("show");
+                loadEarningsPage();
             }
         }
 
