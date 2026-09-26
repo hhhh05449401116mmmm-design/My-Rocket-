@@ -8,6 +8,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
+const { TonClient, WalletContractV4, internal, Address, toNano } = require('@ton/ton');
+const { mnemonicToPrivateKey } = require('@ton/crypto');
 const { URL } = require('url');
 require('dotenv').config();
 const {
@@ -61,6 +63,8 @@ const {
     openLootbox,
     createDeposit,
     createWithdrawalRequest,
+    markWithdrawalProcessing,
+    completeWithdrawal,
     getUserWithdrawals,
     refundFailedWithdrawal,
     saveDepositBoc,
@@ -119,6 +123,8 @@ const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const TON_DEPOSIT_RECEIVER = process.env.TON_DEPOSIT_RECEIVER || '';
 const TONCENTER_API_URL = process.env.TONCENTER_API_URL || 'https://toncenter.com/api/v2';
 const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
+const TON_TREASURY_MNEMONIC = process.env.TON_TREASURY_MNEMONIC || '';
+const TON_WITHDRAWAL_RESERVE = Number(process.env.TON_WITHDRAWAL_RESERVE || '0.05');
 // Phase 3B: server-only config for the managed Telegram business account that receives collectibles.
 // Never exposed to the frontend. Real verification only runs once this is configured on the Telegram side.
 const TELEGRAM_BUSINESS_CONNECTION_ID = process.env.TELEGRAM_BUSINESS_CONNECTION_ID || '';
@@ -177,6 +183,29 @@ function requestJson(urlString) {
     });
 }
 
+async function sendRealTonWithdrawal(withdrawal) {
+    if (!TON_TREASURY_MNEMONIC) throw new Error('Real withdrawals are not configured on the server');
+    const endpoint = TONCENTER_API_URL.endsWith('/api/v2') ? TONCENTER_API_URL + '/jsonRPC' : TONCENTER_API_URL + '/api/v2/jsonRPC';
+    const client = new TonClient({ endpoint, ...(TONCENTER_API_KEY ? { apiKey: TONCENTER_API_KEY } : {}) });
+    const keyPair = await mnemonicToPrivateKey(TON_TREASURY_MNEMONIC.trim().split(/\s+/));
+    const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+    const treasuryAddress = canonicalTonAddress(wallet.address.toString());
+    const configuredTreasury = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
+    if (!configuredTreasury || treasuryAddress !== configuredTreasury) throw new Error('Treasury wallet configuration does not match TON_DEPOSIT_RECEIVER');
+    const contract = client.open(wallet);
+    const balance = await contract.getBalance();
+    const amountNano = toNano(String(Number(withdrawal.amount).toFixed(9)));
+    const reserveNano = toNano(String(Math.max(0.02, TON_WITHDRAWAL_RESERVE)));
+    if (balance < amountNano + reserveNano) throw new Error('Treasury wallet has insufficient TON for this withdrawal');
+    const seqno = await contract.getSeqno();
+    await contract.sendTransfer({ seqno, secretKey: keyPair.secretKey, messages: [internal({ to: Address.parse(withdrawal.wallet_address), value: amountNano, body: 'rocket-withdrawal:' + withdrawal.id })] });
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if ((await contract.getSeqno()) > seqno) return wallet.address.toString() + '#' + seqno;
+    }
+    throw new Error('TON withdrawal was not confirmed by the treasury wallet');
+}
 function canonicalTonAddress(address) {
     if (typeof address !== 'string') return null;
     const value = address.trim();
@@ -2509,39 +2538,25 @@ app.get('/api/deposit/status', authenticate, async (req, res) => {
 
 // ===== 5.12 طلب سحب الأرباح =====
 app.post('/api/withdrawal/request', authenticate, async (req, res) => {
+    let withdrawal = null;
     try {
         const { walletAddress, amount } = req.body;
         const normalizedAddress = canonicalTonAddress(walletAddress);
         const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
-
-        if (!normalizedAddress || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0 || normalizedAmount > 100000) {
-            return res.status(400).json({ ok: false, error: 'Invalid withdrawal data' });
-        }
-
-        // Test balance is never withdrawable. Only real TON balance is considered.
-        const withdrawal = await createWithdrawalRequest(
-            req.user.id,
-            normalizedAddress,
-            Number(normalizedAmount.toFixed(9))
-        );
-
-        res.json({
-            ok: true,
-            withdrawal: {
-                id: withdrawal.id,
-                amount: withdrawal.amount,
-                walletAddress: withdrawal.wallet_address,
-                status: withdrawal.status,
-                createdAt: withdrawal.created_at
-            },
-            balance: await getUserBalance(req.user.id),
-            message: 'Withdrawal request created and balance reserved for payout.'
-        });
+        if (!normalizedAddress || !Number.isFinite(normalizedAmount) || normalizedAmount < 0.1 || normalizedAmount > 100000) return res.status(400).json({ ok: false, error: 'Invalid withdrawal data' });
+        withdrawal = await createWithdrawalRequest(req.user.id, normalizedAddress, Number(normalizedAmount.toFixed(9)));
+        await markWithdrawalProcessing(withdrawal.id);
+        const processing = await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawal.id]);
+        const txRef = await sendRealTonWithdrawal(processing);
+        const paid = await completeWithdrawal(withdrawal.id, txRef);
+        res.json({ ok: true, withdrawal: { id: paid.id, amount: paid.amount, walletAddress: paid.wallet_address, status: paid.status, transactionHash: paid.transaction_hash, createdAt: paid.created_at }, balance: await getUserBalance(req.user.id), message: 'Withdrawal sent successfully.' });
     } catch (error) {
-        res.status(400).json({ ok: false, error: error.message });
+        if (withdrawal?.id) { try { await refundFailedWithdrawal(withdrawal.id, error.message); } catch (refundError) { console.error('WITHDRAWAL REFUND ERROR:', refundError); } }
+        const message = error.message || 'Withdrawal failed';
+        const status = /not configured|configuration does not match|insufficient|not confirmed/i.test(message) ? 503 : 400;
+        res.status(status).json({ ok: false, error: message });
     }
 });
-
 app.get('/api/withdrawal/history', authenticate, async (req, res) => {
     try {
         const withdrawals = await getUserWithdrawals(req.user.id);

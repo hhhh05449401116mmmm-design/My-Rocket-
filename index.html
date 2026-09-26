@@ -1714,6 +1714,10 @@
         .withdraw-submit-button { width:100%;height:54px;margin-top:15px;border:0;border-radius:17px;background:linear-gradient(135deg,#17c979,#087a50);color:#fff;font-size:16px;font-weight:900;box-shadow:0 10px 28px rgba(0,190,110,.2); }
         .withdraw-submit-button:disabled { opacity:.55; }
         .withdraw-status { min-height:18px;margin-top:9px;text-align:center;color:#6f93a9;font-size:10px;line-height:1.5; }
+        .withdraw-wallet-card-connected { border-color:rgba(77,225,138,.25) !important; }
+        .withdraw-wallet-card-connected #withdraw-wallet-address { color:#4de18a; font-size:11px; direction:ltr; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .withdraw-wallet-card-disconnected { border-color:rgba(255,107,127,.2) !important; }
+        .withdraw-wallet-card-disconnected #withdraw-wallet-address { color:#ff8c9c; font-size:11px; }
         
         /* =========================================================
            PROFILE PAGE
@@ -2779,10 +2783,10 @@
         ========================================================= -->
         <div id="earn-page" class="earn-page">
             <div class="earn-hero"><div class="earn-orbit">✦</div><div class="earn-kicker">CRAZY ROCKET</div><h2 id="earn-title">الأرباح</h2><p id="earn-subtitle">أرباحك الحقيقية من اللعبة</p></div>
-            <div class="earn-balance-card"><div class="earn-balance-icon">💎</div><div><div class="earn-label">الرصيد القابل للسحب</div><div class="earn-balance-value"><span id="earn-balance-value">0.00</span> TON</div></div></div>
-            <div class="earn-stats-grid"><div class="earn-stat-card"><span class="earn-stat-icon">📈</span><strong id="earn-total-profit">0.00 TON</strong><small>إجمالي الأرباح</small></div><div class="earn-stat-card"><span class="earn-stat-icon">🏆</span><strong id="earn-total-wins">0</strong><small>الانتصارات</small></div></div>
-            <button class="withdraw-hero-button" type="button" onclick="openWithdrawal()"><span>↓</span><div><strong>سحب الأرباح</strong><small>اسحب TON إلى محفظتك</small></div><b>›</b></button>
-            <div class="earn-history-card"><div class="earn-section-title"><span>آخر طلبات السحب</span><span>TON</span></div><div id="withdrawal-history" class="withdrawal-history"><div class="withdraw-empty">لا توجد طلبات سحب بعد</div></div></div>
+            <div class="earn-balance-card"><div class="earn-balance-icon">💎</div><div><div class="earn-label" id="earn-balance-label">الرصيد القابل للسحب</div><div class="earn-balance-value"><span id="earn-balance-value">0.00</span> TON</div></div></div>
+            <div class="earn-stats-grid"><div class="earn-stat-card"><span class="earn-stat-icon">📈</span><strong id="earn-total-profit">0.00 TON</strong><small id="earn-total-profit-label">إجمالي الأرباح</small></div><div class="earn-stat-card"><span class="earn-stat-icon">🏆</span><strong id="earn-total-wins">0</strong><small id="earn-total-wins-label">الانتصارات</small></div></div>
+            <button class="withdraw-hero-button" type="button" onclick="openWithdrawal()"><span>↓</span><div><strong id="withdraw-hero-title">سحب الأرباح</strong><small id="withdraw-hero-subtitle">اسحب TON إلى محفظتك</small></div><b>›</b></button>
+            <div class="earn-history-card"><div class="earn-section-title"><span id="withdraw-history-title">آخر طلبات السحب</span><span>TON</span></div><div id="withdrawal-history" class="withdrawal-history"><div class="withdraw-empty">لا توجد طلبات سحب بعد</div></div></div>
             <div class="earn-note">🔐 طلب السحب يُسجّل أولاً، ويتم تنفيذ التحويل من خزينة اللعبة بعد المراجعة. رصيد TEST لا يمكن سحبه.</div>
         </div>
 
@@ -2926,11 +2930,14 @@
         ========================================================= -->
         <div id="withdrawal-modal" class="modal" onclick="closeModalOutside(event,'withdrawal-modal')">
             <div class="modal-card withdrawal-modal-card">
-                <div class="modal-head"><div class="modal-title">سحب الأرباح</div><button class="close-button" type="button" onclick="closeModal('withdrawal-modal')">×</button></div>
-                <div class="withdraw-modal-balance"><span>الرصيد المتاح</span><strong><span id="withdraw-modal-balance">0.00</span> TON</strong></div>
-                <label class="withdraw-field-label">عنوان محفظة TON</label>
-                <input id="withdraw-wallet-input" class="withdraw-input" type="text" placeholder="EQ... / UQ...">
-                <label class="withdraw-field-label">مبلغ السحب</label>
+                <div class="modal-head"><div class="modal-title" id="withdraw-modal-title">سحب الأرباح</div><button class="close-button" type="button" onclick="closeModal('withdrawal-modal')">×</button></div>
+                <div class="withdraw-modal-balance"><span id="withdraw-balance-label">الرصيد المتاح</span><strong><span id="withdraw-modal-balance">0.00</span> TON</strong></div>
+                <div class="withdraw-field-label" id="withdraw-wallet-label">محفظة السحب</div>
+                <div id="withdraw-wallet-card" class="wallet-address" style="margin-bottom:8px;min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <span id="withdraw-wallet-address">غير متصلة</span>
+                    <button id="withdraw-connect-button" class="wallet-connect" type="button" onclick="openTonWallet()" style="width:auto;min-width:130px;padding:10px 14px;">ربط TON Wallet</button>
+                </div>
+                <label class="withdraw-field-label" id="withdraw-amount-label">مبلغ السحب</label>
                 <div class="withdraw-amount-wrap"><input id="withdraw-amount-input" class="withdraw-input" type="text" inputmode="decimal" placeholder="0.10"><span>TON</span></div>
                 <div class="withdraw-presets"><button type="button" onclick="setWithdrawAmount(0.1)">0.1</button><button type="button" onclick="setWithdrawAmount(1)">1</button><button type="button" onclick="setWithdrawAmount(5)">5</button><button type="button" onclick="setWithdrawAmount(10)">10</button><button type="button" onclick="setWithdrawMax()">MAX</button></div>
                 <button id="withdraw-submit-button" class="withdraw-submit-button" type="button" onclick="submitWithdrawal()">سحب الآن</button>
@@ -3275,6 +3282,9 @@
             ru: { gameHub: '❄️ Игровой центр', rocket: 'Rocket Ice', rocketDesc: 'Мультиплеерная игра • Ставки и вывод', live: '❄️ В прямом эфире', comingSoon: 'Скоро', soon: 'Скоро', back: '← Назад', giftsTitle: '🎁 Подарки', giftsSub: 'Ваши подарки Telegram', noGiftsTitle: 'Нет подарков!', noGiftsDesc: 'Вы ещё не выиграли ни одного подарка. Продолжайте играть!', giftValue: 'Ценность', betWithGift: 'Ставка подарком', balance: 'Баланс', deposit: '+ Пополнить TON', vipLevels: '💎 VIP уровни', turnover: 'Оборот', next: 'Следующий', at: 'на', rounds: 'Раунды', wins: 'Победы', wallet: 'Кошелек', notConnected: 'Не подключен', connectWallet: '💎 Подключить / изменить TON кошелек', depositTon: '💰 Пополнить TON', language: '🌍 Язык', telegramPlayer: 'Telegram Player', home: 'Главная', top: 'Лидеры', profile: 'Профиль', gifts: 'Подарки', earn: 'Заработок', placeBet: 'Сделать ставку', availableBalance: 'Доступный баланс', betAmount: 'Сумма ставки', chooseGift: 'Выберите подарок для ставки', selectGift: 'Выберите подарок из вашей коллекции', noGiftsToBet: 'У вас нет подарков для ставки', placeTonBet: 'Ставка TON 🚀', placeGiftBet: 'Ставка подарком 🎁', depositTitle: 'Пополнить TON', depositInfo: 'Отправьте TON из вашего кошелька на игровой счет.', depositAmount: 'Сумма пополнения', depositButton: 'Пополнить TON 🚀', connectWalletBtn: 'Подключить TON кошелек', changeWalletBtn: 'Изменить TON кошелек', players: 'Игроки', topTitle: '🏆 Лидеры', topEmpty: 'Нет данных', giftsModalTitle: '🎁 Подарки', giftsModalContent: 'Раздел подарков готов для интерфейса.', autoCashout: 'Автовывод', giftSelected: 'Подарок выбран для ставки', noGiftSelected: 'Пожалуйста, выберите подарок', giftBetPlaced: 'Ставка подарком размещена', giftBetFailed: 'Ставка подарком не удалась', giftWon: '🎁 Вы выиграли подарок!', giftLost: '💔 Вы потеряли подарок', maxLevel: 'МАКСИМУМ', depositPending: 'Создание запроса на пополнение...', depositDetected: '✅ Транзакция найдена.', depositConfirmed: '✅ Транзакция подтверждена.', depositCredited: '✅ Пополнение успешно!', depositFailed: 'Пополнение не удалось', depositTimeout: 'Время пополнения истекло', common: 'Обычный', rare: 'Редкий', epic: 'Эпический', legendary: 'Легендарный', walletConnected: 'Подключен', walletDisconnected: 'Не подключен', roundStarts: 'Раунд начнется через', roundLive: 'Раунд в процессе', roundCrashed: '🚀 Раунд завершен', connecting: 'Подключение...', betOpen: 'Ставки открыты', betActive: 'Следите за множителем и нажмите Cash Out', betQueued: 'Ваша ставка в очереди на следующий раунд', roundInProgress: 'Раунд в процессе', waitingNext: 'Ожидание следующего раунда', roundLabel: 'РАУНД #', multiplier: 'x', placeBetBtn: 'Сделать ставку', cashOut: 'ВЫВОД', betActiveBtn: 'СТАВКА АКТИВНА', betQueuedBtn: 'СТАВКА В ОЧЕРЕДИ', pleaseWait: 'Пожалуйста, подождите...', betNextRound: '🚀 Ставка в следующем раунде' }
         };
 
+        Object.assign(translations.ar, { withdrawTitle:'سحب الأرباح', withdrawAvailableBalance:'الرصيد المتاح للسحب', withdrawWallet:'محفظة السحب', withdrawConnectWallet:'ربط TON Wallet', withdrawChangeWallet:'تغيير TON Wallet', withdrawWalletRequired:'اربط محفظة TON أولًا.', withdrawAmountLabel:'مبلغ السحب', withdrawMinimum:'الحد الأدنى للسحب 0.1 TON.', withdrawInsufficient:'المبلغ أكبر من رصيدك المتاح.', withdrawProcessing:'جاري التحقق وإرسال السحب...', withdrawSuccess:'✅ تم إرسال السحب بنجاح إلى محفظتك.', withdrawFailed:'فشل السحب', withdrawSubmit:'سحب الآن', withdrawHistoryEmpty:'لا توجد طلبات سحب بعد', withdrawHistoryLoadFailed:'تعذر تحميل سجل السحب', withdrawStatusPending:'قيد المعالجة', withdrawStatusProcessing:'جاري التحويل', withdrawStatusPaid:'تم التحويل', withdrawStatusFailed:'فشل — تم إرجاع الرصيد', withdrawStatusCancelled:'ملغى', totalProfitLabel:'إجمالي الأرباح', totalWinsLabel:'الانتصارات', withdrawHeroSubtitle:'اسحب TON إلى محفظتك', withdrawHistoryTitle:'آخر طلبات السحب' });
+        Object.assign(translations.en, { withdrawTitle:'Withdraw earnings', withdrawAvailableBalance:'Available to withdraw', withdrawWallet:'Withdrawal wallet', withdrawConnectWallet:'Connect TON Wallet', withdrawChangeWallet:'Change TON Wallet', withdrawWalletRequired:'Connect a TON wallet first.', withdrawAmountLabel:'Withdrawal amount', withdrawMinimum:'Minimum withdrawal is 0.1 TON.', withdrawInsufficient:'Amount exceeds your available balance.', withdrawProcessing:'Verifying and sending withdrawal...', withdrawSuccess:'✅ Withdrawal sent to your connected wallet.', withdrawFailed:'Withdrawal failed', withdrawSubmit:'Withdraw now', withdrawHistoryEmpty:'No withdrawal requests yet', withdrawHistoryLoadFailed:'Unable to load withdrawal history', withdrawStatusPending:'Processing', withdrawStatusProcessing:'Transferring', withdrawStatusPaid:'Paid', withdrawStatusFailed:'Failed — balance refunded', withdrawStatusCancelled:'Cancelled', totalProfitLabel:'Total profit', totalWinsLabel:'Wins', withdrawHeroSubtitle:'Send TON to your wallet', withdrawHistoryTitle:'Latest withdrawals' });
+        Object.assign(translations.ru, { withdrawTitle:'Вывод средств', withdrawAvailableBalance:'Доступно для вывода', withdrawWallet:'Кошелек для вывода', withdrawConnectWallet:'Подключить TON Wallet', withdrawChangeWallet:'Изменить TON Wallet', withdrawWalletRequired:'Сначала подключите TON-кошелек.', withdrawAmountLabel:'Сумма вывода', withdrawMinimum:'Минимальная сумма вывода — 0,1 TON.', withdrawInsufficient:'Сумма превышает доступный баланс.', withdrawProcessing:'Проверка и отправка вывода...', withdrawSuccess:'✅ Вывод отправлен на подключенный кошелек.', withdrawFailed:'Ошибка вывода', withdrawSubmit:'Вывести сейчас', withdrawHistoryEmpty:'Запросов на вывод пока нет', withdrawHistoryLoadFailed:'Не удалось загрузить историю выводов', withdrawStatusPending:'Обрабатывается', withdrawStatusProcessing:'Перевод', withdrawStatusPaid:'Выполнено', withdrawStatusFailed:'Ошибка — баланс возвращен', withdrawStatusCancelled:'Отменено', totalProfitLabel:'Общая прибыль', totalWinsLabel:'Победы', withdrawHeroSubtitle:'Вывести TON на ваш кошелек', withdrawHistoryTitle:'Последние выводы' });
         Object.assign(translations.ar, { noActivePlayers: 'لا يوجد لاعبون نشطون', guestPlayer: 'ضيف', playerActive: 'نشط', playerWon: 'فائز', playerLost: 'خسر' });
         Object.assign(translations.en, { noActivePlayers: 'No active players', guestPlayer: 'Guest', playerActive: 'Active', playerWon: 'Won', playerLost: 'Lost' });
         Object.assign(translations.ru, { noActivePlayers: 'Нет активных игроков', guestPlayer: 'Гость', playerActive: 'Активен', playerWon: 'Выиграл', playerLost: 'Проиграл' });
@@ -4750,6 +4760,7 @@
                     updateTonWalletUI();
                     updateProfileWalletUI();
                     updateDepositWalletUI();
+                    updateWithdrawalUI();
                     updateProfilePage();
                 });
                 if (tonConnectUI.wallet) {
@@ -5125,31 +5136,61 @@
         }
 
         function updateWithdrawalUI() {
+            const t = translations[currentLanguage] || translations.ar;
             const balance = Number(tonBalance || 0);
             const a = document.getElementById('withdraw-modal-balance');
             if (a) a.textContent = balance.toFixed(2);
-            const wallet = document.getElementById('withdraw-wallet-input');
-            if (wallet && !wallet.value && tonWalletAddress) wallet.value = tonWalletAddress;
+            const connected = Boolean(tonWalletConnected && tonWalletAddress);
+            const walletCard = document.getElementById('withdraw-wallet-card');
+            const walletAddress = document.getElementById('withdraw-wallet-address');
+            const connectButton = document.getElementById('withdraw-connect-button');
+            if (walletAddress) walletAddress.textContent = connected ? tonWalletAddress : t.walletDisconnected;
+            if (walletCard) {
+                walletCard.classList.toggle('withdraw-wallet-card-connected', connected);
+                walletCard.classList.toggle('withdraw-wallet-card-disconnected', !connected);
+            }
+            if (connectButton) connectButton.textContent = connected ? t.withdrawChangeWallet : t.withdrawConnectWallet;
+            const title = document.getElementById('withdraw-modal-title');
+            if (title) title.textContent = t.withdrawTitle;
+            const balanceLabel = document.getElementById('withdraw-balance-label');
+            const walletLabel = document.getElementById('withdraw-wallet-label');
+            const amountLabel = document.getElementById('withdraw-amount-label');
+            const button = document.getElementById('withdraw-submit-button');
+            if (balanceLabel) balanceLabel.textContent = t.withdrawAvailableBalance;
+            if (walletLabel) walletLabel.textContent = t.withdrawWallet;
+            if (amountLabel) amountLabel.textContent = t.withdrawAmountLabel;
+            if (button) { button.textContent = t.withdrawSubmit; button.disabled = !connected; }
+            const earnLabel=document.getElementById('earn-balance-label');
+            const profitLabel=document.getElementById('earn-total-profit-label');
+            const winsLabel=document.getElementById('earn-total-wins-label');
+            const heroTitle=document.getElementById('withdraw-hero-title');
+            const heroSub=document.getElementById('withdraw-hero-subtitle');
+            const historyTitle=document.getElementById('withdraw-history-title');
+            if(earnLabel) earnLabel.textContent=t.withdrawAvailableBalance;
+            if(profitLabel) profitLabel.textContent=t.totalProfitLabel;
+            if(winsLabel) winsLabel.textContent=t.totalWinsLabel;
+            if(heroTitle) heroTitle.textContent=t.withdrawTitle;
+            if(heroSub) heroSub.textContent=t.withdrawHeroSubtitle;
+            if(historyTitle) historyTitle.textContent=t.withdrawHistoryTitle;
         }
 
         async function loadWithdrawalHistory() {
-            const list = document.getElementById('withdrawal-history');
-            if (!list) return;
+            const list = document.getElementById('withdrawal-history'); if (!list) return;
+            const t = translations[currentLanguage] || translations.ar;
             try {
                 const response = await fetch(BACKEND_URL + '/api/withdrawal/history', { headers: getAuthHeaders(), cache: 'no-store' });
                 const data = await response.json();
                 if (!response.ok || !data.ok) throw new Error(data.error || 'Failed');
                 if (!data.withdrawals || !data.withdrawals.length) {
-                    list.innerHTML = '<div class="withdraw-empty">لا توجد طلبات سحب بعد</div>';
+                    list.innerHTML = '<div class="withdraw-empty">' + escapeHtml(t.withdrawHistoryEmpty) + '</div>';
                     return;
                 }
-                const labels = { PENDING:'قيد المراجعة', PROCESSING:'جاري التحويل', PAID:'تم التحويل', FAILED:'فشل — تم إرجاع الرصيد', CANCELLED:'ملغى' };
+                const labels = { PENDING:t.withdrawStatusPending, PROCESSING:t.withdrawStatusProcessing, PAID:t.withdrawStatusPaid, FAILED:t.withdrawStatusFailed, CANCELLED:t.withdrawStatusCancelled };
                 list.innerHTML = data.withdrawals.map(function(item) {
-                    const status = labels[item.status] || item.status;
-                    return '<div class="withdraw-row"><div class="withdraw-row-icon">↓</div><div class="withdraw-row-main"><strong>' + Number(item.amount).toFixed(2) + ' TON</strong><small>' + escapeHtml(item.walletAddress || '') + '</small></div><span class="withdraw-row-status">' + status + '</span></div>';
+                    return '<div class="withdraw-row"><div class="withdraw-row-icon">↓</div><div class="withdraw-row-main"><strong>' + Number(item.amount).toFixed(2) + ' TON</strong><small>' + escapeHtml(item.walletAddress || '') + '</small></div><span class="withdraw-row-status">' + escapeHtml(labels[item.status] || item.status) + '</span></div>';
                 }).join('');
             } catch (error) {
-                list.innerHTML = '<div class="withdraw-empty">تعذر تحميل سجل السحب</div>';
+                list.innerHTML = '<div class="withdraw-empty">' + escapeHtml(t.withdrawHistoryLoadFailed) + '</div>';
             }
         }
 
@@ -5171,35 +5212,45 @@
         }
 
         async function submitWithdrawal() {
+            const t = translations[currentLanguage] || translations.ar;
             const button = document.getElementById('withdraw-submit-button');
             const status = document.getElementById('withdraw-status');
-            const walletInput = document.getElementById('withdraw-wallet-input');
             const amountInput = document.getElementById('withdraw-amount-input');
-            const wallet = String(walletInput && walletInput.value || '').trim();
             const amount = Number(String(amountInput && amountInput.value || '').replace(',', '.'));
-            if (!wallet) { if(status) status.textContent='أدخل عنوان محفظة TON.'; return; }
-            if (!Number.isFinite(amount) || amount < 0.1) { if(status) status.textContent='الحد الأدنى للسحب 0.1 TON.'; return; }
-            if (amount > Number(tonBalance || 0)) { if(status) status.textContent='المبلغ أكبر من رصيدك المتاح.'; return; }
-            if (button) { button.disabled = true; button.textContent = 'جاري إنشاء طلب السحب...'; }
+            if (!tonWalletConnected || !tonWalletAddress) {
+                if (status) status.textContent = t.withdrawWalletRequired;
+                await openTonWallet();
+                return;
+            }
+            if (!Number.isFinite(amount) || amount < 0.1) {
+                if (status) status.textContent = t.withdrawMinimum;
+                return;
+            }
+            if (amount > Number(tonBalance || 0)) {
+                if (status) status.textContent = t.withdrawInsufficient;
+                return;
+            }
+            if (button) { button.disabled = true; button.textContent = t.withdrawProcessing; }
+            if (status) status.textContent = t.withdrawProcessing;
             try {
                 const response = await fetch(BACKEND_URL + '/api/withdrawal/request', {
                     method:'POST',
                     headers:getAuthHeaders(),
-                    body:JSON.stringify({ walletAddress: wallet, amount: amount })
+                    body:JSON.stringify({ walletAddress: tonWalletAddress, amount: amount })
                 });
                 const data = await response.json().catch(function(){ return {}; });
-                if (!response.ok || !data.ok) throw new Error(data.error || 'فشل إنشاء طلب السحب');
+                if (!response.ok || !data.ok) throw new Error(data.error || t.withdrawFailed);
                 tonBalance = Number(data.balance || 0);
                 updateTonWalletUI();
                 updateWithdrawalUI();
-                if(status) status.textContent='✅ تم إنشاء طلب السحب وحجز المبلغ للتحويل.';
-                showToast('✅ تم تسجيل طلب السحب');
+                if (status) status.textContent = t.withdrawSuccess;
+                showToast(t.withdrawSuccess);
                 await loadWithdrawalHistory();
                 setTimeout(function(){ closeModal('withdrawal-modal'); }, 900);
             } catch(error) {
-                if(status) status.textContent=error.message || 'فشل السحب';
+                if (status) status.textContent = error.message || t.withdrawFailed;
             } finally {
-                if(button) { button.disabled=false; button.textContent='سحب الآن'; }
+                updateWithdrawalUI();
             }
         }
 

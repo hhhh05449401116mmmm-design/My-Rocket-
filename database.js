@@ -1921,6 +1921,17 @@ async function createWithdrawalRequest(userId, walletAddress, amount) {
     });
 }
 
+async function markWithdrawalProcessing(withdrawalId) {
+    const result = await run(`UPDATE withdrawals SET status = 'PROCESSING', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'PENDING'`, [withdrawalId]);
+    if (result.changes !== 1) throw new Error('Withdrawal is no longer pending');
+    return await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawalId]);
+}
+
+async function completeWithdrawal(withdrawalId, transactionHash) {
+    const result = await run(`UPDATE withdrawals SET status = 'PAID', transaction_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'PROCESSING'`, [transactionHash || null, withdrawalId]);
+    if (result.changes !== 1) throw new Error('Withdrawal is no longer processing');
+    return await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawalId]);
+}
 async function getUserWithdrawals(userId) {
     return await query(`
         SELECT id, wallet_address, amount, status, transaction_hash, failure_reason, created_at, updated_at
@@ -2757,6 +2768,8 @@ module.exports = {
     // الإيداعات
     createDeposit,
     createWithdrawalRequest,
+    markWithdrawalProcessing,
+    completeWithdrawal,
     getUserWithdrawals,
     refundFailedWithdrawal,
     saveDepositBoc,
