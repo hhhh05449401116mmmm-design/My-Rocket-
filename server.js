@@ -512,7 +512,8 @@ function notifyCollectibleClients(userId, payload) {
     return sent;
 }
 
-// مسح دوري يطابق الهدايا الواردة الحقيقية بأصحاب intents المعلّقة عبر sender_user.id فقط (لا تخمين).
+// مسح دوري يطابق الهدايا التي يعيدها getBusinessAccountGifts مع صاحب حساب Telegram
+// المرتبط فعليًا بالـ Business Connection. sender_user هو مُرسل الهدية وليس مالك الحساب.
 // fetchGiftsFn قابل للحقن للاختبارات فقط (افتراضيًا يستخدم استدعاء Telegram الحقيقي).
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
     await ensureRuntimeBusinessConnection();
@@ -525,6 +526,20 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             isEnabled: runtimeBusinessConnection.isEnabled
         }));
         return { configured: false, credited: 0, unmatched: 0 };
+    }
+
+    const businessUserId = runtimeBusinessConnection.businessUserId;
+    if (!businessUserId) {
+        console.warn('🔍 Collectible sweep skipped: Business Connection owner is not known yet');
+        return { configured: true, credited: 0, unmatched: 0, reason: 'business_owner_unknown' };
+    }
+
+    // The Business Connection's user is the account that owns the returned gifts.
+    // Never use ownedGift.sender_user.id for ownership: that field identifies the gift sender.
+    const ownerUser = await get('SELECT * FROM users WHERE telegram_id = ?', [String(businessUserId)]);
+    if (!ownerUser) {
+        console.warn('🔍 Collectible sweep waiting for the Business account owner to open the game');
+        return { configured: true, credited: 0, unmatched: 0, reason: 'business_owner_not_linked' };
     }
 
     try {
@@ -544,7 +559,7 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
     let credited = 0;
     let unmatched = 0;
     let uniqueDetected = 0;
-    const reasons = { missingSender: 0, userNotFound: 0, alreadyCredited: 0, creditFailed: 0, noPendingIntent: 0 };
+    const reasons = { alreadyCredited: 0, creditFailed: 0 };
 
     for (const ownedGift of ownedGifts) {
         const identity = extractUniqueCollectibleIdentity(ownedGift);
@@ -554,18 +569,10 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
         if (alreadyCredited) { reasons.alreadyCredited++; continue; }
 
-        if (!identity.senderTelegramId) { unmatched++; reasons.missingSender++; continue; }
-
-        const user = await get('SELECT * FROM users WHERE telegram_id = ?', [String(identity.senderTelegramId)]);
-        if (!user) { unmatched++; reasons.userNotFound++; continue; }
-
-        const intent = await getPendingIntentByTelegramSenderId(identity.senderTelegramId);
-        if (!intent) reasons.noPendingIntent++; // informational only — an intent is not required to credit
-
         try {
             const creditResult = await creditVerifiedCollectible({
-                intentId: intent ? intent.id : null,
-                userId: user.id,
+                intentId: null,
+                userId: ownerUser.id,
                 telegramGiftModel: identity.telegramGiftModel,
                 uniqueCollectibleId: identity.uniqueCollectibleId,
                 telegramGiftInstanceId: identity.telegramGiftInstanceId,
@@ -578,11 +585,11 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             console.log('✅ Collectible credited:', JSON.stringify({
                 uniqueCollectibleId: identity.uniqueCollectibleId,
                 collectibleNumber: identity.collectibleNumber,
-                userId: user.id
+                userId: ownerUser.id
             }));
             // إشعار فوري للعميل Backpack المتصل (إن وجد) — هوية علنية فقط، بعد الائتمان الفعلي.
             if (!creditResult.alreadyCredited) {
-                notifyCollectibleClients(user.id, {
+                notifyCollectibleClients(ownerUser.id, {
                     type: 'collectible-credited',
                     uniqueCollectibleId: identity.uniqueCollectibleId,
                     collectibleNumber: identity.collectibleNumber,
