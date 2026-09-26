@@ -5939,15 +5939,24 @@
         }
 
         async function createDepositRequest(amount) {
-            const response = await fetch(`${BACKEND_URL}/api/deposit/create`, {
+            const request = () => fetch(`${BACKEND_URL}/api/deposit/create`, {
                 method: "POST", headers: getAuthHeaders(),
                 body: JSON.stringify({ walletAddress: tonWalletAddress, amount: amount })
             });
-            const data = await response.json().catch(() => ({}));
+
+            let response = await request();
+            let data = await response.json().catch(() => ({}));
+
+            // Refresh a stale Telegram Mini App auth token once after a backend restart.
+            if (response.status === 401 && data.error === 'User not found') {
+                await authenticateUser();
+                response = await request();
+                data = await response.json().catch(() => ({}));
+            }
+
             if (!response.ok || !data.ok) throw new Error(data.error || getTranslation('depositFailed'));
             return data;
         }
-
         async function startTonDeposit() {
             const t = translations[currentLanguage] || translations.ar;
             if (depositInProgress) return;
