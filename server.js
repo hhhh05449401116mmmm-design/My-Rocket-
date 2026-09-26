@@ -8,7 +8,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
-const { TonClient, WalletContractV4, internal, Address, toNano } = require('@ton/ton');
+const { TonClient, WalletContractV5R1, internal, Address, toNano } = require('@ton/ton');
 const { mnemonicToPrivateKey } = require('@ton/crypto');
 const { URL } = require('url');
 require('dotenv').config();
@@ -188,7 +188,7 @@ async function sendRealTonWithdrawal(withdrawal) {
     const endpoint = TONCENTER_API_URL.endsWith('/api/v2') ? TONCENTER_API_URL + '/jsonRPC' : TONCENTER_API_URL + '/api/v2/jsonRPC';
     const client = new TonClient({ endpoint, ...(TONCENTER_API_KEY ? { apiKey: TONCENTER_API_KEY } : {}) });
     const keyPair = await mnemonicToPrivateKey(TON_TREASURY_MNEMONIC.trim().split(/\s+/));
-    const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+    const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey, walletId: { networkGlobalId: -239 } });
     const treasuryAddress = canonicalTonAddress(wallet.address.toString());
     const configuredTreasury = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
     if (!configuredTreasury || treasuryAddress !== configuredTreasury) throw new Error('Treasury wallet configuration does not match TON_DEPOSIT_RECEIVER');
@@ -198,7 +198,7 @@ async function sendRealTonWithdrawal(withdrawal) {
     const reserveNano = toNano(String(Math.max(0.02, TON_WITHDRAWAL_RESERVE)));
     if (balance < amountNano + reserveNano) throw new Error('Treasury wallet has insufficient TON for this withdrawal');
     const seqno = await contract.getSeqno();
-    await contract.sendTransfer({ seqno, secretKey: keyPair.secretKey, messages: [internal({ to: Address.parse(withdrawal.wallet_address), value: amountNano, body: 'rocket-withdrawal:' + withdrawal.id })] });
+    await contract.sendTransfer({ seqno, secretKey: keyPair.secretKey, timeout: Math.floor(Date.now() / 1000) + 60, sendMode: 3, messages: [internal({ to: Address.parse(withdrawal.wallet_address), value: amountNano, body: 'rocket-withdrawal:' + withdrawal.id })] });
     const deadline = Date.now() + 30000;
     while (Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -2630,14 +2630,14 @@ async function verifyTonTreasuryConfiguration() {
     try {
         const words = TON_TREASURY_MNEMONIC.trim().split(/\s+/);
         const keyPair = await mnemonicToPrivateKey(words);
-        const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+        const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey, walletId: { networkGlobalId: -239 } });
         const derivedAddress = canonicalTonAddress(wallet.address.toString());
         const configuredAddress = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
         const match = !!derivedAddress && !!configuredAddress && derivedAddress === configuredAddress;
 
         console.log('💰 TON treasury wallet check:', JSON.stringify({
             configured: true,
-            walletType: 'WalletContractV4',
+            walletType: 'WalletContractV5R1',
             matchesDepositReceiver: match
         }));
 
