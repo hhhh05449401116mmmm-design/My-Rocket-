@@ -3243,6 +3243,8 @@
         ========================================================= */
         let tonConnectUI = null;
         let tonWalletAddress = null;
+        let tonProofVerifiedAddress = null;
+        let tonProofPreparationPromise = null;
         let tonWalletConnected = false;
 
         /* =========================================================
@@ -4754,9 +4756,18 @@
                     restoreConnection: true,
                     language: "en"
                 });
-                tonConnectUI.onStatusChange(function(wallet) {
-                    if (wallet) { tonWalletConnected = true; tonWalletAddress = wallet.account?.address || null; }
-                    else { tonWalletConnected = false; tonWalletAddress = null; }
+                tonConnectUI.onStatusChange(async function(wallet) {
+                    if (wallet) {
+                        tonWalletConnected = true; tonWalletAddress = wallet.account?.address || null;
+                        const proofReply = wallet.connectItems?.tonProof;
+                        if (proofReply && 'proof' in proofReply && wallet.account?.walletStateInit) {
+                            try {
+                                const response = await fetch(BACKEND_URL + '/api/ton-proof/verify', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ proof:proofReply.proof, address:wallet.account.address, network:wallet.account.chain, walletStateInit:wallet.account.walletStateInit }) });
+                                const data = await response.json().catch(function(){ return {}; });
+                                tonProofVerifiedAddress = response.ok && data.ok ? data.address : null;
+                            } catch (error) { tonProofVerifiedAddress = null; console.error('TON PROOF VERIFY ERROR:', error); }
+                        }
+                    } else { tonWalletConnected = false; tonWalletAddress = null; tonProofVerifiedAddress = null; }
                     updateTonWalletUI();
                     updateProfileWalletUI();
                     updateDepositWalletUI();
@@ -4775,6 +4786,23 @@
                 console.error("TON Connect error:", error);
                 showToast(getTranslation('connecting'));
             }
+        }
+
+        async function prepareTonProofRequest() {
+            if (!tonConnectUI) return false;
+            if (tonProofPreparationPromise) return tonProofPreparationPromise;
+            tonProofPreparationPromise = (async function() {
+                tonConnectUI.setConnectRequestParameters({ state:'loading' });
+                try {
+                    const response = await fetch(BACKEND_URL + '/api/ton-proof/payload', { headers:getAuthHeaders(), cache:'no-store' });
+                    const data = await response.json().catch(function(){ return {}; });
+                    if (!response.ok || !data.ok || !data.payload) throw new Error(data.error || 'Unable to prepare TON proof');
+                    tonConnectUI.setConnectRequestParameters({ state:'ready', value:{ tonProof:data.payload } });
+                    return true;
+                } catch (error) { tonConnectUI.setConnectRequestParameters(null); console.error('TON PROOF PREPARE ERROR:', error); return false; }
+                finally { tonProofPreparationPromise = null; }
+            })();
+            return tonProofPreparationPromise;
         }
 
         async function openTonWallet() {
@@ -5222,6 +5250,19 @@
                 await openTonWallet();
                 return;
             }
+            if (!tonProofVerifiedAddress || tonProofVerifiedAddress !== tonWalletAddress) {
+                if (status) status.textContent = t.withdrawProcessing;
+                const prepared = await prepareTonProofRequest();
+                if (!prepared) { if (status) status.textContent = t.withdrawFailed; return; }
+                try {
+                    if (tonConnectUI.connected) await tonConnectUI.disconnect();
+                    tonWalletConnected = false; tonWalletAddress = null; tonProofVerifiedAddress = null;
+                    updateTonWalletUI(); updateWithdrawalUI();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await tonConnectUI.openModal();
+                } catch (error) { if (status) status.textContent = error.message || t.withdrawFailed; }
+                return;
+            }
             if (!Number.isFinite(amount) || amount < 0.1) {
                 if (status) status.textContent = t.withdrawMinimum;
                 return;
@@ -5236,7 +5277,7 @@
                 const response = await fetch(BACKEND_URL + '/api/withdrawal/request', {
                     method:'POST',
                     headers:getAuthHeaders(),
-                    body:JSON.stringify({ walletAddress: tonWalletAddress, amount: amount })
+                    body:JSON.stringify({ amount: amount })
                 });
                 const data = await response.json().catch(function(){ return {}; });
                 if (!response.ok || !data.ok) throw new Error(data.error || t.withdrawFailed);
