@@ -277,13 +277,19 @@ async function findRealTonWithdrawalTransactionHash(withdrawal, treasuryAddress,
 }
 
 async function sendRealTonWithdrawal(withdrawal) {
-    if (!TON_TREASURY_MNEMONIC) throw new Error('Real withdrawals are not configured on the server');
-    const endpoint = TONCENTER_API_URL.endsWith('/api/v2') ? TONCENTER_API_URL + '/jsonRPC' : TONCENTER_API_URL + '/api/v2/jsonRPC';
-    const client = new TonClient({ endpoint, ...(TONCENTER_API_KEY ? { apiKey: TONCENTER_API_KEY } : {}) });
-    const keyPair = await mnemonicToPrivateKey(TON_TREASURY_MNEMONIC.trim().split(/\s+/));
+    // Read production secrets at request time so a long-lived Node process cannot
+    // retain an empty value from an earlier environment snapshot.
+    const treasuryMnemonic = String(process.env.TON_TREASURY_MNEMONIC || '').trim();
+    const toncenterApiUrl = String(process.env.TONCENTER_API_URL || TONCENTER_API_URL || 'https://toncenter.com/api/v2').trim();
+    const toncenterApiKey = String(process.env.TONCENTER_API_KEY || TONCENTER_API_KEY || '').trim();
+    const depositReceiver = String(process.env.TON_DEPOSIT_RECEIVER || TON_DEPOSIT_RECEIVER || '').trim();
+    if (!treasuryMnemonic) throw new Error('Real withdrawals are not configured on the server');
+    const endpoint = toncenterApiUrl.endsWith('/api/v2') ? toncenterApiUrl + '/jsonRPC' : toncenterApiUrl + '/api/v2/jsonRPC';
+    const client = new TonClient({ endpoint, ...(toncenterApiKey ? { apiKey: toncenterApiKey } : {}) });
+    const keyPair = await mnemonicToPrivateKey(treasuryMnemonic.split(/\s+/));
     const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey, walletId: { networkGlobalId: -239 } });
     const treasuryAddress = canonicalTonAddress(wallet.address.toString());
-    const configuredTreasury = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
+    const configuredTreasury = canonicalTonAddress(depositReceiver);
     if (!configuredTreasury || treasuryAddress !== configuredTreasury) throw new Error('Treasury wallet configuration does not match TON_DEPOSIT_RECEIVER');
     const contract = client.open(wallet);
     const balance = await contract.getBalance();
