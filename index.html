@@ -1660,7 +1660,8 @@
         ========================================================= */
         .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; }
         .image-banner .banner-art { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; z-index:0; }
-        .image-banner.playhub-banner .banner-art { height:108%; object-position:center top; }
+        .image-banner .banner-art { max-width:none; max-height:none; }
+        .image-banner.playhub-banner .banner-art { object-position:center; }
 
         /* =========================================================
            EARNINGS / WITHDRAWAL
@@ -2396,7 +2397,7 @@
               <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/B217A240-BAEF-4FB2-BC28-DE86FCF5FE11-artguru.png" alt="Rocket"></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/26B497FC-6E20-4444-B996-FBB19C57EF0E-artguru.png" alt="PVP"></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/pvp-banner-user.jpg" alt="PVP"></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
               <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/playhub-banner-user.jpg" alt="Play Hub"></div>
