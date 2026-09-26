@@ -865,13 +865,13 @@ async function getActiveBetsForRound(roundNumber) {
 async function getRoundPlayers(roundNumber) {
     return await query(`
         SELECT tb.id AS bet_id, tb.user_id, tb.amount AS amount, tb.status,
-               tb.cashout_multiplier AS multiplier, u.first_name, u.last_name, 'TON' AS bet_type
+               tb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url, 'TON' AS bet_type
         FROM ton_bets tb
         JOIN users u ON u.id = tb.user_id
         WHERE tb.round_id = ?
         UNION ALL
         SELECT gb.id AS bet_id, gb.user_id, gb.gift_value_at_bet AS amount, gb.status,
-               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, 'GIFT' AS bet_type
+               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url, 'GIFT' AS bet_type
         FROM gift_bets gb
         JOIN users u ON u.id = gb.user_id
         WHERE gb.round_id = ?

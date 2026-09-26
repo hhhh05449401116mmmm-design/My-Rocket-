@@ -885,6 +885,7 @@ async function refreshRoundPlayers() {
     currentGameState.players = rows.map(row => ({
         id: `${row.bet_type}:${row.bet_id}`,
         name: buildPlayerDisplayName(row.first_name, row.last_name),
+        avatar: row.avatar_url || null,
         amount: row.amount,
         status: row.status,
         multiplier: row.multiplier
