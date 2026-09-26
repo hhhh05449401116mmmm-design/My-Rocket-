@@ -2621,12 +2621,47 @@ app.get('/api/lootboxes', authenticate, async (req, res) => {
 // =========================================================
 // 6. بدء تشغيل السيرفر
 // =========================================================
+async function verifyTonTreasuryConfiguration() {
+    if (!TON_TREASURY_MNEMONIC || !TON_DEPOSIT_RECEIVER) {
+        console.log('💰 TON treasury configuration check: SKIPPED (missing treasury variables)');
+        return { configured: false, match: false };
+    }
+
+    try {
+        const words = TON_TREASURY_MNEMONIC.trim().split(/\s+/);
+        const keyPair = await mnemonicToPrivateKey(words);
+        const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+        const derivedAddress = canonicalTonAddress(wallet.address.toString());
+        const configuredAddress = canonicalTonAddress(TON_DEPOSIT_RECEIVER);
+        const match = !!derivedAddress && !!configuredAddress && derivedAddress === configuredAddress;
+
+        console.log('💰 TON treasury wallet check:', JSON.stringify({
+            configured: true,
+            walletType: 'WalletContractV4',
+            matchesDepositReceiver: match
+        }));
+
+        if (!match) {
+            console.error('❌ TON treasury wallet check FAILED: derived treasury wallet does not match TON_DEPOSIT_RECEIVER');
+        } else {
+            console.log('✅ TON treasury wallet check PASSED');
+        }
+
+        return { configured: true, match };
+    } catch (error) {
+        console.error('❌ TON treasury wallet check ERROR:', error.message);
+        return { configured: true, match: false };
+    }
+}
+
 async function startServer(port = PORT) {
     try {
         // تهيئة قاعدة البيانات
         await initDatabase();
         await seedDatabase();
         console.log('✅ Database initialized and seeded');
+
+        await verifyTonTreasuryConfiguration();
 
         try {
             const businessConnection = await ensureRuntimeBusinessConnection();
