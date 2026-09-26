@@ -34,6 +34,14 @@ function makeOwnedUniqueGift({ name, number, ownedGiftId, senderTelegramId, stic
 
 test.before(async () => {
     await database.initDatabase();
+    await database.savePersistedBusinessConnection({
+        connectionId: 'test-business-connection',
+        businessUserId: 'business-owner-user',
+        canViewGiftsAndStars: true,
+        canTransferAndUpgradeGifts: false,
+        isEnabled: true
+    });
+    await database.findOrCreateUser('business-owner-user');
 });
 
 test.after(async () => {
@@ -58,8 +66,8 @@ test('extractUniqueCollectibleIdentity extracts a real unique collectible identi
     assert.equal(identity.telegramGiftModel.imageUrl, null, 'raw file_id must never be used as a browser image URL');
 });
 
-test('sweep credits the correct Rocket user via sender_user.id, never by name/guess', async () => {
-    const user = await database.findOrCreateUser('sender-match-user');
+test('sweep credits the Business Connection owner, not sender_user.id', async () => {
+    const user = await database.findOrCreateUser('business-owner-user');
     const owned = makeOwnedUniqueGift({ name: 'GoldRing', number: 1, ownedGiftId: 'og-match-1', senderTelegramId: 'sender-match-user' });
 
     const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
@@ -68,33 +76,32 @@ test('sweep credits the correct Rocket user via sender_user.id, never by name/gu
 
     const collectibles = await database.getUserCollectibles(user.id);
     const credited = collectibles.find(c => c.unique_collectible_id === 'GoldRing-1');
-    assert.ok(credited, 'collectible must be credited to the matched sender');
+    assert.ok(credited, 'collectible must be credited to the Business account owner');
     assert.equal(credited.ownership_verified, 1);
 });
 
-test('sweep leaves the collectible unmatched when sender identity is hidden', async () => {
+test('sweep credits a collectible even when sender identity is hidden', async () => {
     const owned = makeOwnedUniqueGift({ name: 'HiddenSender', number: 2, ownedGiftId: 'og-hidden-1', senderTelegramId: null });
     const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
-    assert.equal(result.unmatched, 1);
-    assert.equal(result.credited, 0);
+    assert.equal(result.unmatched, 0);
+    assert.equal(result.credited, 1);
     assert.equal(result.giftsReturned, 1);
     assert.equal(result.uniqueDetected, 1);
-    assert.equal(result.reasons.missingSender, 1, 'diagnostics must report the exact unmatched reason');
 
     const anyOwner = await database.getCollectibleByUniqueId('HiddenSender-2');
-    assert.equal(anyOwner, undefined, 'a collectible with no verifiable sender must never be assigned to any user');
+    assert.ok(anyOwner, 'the collectible must be assigned to the verified Business account owner');
+    assert.equal(anyOwner.user_id, (await database.findOrCreateUser('business-owner-user')).id);
 });
 
-test('sweep leaves the collectible unmatched when sender does not map to any Rocket user', async () => {
+test('sweep credits the collectible even when sender is not a Rocket user', async () => {
     const owned = makeOwnedUniqueGift({ name: 'UnknownSender', number: 3, ownedGiftId: 'og-unknown-1', senderTelegramId: 'no-such-rocket-user' });
     const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
-    assert.equal(result.unmatched, 1);
-    assert.equal(result.credited, 0);
-    assert.equal(result.reasons.userNotFound, 1, 'diagnostics must report userNotFound as the reason');
+    assert.equal(result.unmatched, 0);
+    assert.equal(result.credited, 1);
 });
 
 test('the same real collectible is never credited twice (duplicate prevention)', async () => {
-    const user = await database.findOrCreateUser('dup-prevention-user');
+    const user = await database.findOrCreateUser('business-owner-user');
     const owned = makeOwnedUniqueGift({ name: 'DupModel', number: 5, ownedGiftId: 'og-dup-1', senderTelegramId: 'dup-prevention-user' });
 
     const first = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
@@ -109,7 +116,7 @@ test('the same real collectible is never credited twice (duplicate prevention)',
 });
 
 test('a user can own multiple distinct instances of the same gift model', async () => {
-    const user = await database.findOrCreateUser('multi-instance-user');
+    const user = await database.findOrCreateUser('business-owner-user');
     const first = makeOwnedUniqueGift({ name: 'SameModel', number: 10, ownedGiftId: 'og-multi-1', senderTelegramId: 'multi-instance-user' });
     const second = makeOwnedUniqueGift({ name: 'SameModel', number: 11, ownedGiftId: 'og-multi-2', senderTelegramId: 'multi-instance-user' });
 
@@ -122,7 +129,7 @@ test('a user can own multiple distinct instances of the same gift model', async 
 });
 
 test('concurrent credit attempts for the identical collectible never double-credit (race safety)', async () => {
-    const user = await database.findOrCreateUser('race-user');
+    const user = await database.findOrCreateUser('business-owner-user');
     const owned = makeOwnedUniqueGift({ name: 'RaceModel', number: 9, ownedGiftId: 'og-race-1', senderTelegramId: 'race-user' });
 
     await Promise.all([
