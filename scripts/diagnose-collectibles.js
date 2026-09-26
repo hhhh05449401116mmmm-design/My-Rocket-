@@ -59,8 +59,7 @@ function callTelegramBotApi(method, payload = {}) {
         uniqueCollectibleGiftsReturned: 0,
         withSenderUser: 0,
         alreadyCredited: 0,
-        senderMapsToRocketUser: 0,
-        withPendingImportIntent: 0,
+        businessOwnerMapsToRocketUser: 0,
         wouldBeCreditable: 0,
         adminLastImportIntentStatus: null,
         adminLastImportIntentExpired: null
@@ -75,6 +74,7 @@ function callTelegramBotApi(method, payload = {}) {
         }
 
         const connectionId = process.env.TELEGRAM_BUSINESS_CONNECTION_ID || (persisted ? persisted.connection_id : null);
+        const businessOwnerTelegramId = persisted?.business_user_id || null;
 
         if (!connectionId) {
             report.telegramApiErrorMessage = 'No business connection configured (env or persisted) — skipped getBusinessAccountGifts call.';
@@ -96,16 +96,13 @@ function callTelegramBotApi(method, payload = {}) {
                     );
                     if (alreadyCredited) { report.alreadyCredited++; continue; }
 
-                    if (!identity.senderTelegramId) continue;
-                    report.withSenderUser++;
+                    if (identity.senderTelegramId) report.withSenderUser++;
 
-                    const user = await database.get('SELECT id FROM users WHERE telegram_id = ?', [String(identity.senderTelegramId)]);
+                    if (!businessOwnerTelegramId) continue;
+                    const user = await database.get('SELECT id FROM users WHERE telegram_id = ?', [String(businessOwnerTelegramId)]);
                     if (!user) continue;
-                    report.senderMapsToRocketUser++;
+                    report.businessOwnerMapsToRocketUser++;
                     report.wouldBeCreditable++;
-
-                    const intent = await database.getPendingIntentByTelegramSenderId(identity.senderTelegramId);
-                    if (intent) report.withPendingImportIntent++;
                 }
             } catch (error) {
                 report.telegramApiErrorMessage = error.message;
