@@ -842,11 +842,22 @@
         #rocket-game .game-card {
             background: transparent !important;
         }
-        #rocket-game .game-card::after {
+        #rocket-game .game-card::after,
+        #rocket-game .game-card::before {
             background: transparent !important;
+            animation: none !important;
+        }
+        #rocket-game .stars {
+            background-image: none !important;
+            opacity: 1 !important;
+            animation: none !important;
         }
         #rocket-game .fog-effect {
             background: transparent !important;
+        }
+        #rocket-game .rocket-game-video-bg {
+            opacity: 1 !important;
+            filter: none !important;
         }
 
         /* =========================================================
