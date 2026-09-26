@@ -8,7 +8,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
-const { TonClient, WalletContractV5R1, internal, Address, toNano } = require('@ton/ton');
+const { TonClient, WalletContractV5R1, internal, Address, Cell, contractAddress, loadStateInit, toNano } = require('@ton/ton');
 const { mnemonicToPrivateKey } = require('@ton/crypto');
 const { URL } = require('url');
 require('dotenv').config();
@@ -137,6 +137,75 @@ const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || null;
 // When disabled, the test_balance field is never read or written for gameplay.
 const ENABLE_TEST_BALANCE = process.env.ENABLE_TEST_BALANCE === 'true';
 
+const TON_CONNECT_PROOF_DOMAIN = process.env.TON_CONNECT_PROOF_DOMAIN || 'my-rocket.vercel.app';
+const TON_CONNECT_PROOF_NETWORK = process.env.TON_CONNECT_PROOF_NETWORK || '-239';
+const TON_CONNECT_PROOF_MAX_AGE_SEC = 15 * 60;
+const pendingTonProofs = new Map();
+const verifiedTonWallets = new Map();
+
+function issueTonProofPayload(userId) {
+    const payload = crypto.randomBytes(32).toString('hex');
+    pendingTonProofs.set(String(userId), { payload, expiresAt: Date.now() + TON_CONNECT_PROOF_MAX_AGE_SEC * 1000 });
+    return payload;
+}
+function consumeTonProofPayload(userId, payload) {
+    const entry = pendingTonProofs.get(String(userId));
+    if (!entry || entry.expiresAt < Date.now() || entry.payload !== payload) return false;
+    pendingTonProofs.delete(String(userId));
+    return true;
+}
+function buildTonProofDigest(address, proof) {
+    const domainBytes = Buffer.from(proof.domain.value, 'utf8');
+    if (!Number.isInteger(proof.domain.lengthBytes) || proof.domain.lengthBytes !== domainBytes.length) throw new Error('Invalid TON proof domain length');
+    const workchain = Buffer.alloc(4); workchain.writeInt32BE(address.workChain, 0);
+    const domainLength = Buffer.alloc(4); domainLength.writeUInt32LE(domainBytes.length, 0);
+    const timestamp = Buffer.alloc(8); timestamp.writeBigUInt64LE(BigInt(proof.timestamp), 0);
+    const message = Buffer.concat([Buffer.from('ton-proof-item-v2/', 'utf8'), workchain, Buffer.from(address.hash), domainLength, domainBytes, timestamp, Buffer.from(String(proof.payload), 'utf8')]);
+    const innerHash = crypto.createHash('sha256').update(message).digest();
+    return crypto.createHash('sha256').update(Buffer.concat([Buffer.from([0xff, 0xff]), Buffer.from('ton-connect', 'utf8'), innerHash])).digest();
+}
+function publicKeyFromBigInt(value) {
+    const hex = BigInt(value).toString(16).padStart(64, '0');
+    if (hex.length > 64) throw new Error('Invalid wallet public key');
+    return Buffer.from(hex, 'hex');
+}
+async function getWalletPublicKeyFromChain(addressString) {
+    const endpoint = TONCENTER_API_URL.endsWith('/api/v2') ? TONCENTER_API_URL + '/jsonRPC' : TONCENTER_API_URL + '/api/v2/jsonRPC';
+    const client = new TonClient({ endpoint, ...(TONCENTER_API_KEY ? { apiKey: TONCENTER_API_KEY } : {}) });
+    const result = await client.runMethod(Address.parse(addressString), 'get_public_key');
+    return publicKeyFromBigInt(result.stack.readBigNumber());
+}
+function verifyEd25519Digest(digest, signature, publicKey) {
+    if (!Buffer.isBuffer(signature) || signature.length !== 64 || !Buffer.isBuffer(publicKey) || publicKey.length !== 32) return false;
+    const keyObject = crypto.createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), publicKey]), format: 'der', type: 'spki' });
+    return crypto.verify(null, digest, keyObject, signature);
+}
+async function verifyTonConnectProof(input) {
+    const { address: addressString, network, walletStateInit, proof } = input || {};
+    if (!addressString || !walletStateInit || !proof) throw new Error('TON proof is required');
+    if (String(network) !== TON_CONNECT_PROOF_NETWORK) throw new Error('Wrong TON network');
+    if (proof.domain?.value !== TON_CONNECT_PROOF_DOMAIN) throw new Error('Wrong TON proof domain');
+    if (!proof.payload || !consumeTonProofPayload(input.userId, String(proof.payload))) throw new Error('Invalid or expired TON proof payload');
+    const timestamp = Number(proof.timestamp);
+    if (!Number.isSafeInteger(timestamp) || Math.abs(Math.floor(Date.now() / 1000) - timestamp) > TON_CONNECT_PROOF_MAX_AGE_SEC) throw new Error('TON proof expired');
+    const wantedAddress = Address.parse(addressString);
+    const stateInit = loadStateInit(Cell.fromBase64(walletStateInit).beginParse());
+    const derivedAddress = contractAddress(wantedAddress.workChain, stateInit);
+    if (!derivedAddress.equals(wantedAddress)) throw new Error('Wallet state does not match wallet address');
+    const publicKey = await getWalletPublicKeyFromChain(addressString);
+    const digest = buildTonProofDigest(wantedAddress, proof);
+    const signature = Buffer.from(String(proof.signature || ''), 'base64');
+    if (!verifyEd25519Digest(digest, signature, publicKey)) throw new Error('Invalid TON proof signature');
+    const rawAddress = wantedAddress.toRawString();
+    verifiedTonWallets.set(String(input.userId), { address: rawAddress, expiresAt: Date.now() + TON_CONNECT_PROOF_MAX_AGE_SEC * 1000 });
+    return rawAddress;
+}
+function getVerifiedTonWallet(userId) {
+    const entry = verifiedTonWallets.get(String(userId));
+    if (!entry || entry.expiresAt < Date.now()) { verifiedTonWallets.delete(String(userId)); return null; }
+    return entry.address;
+}
+
 // In-memory only (does not survive a restart): populated by /telegram-webhook once a real
 // business_connection update arrives. No database migration performed for this yet.
 let runtimeBusinessConnection = {
@@ -183,6 +252,30 @@ function requestJson(urlString) {
     });
 }
 
+async function findRealTonWithdrawalTransactionHash(withdrawal, treasuryAddress, sentAfterMs) {
+    const expectedDestination = canonicalTonAddress(withdrawal.wallet_address);
+    const expectedComment = 'rocket-withdrawal:' + withdrawal.id;
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+        const apiUrl = new URL(`${TONCENTER_API_URL.replace(/\/$/, '')}/getTransactions`);
+        apiUrl.searchParams.set('address', treasuryAddress);
+        apiUrl.searchParams.set('limit', '50');
+        const result = await requestJson(apiUrl.toString());
+        const transactions = Array.isArray(result.result) ? result.result : [];
+        for (const transaction of transactions) {
+            const txHash = transaction.transaction_id?.hash;
+            const utime = Number(transaction.utime || 0) * 1000;
+            if (!txHash || (utime && utime + 10000 < sentAfterMs)) continue;
+            for (const message of (transaction.out_msgs || [])) {
+                if (canonicalTonAddress(message.destination) !== expectedDestination) continue;
+                if (extractComment(message).includes(expectedComment)) return txHash;
+            }
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    throw new Error('TON withdrawal transaction hash was not found');
+}
+
 async function sendRealTonWithdrawal(withdrawal) {
     if (!TON_TREASURY_MNEMONIC) throw new Error('Real withdrawals are not configured on the server');
     const endpoint = TONCENTER_API_URL.endsWith('/api/v2') ? TONCENTER_API_URL + '/jsonRPC' : TONCENTER_API_URL + '/api/v2/jsonRPC';
@@ -198,11 +291,12 @@ async function sendRealTonWithdrawal(withdrawal) {
     const reserveNano = toNano(String(Math.max(0.02, TON_WITHDRAWAL_RESERVE)));
     if (balance < amountNano + reserveNano) throw new Error('Treasury wallet has insufficient TON for this withdrawal');
     const seqno = await contract.getSeqno();
+    const sentAfterMs = Date.now();
     await contract.sendTransfer({ seqno, secretKey: keyPair.secretKey, timeout: Math.floor(Date.now() / 1000) + 60, sendMode: 3, messages: [internal({ to: Address.parse(withdrawal.wallet_address), value: amountNano, body: 'rocket-withdrawal:' + withdrawal.id })] });
-    const deadline = Date.now() + 30000;
+    const deadline = sentAfterMs + 30000;
     while (Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        if ((await contract.getSeqno()) > seqno) return wallet.address.toString() + '#' + seqno;
+        if ((await contract.getSeqno()) > seqno) return await findRealTonWithdrawalTransactionHash(withdrawal, wallet.address.toString(), sentAfterMs);
     }
     throw new Error('TON withdrawal was not confirmed by the treasury wallet');
 }
@@ -2536,14 +2630,24 @@ app.get('/api/deposit/status', authenticate, async (req, res) => {
     }
 });
 
+// ===== 5.11 TON Connect Proof =====
+app.get('/api/ton-proof/payload', authenticate, async (req, res) => {
+    try { res.json({ ok: true, payload: issueTonProofPayload(req.user.id), domain: TON_CONNECT_PROOF_DOMAIN, network: TON_CONNECT_PROOF_NETWORK }); }
+    catch (error) { res.status(500).json({ ok: false, error: error.message }); }
+});
+app.post('/api/ton-proof/verify', authenticate, async (req, res) => {
+    try { const address = await verifyTonConnectProof({ ...req.body, userId: req.user.id }); res.json({ ok: true, address, verified: true }); }
+    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
+});
+
 // ===== 5.12 طلب سحب الأرباح =====
 app.post('/api/withdrawal/request', authenticate, async (req, res) => {
     let withdrawal = null;
     try {
-        const { walletAddress, amount } = req.body;
-        const normalizedAddress = canonicalTonAddress(walletAddress);
-        const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
-        if (!normalizedAddress || !Number.isFinite(normalizedAmount) || normalizedAmount < 0.1 || normalizedAmount > 100000) return res.status(400).json({ ok: false, error: 'Invalid withdrawal data' });
+        const normalizedAddress = getVerifiedTonWallet(req.user.id);
+        const normalizedAmount = Number(String(req.body?.amount ?? '').trim().replace(',', '.'));
+        if (!normalizedAddress) return res.status(428).json({ ok: false, error: 'TON wallet ownership proof is required. Reconnect your wallet to verify ownership.' });
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount < 0.1 || normalizedAmount > 100000) return res.status(400).json({ ok: false, error: 'Invalid withdrawal data' });
         withdrawal = await createWithdrawalRequest(req.user.id, normalizedAddress, Number(normalizedAmount.toFixed(9)));
         await markWithdrawalProcessing(withdrawal.id);
         const processing = await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawal.id]);
