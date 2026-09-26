@@ -306,6 +306,24 @@ function initDatabase() {
                 )
             `);
 
+            // ===== 3.6B طلبات سحب الأرباح =====
+            db.run(`
+                CREATE TABLE IF NOT EXISTS withdrawals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    wallet_address TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED')),
+                    transaction_hash TEXT,
+                    failure_reason TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status)`);
+
             // ===== 3.7 جدول الصناديق =====
             db.run(`
                 CREATE TABLE IF NOT EXISTS lootboxes (
@@ -1879,6 +1897,59 @@ async function updateDepositStatus(depositId, status, failureReason = null) {
     });
 }
 
+// ===== 5.6B سحب الأرباح =====
+async function createWithdrawalRequest(userId, walletAddress, amount) {
+    return await transaction(async () => {
+        const user = await get('SELECT balance FROM users WHERE id = ?', [userId]);
+        if (!user) throw new Error('User not found');
+        const normalizedAmount = Number(Number(amount).toFixed(9));
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) throw new Error('Invalid withdrawal amount');
+        if (normalizedAmount > Number(user.balance || 0)) throw new Error('Insufficient balance');
+
+        const update = await run(
+            'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+            [normalizedAmount, userId, normalizedAmount]
+        );
+        if (update.changes !== 1) throw new Error('Insufficient balance');
+
+        const result = await run(`
+            INSERT INTO withdrawals (user_id, wallet_address, amount, status)
+            VALUES (?, ?, ?, 'PENDING')
+        `, [userId, walletAddress, normalizedAmount]);
+
+        return await get('SELECT * FROM withdrawals WHERE id = ?', [result.lastID]);
+    });
+}
+
+async function getUserWithdrawals(userId) {
+    return await query(`
+        SELECT id, wallet_address, amount, status, transaction_hash, failure_reason, created_at, updated_at
+        FROM withdrawals
+        WHERE user_id = ?
+        ORDER BY id DESC
+        LIMIT 20
+    `, [userId]);
+}
+
+async function refundFailedWithdrawal(withdrawalId, reason = 'Withdrawal failed') {
+    return await transaction(async () => {
+        const withdrawal = await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawalId]);
+        if (!withdrawal) throw new Error('Withdrawal not found');
+        if (withdrawal.status === 'PAID' || withdrawal.status === 'CANCELLED') return withdrawal;
+        if (withdrawal.status === 'FAILED') return withdrawal;
+        await run(`
+            UPDATE withdrawals
+            SET status = 'FAILED', failure_reason = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status IN ('PENDING', 'PROCESSING')
+        `, [reason, withdrawalId]);
+        await run(
+            'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [withdrawal.amount, withdrawal.user_id]
+        );
+        return await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawalId]);
+    });
+}
+
 // ===== 5.7 إحصائيات المستخدم =====
 async function updateUserStats(userId, type, value) {
     const stats = await get('SELECT * FROM user_stats WHERE user_id = ?', [userId]);
@@ -2685,6 +2756,9 @@ module.exports = {
     
     // الإيداعات
     createDeposit,
+    createWithdrawalRequest,
+    getUserWithdrawals,
+    refundFailedWithdrawal,
     saveDepositBoc,
     creditVerifiedDeposit,
     updateDepositStatus,
