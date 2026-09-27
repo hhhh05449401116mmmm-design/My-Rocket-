@@ -8,6 +8,16 @@ const cors = require('cors');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
+
+// Collectible-only renderer. Lazy loading keeps renderer failures isolated from the game loop.
+let sharpRenderer = undefined;
+function getSharpRenderer() {
+    if (sharpRenderer !== undefined) return sharpRenderer;
+    try { sharpRenderer = require('sharp'); }
+    catch (error) { sharpRenderer = null; console.error('Collectible renderer unavailable:', error.message); }
+    return sharpRenderer;
+}
+
 const { TonClient, WalletContractV5R1, internal, Address, Cell, contractAddress, loadStateInit, toNano } = require('@ton/ton');
 const { mnemonicToPrivateKey } = require('@ton/crypto');
 const { URL } = require('url');
@@ -1756,7 +1766,8 @@ function buildCollectibleApiRow(row, req) {
     const symbol = metadata.symbol || null;
     const backdrop = metadata.backdrop || null;
     const mediaFileId = metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null;
-    const imageUrl = mediaFileId
+    const hasMedia = !!(mediaFileId || metadata.model?.stickerFileId || metadata.symbol?.stickerFileId);
+    const imageUrl = row.unique_collectible_id && hasMedia
         ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
         : null;
     return {
@@ -1836,30 +1847,90 @@ app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
 });
 // المُدخل الوحيد المقبول هو unique_collectible_id (نفس المعرّف العلني المستخدم في الرهان)،
 // ويُتحقق أنه ينتمي فعلًا لقطعة verified في قاعدتنا قبل أي اتصال بـ Telegram. لا يُكشف BOT_TOKEN أبداً.
+const collectibleRenderCache = new Map();
+const stickerBufferCache = new Map();
+const MAX_RENDER_CACHE = 48;
+const MAX_STICKER_CACHE = 64;
+
+function cacheSet(map, key, value, max) {
+    if (map.has(key)) map.delete(key);
+    map.set(key, value);
+    while (map.size > max) map.delete(map.keys().next().value);
+}
+
+function colorHex(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) && n >= 0 && n <= 0xFFFFFF ? '#' + Math.round(n).toString(16).padStart(6, '0') : fallback;
+}
+
+function backdropSvg(colors) {
+    const center = colorHex(colors?.center_color, '#6b55e8');
+    const edge = colorHex(colors?.edge_color, '#20183f');
+    const symbol = colorHex(colors?.symbol_color, '#ffffff');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640"><defs><radialGradient id="g"><stop offset="0" stop-color="${center}"/><stop offset="1" stop-color="${edge}"/></radialGradient></defs><rect width="640" height="640" rx="64" fill="url(#g)"/><circle cx="320" cy="270" r="250" fill="${symbol}" opacity=".08"/></svg>`;
+}
+
+async function downloadTelegramMedia(filePath) {
+    return new Promise((resolve, reject) => {
+        const req = https.request({ hostname: 'api.telegram.org', path: `/file/bot${BOT_TOKEN}/${filePath}`, method: 'GET' }, response => {
+            if (response.statusCode < 200 || response.statusCode >= 300) { response.resume(); reject(new Error(`Telegram media HTTP ${response.statusCode}`)); return; }
+            const chunks = []; let size = 0;
+            response.on('data', chunk => { size += chunk.length; if (size <= 20 * 1024 * 1024) chunks.push(chunk); });
+            response.on('end', () => size <= 20 * 1024 * 1024 ? resolve(Buffer.concat(chunks)) : reject(new Error('Telegram media exceeds renderer limit')));
+        });
+        req.setTimeout(15000, () => req.destroy(new Error('Telegram media timeout')));
+        req.on('error', reject); req.end();
+    });
+}
+
+async function getStickerPng(sticker) {
+    const sharp = getSharpRenderer();
+    if (!sharp || !sticker) return null;
+    const ids = [sticker.thumbnailFileId, sticker.fileId].filter(Boolean);
+    for (const fileId of [...new Set(ids)]) {
+        try {
+            let buffer = stickerBufferCache.get(fileId);
+            if (!buffer) { buffer = await downloadTelegramMedia(await resolveTelegramFilePath(fileId)); cacheSet(stickerBufferCache, fileId, buffer, MAX_STICKER_CACHE); }
+            return await sharp(buffer).ensureAlpha().png().toBuffer();
+        } catch (error) { console.warn('Collectible sticker render fallback:', error.message); }
+    }
+    return null;
+}
+
+async function renderCollectibleImage(id, metadata) {
+    const cached = collectibleRenderCache.get(id);
+    if (cached) return cached;
+    const sharp = getSharpRenderer();
+    if (!sharp) throw new Error('sharp unavailable');
+    const model = metadata?.model || {};
+    const symbol = metadata?.symbol || {};
+    const [modelPng, symbolPng] = await Promise.all([
+        getStickerPng({ fileId: model.stickerFileId, thumbnailFileId: model.stickerThumbnailFileId }),
+        getStickerPng({ fileId: symbol.stickerFileId, thumbnailFileId: symbol.stickerThumbnailFileId })
+    ]);
+    if (!modelPng && !symbolPng) throw new Error('No renderable Telegram collectible media');
+    const layers = [];
+    if (modelPng) layers.push({ input: await sharp(modelPng).resize(500, 500, { fit: 'contain' }).png().toBuffer(), left: 70, top: 55 });
+    if (symbolPng) layers.push({ input: await sharp(symbolPng).resize(210, 210, { fit: 'contain' }).png().toBuffer(), left: 215, top: 215 });
+    const output = await sharp(Buffer.from(backdropSvg(metadata?.backdrop?.colors || {}))).composite(layers).webp({ quality: 92 }).toBuffer();
+    cacheSet(collectibleRenderCache, id, output, MAX_RENDER_CACHE);
+    return output;
+}
+
 app.get('/api/collectible-media/:uniqueCollectibleId', async (req, res) => {
     try {
         const collectible = await getCollectibleByUniqueId(req.params.uniqueCollectibleId);
-        if (!collectible || collectible.ownership_verified !== 1) {
-            res.status(404).end();
-            return;
-        }
-
-        let stickerFileId = null;
-        try {
-            const metadata = collectible.verified_metadata ? JSON.parse(collectible.verified_metadata) : null;
-            stickerFileId = metadata?.stickerThumbnailFileId || metadata?.stickerFileId || null;
-        } catch { /* malformed metadata → fallback to column */ }
-        stickerFileId = stickerFileId || collectible.telegram_thumbnail_file_id || null;
-
-        if (!stickerFileId) {
-            res.status(404).end();
-            return;
-        }
-
-        const filePath = await resolveTelegramFilePath(stickerFileId);
-        await streamTelegramFile(filePath, res);
+        if (!collectible || collectible.ownership_verified !== 1) return res.status(404).end();
+        let metadata = null;
+        try { metadata = collectible.verified_metadata ? JSON.parse(collectible.verified_metadata) : null; } catch {}
+        if (!metadata) return res.status(404).end();
+        const output = await renderCollectibleImage(req.params.uniqueCollectibleId, metadata);
+        res.setHeader('Content-Type', 'image/webp');
+        res.setHeader('Cache-Control', 'public, max-age=3600, immutable');
+        res.setHeader('X-Collectible-Media', 'rendered');
+        res.end(output);
     } catch (error) {
-        console.error('collectible-media error:', error.message);
+        console.error('collectible-media render failed:', error.message);
         if (!res.headersSent) res.status(502).end();
     }
 });
