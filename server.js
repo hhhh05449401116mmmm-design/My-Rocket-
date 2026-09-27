@@ -1224,10 +1224,10 @@ app.get('/api/rocket-media/:documentId', async (req, res) => {
         res.setHeader('X-Telegram-Original-Mime-Type', entry.mimeType || 'application/octet-stream');
         res.setHeader('X-Telegram-Render-Type', entry.format || 'unknown');
         if (entry.format === 'tgs') {
-            const body = Buffer.from(JSON.stringify(decodeTelegramTgs(entry.buffer)), 'utf8');
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
-            res.setHeader('Content-Length', String(body.length));
-            res.end(body);
+            res.setHeader('Content-Type', 'application/x-tgsticker');
+            res.setHeader('Content-Encoding', 'identity');
+            res.setHeader('Content-Length', String(entry.size));
+            res.end(entry.buffer);
             return;
         }
         res.setHeader('Content-Type', entry.mimeType || 'video/webm');
