@@ -1847,6 +1847,62 @@ app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
 });
 // المُدخل الوحيد المقبول هو unique_collectible_id (نفس المعرّف العلني المستخدم في الرهان)،
 // ويُتحقق أنه ينتمي فعلًا لقطعة verified في قاعدتنا قبل أي اتصال بـ Telegram. لا يُكشف BOT_TOKEN أبداً.
+// Fragment exposes a public WebP for minted Telegram collectibles using the same
+// UniqueGift name/number slug. Prefer this exact rendered collectible image when available;
+// keep Telegram Bot API media as a fallback. This is isolated to collectible media only.
+const fragmentCollectibleCache = new Map();
+const MAX_FRAGMENT_CACHE = 48;
+
+function fragmentGiftSlug(metadata) {
+    const name = metadata?.uniqueName;
+    const number = metadata?.collectibleNumber;
+    if (!name || !Number.isFinite(Number(number))) return null;
+    return `${String(name).toLowerCase()}-${Number(number)}`;
+}
+
+async function fetchFragmentCollectibleImage(metadata) {
+    const slug = fragmentGiftSlug(metadata);
+    if (!slug) return null;
+    const cached = fragmentCollectibleCache.get(slug);
+    if (cached) return cached;
+    return new Promise(resolve => {
+        const req = https.request({
+            hostname: 'nft.fragment.com',
+            path: `/gift/${encodeURIComponent(slug)}.webp`,
+            method: 'GET',
+            headers: { 'User-Agent': 'CrazyRocketBot/2.0 collectible-media' }
+        }, response => {
+            if (response.statusCode < 200 || response.statusCode >= 300) {
+                response.resume();
+                resolve(null);
+                return;
+            }
+            const contentType = String(response.headers['content-type'] || '').toLowerCase();
+            if (!contentType.includes('image/')) {
+                response.resume();
+                resolve(null);
+                return;
+            }
+            const chunks = [];
+            let size = 0;
+            response.on('data', chunk => {
+                size += chunk.length;
+                if (size <= 8 * 1024 * 1024) chunks.push(chunk);
+            });
+            response.on('end', () => {
+                if (size > 8 * 1024 * 1024) return resolve(null);
+                const buffer = Buffer.concat(chunks);
+                cacheSet(fragmentCollectibleCache, slug, buffer, MAX_FRAGMENT_CACHE);
+                resolve(buffer);
+            });
+            response.on('error', () => resolve(null));
+        });
+        req.setTimeout(12000, () => req.destroy());
+        req.on('error', () => resolve(null));
+        req.end();
+    });
+}
+
 const collectibleRenderCache = new Map();
 const stickerBufferCache = new Map();
 const MAX_RENDER_CACHE = 48;
@@ -1900,6 +1956,15 @@ async function getStickerPng(sticker) {
 async function renderCollectibleImage(id, metadata) {
     const cached = collectibleRenderCache.get(id);
     if (cached) return cached;
+
+    // Exact rendered collectible image first. This matches the visual Telegram/Fragment card
+    // rather than attempting to reconstruct the artwork from separate model/symbol stickers.
+    const fragmentImage = await fetchFragmentCollectibleImage(metadata);
+    if (fragmentImage) {
+        cacheSet(collectibleRenderCache, id, fragmentImage, MAX_RENDER_CACHE);
+        return fragmentImage;
+    }
+
     const sharp = getSharpRenderer();
     if (!sharp) throw new Error('sharp unavailable');
     const model = metadata?.model || {};
