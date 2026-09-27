@@ -6458,45 +6458,52 @@
             } catch (error) { showToast('Error'); }
         }
 
-        // Start auth after DOMContentLoaded so Telegram has time to finish
-        // initializing the Mini App context.
-        document.addEventListener("DOMContentLoaded", async function() {
-            initUserUI();
-            initTonConnect();
-            renderHistory();
-            renderPlayers();
-            fetchBalance();
-            updateTonWalletUI();
-            updateProfileWalletUI();
-            updateDepositWalletUI();
-            updateAutoCashoutUI();
-             updateModalBetButton();
-             updateMainBetButton();
-             updateProfilePage();
-             document.getElementById("game-hub").classList.remove("hidden");
-            document.getElementById("rocket-game").classList.add("hidden");
-            document.getElementById("profile-page").classList.remove("show");
-            document.getElementById("gifts-page").classList.remove("show");
-              document.getElementById("mines-game").classList.add("hidden");
-             document.getElementById("plinko-game").classList.add("hidden");
-             document.getElementById("dice-game").classList.add("hidden");
-             document.getElementById("crafts-game").classList.add("hidden");
-             document.getElementById("pvp-game").classList.add("hidden");
-             document.getElementById("upgrade-game").classList.add("hidden");
-             document.getElementById("lottery-game").classList.add("hidden");
-             document.getElementById("playhub-screen").classList.add("hidden");
-
+        // Bootstrap authentication independently from UI initialization.
+        // This prevents an earlier UI/Wallet initialization error from blocking
+        // Telegram signed initData authentication and the game connection.
+        async function bootstrapRocketApp() {
             const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
                 return;
             }
-            connectToServer();
 
-            fetchCollectibles();
-            loadTelegramRocketGifts();
-            initLiveStrip();
-        });
+            try { initUserUI(); } catch (e) { console.error("UI init error:", e); }
+            try { initTonConnect(); } catch (e) { console.error("TON init error:", e); }
+            try { renderHistory(); } catch (e) { console.error("History init error:", e); }
+            try { renderPlayers(); } catch (e) { console.error("Players init error:", e); }
+            try { updateTonWalletUI(); } catch (e) {}
+            try { updateProfileWalletUI(); } catch (e) {}
+            try { updateDepositWalletUI(); } catch (e) {}
+            try { updateAutoCashoutUI(); } catch (e) {}
+            try { updateModalBetButton(); } catch (e) {}
+            try { updateMainBetButton(); } catch (e) {}
+            try { updateProfilePage(); } catch (e) {}
+
+            try { document.getElementById("game-hub").classList.remove("hidden"); } catch (e) {}
+            try { document.getElementById("rocket-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("profile-page").classList.remove("show"); } catch (e) {}
+            try { document.getElementById("gifts-page").classList.remove("show"); } catch (e) {}
+            try { document.getElementById("mines-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("plinko-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("dice-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("crafts-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("pvp-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("upgrade-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("lottery-game").classList.add("hidden"); } catch (e) {}
+            try { document.getElementById("playhub-screen").classList.add("hidden"); } catch (e) {}
+
+            try { connectToServer(); } catch (e) { console.error("Server connection error:", e); }
+            try { fetchCollectibles(); } catch (e) {}
+            try { loadTelegramRocketGifts(); } catch (e) {}
+            try { initLiveStrip(); } catch (e) {}
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", bootstrapRocketApp, { once: true });
+        } else {
+            bootstrapRocketApp();
+        }
 
           window.addEventListener("beforeunload", function() {
              if (gameInterval) clearInterval(gameInterval);
