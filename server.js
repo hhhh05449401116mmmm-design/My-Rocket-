@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const zlib = require('zlib');
 const https = require('https');
 const http = require('http');
+const path = require('path');
 
 // Collectible-only renderer. Lazy loading keeps renderer failures isolated from the game loop.
 let sharpRenderer = undefined;
@@ -137,6 +138,10 @@ app.use((req, res, next) => {
     }
     next();
 });
+app.use('/vendor/tlottie', express.static(path.join(__dirname, 'node_modules/tlottie/dist'), {
+    immutable: true,
+    maxAge: '1y'
+}));
 app.use(express.static('.'));
 
 // =========================================================
