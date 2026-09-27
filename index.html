@@ -1742,6 +1742,13 @@
         ========================================================= */
         .earn-page { display:none; padding:14px 14px 120px; }
         .earn-page.show { display:block; }
+        .top-page { padding:10px 18px 110px; display:none; }
+        .top-page.show { display:block; }
+        .top-page-header { display:flex; justify-content:space-between; align-items:center; padding:12px 4px 16px; }
+        .top-page-kicker { color:#a889ff; font-size:10px; letter-spacing:2.5px; font-weight:900; }
+        .top-page-header h2 { margin:4px 0; color:#fff; font-size:27px; font-weight:900; }
+        .top-page-header p { margin:0; color:#7e8490; font-size:12px; }
+        .top-page-header .spender-refresh { width:40px; height:40px; border-radius:12px; background:rgba(128,105,223,.12); border:1px solid rgba(154,124,242,.35); }
         .invite-page { padding-top:10px; }
         .invite-hero { text-align:center; padding:18px 12px 12px; }
         .invite-kicker { color:#a889ff; font-size:10px; letter-spacing:2.5px; font-weight:900; }
@@ -2936,6 +2943,23 @@
         <!-- =========================================================
            EARNINGS / WITHDRAW PAGE
         ========================================================= -->
+        <div id="top-page" class="top-page">
+            <div class="top-page-header">
+                <div>
+                    <div class="top-page-kicker">CRAZY ROCKET</div>
+                    <h2>المتصدرون</h2>
+                    <p>أكثر اللاعبين صرفًا في اللعبة</p>
+                </div>
+                <button type="button" class="spender-refresh" onclick="loadSpenderLeaderboard(true)" aria-label="تحديث">↻</button>
+            </div>
+            <div class="spender-head">
+                <div><span>🏆</span><strong>Top Players</strong></div>
+                <div class="spender-columns"><span>Prize</span><span>Points</span></div>
+            </div>
+            <div id="spender-list" class="spender-list"></div>
+            <div id="spender-me-bar" class="spender-me-bar" style="display:none;"></div>
+        </div>
+
         <div id="earn-page" class="earn-page invite-page">
             <div class="invite-hero">
                 <div class="invite-kicker">CRAZY ROCKET</div>
@@ -5821,12 +5845,13 @@
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
             document.getElementById("earn-page").classList.remove("show");
+            document.getElementById("top-page").classList.remove("show");
             if (page === "home") {
                 document.getElementById("nav-home").classList.add("active");
                 document.getElementById("game-hub").classList.remove("hidden");
             } else if (page === "top") {
                 document.getElementById("nav-top").classList.add("active");
-                document.getElementById("earn-page").classList.add("show");
+                document.getElementById("top-page").classList.add("show");
                 loadSpenderLeaderboard();
             } else if (page === "profile") {
                 document.getElementById("nav-profile").classList.add("active");
