@@ -789,6 +789,63 @@ function streamTelegramFile(filePath, res) {
     });
 }
 
+// ===== Rocket game: live Telegram collectible rocket media =====
+const rocketMediaFileIds = new Set();
+
+app.get('/api/rocket-gifts', async (req, res) => {
+    try {
+        const ownedGifts = await fetchBusinessAccountGifts();
+        const seen = new Set();
+        const rockets = [];
+
+        for (const ownedGift of (Array.isArray(ownedGifts) ? ownedGifts : [])) {
+            const gift = ownedGift?.gift;
+            if (!ownedGift || ownedGift.type !== 'unique' || !gift) continue;
+
+            const baseName = String(gift.base_name || gift.name || '').trim();
+            const modelName = String(gift.model?.name || '').trim();
+            const searchable = (baseName + ' ' + modelName).toLowerCase();
+            if (!searchable.includes('rocket')) continue;
+
+            const fileId = gift.model?.sticker?.file_id || gift.model?.sticker?.thumbnail?.file_id;
+            if (!fileId || seen.has(fileId)) continue;
+
+            seen.add(fileId);
+            rocketMediaFileIds.add(fileId);
+            rockets.push({
+                id: String(ownedGift.owned_gift_id || gift.name || fileId),
+                name: baseName || modelName || 'Rocket',
+                model: modelName || baseName || 'Rocket',
+                number: Number.isFinite(gift.number) ? gift.number : null,
+                mediaUrl: `/api/collectible-media?file_id=${encodeURIComponent(fileId)}`,
+                isVideo: !!gift.model?.sticker?.is_video,
+                isAnimated: !!gift.model?.sticker?.is_animated
+            });
+        }
+
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ ok: true, rockets });
+    } catch (error) {
+        console.error('Rocket gifts fetch failed:', error.message);
+        res.status(503).json({ ok: false, rockets: [], error: 'Rocket collectibles unavailable' });
+    }
+});
+
+app.get('/api/collectible-media', async (req, res) => {
+    try {
+        const fileId = String(req.query.file_id || '').trim();
+        if (!fileId || !rocketMediaFileIds.has(fileId)) {
+            res.status(404).end();
+            return;
+        }
+        const filePath = await resolveTelegramFilePath(fileId);
+        await streamTelegramFile(filePath, res);
+    } catch (error) {
+        console.error('Collectible media proxy failed:', error.message);
+        if (!res.headersSent) res.status(502).end();
+    }
+});
+
 // ===== Telegram Business Connection webhook (Phase 3B) =====
 // Receives ONLY the official business_connection update; ignores every other Telegram update type.
 // Never invents/hardcodes a connection id — it only stores whatever Telegram itself sends.
