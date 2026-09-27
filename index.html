@@ -6334,24 +6334,29 @@
         });
 
         async function authenticateUser() {
-            // Register the player immediately on every Mini App open.
-            // initDataUnsafe is only for UI; authentication always uses signed initData.
+            // Telegram Mini App auth must use signed initData. Read the WebApp object
+            // dynamically because Telegram can finish initializing it after page load.
             try {
-                const webApp = window.Telegram?.WebApp;
-                if (webApp) {
-                    try { webApp.ready(); webApp.expand(); } catch (e) {}
-                }
+                let webApp = null;
+                let initData = '';
 
-                let initData = webApp?.initData || '';
-                // Telegram can populate signed initData a moment after the WebApp object
-                // becomes available. Wait briefly instead of silently continuing as a guest.
-                for (let attempt = 0; !initData && attempt < 15; attempt++) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    initData = webApp?.initData || '';
+                for (let attempt = 0; attempt < 50 && !initData; attempt++) {
+                    webApp = window.Telegram?.WebApp || null;
+                    if (webApp) {
+                        try { webApp.ready(); webApp.expand(); } catch (e) {}
+                        initData = webApp.initData || '';
+                    }
+                    if (!initData) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
                 }
 
                 if (!initData) {
-                    console.error('Auth error: Telegram signed initData is unavailable');
+                    console.error('Auth error: Telegram signed initData is unavailable after 10 seconds', {
+                        telegramLoaded: !!window.Telegram,
+                        webAppLoaded: !!window.Telegram?.WebApp,
+                        initDataUnsafeUser: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
+                    });
                     return false;
                 }
 
@@ -6371,6 +6376,7 @@
                 authToken = data.token;
                 localStorage.setItem('authToken', authToken);
                 await fetchBalance();
+                console.log('✅ Rocket player registered with Telegram');
                 return true;
             } catch (error) {
                 console.error('Auth error:', error);
@@ -6452,10 +6458,8 @@
             } catch (error) { showToast('Error'); }
         }
 
-        // Start Telegram authentication as soon as the WebApp script is ready,
-        // rather than waiting for the full UI/DOM to initialize.
-        let earlyAuthPromise = authenticateUser();
-
+        // Start auth after DOMContentLoaded so Telegram has time to finish
+        // initializing the Mini App context.
         document.addEventListener("DOMContentLoaded", async function() {
             initUserUI();
             initTonConnect();
@@ -6482,7 +6486,7 @@
              document.getElementById("lottery-game").classList.add("hidden");
              document.getElementById("playhub-screen").classList.add("hidden");
 
-            const authenticated = await earlyAuthPromise;
+            const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
                 return;
