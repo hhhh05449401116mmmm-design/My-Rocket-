@@ -3377,8 +3377,11 @@
             collectibleNumberLabel: 'الرقم التسلسلي',
             collectibleActionUnavailable: 'غير متاح بعد (المرحلة القادمة)',
             keepCollectible: 'احتفاظ',
+            sellCollectible: 'بيع',
             withdrawCollectible: 'سحب',
             betCollectible: 'رهان',
+            collectibleSold: '✅ تم بيع المقتنى وإضافة {amount} TON إلى رصيدك',
+            collectibleSellFailed: '❌ تعذر بيع المقتنى',
             withdrawUnavailable: 'السحب غير متاح حاليًا',
             collectibleKept: 'بقي المقتنى في حقيبتك 🎒',
             giftsWithdrawn: '🎁 تم إرسال المقتنى إلى حساب Telegram الخاص بك!',
@@ -3421,8 +3424,11 @@
             collectibleNumberLabel: 'Serial Number',
             collectibleActionUnavailable: 'Not available yet (next phase)',
             keepCollectible: 'Keep',
+            sellCollectible: 'Sell',
             withdrawCollectible: 'Withdraw',
             betCollectible: 'Bet',
+            collectibleSold: '✅ Collectible sold for {amount} TON',
+            collectibleSellFailed: '❌ Could not sell collectible',
             withdrawUnavailable: 'Withdrawal unavailable right now',
             collectibleKept: 'This collectible stays in your Backpack 🎒',
             giftsWithdrawn: '🎁 Collectible sent to your Telegram account!',
@@ -5186,7 +5192,7 @@
                     <span class="name">${item.name || ''}</span>
                     ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
                     <div class="actions">
-                        <button type="button" onclick="keepCollectible('${item.id}')">${t.keepCollectible}</button>
+                        <button type="button" onclick="sellCollectible('${item.id}')" ${isInBet ? 'disabled' : ''}>${t.sellCollectible} ${Number(item.sellValue || 0).toFixed(2)} TON</button>
                         <button type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet ? 'disabled title="' + t.withdrawUnavailable + '"' : ''}>${t.withdrawCollectible}</button>
                         <button type="button" ${betDisabledAttr} onclick="betWithCollectible('${item.id}')">${t.betCollectible}</button>
                     </div>
@@ -5273,6 +5279,28 @@
             const gift = verifiedCollectibles.find(c => c.id === uniqueCollectibleId);
             if (!gift) return;
             showToast(t.collectibleKept);
+         }
+
+         async function sellCollectible(uniqueCollectibleId) {
+            const t = translations[currentLanguage] || translations.ar;
+            if (actionInProgress) return;
+            actionInProgress = true;
+            try {
+                const response = await fetch(BACKEND_URL + '/api/collectibles/sell', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ collectibleId: uniqueCollectibleId })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || t.collectibleSellFailed);
+                showToast((t.collectibleSold || 'Collectible sold').replace('{amount}', Number(data.saleValue || 0).toFixed(2)));
+                await Promise.all([fetchCollectibles(), fetchBalance()]);
+            } catch (error) {
+                console.error('COLLECTIBLE SELL ERROR:', error);
+                showToast(error.message || t.collectibleSellFailed);
+            } finally {
+                actionInProgress = false;
+            }
          }
 
          async function withdrawCollectible(uniqueCollectibleId) {
