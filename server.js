@@ -590,6 +590,7 @@ function extractUniqueCollectibleIdentity(ownedGift) {
         telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
         collectibleNumber: uniqueGift.number,
         senderTelegramId: ownedGift.sender_user?.id || null,
+        senderUsername: ownedGift.sender_user?.username || null,
         telegramGiftModel: {
             telegramGiftId: uniqueGift.base_name || uniqueGift.name,
             name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name,
@@ -706,12 +707,38 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             continue;
         }
 
-        const player = await get('SELECT * FROM users WHERE telegram_id = ?', [String(senderTelegramId)]);
+        // Primary identity is Telegram's immutable numeric user id. If an existing
+        // registered player was created before Telegram exposed that id in the gift,
+        // reconcile by the sender's exact current username, then persist the real id.
+        // This still requires a pre-existing Rocket account; we never auto-register here.
+        let player = await get('SELECT * FROM users WHERE telegram_id = ?', [String(senderTelegramId)]);
+        let matchedByUsername = false;
+        const senderUsername = identity.senderUsername ? String(identity.senderUsername).replace(/^@/, '').trim().toLowerCase() : '';
+        if (!player && senderUsername) {
+            player = await get(
+                'SELECT * FROM users WHERE lower(ltrim(username, \'@\')) = ? LIMIT 1',
+                [senderUsername]
+            );
+            if (player) {
+                matchedByUsername = true;
+                await run('UPDATE users SET telegram_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [String(senderTelegramId), player.id]);
+                player = await get('SELECT * FROM users WHERE id = ?', [player.id]);
+            }
+        }
         if (!player) {
             unmatched++;
             reasons.playerNotRegistered++;
-            console.warn('🔍 Collectible not credited: sender is not a registered Rocket player');
+            console.warn('🔍 Collectible not credited: sender is not a registered Rocket player', JSON.stringify({
+                senderTelegramId: String(senderTelegramId),
+                senderUsername: identity.senderUsername || null
+            }));
             continue;
+        }
+        if (matchedByUsername) {
+            console.log('🔗 Collectible sender identity reconciled by username:', JSON.stringify({
+                userId: player.id,
+                senderUsername: identity.senderUsername
+            }));
         }
 
         try {
@@ -1452,8 +1479,11 @@ app.post('/api/auth', async (req, res) => {
             avatar_url: userData.photo_url
         });
 
-        // تحديث initData في قاعدة البيانات
-        await run('UPDATE users SET init_data = ? WHERE id = ?', [initData, user.id]);
+        // Keep the Telegram identity metadata current for identity reconciliation.
+        await run(
+            'UPDATE users SET init_data = ?, username = ?, first_name = ?, last_name = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [initData, userData.username || null, userData.first_name || null, userData.last_name || null, userData.photo_url || null, user.id]
+        );
 
         res.json({ 
             ok: true, 
