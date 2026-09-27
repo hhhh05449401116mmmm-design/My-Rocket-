@@ -1208,7 +1208,7 @@ app.get('/api/rocket-media/:documentId', async (req, res) => {
         console.error('Rocket MTProto media proxy failed:', error.message);
         if (!res.headersSent) res.status(404).end();
     }
-}
+});
 
 // ===== Telegram Business Connection webhook (Phase 3B) =====
 // Receives ONLY the official business_connection update; ignores every other Telegram update type.
