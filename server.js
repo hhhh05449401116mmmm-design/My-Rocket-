@@ -44,6 +44,8 @@ const {
     run,
     transaction,
     findOrCreateUser,
+     attachReferralToUser,
+     getReferralOverview,
      getUserBalance,
      updateUserBalance,
      getUserTestBalance,
@@ -1839,9 +1841,11 @@ app.post('/api/auth', async (req, res) => {
 
         const params = new URLSearchParams(initData);
         const userData = JSON.parse(params.get('user'));
+        const startParam = params.get('start_param') || params.get('startapp') || '';
         console.log('🔐 Telegram player authenticated', {
             telegramId: String(userData.id),
-            username: userData.username || null
+            username: userData.username || null,
+            hasReferralStartParam: /^ref_r\d+$/.test(startParam)
         });
         
         const user = await findOrCreateUser(userData.id, {
@@ -1850,6 +1854,11 @@ app.post('/api/auth', async (req, res) => {
             last_name: userData.last_name,
             avatar_url: userData.photo_url
         });
+
+        if (/^ref_r\d+$/.test(startParam)) {
+            try { await attachReferralToUser(user.id, startParam.slice(4)); }
+            catch (referralError) { console.error('Referral attach failed:', referralError.message); }
+        }
 
         // Keep the Telegram identity metadata current for identity reconciliation.
         await run(
@@ -3385,6 +3394,17 @@ app.get('/api/notifications', authenticate, async (req, res) => {
 });
 
 // ===== 5.13 جلب إحصائيات المستخدم =====
+app.get('/api/referral', authenticate, async (req, res) => {
+    try {
+        const overview = await getReferralOverview(req.user.id);
+        const info = await getTelegramBotLaunchInfo();
+        const link = info.username ? `https://t.me/${info.username}?startapp=ref_${overview.referralCode}` : null;
+        res.json({ ok: true, ...overview, inviteLink: link, commissionPercent: 10 });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
 app.get('/api/stats', authenticate, async (req, res) => {
     try {
         const stats = await get('SELECT * FROM user_stats WHERE user_id = ?', [req.user.id]);
