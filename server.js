@@ -1837,6 +1837,37 @@ async function ensureTelegramWebhookConfigured() {
     return true;
 }
 
+// Small delay helper used by the webhook bootstrap retry logic below.
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Retries ensureTelegramWebhookConfigured() with exponential backoff (2s, 4s, 8s) plus jitter,
+// to smooth over transient network failures / Telegram API hiccups at startup. Never throws —
+// callers can fire this off without blocking server startup.
+async function ensureTelegramWebhookConfiguredWithRetry(maxAttempts = 3) {
+    const baseDelaysMs = [2000, 4000, 8000];
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`🔄 Telegram webhook bootstrap: Attempt ${attempt}/${maxAttempts}...`);
+        try {
+            await ensureTelegramWebhookConfigured();
+            console.log(`✅ Telegram webhook bootstrap succeeded after ${attempt} attempt(s)`);
+            return true;
+        } catch (error) {
+            if (attempt === maxAttempts) {
+                console.log(`⚠️ Telegram webhook bootstrap failed after ${maxAttempts} attempts: ${error.message}. Webhook endpoint available but may not be registered; business_connection updates will not arrive.`);
+                return false;
+            }
+            const base = baseDelaysMs[attempt - 1];
+            // ±10-20% jitter to avoid thundering herd if multiple instances restart simultaneously.
+            const jitterFactor = 1 + (Math.random() * 0.3 - 0.15);
+            const waitMs = Math.max(0, Math.round(base * jitterFactor));
+            await delay(waitMs);
+        }
+    }
+    return false;
+}
+
 app.post('/api/admin/setup-telegram-webhook', authenticate, async (req, res) => {
     if (!ADMIN_TELEGRAM_ID || req.user.telegram_id !== ADMIN_TELEGRAM_ID) {
          res.status(403).json({ ok: false, error: 'Forbidden' });
@@ -2847,11 +2878,11 @@ async function startServer(port = PORT) {
             console.error('Failed to initialize Telegram business connection:', error.message);
         }
 
-        try {
-            await ensureTelegramWebhookConfigured();
-        } catch (error) {
-            console.error('Failed to ensure Telegram webhook configuration:', error.message);
-        }
+        // Fire-and-forget: retried with backoff internally, and never throws, so it cannot
+        // block or fail server startup even if Telegram is transiently unreachable.
+        ensureTelegramWebhookConfiguredWithRetry().catch(error => {
+            console.error('Unexpected error during Telegram webhook bootstrap:', error.message);
+        });
 
         const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
         const nextRoundNumber = Number(latestRound?.round_number || 0) + 1;
