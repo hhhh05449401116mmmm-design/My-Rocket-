@@ -4102,6 +4102,14 @@
                         forceRender: true,
                         workerCount: 1
                     });
+                    // The vanilla adapter stylesheet is not bundled into this app;
+                    // size the wrapper/canvas explicitly before TLottie measures it.
+                    telegramRocketTgsPlayer.element.style.width = '100%';
+                    telegramRocketTgsPlayer.element.style.height = '100%';
+                    telegramRocketTgsPlayer.canvas.style.width = '100%';
+                    telegramRocketTgsPlayer.canvas.style.height = '100%';
+                    telegramRocketTgsPlayer.canvas.style.display = 'block';
+                    telegramRocketTgsPlayer.canvas.style.background = 'transparent';
 
                     const playerHandle = telegramRocketTgsPlayer;
                     playerHandle.tlottie.on('load', () => {
