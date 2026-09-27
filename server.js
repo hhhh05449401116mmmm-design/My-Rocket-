@@ -959,7 +959,7 @@ function streamTelegramFile(filePath, res) {
 let telegramMtprotoClient = null;
 let telegramRocketCatalog = [];
 let telegramRocketCatalogLoadedAt = 0;
-let telegramRocketInitPromise = null;
+let telegramMtprotoInitPromise = null;
 
 const TELEGRAM_ROCKET_CATALOG_TTL_MS = 30 * 60 * 1000;
 const telegramRocketMediaCache = new Map();
