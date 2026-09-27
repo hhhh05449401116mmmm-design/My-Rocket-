@@ -2898,6 +2898,22 @@ async function verifyTonTreasuryConfiguration() {
     }
 }
 
+async function ensureTelegramMiniAppMenuButton() {
+    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
+    try {
+        await callTelegramBotApi('setChatMenuButton', {
+            menu_button: {
+                type: 'web_app',
+                text: '🚀 Rocket',
+                web_app: { url: webAppUrl }
+            }
+        });
+        console.log('🚀 Telegram Mini App menu button configured');
+    } catch (error) {
+        console.error('Failed to configure Telegram Mini App menu button:', error.message);
+    }
+}
+
 async function startServer(port = PORT) {
     try {
         // تهيئة قاعدة البيانات
@@ -2924,6 +2940,8 @@ async function startServer(port = PORT) {
         } catch (error) {
             console.error('Failed to ensure Telegram webhook configuration:', error.message);
         }
+
+        await ensureTelegramMiniAppMenuButton();
 
         const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
         const nextRoundNumber = Number(latestRound?.round_number || 0) + 1;
