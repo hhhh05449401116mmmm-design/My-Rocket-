@@ -208,6 +208,9 @@ function initDatabase() {
                     balance REAL DEFAULT 0,
                     test_balance REAL DEFAULT 0,
                     total_turnover REAL DEFAULT 0,
+                    referral_code TEXT UNIQUE,
+                    referred_by_user_id INTEGER,
+                    referral_earned REAL DEFAULT 0,
                     vip_level INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -476,6 +479,38 @@ function initDatabase() {
             db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
                 ON user_gifts(telegram_gift_instance_id) WHERE telegram_gift_instance_id IS NOT NULL`, error => {
                 if (error) console.error('Failed to index telegram_gift_instance_id:', error.message);
+            });
+
+            // Referral migrations.
+            db.run(`ALTER TABLE users ADD COLUMN referral_code TEXT`, error => {
+                if (error && !error.message.includes('duplicate column name')) console.error('Failed to add users.referral_code:', error.message);
+                db.run(`UPDATE users SET referral_code = 'r' || id WHERE referral_code IS NULL OR referral_code = ''`, updateError => {
+                    if (updateError) console.error('Failed to backfill users.referral_code:', updateError.message);
+                    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)`, indexError => {
+                        if (indexError) console.error('Failed to index users.referral_code:', indexError.message);
+                    });
+                });
+            });
+            db.run(`ALTER TABLE users ADD COLUMN referred_by_user_id INTEGER`, error => {
+                if (error && !error.message.includes('duplicate column name')) console.error('Failed to add users.referred_by_user_id:', error.message);
+            });
+            db.run(`ALTER TABLE users ADD COLUMN referral_earned REAL DEFAULT 0`, error => {
+                if (error && !error.message.includes('duplicate column name')) console.error('Failed to add users.referral_earned:', error.message);
+            });
+            db.run(`
+                CREATE TABLE IF NOT EXISTS referral_rewards (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    inviter_user_id INTEGER NOT NULL,
+                    invited_user_id INTEGER NOT NULL,
+                    deposit_id INTEGER NOT NULL UNIQUE,
+                    amount REAL NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (inviter_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (deposit_id) REFERENCES deposits(id) ON DELETE CASCADE
+                )
+            `, error => {
+                if (error) console.error('Failed to create referral_rewards:', error.message);
             });
 
             // Migration: add test_balance column for existing databases (default 0, never affects real balance).
@@ -774,16 +809,42 @@ async function findOrCreateUser(telegramId, userData = {}) {
             INSERT INTO users (telegram_id, username, first_name, last_name, avatar_url)
             VALUES (?, ?, ?, ?, ?)
         `, [normalizedTelegramId, userData.username, userData.first_name, userData.last_name, userData.avatar_url]);
-        
+        await run('UPDATE users SET referral_code = ? WHERE id = ?', ['r' + result.lastID, result.lastID]);
         user = await get('SELECT * FROM users WHERE id = ?', [result.lastID]);
         
-        // إنشاء إحصائيات للمستخدم الجديد
         await run(`
             INSERT INTO user_stats (user_id) VALUES (?)
         `, [result.lastID]);
     }
     
     return user;
+}
+
+async function attachReferralToUser(userId, referralCode) {
+    const code = String(referralCode || '').trim().slice(0, 100);
+    if (!code || !/^r\d+$/.test(code)) return { attached: false, reason: 'invalid_code' };
+    const user = await get('SELECT id, referred_by_user_id FROM users WHERE id = ?', [userId]);
+    if (!user || user.referred_by_user_id) return { attached: false, reason: 'already_attached' };
+    const inviter = await get('SELECT id FROM users WHERE referral_code = ?', [code]);
+    if (!inviter || inviter.id === userId) return { attached: false, reason: 'invalid_inviter' };
+    await run('UPDATE users SET referred_by_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND referred_by_user_id IS NULL', [inviter.id, userId]);
+    return { attached: true, inviterUserId: inviter.id };
+}
+
+async function getReferralOverview(userId) {
+    const user = await get('SELECT referral_code, referral_earned FROM users WHERE id = ?', [userId]);
+    const invitees = await get('SELECT COUNT(*) AS count FROM users WHERE referred_by_user_id = ?', [userId]);
+    const today = await get(`
+        SELECT COALESCE(SUM(amount), 0) AS amount
+        FROM referral_rewards
+        WHERE inviter_user_id = ? AND created_at >= date('now')
+    `, [userId]);
+    return {
+        referralCode: user?.referral_code || ('r' + userId),
+        totalEarned: Number(user?.referral_earned || 0),
+        earnedToday: Number(today?.amount || 0),
+        inviteCount: Number(invitees?.count || 0)
+    };
 }
 
 async function getUserBalance(userId) {
@@ -1899,6 +1960,26 @@ async function creditVerifiedDeposit(depositId, userId, transactionHash, transac
             'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
             [deposit.amount, userId]
         );
+
+        const referredUser = await get('SELECT referred_by_user_id FROM users WHERE id = ?', [userId]);
+        const inviterId = Number(referredUser?.referred_by_user_id || 0);
+        if (inviterId > 0 && inviterId !== Number(userId)) {
+            const rewardAmount = Number((Number(deposit.amount) * 0.10).toFixed(9));
+            if (rewardAmount > 0) {
+                const rewardInsert = await run(`
+                    INSERT OR IGNORE INTO referral_rewards
+                    (inviter_user_id, invited_user_id, deposit_id, amount)
+                    VALUES (?, ?, ?, ?)
+                `, [inviterId, userId, depositId, rewardAmount]);
+                if (rewardInsert.changes === 1) {
+                    await run(
+                        'UPDATE users SET balance = balance + ?, referral_earned = COALESCE(referral_earned, 0) + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [rewardAmount, rewardAmount, inviterId]
+                    );
+                }
+            }
+        }
+
         return await get('SELECT * FROM deposits WHERE id = ? AND user_id = ?', [depositId, userId]);
     });
 }
@@ -2809,6 +2890,8 @@ module.exports = {
     
      // إدارة المستخدمين
      findOrCreateUser,
+     attachReferralToUser,
+     getReferralOverview,
      getUserBalance,
      updateUserBalance,
      getUserTestBalance,
