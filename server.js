@@ -2898,6 +2898,29 @@ async function verifyTonTreasuryConfiguration() {
     }
 }
 
+async function getTelegramBotLaunchInfo() {
+    try {
+        const me = await callTelegramBotApi('getMe', {});
+        return { username: me.username || null, id: me.id || null };
+    } catch (error) {
+        console.error('Failed to get Telegram bot launch info:', error.message);
+        return { username: null, id: null };
+    }
+}
+
+app.get('/api/telegram/launch-info', async (req, res) => {
+    try {
+        const info = await getTelegramBotLaunchInfo();
+        res.json({
+            ok: true,
+            botUsername: info.username,
+            menuUrl: info.username ? `https://t.me/${info.username}` : null
+        });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
 async function ensureTelegramMiniAppMenuButton() {
     const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
     try {
