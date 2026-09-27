@@ -945,62 +945,270 @@ function streamTelegramFile(filePath, res) {
     });
 }
 
-// ===== Rocket game: live Telegram collectible rocket media =====
-const rocketMediaFileIds = new Set();
+// ===== Rocket game: official Telegram Stellar Rocket model catalog =====
+// Isolated from the crash/round engine. This uses MTProto only to read the public
+// collectible attributes for the Stellar Rocket gift type and to serve the exact
+// Telegram model Document bytes to the existing <video> element.
+//
+// Required server-only variables:
+//   TELEGRAM_API_ID
+//   TELEGRAM_API_HASH
+//   TELEGRAM_SESSION_STRING
+//
+// The session string is a Telegram user login credential. Never log or expose it.
+let telegramMtprotoClient = null;
+let telegramRocketCatalog = [];
+let telegramRocketCatalogLoadedAt = 0;
+let telegramRocketInitPromise = null;
+
+const TELEGRAM_ROCKET_CATALOG_TTL_MS = 30 * 60 * 1000;
+const telegramRocketMediaCache = new Map();
+const MAX_TELEGRAM_ROCKET_MEDIA_CACHE = 8;
+const MAX_TELEGRAM_ROCKET_MEDIA_BYTES = 12 * 1024 * 1024;
+
+function rocketAttributeRarity(attribute) {
+    const rarity = attribute?.rarity;
+    if (!rarity) return null;
+    if (Number.isFinite(rarity.permille)) return Number(rarity.permille);
+    const name = String(rarity.className || rarity.constructor?.name || '').toLowerCase();
+    if (name.includes('legendary')) return 'legendary';
+    if (name.includes('epic')) return 'epic';
+    if (name.includes('rare')) return 'rare';
+    if (name.includes('uncommon')) return 'uncommon';
+    return null;
+}
+
+function isTelegramRocketModel(attribute) {
+    return !!attribute && (
+        attribute.className === 'StarGiftAttributeModel'
+        || attribute.constructor?.className === 'StarGiftAttributeModel'
+        || attribute.constructor?.name === 'StarGiftAttributeModel'
+    );
+}
+
+function telegramDocumentKey(document) {
+    return document?.id != null ? String(document.id) : null;
+}
+
+function telegramDocumentMimeType(document) {
+    return String(document?.mimeType || document?.mime_type || 'video/webm').toLowerCase();
+}
+
+function buildTelegramRocketModel(model, index) {
+    const document = model.document || null;
+    const documentId = telegramDocumentKey(document);
+    return {
+        id: documentId || `model-${index + 1}`,
+        name: String(model.name || `Stellar Rocket #${index + 1}`),
+        rarity: rocketAttributeRarity(model),
+        crafted: !!model.crafted,
+        documentId,
+        mimeType: telegramDocumentMimeType(document),
+        size: Number.isFinite(Number(document?.size)) ? Number(document.size) : null,
+        mediaUrl: documentId ? `/api/rocket-media/${encodeURIComponent(documentId)}` : null
+    };
+}
+
+async function ensureTelegramMtprotoClient() {
+    if (telegramMtprotoClient) return telegramMtprotoClient;
+    if (telegramMtprotoInitPromise) return telegramMtprotoInitPromise;
+
+    telegramMtprotoInitPromise = (async () => {
+        let TelegramClient;
+        let StringSession;
+        try {
+            ({ TelegramClient } = require('teleproto'));
+            ({ StringSession } = require('teleproto/sessions'));
+        } catch (error) {
+            throw new Error('teleproto is unavailable: ' + error.message);
+        }
+
+        const apiId = Number(String(process.env.TELEGRAM_API_ID || '').trim());
+        const apiHash = String(process.env.TELEGRAM_API_HASH || '').trim();
+        const sessionString = String(process.env.TELEGRAM_SESSION_STRING || '').trim();
+
+        if (!Number.isInteger(apiId) || apiId <= 0) throw new Error('TELEGRAM_API_ID is not configured');
+        if (!apiHash) throw new Error('TELEGRAM_API_HASH is not configured');
+        if (!sessionString) throw new Error('TELEGRAM_SESSION_STRING is not configured');
+
+        const session = new StringSession(sessionString);
+        const client = new TelegramClient(session, apiId, apiHash, {
+            connectionRetries: 5,
+            autoReconnect: true,
+            maxConcurrentDownloads: 4
+        });
+        await client.connect();
+        const me = await client.getMe();
+        console.log('🔐 Telegram MTProto connected for Stellar Rocket catalog:', JSON.stringify({
+            authorized: !!me,
+            accountType: me?.className || null
+        }));
+        telegramMtprotoClient = client;
+        return client;
+    })();
+
+    try {
+        return await telegramMtprotoInitPromise;
+    } finally {
+        telegramMtprotoInitPromise = null;
+    }
+}
+
+async function refreshTelegramRocketCatalog(force = false) {
+    if (!force && telegramRocketCatalog.length && Date.now() - telegramRocketCatalogLoadedAt < TELEGRAM_ROCKET_CATALOG_TTL_MS) {
+        return telegramRocketCatalog;
+    }
+
+    const client = await ensureTelegramMtprotoClient();
+
+    // Telegram's official MTProto flow:
+    // 1) payments.getStarGifts gives the base gift type and id.
+    // 2) payments.getStarGiftUpgradeAttributes gives every possible model/pattern/backdrop.
+    const available = await client.api.payments.getStarGifts({ hash: 0 });
+    const gifts = Array.isArray(available?.gifts) ? available.gifts : [];
+    const stellarRocket = gifts.find(gift => String(gift?.title || '').trim().toLowerCase() === 'stellar rocket')
+        || gifts.find(gift => String(gift?.title || '').trim().toLowerCase().includes('stellar rocket'));
+
+    if (!stellarRocket?.id) {
+        throw new Error('Telegram did not return the Stellar Rocket base gift');
+    }
+
+    const attributesResult = await client.api.payments.getStarGiftUpgradeAttributes({
+        giftId: stellarRocket.id
+    });
+    const attributes = Array.isArray(attributesResult?.attributes) ? attributesResult.attributes : [];
+    const models = attributes
+        .filter(attribute => isTelegramRocketModel(attribute) && !attribute.crafted && attribute.document)
+        .map((attribute, index) => buildTelegramRocketModel(attribute, index))
+        .filter(model => model.documentId);
+
+    if (!models.length) {
+        throw new Error('Telegram returned no Stellar Rocket model documents');
+    }
+
+    const deduped = [];
+    const seen = new Set();
+    for (const model of models) {
+        if (seen.has(model.documentId)) continue;
+        seen.add(model.documentId);
+        deduped.push(model);
+    }
+
+    telegramRocketCatalog = deduped;
+    telegramRocketCatalogLoadedAt = Date.now();
+
+    console.log('🚀 Stellar Rocket catalog refreshed from Telegram:', JSON.stringify({
+        baseGiftId: String(stellarRocket.id),
+        variantsReported: Number(stellarRocket.upgradeVariants || 0) || null,
+        modelsReturned: telegramRocketCatalog.length
+    }));
+
+    return telegramRocketCatalog;
+}
+
+async function getTelegramRocketMedia(documentId) {
+    const key = String(documentId || '').trim();
+    if (!key) throw new Error('Rocket document id is required');
+
+    const cached = telegramRocketMediaCache.get(key);
+    if (cached) {
+        cached.lastUsedAt = Date.now();
+        return cached;
+    }
+
+    const catalogEntry = telegramRocketCatalog.find(item => item.documentId === key);
+    if (!catalogEntry) throw new Error('Rocket model is not in the Telegram catalog');
+
+    const client = await ensureTelegramMtprotoClient();
+    const document = {
+        _: 'document',
+        id: BigInt(key),
+        accessHash: undefined
+    };
+
+    // Prefer the exact Document object returned by getStarGiftUpgradeAttributes.
+    // It contains the file reference needed by Telegram's MTProto media endpoint.
+    const available = await client.api.payments.getStarGifts({ hash: 0 });
+    const gifts = Array.isArray(available?.gifts) ? available.gifts : [];
+    const stellarRocket = gifts.find(gift => String(gift?.title || '').trim().toLowerCase().includes('stellar rocket'));
+    if (!stellarRocket?.id) throw new Error('Stellar Rocket base gift unavailable');
+
+    const attributesResult = await client.api.payments.getStarGiftUpgradeAttributes({ giftId: stellarRocket.id });
+    const attribute = (Array.isArray(attributesResult?.attributes) ? attributesResult.attributes : [])
+        .find(item => isTelegramRocketModel(item) && !item.crafted && telegramDocumentKey(item.document) === key);
+    if (!attribute?.document) throw new Error('Rocket model document reference unavailable');
+
+    const buffer = await client.downloadMedia(attribute.document);
+    if (!buffer || !Buffer.isBuffer(buffer)) throw new Error('Telegram returned no rocket media');
+    if (buffer.length > MAX_TELEGRAM_ROCKET_MEDIA_BYTES) throw new Error('Rocket media exceeds safe cache limit');
+
+    const entry = {
+        buffer,
+        mimeType: telegramDocumentMimeType(attribute.document),
+        size: buffer.length,
+        lastUsedAt: Date.now()
+    };
+    telegramRocketMediaCache.set(key, entry);
+
+    while (telegramRocketMediaCache.size > MAX_TELEGRAM_ROCKET_MEDIA_CACHE) {
+        let oldestKey = null;
+        let oldestTime = Infinity;
+        for (const [candidateKey, candidate] of telegramRocketMediaCache) {
+            if (candidate.lastUsedAt < oldestTime) {
+                oldestTime = candidate.lastUsedAt;
+                oldestKey = candidateKey;
+            }
+        }
+        if (oldestKey == null) break;
+        telegramRocketMediaCache.delete(oldestKey);
+    }
+
+    return entry;
+}
 
 app.get('/api/rocket-gifts', async (req, res) => {
     try {
-        const ownedGifts = await fetchBusinessAccountGifts();
-        const seen = new Set();
-        const rockets = [];
-
-        for (const ownedGift of (Array.isArray(ownedGifts) ? ownedGifts : [])) {
-            const gift = ownedGift?.gift;
-            if (!ownedGift || ownedGift.type !== 'unique' || !gift) continue;
-
-            const baseName = String(gift.base_name || gift.name || '').trim();
-            const modelName = String(gift.model?.name || '').trim();
-            const searchable = (baseName + ' ' + modelName).toLowerCase();
-            if (!searchable.includes('rocket')) continue;
-
-            const fileId = gift.model?.sticker?.file_id || gift.model?.sticker?.thumbnail?.file_id;
-            if (!fileId || seen.has(fileId)) continue;
-
-            seen.add(fileId);
-            rocketMediaFileIds.add(fileId);
-            rockets.push({
-                id: String(ownedGift.owned_gift_id || gift.name || fileId),
-                name: baseName || modelName || 'Rocket',
-                model: modelName || baseName || 'Rocket',
-                number: Number.isFinite(gift.number) ? gift.number : null,
-                mediaUrl: `/api/collectible-media?file_id=${encodeURIComponent(fileId)}`,
-                isVideo: !!gift.model?.sticker?.is_video,
-                isAnimated: !!gift.model?.sticker?.is_animated
-            });
-        }
-
+        const catalog = await refreshTelegramRocketCatalog();
         res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, rockets });
+        res.json({
+            ok: true,
+            source: 'telegram-mtproto-payments.getStarGiftUpgradeAttributes',
+            collection: 'Stellar Rocket',
+            rockets: catalog.map(item => ({
+                id: item.id,
+                name: item.name,
+                model: item.name,
+                rarity: item.rarity,
+                number: null,
+                mediaUrl: item.mediaUrl,
+                mimeType: item.mimeType,
+                isVideo: item.mimeType.startsWith('video/'),
+                isAnimated: true
+            }))
+        });
     } catch (error) {
-        console.error('Rocket gifts fetch failed:', error.message);
-        res.status(503).json({ ok: false, rockets: [], error: 'Rocket collectibles unavailable' });
+        console.error('Rocket catalog fetch failed:', error.message);
+        res.status(503).json({
+            ok: false,
+            rockets: [],
+            error: 'Stellar Rocket catalog unavailable'
+        });
     }
 });
 
-app.get('/api/collectible-media', async (req, res) => {
+app.get('/api/rocket-media/:documentId', async (req, res) => {
     try {
-        const fileId = String(req.query.file_id || '').trim();
-        if (!fileId || !rocketMediaFileIds.has(fileId)) {
-            res.status(404).end();
-            return;
-        }
-        const filePath = await resolveTelegramFilePath(fileId);
-        await streamTelegramFile(filePath, res);
+        const entry = await getTelegramRocketMedia(decodeURIComponent(String(req.params.documentId || '')));
+        res.setHeader('Content-Type', entry.mimeType || 'video/webm');
+        res.setHeader('Content-Length', String(entry.size));
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('X-Telegram-Media', 'mtproto');
+        res.end(entry.buffer);
     } catch (error) {
-        console.error('Collectible media proxy failed:', error.message);
-        if (!res.headersSent) res.status(502).end();
+        console.error('Rocket MTProto media proxy failed:', error.message);
+        if (!res.headersSent) res.status(404).end();
     }
-});
+}
 
 // ===== Telegram Business Connection webhook (Phase 3B) =====
 // Receives ONLY the official business_connection update; ignores every other Telegram update type.
@@ -3173,6 +3381,18 @@ app.get('/api/lootboxes', authenticate, async (req, res) => {
 // =========================================================
 // 6. بدء تشغيل السيرفر
 // =========================================================
+async function initializeTelegramRocketCatalog() {
+    if (!String(process.env.TELEGRAM_SESSION_STRING || '').trim()) {
+        console.warn('🚀 Stellar Rocket MTProto: TELEGRAM_SESSION_STRING is not configured; rocket catalog remains unavailable');
+        return;
+    }
+    try {
+        await refreshTelegramRocketCatalog(true);
+    } catch (error) {
+        console.error('🚀 Stellar Rocket catalog warm-up failed:', error.message);
+    }
+}
+
 async function verifyTonTreasuryConfiguration() {
     if (!TON_TREASURY_MNEMONIC || !TON_DEPOSIT_RECEIVER) {
         console.log('💰 TON treasury configuration check: SKIPPED (missing treasury variables)');
@@ -3303,6 +3523,12 @@ async function startServer(port = PORT) {
         console.log('🎮 Game loop started');
         startPvpGameLoop();
         startCollectibleReconciliationWorker();
+
+        // Warm the Telegram Stellar Rocket catalog without ever blocking or modifying the game loop.
+        // Failure here only disables the optional rocket-media feature.
+        initializeTelegramRocketCatalog().catch(error => {
+            console.error('🚀 Stellar Rocket MTProto initialization failed:', error.message);
+        });
 
         // بدء السيرفر
         return await new Promise((resolve, reject) => {
