@@ -587,7 +587,11 @@ function extractUniqueCollectibleIdentity(ownedGift) {
 
     // Raw Telegram file_id — NOT a browser-usable URL. Resolved on-demand via the
     // /api/collectible-media proxy, never sent to the frontend directly.
-    const stickerFileId = uniqueGift.model?.sticker?.file_id || uniqueGift.model?.sticker?.thumbnail?.file_id || null;
+    // Prefer Telegram's static PhotoSize thumbnail for Backpack rendering. A unique gift's
+    // main sticker can be animated (.TGS) or video (.WEBM), which an <img> element cannot render.
+    // The thumbnail is a real Telegram-hosted image and works reliably in the Mini App.
+    const stickerThumbnailFileId = uniqueGift.model?.sticker?.thumbnail?.file_id || null;
+    const stickerFileId = stickerThumbnailFileId || uniqueGift.model?.sticker?.file_id || null;
 
     const collectibleForPricing = {
         name: uniqueGift.base_name || uniqueGift.name,
@@ -618,7 +622,8 @@ function extractUniqueCollectibleIdentity(ownedGift) {
             model: uniqueGift.model?.name || null,
             symbol: uniqueGift.symbol?.name || null,
             backdrop: uniqueGift.backdrop?.name || null,
-            stickerFileId
+            stickerFileId,
+            stickerThumbnailFileId
         }),
         stickerFileId
     };
@@ -724,7 +729,8 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
                             name: identity.telegramGiftModel.name,
                             number: identity.collectibleNumber,
                             model: identity.telegramGiftModel.name,
-                            stickerFileId: identity.stickerFileId
+                            stickerFileId: identity.stickerFileId,
+                            stickerThumbnailFileId: identity.stickerFileId
                         };
                         await run(
                             `UPDATE user_gifts
