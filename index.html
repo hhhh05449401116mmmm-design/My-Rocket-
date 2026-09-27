@@ -1699,6 +1699,27 @@
         /* =========================================================
            PREMIUM IMAGE BANNERS
         ========================================================= */
+        /* Telegram collectible rocket: the animation loops for the entire round. */
+        .telegram-rocket {
+            position: absolute;
+            width: 112px;
+            height: 112px;
+            object-fit: contain;
+            object-position: center;
+            left: 15%;
+            bottom: 74px;
+            z-index: 5;
+            pointer-events: none;
+            display: block;
+            transform-origin: center center;
+            will-change: left, bottom, transform;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        .telegram-rocket.hidden { display: none !important; }
+        #rocket.telegram-fallback-hidden { visibility: hidden; }
+        
         .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; }
         .image-banner .banner-art { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; z-index:0; }
         .image-banner.playhub-banner .banner-art { height:108%; object-position:center top; }
@@ -2556,6 +2577,7 @@
                         <div id="flight-line" class="flight-line"></div>
                          <div id="rocket-trail" class="rocket-trail"></div>
                          <div id="flame" class="flame"></div>
+                         <video id="telegram-rocket" class="telegram-rocket hidden" autoplay loop muted playsinline preload="auto" aria-hidden="true"></video>
                          <div id="rocket" class="rocket"></div>
                          <div id="rocket-particles" class="rocket-particles"></div>
                      </div>
@@ -3277,6 +3299,9 @@
         let selectedGiftForBet = null;
         let currentBetId = null;
         let currentBetType = "TON";
+        let telegramRocketGifts = [];
+        let activeTelegramRocketIndex = -1;
+        let telegramRocketLoadToken = 0;
 
         // عداد الجولة القادمة (دائرة)
         let countdownStartTime = 0;
@@ -3960,6 +3985,76 @@
             };
         }
 
+        async function loadTelegramRocketGifts() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/rocket-gifts`, {
+                    headers: getAuthHeaders(),
+                    cache: 'no-store'
+                });
+                const data = await response.json().catch(() => ({}));
+                telegramRocketGifts = Array.isArray(data.rockets) ? data.rockets : [];
+                if (telegramRocketGifts.length && gamePhase === 'FLIGHT') {
+                    prepareTelegramRocketForRound(currentRoundId);
+                }
+            } catch (error) {
+                telegramRocketGifts = [];
+                console.warn('Telegram rocket gifts unavailable:', error);
+            }
+        }
+
+        function prepareTelegramRocketForRound(roundId) {
+            const video = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
+            if (!video || !telegramRocketGifts.length) return;
+
+            const index = Math.abs(Number(roundId) || 0) % telegramRocketGifts.length;
+            const gift = telegramRocketGifts[index];
+            if (!gift?.mediaUrl) return;
+            if (activeTelegramRocketIndex === index && video.src) {
+                video.currentTime = 0;
+                video.loop = true;
+                video.play().catch(() => {});
+                fallback?.classList.add('telegram-fallback-hidden');
+                video.classList.remove('hidden');
+                return;
+            }
+
+            activeTelegramRocketIndex = index;
+            const token = ++telegramRocketLoadToken;
+            video.pause();
+            video.src = gift.mediaUrl;
+            video.loop = true;
+            video.load();
+            video.onloadeddata = function() {
+                if (token !== telegramRocketLoadToken) return;
+                video.currentTime = 0;
+                video.play().catch(() => {});
+                fallback?.classList.add('telegram-fallback-hidden');
+                video.classList.remove('hidden');
+            };
+            video.onerror = function() {
+                if (token !== telegramRocketLoadToken) return;
+                video.classList.add('hidden');
+                fallback?.classList.remove('telegram-fallback-hidden');
+            };
+        }
+
+        function resetTelegramRocketForCountdown() {
+            const video = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
+            if (!video) return;
+            video.pause();
+            try { video.currentTime = 0; } catch {}
+            video.classList.add('hidden');
+            fallback?.classList.remove('telegram-fallback-hidden');
+        }
+
+        function stopTelegramRocketAtCrash() {
+            const video = document.getElementById('telegram-rocket');
+            if (!video) return;
+            video.pause();
+        }
+
         function setServerStatus(connected) {
             serverConnected = connected;
             const status = document.getElementById('status-message');
@@ -3984,6 +4079,8 @@
             const previousRoundId = currentRoundId;
             currentRoundId = state.roundId;
             if (previousRoundId && previousRoundId !== currentRoundId) {
+                activeTelegramRocketIndex = -1;
+                resetTelegramRocketForCountdown();
                 hasBet = false;
                 currentBetId = null;
                 playedThisRound = false;
@@ -4012,6 +4109,7 @@
                     document.getElementById("countdown-container").classList.add("show");
                     document.getElementById("multiplier").classList.remove("flying");
                     document.getElementById("multiplier").classList.remove("crashed");
+                    resetTelegramRocketForCountdown();
                 }
             }
             if (state.phase === "FLIGHT") {
@@ -4030,6 +4128,7 @@
                 document.getElementById("multiplier").classList.add("crashed");
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
                 document.getElementById("rocket").classList.add("crashed");
+                stopTelegramRocketAtCrash();
                 document.getElementById("flame").style.display = "none";
                 document.getElementById("countdown-container").classList.remove("show");
             }
@@ -4076,6 +4175,7 @@
 
         function moveRocket(progress) {
             const rocket = document.getElementById("rocket");
+            const telegramRocket = document.getElementById("telegram-rocket");
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
             const particles = document.getElementById("rocket-particles");
@@ -4084,6 +4184,13 @@
             rocket.style.left = `${15 + progress * 58}%`;
             rocket.style.bottom = `${74 + progress * 120}px`;
             rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
+                telegramRocket.style.left = `${15 + progress * 58}%`;
+                telegramRocket.style.bottom = `${74 + progress * 120}px`;
+                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+                telegramRocket.loop = true;
+                if (telegramRocket.paused) telegramRocket.play().catch(() => {});
+            }
             rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
             if (flame) {
                 flame.style.display = "block";
@@ -6347,6 +6454,7 @@
             connectToServer();
 
             fetchCollectibles();
+            loadTelegramRocketGifts();
             initLiveStrip();
         });
 
