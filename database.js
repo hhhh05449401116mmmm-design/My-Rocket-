@@ -2007,6 +2007,25 @@ async function updateDepositStatus(depositId, status, failureReason = null) {
                 'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                 [deposit.amount, deposit.user_id]
             );
+
+            const referredUser = await get('SELECT referred_by_user_id FROM users WHERE id = ?', [deposit.user_id]);
+            const inviterId = Number(referredUser?.referred_by_user_id || 0);
+            if (inviterId > 0 && inviterId !== Number(deposit.user_id)) {
+                const rewardAmount = Number((Number(deposit.amount) * 0.10).toFixed(9));
+                if (rewardAmount > 0) {
+                    const rewardInsert = await run(`
+                        INSERT OR IGNORE INTO referral_rewards
+                        (inviter_user_id, invited_user_id, deposit_id, amount)
+                        VALUES (?, ?, ?, ?)
+                    `, [inviterId, deposit.user_id, depositId, rewardAmount]);
+                    if (rewardInsert.changes === 1) {
+                        await run(
+                            'UPDATE users SET balance = balance + ?, referral_earned = COALESCE(referral_earned, 0) + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                            [rewardAmount, rewardAmount, inviterId]
+                        );
+                    }
+                }
+            }
         }
 
         return await get('SELECT * FROM deposits WHERE id = ?', [depositId]);
