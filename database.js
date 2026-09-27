@@ -766,13 +766,14 @@ function seedDatabase() {
 
 // ===== 5.1 إدارة المستخدمين =====
 async function findOrCreateUser(telegramId, userData = {}) {
-    let user = await get('SELECT * FROM users WHERE telegram_id = ?', [telegramId]);
+    const normalizedTelegramId = String(telegramId);
+    let user = await get('SELECT * FROM users WHERE telegram_id = ?', [normalizedTelegramId]);
     
     if (!user) {
         const result = await run(`
             INSERT INTO users (telegram_id, username, first_name, last_name, avatar_url)
             VALUES (?, ?, ?, ?, ?)
-        `, [telegramId, userData.username, userData.first_name, userData.last_name, userData.avatar_url]);
+        `, [normalizedTelegramId, userData.username, userData.first_name, userData.last_name, userData.avatar_url]);
         
         user = await get('SELECT * FROM users WHERE id = ?', [result.lastID]);
         
