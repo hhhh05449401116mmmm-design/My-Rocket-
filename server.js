@@ -951,7 +951,7 @@ app.post('/telegram-webhook', async (req, res) => {
             const incomingMessage = update.message;
             const messageText = typeof incomingMessage?.text === 'string' ? incomingMessage.text.trim() : '';
             const chatId = incomingMessage?.chat?.id;
-            if (chatId && /^\\/(start|open)(?:@[^\\s]+)?(?:\\s|$)/i.test(messageText)) {
+                        if (chatId && /^\/(start|open)(?:@[^\s]+)?(?:\s|$)/i.test(messageText)) {
                 try {
                     await sendTelegramMiniAppLaunchMessage(chatId);
                     console.log('🚀 Telegram Mini App launch message sent', JSON.stringify({ hasChatId: true }));
