@@ -1422,6 +1422,12 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
             (user_id, user_gift_id, round_id, gift_value_at_bet, auto_cashout_target)
             VALUES (?, ?, ?, ?, ?)
         `, [userId, userGift.id, roundId, giftValue, normalizedAutoCashoutTarget]);
+
+        // Track Rocket wagering volume for VIP/profile/leaderboard purposes.
+        await run(
+            'UPDATE users SET total_turnover = total_turnover + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [giftValue, userId]
+        );
         
         return {
             betId: result.lastID,
@@ -1671,6 +1677,12 @@ async function placeTonBet(userId, amount, roundId, autoCashoutTarget = null) {
             (user_id, round_id, amount, auto_cashout_target)
             VALUES (?, ?, ?, ?)
         `, [userId, roundId, normalizedAmount, normalizedAutoCashoutTarget]);
+
+        // Track Rocket wagering volume for VIP/profile/leaderboard purposes.
+        await run(
+            'UPDATE users SET total_turnover = total_turnover + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [normalizedAmount, userId]
+        );
         
         return {
             betId: result.lastID,
@@ -1982,6 +1994,81 @@ async function refundFailedWithdrawal(withdrawalId, reason = 'Withdrawal failed'
         );
         return await get('SELECT * FROM withdrawals WHERE id = ?', [withdrawalId]);
     });
+}
+
+// ===== 5.7A ترتيب المتصدرين حسب إجمالي الصرف =====
+async function getSpenderLeaderboard(limit = 200, userId = null) {
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 200, 200));
+
+    const spendingCte = `
+        WITH spending AS (
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.username,
+                u.avatar_url,
+                COALESCE(tb.spent, 0) + COALESCE(gb.spent, 0) AS total_spent
+            FROM users u
+            LEFT JOIN (
+                SELECT user_id, SUM(amount) AS spent
+                FROM ton_bets
+                GROUP BY user_id
+            ) tb ON tb.user_id = u.id
+            LEFT JOIN (
+                SELECT user_id, SUM(gift_value_at_bet) AS spent
+                FROM gift_bets
+                GROUP BY user_id
+            ) gb ON gb.user_id = u.id
+        )
+    `;
+
+    const topRows = await query(
+        spendingCte + `
+            SELECT id, first_name, last_name, username, avatar_url, total_spent
+            FROM spending
+            ORDER BY total_spent DESC, id ASC
+            LIMIT ?
+        `,
+        [safeLimit]
+    );
+
+    let me = null;
+    if (userId != null) {
+        me = await get(
+            spendingCte + `
+                SELECT
+                    id, first_name, last_name, username, avatar_url, total_spent,
+                    (SELECT COUNT(*) + 1 FROM spending s2
+                     WHERE s2.total_spent > spending.total_spent
+                        OR (s2.total_spent = spending.total_spent AND s2.id < spending.id)) AS rank
+                FROM spending
+                WHERE id = ?
+            `,
+            [userId]
+        );
+    }
+
+    return {
+        players: topRows.map((row, index) => ({
+            id: row.id,
+            rank: index + 1,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            username: row.username,
+            avatar: row.avatar_url,
+            totalSpent: Number(row.total_spent || 0)
+        })),
+        me: me ? {
+            id: me.id,
+            rank: Number(me.rank || 1),
+            firstName: me.first_name,
+            lastName: me.last_name,
+            username: me.username,
+            avatar: me.avatar_url,
+            totalSpent: Number(me.total_spent || 0)
+        } : null
+    };
 }
 
 // ===== 5.7 إحصائيات المستخدم =====
@@ -2801,6 +2888,7 @@ module.exports = {
     
     // الإحصائيات
     updateUserStats,
+    getSpenderLeaderboard,
     
     // الإشعارات
     createNotification,
