@@ -2120,7 +2120,23 @@
             background: rgba(79, 195, 247, 0.08);
             box-shadow: 0 0 20px rgba(79, 195, 247, 0.1);
         }
+        .gift-select-item .gift-select-image {
+            width: 58px;
+            height: 58px;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 5px;
+            background: rgba(255,255,255,0.04);
+        }
         .gift-select-item .emoji { font-size: 28px; display: block; }
+        .selected-gift-display .selected-gift-image {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 9px;
+            flex: 0 0 48px;
+        }
         .gift-select-item .name {
             font-size: 10px;
             font-weight: 700;
@@ -4482,19 +4498,33 @@
                         btn.disabled = false;
                     }
                     if (selectedDisplay) {
+                        const selectedImageUrl = typeof gift.imageUrl === "string" && gift.imageUrl
+                            ? (gift.imageUrl.startsWith("/") ? `${BACKEND_URL}${gift.imageUrl}` : gift.imageUrl)
+                            : "";
+                        const selectedHasImage = /^https?:\/\//i.test(selectedImageUrl);
+                        const selectedImage = selectedHasImage
+                            ? `<img class="selected-gift-image" src="${escapeHtmlAttribute(selectedImageUrl)}" alt="${escapeHtmlAttribute(gift.name || 'Telegram Collectible')}" onerror="this.outerHTML='<span class=&quot;emoji&quot;>🎁</span>'">`
+                            : `<span class="emoji">🎁</span>`;
                         selectedDisplay.innerHTML = `
                             <div class="selected-gift">
-                                <span class="emoji">🎁</span>
-                                <span class="name">${gift.name || ''}</span>
+                                ${selectedImage}
+                                <span class="name">${escapeHtml(gift.name || '')}</span>
                                 <span class="value">${giftValue.toFixed(2)} TON</span>
                             </div>
                         `;
                     }
                     if (valueDisplay) valueDisplay.textContent = giftValue.toFixed(2);
                 };
+                const giftImageUrl = typeof gift.imageUrl === "string" && gift.imageUrl
+                    ? (gift.imageUrl.startsWith("/") ? `${BACKEND_URL}${gift.imageUrl}` : gift.imageUrl)
+                    : "";
+                const giftHasImage = /^https?:\/\//i.test(giftImageUrl);
+                const giftImage = giftHasImage
+                    ? `<img class="gift-select-image" src="${escapeHtmlAttribute(giftImageUrl)}" alt="${escapeHtmlAttribute(gift.name || 'Telegram Collectible')}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;emoji&quot;>🎁</span>'">`
+                    : `<span class="emoji">🎁</span>`;
                 item.innerHTML = `
-                    <span class="emoji">🎁</span>
-                    <span class="name">${gift.name || ''}</span>
+                    ${giftImage}
+                    <span class="name">${escapeHtml(gift.name || '')}</span>
                     <span class="value">${giftValue.toFixed(2)} TON</span>
                     <span class="check">✅</span>
                 `;
