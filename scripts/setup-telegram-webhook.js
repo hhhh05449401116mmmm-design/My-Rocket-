@@ -7,7 +7,7 @@ require('dotenv').config();
 const https = require('https');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
+const WEBHOOK_URL = process.env.TELEGRAM_WEBHOOK_URL || 'https://my-rocket-production-150d.up.railway.app/telegram-webhook';
 // Must match the TELEGRAM_WEBHOOK_SECRET the server validates, otherwise every update is rejected.
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 // Telegram documents that an empty allowed_updates list subscribes the bot to all update types
