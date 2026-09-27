@@ -4158,6 +4158,8 @@
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
+                // Ensure the Telegram Stellar Rocket is prepared exactly when a new flight starts.
+                prepareTelegramRocketForRound(currentRoundId);
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
