@@ -2748,7 +2748,7 @@ module.exports = {
     getCollectibleByTelegramInstanceId,
     reserveCollectibleForBet,
     releaseCollectible,
-    markCollectibleSold,
+    sellCollectibleForBalance,
     updateCollectibleMarketValue,
     createOrGetImportIntent,
     getLatestImportIntentForUser,
