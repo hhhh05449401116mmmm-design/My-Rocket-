@@ -54,6 +54,7 @@ const {
     hasProcessedWebhookUpdate,
     markWebhookUpdateProcessed,
     getCollectibleByUniqueId,
+    sellCollectibleForBalance,
     placeGiftBet,
     placeTonBet,
     cashoutTonBet,
@@ -2303,6 +2304,61 @@ app.get('/api/inventory', authenticate, async (req, res) => {
         })) });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.6.2.1 بيع المقتنى مقابل رصيد TON داخل اللعبة =====
+app.post('/api/collectibles/sell', authenticate, async (req, res) => {
+    try {
+        const { collectibleId } = req.body || {};
+        if (!collectibleId) {
+            return res.status(400).json({ ok: false, error: 'collectibleId required' });
+        }
+
+        const collectible = await getCollectibleByUniqueId(collectibleId);
+        if (!collectible || collectible.user_id !== req.user.id || collectible.ownership_verified !== 1) {
+            return res.status(404).json({ ok: false, error: 'Collectible not found or not owned' });
+        }
+        if (collectible.ownership_status !== 'OWNED') {
+            return res.status(409).json({ ok: false, error: 'Collectible is not available for sale' });
+        }
+
+        // Sale value is calculated from the latest server-side market value.
+        // The client never supplies the amount, preventing price manipulation.
+        const market = getCollectibleMarketValue({
+            name: collectible.name,
+            base_name: collectible.telegram_gift_id,
+            model_name: collectible.name
+        });
+        const marketValue = Number(market?.floorPriceTon ?? collectible.value ?? 0);
+        const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
+        if (!Number.isFinite(marketValue) || marketValue <= 0) {
+            return res.status(409).json({ ok: false, error: 'No valid market value is available for this collectible' });
+        }
+        if (!Number.isFinite(sellRate) || sellRate <= 0 || sellRate > 1) {
+            return res.status(503).json({ ok: false, error: 'Invalid collectible sale configuration' });
+        }
+
+        const saleValue = Number((marketValue * sellRate).toFixed(9));
+        const result = await sellCollectibleForBalance(req.user.id, collectibleId, saleValue);
+
+        await createNotification(
+            req.user.id,
+            'GIFT_SOLD',
+            `Collectible sold for ${saleValue.toFixed(2)} TON`,
+            { collectibleId, marketValue, saleValue }
+        );
+
+        res.json({
+            ok: true,
+            collectibleId,
+            marketValue,
+            sellRate,
+            saleValue,
+            balance: result.balance
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
     }
 });
 
