@@ -945,6 +945,21 @@ app.post('/telegram-webhook', async (req, res) => {
 
         const connection = update.business_connection;
         if (!connection) {
+            // Normal bot messages are also delivered to this webhook. Use /start (or /open)
+            // as the canonical launcher so every player opens the game as a real Telegram
+            // Mini App and receives signed WebApp initData for authentication.
+            const incomingMessage = update.message;
+            const messageText = typeof incomingMessage?.text === 'string' ? incomingMessage.text.trim() : '';
+            const chatId = incomingMessage?.chat?.id;
+            if (chatId && /^\\/(start|open)(?:@[^\\s]+)?(?:\\s|$)/i.test(messageText)) {
+                try {
+                    await sendTelegramMiniAppLaunchMessage(chatId);
+                    console.log('🚀 Telegram Mini App launch message sent', JSON.stringify({ hasChatId: true }));
+                } catch (launchError) {
+                    console.error('Telegram Mini App launch message failed:', launchError.message);
+                }
+            }
+
             // Business-scoped updates carry business_connection_id. Recover the connection when
             // needed, then trigger ingestion for messages/service messages that may represent a gift.
             const recoverableId = extractBusinessConnectionIdFromUpdate(update);
@@ -2921,6 +2936,20 @@ app.get('/api/telegram/launch-info', async (req, res) => {
     }
 });
 
+async function sendTelegramMiniAppLaunchMessage(chatId) {
+    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
+    await callTelegramBotApi('sendMessage', {
+        chat_id: chatId,
+        text: '🚀 افتح Rocket من الزر بالأسفل للدخول إلى اللعبة بحساب Telegram الخاص بك.',
+        reply_markup: {
+            inline_keyboard: [[{
+                text: '🚀 فتح Rocket',
+                web_app: { url: webAppUrl }
+            }]]
+        }
+    });
+}
+
 async function ensureTelegramMiniAppMenuButton() {
     const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
     try {
@@ -2965,6 +2994,12 @@ async function startServer(port = PORT) {
         }
 
         await ensureTelegramMiniAppMenuButton();
+        const launchInfo = await getTelegramBotLaunchInfo();
+        console.log('🤖 Telegram bot launch identity:', JSON.stringify({
+            configured: !!launchInfo.username,
+            username: launchInfo.username || null,
+            menuUrlConfigured: !!launchInfo.username
+        }));
 
         const latestRound = await get('SELECT MAX(round_number) AS round_number FROM rounds');
         const nextRoundNumber = Number(latestRound?.round_number || 0) + 1;
