@@ -1845,7 +1845,7 @@ app.post('/api/auth', async (req, res) => {
         console.log('🔐 Telegram player authenticated', {
             telegramId: String(userData.id),
             username: userData.username || null,
-            hasReferralStartParam: /^ref_r\\d+$/.test(startParam)
+            hasReferralStartParam: /^ref_r\d+$/.test(startParam)
         });
         
         const user = await findOrCreateUser(userData.id, {
@@ -1855,7 +1855,7 @@ app.post('/api/auth', async (req, res) => {
             avatar_url: userData.photo_url
         });
 
-        if (/^ref_r\\d+$/.test(startParam)) {
+        if (/^ref_r\d+$/.test(startParam)) {
             try { await attachReferralToUser(user.id, startParam.slice(4)); }
             catch (referralError) { console.error('Referral attach failed:', referralError.message); }
         }
