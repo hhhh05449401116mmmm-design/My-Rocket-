@@ -708,7 +708,42 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         uniqueDetected++;
 
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
-        if (alreadyCredited) { reasons.alreadyCredited++; continue; }
+        if (alreadyCredited) {
+            // Existing collectibles may have been imported before Telegram sticker media was
+            // persisted. Reconcile the current official Telegram sticker file id on every sweep
+            // so the Backpack can recover the real image instead of falling back to 🎁.
+            if (identity.stickerFileId) {
+                try {
+                    let metadata = {};
+                    try {
+                        metadata = alreadyCredited.verified_metadata ? JSON.parse(alreadyCredited.verified_metadata) : {};
+                    } catch {}
+                    if (metadata.stickerFileId !== identity.stickerFileId) {
+                        metadata = {
+                            ...metadata,
+                            name: identity.telegramGiftModel.name,
+                            number: identity.collectibleNumber,
+                            model: identity.telegramGiftModel.name,
+                            stickerFileId: identity.stickerFileId
+                        };
+                        await run(
+                            `UPDATE user_gifts
+                             SET telegram_thumbnail_file_id = ?, verified_metadata = ?, updated_at = CURRENT_TIMESTAMP
+                             WHERE id = ?`,
+                            [identity.stickerFileId, JSON.stringify(metadata), alreadyCredited.id]
+                        );
+                        console.log('🖼️ Collectible media metadata repaired:', JSON.stringify({
+                            uniqueCollectibleId: identity.uniqueCollectibleId,
+                            userGiftId: alreadyCredited.id
+                        }));
+                    }
+                } catch (mediaRepairError) {
+                    console.error('🖼️ Collectible media metadata repair failed:', mediaRepairError.message);
+                }
+            }
+            reasons.alreadyCredited++;
+            continue;
+        }
 
         const senderTelegramId = identity.senderTelegramId;
         if (!senderTelegramId) {
