@@ -10,8 +10,10 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
 // Must match the TELEGRAM_WEBHOOK_SECRET the server validates, otherwise every update is rejected.
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
-// business_connection is NOT part of Telegram's default allowed_updates and must be requested.
-const ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
+// Telegram documents that an empty allowed_updates list subscribes the bot to all update types
+// except chat_member/message_reaction/message_reaction_count. This avoids stale or incomplete
+// update subscriptions while we bootstrap Business connections.
+const ALLOWED_UPDATES = [];
 
 function callTelegramBotApi(method, payload = {}) {
     return new Promise((resolve, reject) => {
@@ -63,7 +65,7 @@ function callTelegramBotApi(method, payload = {}) {
         if (WEBHOOK_SECRET) payload.secret_token = WEBHOOK_SECRET;
         await callTelegramBotApi('setWebhook', payload);
         console.log('✅ setWebhook succeeded for:', WEBHOOK_URL);
-        console.log('ℹ️ allowed_updates:', ALLOWED_UPDATES.join(', '));
+        console.log('ℹ️ allowed_updates: ALL (Telegram empty-list mode)');
         console.log('ℹ️ secret_token configured:', !!WEBHOOK_SECRET);
 
         const info = await callTelegramBotApi('getWebhookInfo', {});
