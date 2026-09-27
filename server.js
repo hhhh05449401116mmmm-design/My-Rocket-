@@ -644,8 +644,9 @@ function notifyCollectibleClients(userId, payload) {
     return sent;
 }
 
-// مسح دوري يطابق الهدايا التي يعيدها getBusinessAccountGifts مع صاحب حساب Telegram
-// المرتبط فعليًا بالـ Business Connection. sender_user هو مُرسل الهدية وليس مالك الحساب.
+// مسح دوري للهدايا المملوكة لحساب Telegram Business.
+// الملكية داخل اللعبة تُسند إلى sender_user.id: هذا هو مُرسل الهدية، وليس مالك حساب Business.
+// لا نطلب من مالك حساب Business تسجيل الدخول للعبة، ولا نُسند المقتنى إليه.
 // fetchGiftsFn قابل للحقن للاختبارات فقط (افتراضيًا يستخدم استدعاء Telegram الحقيقي).
 async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccountGifts) {
     await ensureRuntimeBusinessConnection();
@@ -660,18 +661,9 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         return { configured: false, credited: 0, unmatched: 0 };
     }
 
-    const businessUserId = runtimeBusinessConnection.businessUserId;
-    if (!businessUserId) {
-        console.warn('🔍 Collectible sweep skipped: Business Connection owner is not known yet');
-        return { configured: true, credited: 0, unmatched: 0, reason: 'business_owner_unknown' };
-    }
-
-    // The Business Connection's user is the account that owns the returned gifts.
-    // Never use ownedGift.sender_user.id for ownership: that field identifies the gift sender.
-    const ownerUser = await get('SELECT * FROM users WHERE telegram_id = ?', [String(businessUserId)]);
-    if (!ownerUser) {
-        console.warn('🔍 Collectible sweep waiting for the Business account owner to open the game');
-        return { configured: true, credited: 0, unmatched: 0, reason: 'business_owner_not_linked' };
+    if (!runtimeBusinessConnection.canViewGiftsAndStars) {
+        console.warn('🔍 Collectible sweep skipped: Business connection cannot view gifts and stars');
+        return { configured: true, credited: 0, unmatched: 0, reason: 'missing_view_gifts_right' };
     }
 
     try {
@@ -691,7 +683,12 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
     let credited = 0;
     let unmatched = 0;
     let uniqueDetected = 0;
-    const reasons = { alreadyCredited: 0, creditFailed: 0 };
+    const reasons = {
+        alreadyCredited: 0,
+        creditFailed: 0,
+        senderUnknown: 0,
+        playerNotRegistered: 0
+    };
 
     for (const ownedGift of ownedGifts) {
         const identity = extractUniqueCollectibleIdentity(ownedGift);
@@ -701,10 +698,26 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
         if (alreadyCredited) { reasons.alreadyCredited++; continue; }
 
+        const senderTelegramId = identity.senderTelegramId;
+        if (!senderTelegramId) {
+            unmatched++;
+            reasons.senderUnknown++;
+            console.warn('🔍 Collectible not credited: Telegram did not expose a known sender');
+            continue;
+        }
+
+        const player = await get('SELECT * FROM users WHERE telegram_id = ?', [String(senderTelegramId)]);
+        if (!player) {
+            unmatched++;
+            reasons.playerNotRegistered++;
+            console.warn('🔍 Collectible not credited: sender is not a registered Rocket player');
+            continue;
+        }
+
         try {
             const creditResult = await creditVerifiedCollectible({
                 intentId: null,
-                userId: ownerUser.id,
+                userId: player.id,
                 telegramGiftModel: identity.telegramGiftModel,
                 uniqueCollectibleId: identity.uniqueCollectibleId,
                 telegramGiftInstanceId: identity.telegramGiftInstanceId,
@@ -712,21 +725,36 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
                 verifiedMetadata: identity.verifiedMetadata,
                 stickerFileId: identity.stickerFileId
             });
+
+            if (creditResult.alreadyCredited) {
+                reasons.alreadyCredited++;
+                continue;
+            }
+
             credited++;
-            // Safe: collectible identity is public game data; no secrets, no file_id, no raw sender payload.
             console.log('✅ Collectible credited:', JSON.stringify({
                 uniqueCollectibleId: identity.uniqueCollectibleId,
                 collectibleNumber: identity.collectibleNumber,
-                userId: ownerUser.id
+                userId: player.id
             }));
-            // إشعار فوري للعميل Backpack المتصل (إن وجد) — هوية علنية فقط، بعد الائتمان الفعلي.
-            if (!creditResult.alreadyCredited) {
-                notifyCollectibleClients(ownerUser.id, {
-                    type: 'collectible-credited',
-                    uniqueCollectibleId: identity.uniqueCollectibleId,
-                    collectibleNumber: identity.collectibleNumber,
-                    receivedAt: new Date().toISOString()
+
+            notifyCollectibleClients(player.id, {
+                type: 'collectible-credited',
+                uniqueCollectibleId: identity.uniqueCollectibleId,
+                collectibleNumber: identity.collectibleNumber,
+                receivedAt: new Date().toISOString()
+            });
+
+            // Confirmation goes to the real sender/player. Failure here must never undo
+            // the already-committed collectible ownership in the Backpack.
+            try {
+                await callTelegramBotApi('sendMessage', {
+                    chat_id: String(senderTelegramId),
+                    text: `🎁 ${identity.telegramGiftModel.name} #${identity.collectibleNumber} just arrived.
+It’s in your Backpack: upgrade it, use it in a contract, or quick-sell it.`
                 });
+            } catch (notifyError) {
+                console.error('🔍 Collectible confirmation message failed:', notifyError.message);
             }
         } catch (error) {
             unmatched++;
@@ -890,8 +918,8 @@ app.post('/telegram-webhook', async (req, res) => {
 
         const connection = update.business_connection;
         if (!connection) {
-            // Recovery path: a business-scoped update still carries business_connection_id, which
-            // lets us re-fetch the authoritative connection if the business_connection update was missed.
+            // Business-scoped updates carry business_connection_id. Recover the connection when
+            // needed, then trigger ingestion for messages/service messages that may represent a gift.
             const recoverableId = extractBusinessConnectionIdFromUpdate(update);
             if (recoverableId && (
                 !runtimeBusinessConnection.id
@@ -909,27 +937,28 @@ app.post('/telegram-webhook', async (req, res) => {
                 } catch (recoveryError) {
                     console.error('🔎 Webhook diagnostic: business connection recovery failed', JSON.stringify({ updateId, reason: recoveryError.message }));
                 }
-            } else {
-                if (['business_message', 'edited_business_message', 'deleted_business_messages'].includes(updateType)) {
-                    if (collectibleSweepInProgress) {
-                        console.log(`ℹ️ Telegram webhook: business update received but sweep already in progress — skipping`);
-                    } else {
-                        const now = Date.now();
-                        if (now - lastCollectibleSweepTime < COLLECTIBLE_SWEEP_COOLDOWN_MS) {
-                            console.log(`ℹ️ Telegram webhook: business update received but sweep on cooldown — skipping`);
-                        } else {
-                            collectibleSweepInProgress = true;
-                            lastCollectibleSweepTime = now;
-                            console.log(`ℹ️ Telegram webhook: business-scoped update received, triggering collectible sweep`);
-                            runCollectibleVerificationSweep().catch(err =>
-                                console.error('Sweep triggered from webhook failed:', err.message)
-                            ).finally(() => { collectibleSweepInProgress = false; });
-                        }
-                    }
-                } else {
-                    console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
-                }
             }
+
+            if (['business_message', 'edited_business_message', 'deleted_business_messages'].includes(updateType)) {
+                if (collectibleSweepInProgress) {
+                    console.log('ℹ️ Telegram webhook: business update received but sweep already in progress — skipping');
+                } else {
+                    const now = Date.now();
+                    if (now - lastCollectibleSweepTime < COLLECTIBLE_SWEEP_COOLDOWN_MS) {
+                        console.log('ℹ️ Telegram webhook: business update received but sweep on cooldown — skipping');
+                    } else {
+                        collectibleSweepInProgress = true;
+                        lastCollectibleSweepTime = now;
+                        console.log('ℹ️ Telegram webhook: business-scoped update received, triggering collectible sweep');
+                        runCollectibleVerificationSweep().catch(err =>
+                            console.error('Sweep triggered from webhook failed:', err.message)
+                        ).finally(() => { collectibleSweepInProgress = false; });
+                    }
+                }
+            } else {
+                console.log(`ℹ️ Telegram webhook: ignored unrelated update type "${updateType}"`);
+            }
+
             await markWebhookUpdateProcessed(update.update_id);
             res.status(200).json({ ok: true });
             return;
