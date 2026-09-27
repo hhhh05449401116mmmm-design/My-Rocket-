@@ -84,6 +84,7 @@ const {
     creditVerifiedDeposit,
     updateDepositStatus,
     updateUserStats,
+    getSpenderLeaderboard,
     createNotification,
     getNotifications,
     createRoundRecord,
@@ -1865,7 +1866,8 @@ app.post('/api/auth', async (req, res) => {
                 first_name: user.first_name,
                 last_name: user.last_name,
                 avatar_url: user.avatar_url,
-                balance: user.balance
+                balance: user.balance,
+                total_turnover: Number(user.total_turnover || 0)
             },
             token: user.id 
         });
@@ -3388,6 +3390,17 @@ app.get('/api/stats', authenticate, async (req, res) => {
         const stats = await get('SELECT * FROM user_stats WHERE user_id = ?', [req.user.id]);
         res.json({ ok: true, stats: stats || { total_rounds: 0, total_wins: 0, total_losses: 0 } });
     } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.13A المتصدرون حسب إجمالي الصرف =====
+app.get('/api/spender-leaderboard', authenticate, async (req, res) => {
+    try {
+        const leaderboard = await getSpenderLeaderboard(200, req.user.id);
+        res.json({ ok: true, ...leaderboard });
+    } catch (error) {
+        console.error('Spender leaderboard error:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
