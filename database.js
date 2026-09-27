@@ -520,6 +520,13 @@ function initDatabase() {
                 )
             `);
 
+            // Migration for existing Railway databases created before gift-transfer rights were added.
+            db.run(`ALTER TABLE telegram_business_connection ADD COLUMN can_transfer_and_upgrade_gifts INTEGER DEFAULT 0`, error => {
+                if (error && !error.message.includes('duplicate column name')) {
+                    console.error('Failed to add telegram_business_connection.can_transfer_and_upgrade_gifts:', error.message);
+                }
+            });
+
             // Store inventory of real collectibles available as crash rewards.
             // These are real Telegram unique gifts (verified) that the game holds in reserve
             // to grant as prizes when a player cashes out above 1.10x.
