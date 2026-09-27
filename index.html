@@ -3333,6 +3333,8 @@
         let telegramRocketGifts = [];
         let activeTelegramRocketIndex = -1;
         let telegramRocketLoadToken = 0;
+        let telegramRocketLottieAnimation = null;
+        let telegramRocketVideo = null;
 
         // عداد الجولة القادمة (دائرة)
         let countdownStartTime = 0;
@@ -4024,72 +4026,109 @@
 
         async function loadTelegramRocketGifts() {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/rocket-gifts`, {
-                    headers: getAuthHeaders(),
-                    cache: 'no-store'
-                });
+                const response = await fetch(`${BACKEND_URL}/api/rocket-gifts`, { headers: getAuthHeaders(), cache: 'no-store' });
                 const data = await response.json().catch(() => ({}));
                 telegramRocketGifts = Array.isArray(data.rockets) ? data.rockets : [];
-                if (telegramRocketGifts.length && gamePhase === 'FLIGHT') {
-                    prepareTelegramRocketForRound(currentRoundId);
-                }
+                if (telegramRocketGifts.length && gamePhase === 'FLIGHT') prepareTelegramRocketForRound(currentRoundId);
             } catch (error) {
                 telegramRocketGifts = [];
                 console.warn('Telegram rocket gifts unavailable:', error);
             }
         }
 
-        function prepareTelegramRocketForRound(roundId) {
-            const video = document.getElementById('telegram-rocket');
-            const fallback = document.getElementById('rocket');
-            if (!video || !telegramRocketGifts.length) return;
+        function destroyTelegramRocketRenderer() {
+            if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.destroy(); } catch (e) {} telegramRocketLottieAnimation = null; }
+            if (telegramRocketVideo) {
+                try { telegramRocketVideo.pause(); telegramRocketVideo.removeAttribute('src'); telegramRocketVideo.load(); } catch (e) {}
+                telegramRocketVideo.remove(); telegramRocketVideo = null;
+            }
+            const container = document.getElementById('telegram-rocket');
+            if (container) container.innerHTML = '';
+        }
 
+        async function renderTelegramRocketMedia(gift, token) {
+            const container = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
+            if (!container || !gift?.mediaUrl) return;
+            const response = await fetch(`${BACKEND_URL}${gift.mediaUrl}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`Rocket media HTTP ${response.status}`);
+            const renderType = response.headers.get('X-Telegram-Render-Type') || '';
+            const contentType = (response.headers.get('Content-Type') || '').toLowerCase();
+            if (token !== telegramRocketLoadToken) return;
+            destroyTelegramRocketRenderer();
+
+            if (renderType === 'tgs' || contentType.includes('application/json')) {
+                const animationData = await response.json();
+                if (token !== telegramRocketLoadToken) return;
+                telegramRocketLottieAnimation = lottie.loadAnimation({
+                    container, renderer: 'svg', loop: true, autoplay: false, animationData
+                });
+                telegramRocketLottieAnimation.addEventListener('DOMLoaded', function() {
+                    if (token !== telegramRocketLoadToken) return;
+                    telegramRocketLottieAnimation.goToAndPlay(0, true);
+                    fallback?.classList.add('telegram-fallback-hidden');
+                    container.classList.remove('hidden');
+                });
+                return;
+            }
+
+            const video = document.createElement('video');
+            video.autoplay = false; video.loop = true; video.muted = true; video.playsInline = true; video.preload = 'auto';
+            video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
+            video.style.width = '100%'; video.style.height = '100%'; video.style.objectFit = 'contain'; video.style.display = 'block';
+            video.addEventListener('loadeddata', function() {
+                if (token !== telegramRocketLoadToken) return;
+                telegramRocketVideo = video; video.currentTime = 0; video.play().catch(() => {});
+                fallback?.classList.add('telegram-fallback-hidden'); container.classList.remove('hidden');
+            }, { once: true });
+            video.addEventListener('error', function() {
+                if (token !== telegramRocketLoadToken) return;
+                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            }, { once: true });
+            video.src = gift.mediaUrl; container.appendChild(video); telegramRocketVideo = video; video.load();
+        }
+
+        function prepareTelegramRocketForRound(roundId) {
+            const container = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
+            if (!container || !telegramRocketGifts.length) return;
             const index = Math.abs(Number(roundId) || 0) % telegramRocketGifts.length;
             const gift = telegramRocketGifts[index];
             if (!gift?.mediaUrl) return;
-            if (activeTelegramRocketIndex === index && video.src) {
-                video.currentTime = 0;
-                video.loop = true;
-                video.play().catch(() => {});
+
+            if (activeTelegramRocketIndex === index && !container.classList.contains('hidden')) {
+                if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.goToAndPlay(0, true);
+                else if (telegramRocketVideo) { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); }
                 fallback?.classList.add('telegram-fallback-hidden');
-                video.classList.remove('hidden');
                 return;
             }
 
             activeTelegramRocketIndex = index;
             const token = ++telegramRocketLoadToken;
-            video.pause();
-            video.src = gift.mediaUrl;
-            video.loop = true;
-            video.load();
-            video.onloadeddata = function() {
+            container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            destroyTelegramRocketRenderer();
+            renderTelegramRocketMedia(gift, token).catch(error => {
                 if (token !== telegramRocketLoadToken) return;
-                video.currentTime = 0;
-                video.play().catch(() => {});
-                fallback?.classList.add('telegram-fallback-hidden');
-                video.classList.remove('hidden');
-            };
-            video.onerror = function() {
-                if (token !== telegramRocketLoadToken) return;
-                video.classList.add('hidden');
-                fallback?.classList.remove('telegram-fallback-hidden');
-            };
+                console.warn('Telegram rocket media render failed:', error);
+                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            });
         }
 
         function resetTelegramRocketForCountdown() {
-            const video = document.getElementById('telegram-rocket');
+            const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
-            if (!video) return;
-            video.pause();
-            try { video.currentTime = 0; } catch {}
-            video.classList.add('hidden');
-            fallback?.classList.remove('telegram-fallback-hidden');
+            if (!container) return;
+            ++telegramRocketLoadToken;
+            if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.stop(); } catch (e) {} }
+            if (telegramRocketVideo) { try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {} }
+            container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
         }
 
         function stopTelegramRocketAtCrash() {
-            const video = document.getElementById('telegram-rocket');
-            if (!video) return;
-            video.pause();
+            const container = document.getElementById('telegram-rocket');
+            if (!container) return;
+            if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
+            if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
         }
 
         function setServerStatus(connected) {
@@ -4227,8 +4266,8 @@
                 telegramRocket.style.left = `${15 + progress * 58}%`;
                 telegramRocket.style.bottom = `${74 + progress * 120}px`;
                 telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-                telegramRocket.loop = true;
-                if (telegramRocket.paused) telegramRocket.play().catch(() => {});
+                if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
+                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
             }
             rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
             if (flame) {
