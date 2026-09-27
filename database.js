@@ -1199,20 +1199,35 @@ async function releaseCollectible(uniqueCollectibleId, outcome) {
 }
 
 // بيع قطعة مملوكة: OWNED -> SOLD، ذريًا.
-async function markCollectibleSold(userId, uniqueCollectibleId) {
+async function sellCollectibleForBalance(userId, uniqueCollectibleId, sellValue) {
     return await transaction(async () => {
         const collectible = await getCollectibleByUniqueId(uniqueCollectibleId);
         if (!collectible) throw new Error('Collectible not found');
         if (collectible.user_id !== userId) throw new Error('Collectible not owned by this user');
+        if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible is not available for sale');
+
+        const amount = Number(sellValue);
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error('Invalid collectible sale value');
 
         const update = await run(`
             UPDATE user_gifts
             SET status = 'SOLD', updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status = 'OWNED'
         `, [collectible.user_gift_id]);
-        if (update.changes !== 1) throw new Error('Collectible is not available for sale');
+        if (update.changes !== 1) throw new Error('Collectible was already used');
 
-        return await getCollectibleByUniqueId(uniqueCollectibleId);
+        const currentBalance = await getUserBalance(userId);
+        const newBalance = currentBalance + amount;
+        await run(
+            'UPDATE users SET balance = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [newBalance, userId]
+        );
+
+        return {
+            collectible,
+            saleValue: amount,
+            balance: newBalance
+        };
     });
 }
 
