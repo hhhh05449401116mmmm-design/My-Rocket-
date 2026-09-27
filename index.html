@@ -5189,23 +5189,12 @@
                 const imageHtml = hasRealImage
                     ? `<img src="${safeImageUrl}" alt="${escapeHtmlAttribute(item.name || 'Telegram Collectible')}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
-                const detailParts = [
-                    item.baseName && item.baseName !== item.name ? item.baseName : null,
-                    item.model ? `Model: ${item.model}` : null,
-                    item.symbol ? `Symbol: ${item.symbol}` : null,
-                    item.backdrop ? `Backdrop: ${item.backdrop}` : null
-                ].filter(Boolean);
-                const transferText = item.canBeTransferred ? "Transferable" : "Not transferable";
                 const isInBet = item.status === "IN_BET";
                 const betDisabledAttr = isInBet ? "disabled" : "";
                 card.innerHTML = `
                     ${imageHtml}
                     <span class="name">${escapeHtml(item.name || '')}</span>
                     ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
-                    ${detailParts.length ? `<span class="number">${escapeHtml(detailParts.join(' • '))}</span>` : ''}
-                    ${item.sender?.username || item.sender?.firstName ? `<span class="number">Sender: ${escapeHtml(item.sender?.username ? '@' + item.sender.username : item.sender.firstName)}</span>` : ''}
-                    ${item.sendDateIso ? `<span class="number">${escapeHtml(new Date(item.sendDateIso).toLocaleString())}</span>` : ''}
-                    <span class="number">${transferText}${item.transferStarCount != null ? ` • ${Number(item.transferStarCount)} ⭐` : ''}</span>
                     <div class="actions">
                         <button type="button" onclick="sellCollectible('${item.id}')" ${isInBet ? 'disabled' : ''}>${t.sellCollectible} ${Number(item.sellValue || 0).toFixed(2)} TON</button>
                         <button type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet ? 'disabled title="' + t.withdrawUnavailable + '"' : ''}>${t.withdrawCollectible}</button>
