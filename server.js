@@ -586,13 +586,11 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     if (!ownedGift || ownedGift.type !== 'unique' || !uniqueGift) return null;
     if (!uniqueGift.name || !Number.isFinite(uniqueGift.number)) return null;
 
-    // Raw Telegram file_id — NOT a browser-usable URL. Resolved on-demand via the
-    // /api/collectible-media proxy, never sent to the frontend directly.
-    // Prefer Telegram's static PhotoSize thumbnail for Backpack rendering. A unique gift's
-    // main sticker can be animated (.TGS) or video (.WEBM), which an <img> element cannot render.
-    // The thumbnail is a real Telegram-hosted image and works reliably in the Mini App.
+    // Telegram's static thumbnail is preferred because it is a browser-renderable image.
+    // The full sticker may be TGS/WEBM and is therefore kept as metadata/fallback only.
     const stickerThumbnailFileId = uniqueGift.model?.sticker?.thumbnail?.file_id || null;
-    const stickerFileId = stickerThumbnailFileId || uniqueGift.model?.sticker?.file_id || null;
+    const stickerFileId = uniqueGift.model?.sticker?.file_id || null;
+    const displayFileId = stickerThumbnailFileId || stickerFileId || null;
 
     const collectibleForPricing = {
         name: uniqueGift.base_name || uniqueGift.name,
@@ -601,6 +599,61 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     const marketValue = getCollectibleMarketValue(collectibleForPricing);
     const giftValue = marketValue ? marketValue.floorPriceTon : 0;
 
+    const verifiedMetadata = {
+        source: 'telegram.business.getBusinessAccountGifts',
+        ownedGiftId: ownedGift.owned_gift_id || null,
+        uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
+        telegramGiftId: uniqueGift.gift_id || uniqueGift.base_name || uniqueGift.name,
+        baseName: uniqueGift.base_name || null,
+        uniqueName: uniqueGift.name,
+        collectibleNumber: Number.isFinite(uniqueGift.number) ? uniqueGift.number : null,
+        isPremium: !!uniqueGift.is_premium,
+        isBurned: !!uniqueGift.is_burned,
+        isFromBlockchain: !!uniqueGift.is_from_blockchain,
+        sendDate: Number.isFinite(ownedGift.send_date) ? ownedGift.send_date : null,
+        sendDateIso: Number.isFinite(ownedGift.send_date)
+            ? new Date(ownedGift.send_date * 1000).toISOString()
+            : null,
+        isSaved: !!ownedGift.is_saved,
+        canBeTransferred: !!ownedGift.can_be_transferred,
+        transferStarCount: Number.isFinite(ownedGift.transfer_star_count) ? ownedGift.transfer_star_count : null,
+        nextTransferDate: Number.isFinite(ownedGift.next_transfer_date) ? ownedGift.next_transfer_date : null,
+        nextTransferDateIso: Number.isFinite(ownedGift.next_transfer_date)
+            ? new Date(ownedGift.next_transfer_date * 1000).toISOString()
+            : null,
+        sender: ownedGift.sender_user ? {
+            id: ownedGift.sender_user.id || null,
+            username: ownedGift.sender_user.username || null,
+            firstName: ownedGift.sender_user.first_name || null,
+            lastName: ownedGift.sender_user.last_name || null
+        } : null,
+        model: {
+            name: uniqueGift.model?.name || null,
+            rarity: uniqueGift.model?.rarity || null,
+            rarityPerMille: Number.isFinite(uniqueGift.model?.rarity_per_mille) ? uniqueGift.model.rarity_per_mille : null,
+            stickerFileId,
+            stickerThumbnailFileId,
+            stickerFileUniqueId: uniqueGift.model?.sticker?.file_unique_id || null,
+            stickerThumbnailFileUniqueId: uniqueGift.model?.sticker?.thumbnail?.file_unique_id || null,
+            stickerIsAnimated: !!uniqueGift.model?.sticker?.is_animated,
+            stickerIsVideo: !!uniqueGift.model?.sticker?.is_video
+        },
+        symbol: uniqueGift.symbol ? {
+            name: uniqueGift.symbol.name || null,
+            rarityPerMille: Number.isFinite(uniqueGift.symbol.rarity_per_mille) ? uniqueGift.symbol.rarity_per_mille : null,
+            stickerFileId: uniqueGift.symbol.sticker?.file_id || null,
+            stickerThumbnailFileId: uniqueGift.symbol.sticker?.thumbnail?.file_id || null
+        } : null,
+        backdrop: uniqueGift.backdrop ? {
+            name: uniqueGift.backdrop.name || null,
+            rarityPerMille: Number.isFinite(uniqueGift.backdrop.rarity_per_mille) ? uniqueGift.backdrop.rarity_per_mille : null,
+            colors: uniqueGift.backdrop.colors || null
+        } : null,
+        marketValue: giftValue,
+        displayMediaFileId: displayFileId,
+        rawTelegram: ownedGift
+    };
+
     return {
         uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
         telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
@@ -608,25 +661,17 @@ function extractUniqueCollectibleIdentity(ownedGift) {
         senderTelegramId: ownedGift.sender_user?.id || null,
         senderUsername: ownedGift.sender_user?.username || null,
         telegramGiftModel: {
-            telegramGiftId: uniqueGift.base_name || uniqueGift.name,
-            name: uniqueGift.model?.name || uniqueGift.base_name || uniqueGift.name,
+            telegramGiftId: uniqueGift.gift_id || uniqueGift.base_name || uniqueGift.name,
+            name: uniqueGift.name || uniqueGift.base_name || 'Telegram Collectible',
             slug: `${uniqueGift.name}-${uniqueGift.number}`,
             imageUrl: null,
-            collection: uniqueGift.backdrop?.name || null,
-            rarity: 'common',
+            collection: uniqueGift.base_name || uniqueGift.backdrop?.name || null,
+            rarity: uniqueGift.model?.rarity || 'common',
             value: giftValue,
             totalSupply: 0
         },
-        verifiedMetadata: JSON.stringify({
-            name: uniqueGift.name,
-            number: uniqueGift.number,
-            model: uniqueGift.model?.name || null,
-            symbol: uniqueGift.symbol?.name || null,
-            backdrop: uniqueGift.backdrop?.name || null,
-            stickerFileId,
-            stickerThumbnailFileId
-        }),
-        stickerFileId
+        verifiedMetadata: JSON.stringify(verifiedMetadata),
+        stickerFileId: displayFileId
     };
 }
 
@@ -718,35 +763,28 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             // Existing collectibles may have been imported before Telegram sticker media was
             // persisted. Reconcile the current official Telegram sticker file id on every sweep
             // so the Backpack can recover the real image instead of falling back to 🎁.
-            if (identity.stickerFileId) {
+            try {
+                let existingMetadata = {};
                 try {
-                    let metadata = {};
-                    try {
-                        metadata = alreadyCredited.verified_metadata ? JSON.parse(alreadyCredited.verified_metadata) : {};
-                    } catch {}
-                    if (metadata.stickerFileId !== identity.stickerFileId) {
-                        metadata = {
-                            ...metadata,
-                            name: identity.telegramGiftModel.name,
-                            number: identity.collectibleNumber,
-                            model: identity.telegramGiftModel.name,
-                            stickerFileId: identity.stickerFileId,
-                            stickerThumbnailFileId: identity.stickerFileId
-                        };
-                        await run(
-                            `UPDATE user_gifts
-                             SET telegram_thumbnail_file_id = ?, verified_metadata = ?, updated_at = CURRENT_TIMESTAMP
-                             WHERE id = ?`,
-                            [identity.stickerFileId, JSON.stringify(metadata), alreadyCredited.id]
-                        );
-                        console.log('🖼️ Collectible media metadata repaired:', JSON.stringify({
-                            uniqueCollectibleId: identity.uniqueCollectibleId,
-                            userGiftId: alreadyCredited.id
-                        }));
-                    }
-                } catch (mediaRepairError) {
-                    console.error('🖼️ Collectible media metadata repair failed:', mediaRepairError.message);
+                    existingMetadata = alreadyCredited.verified_metadata ? JSON.parse(alreadyCredited.verified_metadata) : {};
+                } catch {}
+                const metadataChanged = JSON.stringify(existingMetadata) !== identity.verifiedMetadata;
+                const mediaChanged = (alreadyCredited.telegram_thumbnail_file_id || null) !== (identity.stickerFileId || null);
+                if (metadataChanged || mediaChanged) {
+                    await run(
+                        `UPDATE user_gifts
+                         SET telegram_thumbnail_file_id = ?, verified_metadata = ?, updated_at = CURRENT_TIMESTAMP
+                         WHERE id = ?`,
+                        [identity.stickerFileId || alreadyCredited.telegram_thumbnail_file_id || null, identity.verifiedMetadata, alreadyCredited.id]
+                    );
+                    console.log('🧾 Collectible metadata synchronized:', JSON.stringify({
+                        uniqueCollectibleId: identity.uniqueCollectibleId,
+                        userGiftId: alreadyCredited.id,
+                        mediaChanged
+                    }));
                 }
+            } catch (mediaRepairError) {
+                console.error('🧾 Collectible metadata synchronization failed:', mediaRepairError.message);
             }
             reasons.alreadyCredited++;
             continue;
@@ -1704,6 +1742,60 @@ app.get('/api/gifts', authenticate, async (req, res) => {
     }
 });
 
+function parseCollectibleMetadata(row) {
+    try {
+        return row?.verified_metadata ? JSON.parse(row.verified_metadata) : {};
+    } catch {
+        return {};
+    }
+}
+
+function buildCollectibleApiRow(row, req) {
+    const metadata = parseCollectibleMetadata(row);
+    const model = metadata.model || {};
+    const symbol = metadata.symbol || null;
+    const backdrop = metadata.backdrop || null;
+    const mediaFileId = metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null;
+    const imageUrl = mediaFileId
+        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+        : null;
+    return {
+        id: row.unique_collectible_id,
+        userGiftId: row.user_gift_id,
+        name: row.name || metadata.uniqueName || metadata.baseName || 'Telegram Collectible',
+        baseName: metadata.baseName || row.name || null,
+        uniqueName: metadata.uniqueName || row.name || null,
+        collectibleNumber: row.collectible_number ?? metadata.collectibleNumber ?? null,
+        model: model.name || null,
+        modelRarity: model.rarity || null,
+        modelRarityPerMille: model.rarityPerMille ?? null,
+        symbol: symbol?.name || null,
+        symbolRarityPerMille: symbol?.rarityPerMille ?? null,
+        backdrop: backdrop?.name || null,
+        backdropRarityPerMille: backdrop?.rarityPerMille ?? null,
+        backdropColors: backdrop?.colors || null,
+        sender: metadata.sender || null,
+        sendDate: metadata.sendDate || null,
+        sendDateIso: metadata.sendDateIso || null,
+        ownedGiftId: metadata.ownedGiftId || row.telegram_gift_instance_id || null,
+        isPremium: !!metadata.isPremium,
+        isFromBlockchain: !!metadata.isFromBlockchain,
+        canBeTransferred: !!metadata.canBeTransferred,
+        transferStarCount: metadata.transferStarCount ?? null,
+        nextTransferDate: metadata.nextTransferDate ?? null,
+        nextTransferDateIso: metadata.nextTransferDateIso || null,
+        stickerIsAnimated: !!model.stickerIsAnimated,
+        stickerIsVideo: !!model.stickerIsVideo,
+        imageUrl,
+        rarity: row.rarity || model.rarity || 'common',
+        value: row.value,
+        sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
+        status: row.ownership_status,
+        verifiedMetadata: row.verified_metadata,
+        receivedAt: row.received_at
+    };
+}
+
 // ===== 5.3.1 جلب مقتنيات Telegram الحقيقية الموثّقة فقط (Phase 3A/3B) =====
 app.get('/api/collectibles', authenticate, async (req, res) => {
     try {
@@ -1717,29 +1809,7 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
             .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
-            .map(row => {
-                let hasStickerMedia = false;
-                try {
-                    const metadata = row.verified_metadata ? JSON.parse(row.verified_metadata) : null;
-                    hasStickerMedia = !!(metadata && metadata.stickerFileId);
-                } catch { /* malformed metadata simply means no media available */ }
-
-                return {
-                    id: row.unique_collectible_id,
-                    userGiftId: row.user_gift_id,
-                    name: row.name,
-                    imageUrl: hasStickerMedia
-                        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
-                        : null,
-                    collectibleNumber: row.collectible_number,
-                    rarity: row.rarity,
-                    value: row.value,
-                    sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
-                    status: row.ownership_status,
-                    verifiedMetadata: row.verified_metadata,
-                    receivedAt: row.received_at
-                };
-            });
+            .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
@@ -1758,29 +1828,7 @@ app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
             .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
-            .map(row => {
-                let hasStickerMedia = false;
-                try {
-                    const metadata = row.verified_metadata ? JSON.parse(row.verified_metadata) : null;
-                    hasStickerMedia = !!(metadata && metadata.stickerFileId);
-                } catch { /* malformed metadata simply means no media available */ }
-
-                return {
-                    id: row.unique_collectible_id,
-                    userGiftId: row.user_gift_id,
-                    name: row.name,
-                    imageUrl: hasStickerMedia
-                        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
-                        : null,
-                    collectibleNumber: row.collectible_number,
-                    rarity: row.rarity,
-                    value: row.value,
-                    sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
-                    status: row.ownership_status,
-                    verifiedMetadata: row.verified_metadata,
-                    receivedAt: row.received_at
-                };
-            });
+            .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
@@ -1796,13 +1844,12 @@ app.get('/api/collectible-media/:uniqueCollectibleId', async (req, res) => {
             return;
         }
 
-        let stickerFileId = collectible.telegram_thumbnail_file_id || null;
-        if (!stickerFileId) {
-            try {
-                const metadata = collectible.verified_metadata ? JSON.parse(collectible.verified_metadata) : null;
-                stickerFileId = metadata ? metadata.stickerFileId : null;
-            } catch { /* malformed metadata → no media */ }
-        }
+        let stickerFileId = null;
+        try {
+            const metadata = collectible.verified_metadata ? JSON.parse(collectible.verified_metadata) : null;
+            stickerFileId = metadata?.stickerThumbnailFileId || metadata?.stickerFileId || null;
+        } catch { /* malformed metadata → fallback to column */ }
+        stickerFileId = stickerFileId || collectible.telegram_thumbnail_file_id || null;
 
         if (!stickerFileId) {
             res.status(404).end();
