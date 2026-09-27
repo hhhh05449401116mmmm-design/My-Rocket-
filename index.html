@@ -3339,7 +3339,7 @@
 
         function loadTelegramTgsRenderer() {
             if (!telegramTgsRendererModulePromise) {
-                telegramTgsRendererModulePromise = import('https://unpkg.com/tlottie@0.1.24/dist/vanilla/index.js')
+                telegramTgsRendererModulePromise = import('/vendor/tlottie/vanilla/index.js')
                     .then(module => {
                         if (typeof module.initializeTLottie === 'function') {
                             module.initializeTLottie({ workerCount: 1 }).catch(error => {
