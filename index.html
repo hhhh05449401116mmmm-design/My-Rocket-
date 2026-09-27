@@ -6452,6 +6452,10 @@
             } catch (error) { showToast('Error'); }
         }
 
+        // Start Telegram authentication as soon as the WebApp script is ready,
+        // rather than waiting for the full UI/DOM to initialize.
+        let earlyAuthPromise = authenticateUser();
+
         document.addEventListener("DOMContentLoaded", async function() {
             initUserUI();
             initTonConnect();
@@ -6478,7 +6482,7 @@
              document.getElementById("lottery-game").classList.add("hidden");
              document.getElementById("playhub-screen").classList.add("hidden");
 
-            const authenticated = await authenticateUser();
+            const authenticated = await earlyAuthPromise;
             if (!authenticated) {
                 setServerStatus(false);
                 return;
