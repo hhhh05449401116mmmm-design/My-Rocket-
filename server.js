@@ -1808,21 +1808,26 @@ app.post('/api/admin/refresh-business-connection', authenticate, async (req, res
 const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
 // business_connection is NOT delivered by Telegram's default allowed_updates, so it must be
 // requested explicitly or the webhook never receives the connection at all.
-const TELEGRAM_ALLOWED_UPDATES = ['business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'message'];
+// Empty allowed_updates means Telegram delivers all supported update types.
+// This is intentional for Business mode so a connection update cannot be lost because of a stale subscription.
+const TELEGRAM_ALLOWED_UPDATES = [];
 
 async function ensureTelegramWebhookConfigured() {
     if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') return false;
     const info = await callTelegramBotApi('getWebhookInfo', {});
     const currentAllowed = Array.isArray(info.allowed_updates) ? info.allowed_updates : [];
-    const allowedUpdatesMatch = TELEGRAM_ALLOWED_UPDATES.every(type => currentAllowed.includes(type))
-        && currentAllowed.length === TELEGRAM_ALLOWED_UPDATES.length;
+    const allowedUpdatesMatch = TELEGRAM_ALLOWED_UPDATES.length === 0
+        ? currentAllowed.length === 0
+        : TELEGRAM_ALLOWED_UPDATES.every(type => currentAllowed.includes(type))
+            && currentAllowed.length === TELEGRAM_ALLOWED_UPDATES.length;
     const urlMatches = info.url === TELEGRAM_WEBHOOK_URL;
     if (!urlMatches || !allowedUpdatesMatch || TELEGRAM_WEBHOOK_SECRET) {
         const payload = { url: TELEGRAM_WEBHOOK_URL, allowed_updates: TELEGRAM_ALLOWED_UPDATES };
         if (TELEGRAM_WEBHOOK_SECRET) payload.secret_token = TELEGRAM_WEBHOOK_SECRET;
         await callTelegramBotApi('setWebhook', payload);
         console.log('🔗 Telegram webhook configuration ensured:', JSON.stringify({
-            urlMatches: true, businessConnectionAllowed: true, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET
+            urlMatches: true, allUpdatesEnabled: TELEGRAM_ALLOWED_UPDATES.length === 0,
+            businessConnectionAllowed: true, secretConfigured: !!TELEGRAM_WEBHOOK_SECRET
         }));
         return true;
     }
