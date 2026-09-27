@@ -6,6 +6,7 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const https = require('https');
 const http = require('http');
 
@@ -994,6 +995,24 @@ function telegramDocumentMimeType(document) {
     return String(document?.mimeType || document?.mime_type || 'video/webm').toLowerCase();
 }
 
+function detectTelegramRocketFormat(buffer, mimeType) {
+    const mime = String(mimeType || '').toLowerCase();
+    const bytes = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || []);
+    const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+    if (mime.includes('tgsticker') || mime === 'application/x-tgsticker' || isGzip) return 'tgs';
+    if (mime === 'video/webm' || mime.includes('webm')) return 'webm';
+    return 'unknown';
+}
+
+function decodeTelegramTgs(buffer) {
+    const inflated = zlib.gunzipSync(buffer);
+    const animation = JSON.parse(inflated.toString('utf8'));
+    if (!animation || typeof animation !== 'object' || !Array.isArray(animation.layers)) {
+        throw new Error('Telegram TGS payload is not valid Lottie JSON');
+    }
+    return animation;
+}
+
 function buildTelegramRocketModel(model, index) {
     const document = model.document || null;
     const documentId = telegramDocumentKey(document);
@@ -1142,12 +1161,13 @@ async function getTelegramRocketMedia(documentId) {
     if (!buffer || !Buffer.isBuffer(buffer)) throw new Error('Telegram returned no rocket media');
     if (buffer.length > MAX_TELEGRAM_ROCKET_MEDIA_BYTES) throw new Error('Rocket media exceeds safe cache limit');
 
-    const entry = {
-        buffer,
-        mimeType: telegramDocumentMimeType(attribute.document),
-        size: buffer.length,
-        lastUsedAt: Date.now()
-    };
+    const mimeType = telegramDocumentMimeType(attribute.document);
+    const format = detectTelegramRocketFormat(buffer, mimeType);
+    console.log('🚀 Telegram Stellar Rocket media:', JSON.stringify({
+        documentId: key, mimeType, format, size: buffer.length,
+        magic: buffer.subarray(0, 8).toString('hex')
+    }));
+    const entry = { buffer, mimeType, format, size: buffer.length, lastUsedAt: Date.now() };
     telegramRocketMediaCache.set(key, entry);
 
     while (telegramRocketMediaCache.size > MAX_TELEGRAM_ROCKET_MEDIA_CACHE) {
@@ -1199,10 +1219,19 @@ app.get('/api/rocket-gifts', async (req, res) => {
 app.get('/api/rocket-media/:documentId', async (req, res) => {
     try {
         const entry = await getTelegramRocketMedia(decodeURIComponent(String(req.params.documentId || '')));
-        res.setHeader('Content-Type', entry.mimeType || 'video/webm');
-        res.setHeader('Content-Length', String(entry.size));
         res.setHeader('Cache-Control', 'public, max-age=86400');
         res.setHeader('X-Telegram-Media', 'mtproto');
+        res.setHeader('X-Telegram-Original-Mime-Type', entry.mimeType || 'application/octet-stream');
+        res.setHeader('X-Telegram-Render-Type', entry.format || 'unknown');
+        if (entry.format === 'tgs') {
+            const body = Buffer.from(JSON.stringify(decodeTelegramTgs(entry.buffer)), 'utf8');
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Content-Length', String(body.length));
+            res.end(body);
+            return;
+        }
+        res.setHeader('Content-Type', entry.mimeType || 'video/webm');
+        res.setHeader('Content-Length', String(entry.size));
         res.end(entry.buffer);
     } catch (error) {
         console.error('Rocket MTProto media proxy failed:', error.message);
