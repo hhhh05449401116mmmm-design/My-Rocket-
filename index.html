@@ -3339,15 +3339,24 @@
 
         function loadTelegramTgsRenderer() {
             if (!telegramTgsRendererModulePromise) {
-                telegramTgsRendererModulePromise = import('/vendor/tlottie/vanilla/index.js')
-                    .then(module => {
-                        if (typeof module.initializeTLottie === 'function') {
-                            module.initializeTLottie({ workerCount: 1 }).catch(error => {
-                                console.warn('Telegram TGS renderer warmup failed:', error);
-                            });
-                        }
-                        return module;
-                    });
+                telegramTgsRendererModulePromise = (async () => {
+                    if (!window.OffscreenCanvas || typeof window.DecompressionStream !== 'function') {
+                        throw new Error('Telegram TGS renderer unsupported: OffscreenCanvas/DecompressionStream unavailable');
+                    }
+                    const module = await import('/vendor/tlottie/vanilla/index.js');
+                    if (typeof module.createTLottiePlayer !== 'function') {
+                        throw new Error('Telegram TGS renderer module missing createTLottiePlayer');
+                    }
+                    if (typeof module.initializeTLottie === 'function') {
+                        try { await module.initializeTLottie({ workerCount: 1 }); }
+                        catch (error) { console.warn('Telegram TGS renderer warmup failed; continuing:', error); }
+                    }
+                    console.info('Telegram TGS renderer ready: tlottie 0.1.24');
+                    return module;
+                })().catch(error => {
+                    telegramTgsRendererModulePromise = null;
+                    throw error;
+                });
             }
             return telegramTgsRendererModulePromise;
         }
@@ -4177,6 +4186,7 @@
             const container = document.getElementById('telegram-rocket');
             if (!container) return;
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
+            if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
         }
 
