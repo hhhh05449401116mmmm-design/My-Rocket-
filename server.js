@@ -1734,6 +1734,7 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
                     collectibleNumber: row.collectible_number,
                     rarity: row.rarity,
                     value: row.value,
+                    sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
                     status: row.ownership_status,
                     verifiedMetadata: row.verified_metadata,
                     receivedAt: row.received_at
@@ -1774,6 +1775,7 @@ app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
                     collectibleNumber: row.collectible_number,
                     rarity: row.rarity,
                     value: row.value,
+                    sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
                     status: row.ownership_status,
                     verifiedMetadata: row.verified_metadata,
                     receivedAt: row.received_at
