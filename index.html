@@ -4158,6 +4158,12 @@
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
+
+                // The Rocket catalog may finish loading after the game has already entered FLIGHT.
+                // Prepare it once for the current round without restarting it on every state update.
+                if (telegramRocketGifts.length && (previousPhase !== "FLIGHT" || activeTelegramRocketIndex < 0)) {
+                    prepareTelegramRocketForRound(currentRoundId);
+                }
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
