@@ -1757,7 +1757,7 @@ function buildCollectibleApiRow(row, req) {
     const backdrop = metadata.backdrop || null;
     const mediaFileId = metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null;
     const imageUrl = mediaFileId
-        ? `${req.protocol}://${req.get('host')}/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+        ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
         : null;
     return {
         id: row.unique_collectible_id,
