@@ -6334,21 +6334,49 @@
         });
 
         async function authenticateUser() {
+            // Register the player immediately on every Mini App open.
+            // initDataUnsafe is only for UI; authentication always uses signed initData.
             try {
-                const initData = window.Telegram?.WebApp?.initData || '';
-                const response = await fetch(`${BACKEND_URL}/api/auth`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ initData })
-                });
-                const data = await response.json();
-                if (data.ok) {
-                    authToken = data.token;
-                    localStorage.setItem('authToken', authToken);
-                    await fetchBalance();
+                const webApp = window.Telegram?.WebApp;
+                if (webApp) {
+                    try { webApp.ready(); webApp.expand(); } catch (e) {}
                 }
-            } catch (error) { console.error('Auth error:', error); }
-        }
 
+                let initData = webApp?.initData || '';
+                // Telegram can populate signed initData a moment after the WebApp object
+                // becomes available. Wait briefly instead of silently continuing as a guest.
+                for (let attempt = 0; !initData && attempt < 15; attempt++) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    initData = webApp?.initData || '';
+                }
+
+                if (!initData) {
+                    console.error('Auth error: Telegram signed initData is unavailable');
+                    return false;
+                }
+
+                const response = await fetch(`${BACKEND_URL}/api/auth`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData }),
+                    cache: 'no-store'
+                });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data.ok) {
+                    console.error('Auth error:', data.error || `HTTP ${response.status}`);
+                    return false;
+                }
+
+                authToken = data.token;
+                localStorage.setItem('authToken', authToken);
+                await fetchBalance();
+                return true;
+            } catch (error) {
+                console.error('Auth error:', error);
+                return false;
+            }
+        }
         function getAuthHeaders() {
             const token = authToken || localStorage.getItem('authToken');
             return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -6450,7 +6478,11 @@
              document.getElementById("lottery-game").classList.add("hidden");
              document.getElementById("playhub-screen").classList.add("hidden");
 
-            await authenticateUser();
+            const authenticated = await authenticateUser();
+            if (!authenticated) {
+                setServerStatus(false);
+                return;
+            }
             connectToServer();
 
             fetchCollectibles();
