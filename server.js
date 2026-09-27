@@ -1462,15 +1462,28 @@ app.post('/api/auth', async (req, res) => {
         const { initData } = req.body;
         
         if (!initData) {
+            console.error('🔐 Auth rejected: missing Telegram initData');
             return res.status(400).json({ ok: false, error: 'initData required' });
         }
 
         if (!verifyTelegramData(initData)) {
+            const p = new URLSearchParams(initData);
+            let debugUserId = null;
+            try { debugUserId = JSON.parse(p.get('user') || '{}').id || null; } catch {}
+            console.error('🔐 Auth rejected: invalid Telegram signature', {
+                hasHash: Boolean(p.get('hash')),
+                hasUser: Boolean(p.get('user')),
+                userId: debugUserId
+            });
             return res.status(401).json({ ok: false, error: 'Invalid Telegram data' });
         }
 
         const params = new URLSearchParams(initData);
         const userData = JSON.parse(params.get('user'));
+        console.log('🔐 Telegram player authenticated', {
+            telegramId: String(userData.id),
+            username: userData.username || null
+        });
         
         const user = await findOrCreateUser(userData.id, {
             username: userData.username,
