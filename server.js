@@ -791,10 +791,45 @@ function streamTelegramFile(filePath, res) {
 
 // ===== Rocket game: live Telegram collectible rocket media =====
 const rocketMediaFileIds = new Set();
+const capturedRocketMedia = new Map();
+
+// Fallback path that does not require the restricted Manage Gifts and Stars right.
+function captureRocketMediaFromMessage(message) {
+    const uniqueGift = message?.unique_gift?.gift || null;
+    const giftInfo = message?.gift?.gift || null;
+    const sticker = uniqueGift?.model?.sticker || message?.sticker || giftInfo?.sticker || null;
+    if (!sticker?.file_id) return false;
+    const baseName = String(uniqueGift?.base_name || giftInfo?.name || '').trim();
+    const modelName = String(uniqueGift?.model?.name || '').trim();
+    const symbolName = String(uniqueGift?.symbol?.name || '').trim();
+    const searchable = [baseName, modelName, symbolName].filter(Boolean).join(' ').toLowerCase();
+    const isRocket = searchable.includes('rocket') || !!uniqueGift;
+    if (!isRocket) return false;
+    const fileId = String(sticker.file_id);
+    capturedRocketMedia.set(fileId, {
+        id: String(uniqueGift?.name || giftInfo?.id || sticker.file_unique_id || fileId),
+        name: baseName || modelName || symbolName || 'Rocket',
+        model: modelName || baseName || 'Rocket',
+        number: Number.isFinite(uniqueGift?.number) ? uniqueGift.number : null,
+        mediaUrl: '/api/collectible-media?file_id=' + encodeURIComponent(fileId),
+        isVideo: !!sticker.is_video,
+        isAnimated: !!sticker.is_animated,
+        format: sticker.is_video ? 'video' : (sticker.is_animated ? 'animated' : 'static')
+    });
+    rocketMediaFileIds.add(fileId);
+    return true;
+}
 
 app.get('/api/rocket-gifts', async (req, res) => {
     try {
-        const ownedGifts = await fetchBusinessAccountGifts();
+        let businessFetchSucceeded = false;
+        let ownedGifts = [];
+        try {
+            ownedGifts = await fetchBusinessAccountGifts();
+            businessFetchSucceeded = true;
+        } catch (businessError) {
+            console.log('ℹ️ Rocket gifts: using message-media fallback', businessError.message);
+        }
         const seen = new Set();
         const rockets = [];
 
@@ -823,11 +858,14 @@ app.get('/api/rocket-gifts', async (req, res) => {
             });
         }
 
+        if (!rockets.length && capturedRocketMedia.size) {
+            rockets.push(...capturedRocketMedia.values());
+        }
         res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, rockets });
+        res.json({ ok: true, rockets, source: rockets.length ? (businessFetchSucceeded ? 'business_api' : 'message_media') : 'none' });
     } catch (error) {
         console.error('Rocket gifts fetch failed:', error.message);
-        res.status(503).json({ ok: false, rockets: [], error: 'Rocket collectibles unavailable' });
+        res.status(200).json({ ok: true, rockets: [...capturedRocketMedia.values()], source: 'message_media' });
     }
 });
 
@@ -875,6 +913,16 @@ app.post('/telegram-webhook', async (req, res) => {
         const updateId = Number.isFinite(update.update_id) ? update.update_id : null;
         const updateType = Object.keys(update).find(key => key !== 'update_id') || 'unknown';
         const hasBusinessConnection = !!update.business_connection;
+
+        const messageForMedia = update.message || update.business_message || update.edited_business_message || null;
+        if (messageForMedia && captureRocketMediaFromMessage(messageForMedia)) {
+            console.log('🚀 Rocket media captured from Telegram message', JSON.stringify({
+                updateType,
+                hasSticker: !!messageForMedia.sticker,
+                hasUniqueGift: !!messageForMedia.unique_gift,
+                capturedCount: capturedRocketMedia.size
+            }));
+        }
 
         // Diagnostic only — safe fields exclusively (no BOT_TOKEN, secret, connection_id, user IDs, file_id).
         console.log('🔎 Webhook diagnostic: update received', JSON.stringify({ updateId, updateType, hasBusinessConnection }));
