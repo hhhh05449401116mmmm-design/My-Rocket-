@@ -1805,7 +1805,7 @@ app.post('/api/admin/refresh-business-connection', authenticate, async (req, res
 });
 
 // ===== 5.3.5 إعداد Telegram webhook (محمي/إداري فقط) — لا يكشف BOT_TOKEN أبداً =====
-const TELEGRAM_WEBHOOK_URL = 'https://my-rocket-production.up.railway.app/telegram-webhook';
+const TELEGRAM_WEBHOOK_URL = process.env.TELEGRAM_WEBHOOK_URL || 'https://my-rocket-production-150d.up.railway.app/telegram-webhook';
 // business_connection is NOT delivered by Telegram's default allowed_updates, so it must be
 // requested explicitly or the webhook never receives the connection at all.
 // Empty allowed_updates means Telegram delivers all supported update types.
