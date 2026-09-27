@@ -9,7 +9,6 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <!-- Lottie Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@0.4.0/dist/tgs-player.js"></script>
     <!-- Eruda -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
@@ -3336,6 +3335,22 @@
         let telegramRocketLoadToken = 0;
         let telegramRocketLottieAnimation = null;
     let telegramRocketTgsPlayer = null;
+        let telegramTgsRendererModulePromise = null;
+
+        function loadTelegramTgsRenderer() {
+            if (!telegramTgsRendererModulePromise) {
+                telegramTgsRendererModulePromise = import('https://unpkg.com/tlottie@0.1.24/dist/vanilla/index.js')
+                    .then(module => {
+                        if (typeof module.initializeTLottie === 'function') {
+                            module.initializeTLottie({ workerCount: 1 }).catch(error => {
+                                console.warn('Telegram TGS renderer warmup failed:', error);
+                            });
+                        }
+                        return module;
+                    });
+            }
+            return telegramTgsRendererModulePromise;
+        }
         let telegramRocketVideo = null;
 
         // عداد الجولة القادمة (دائرة)
@@ -4040,7 +4055,11 @@
 
         function destroyTelegramRocketRenderer() {
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.destroy(); } catch (e) {} telegramRocketLottieAnimation = null; }
-            if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} try { telegramRocketTgsPlayer.remove(); } catch (e) {} telegramRocketTgsPlayer = null; }
+            if (telegramRocketTgsPlayer) {
+                try { telegramRocketTgsPlayer.tlottie.stop(); } catch (e) {}
+                try { telegramRocketTgsPlayer.destroy(); } catch (e) {}
+                telegramRocketTgsPlayer = null;
+            }
             if (telegramRocketVideo) {
                 try { telegramRocketVideo.pause(); telegramRocketVideo.removeAttribute('src'); telegramRocketVideo.load(); } catch (e) {}
                 telegramRocketVideo.remove(); telegramRocketVideo = null;
@@ -4058,31 +4077,45 @@
             destroyTelegramRocketRenderer();
 
             if (renderType.includes('application/x-tgsticker') || gift.mediaUrl.toLowerCase().includes('rocket-media')) {
-                const player = document.createElement('tgs-player');
-                player.setAttribute('autoplay', '');
-                player.setAttribute('loop', '');
-                player.setAttribute('mode', 'normal');
-                player.setAttribute('strict', 'false');
-                player.style.width = '100%';
-                player.style.height = '100%';
-                player.style.display = 'block';
-                player.style.background = 'transparent';
-                player.addEventListener('rendered', function() {
-                    if (token !== telegramRocketLoadToken) return;
-                    telegramRocketTgsPlayer = player;
-                    fallback?.classList.add('telegram-fallback-hidden');
+                try {
+                    // TLottie measures its canvas on the next animation frame, so the
+                    // container must be visible before the player is created.
                     container.classList.remove('hidden');
-                    try { player.play(); } catch (e) {}
-                }, { once: true });
-                player.addEventListener('error', function() {
+                    fallback?.classList.add('telegram-fallback-hidden');
+
+                    const module = await loadTelegramTgsRenderer();
                     if (token !== telegramRocketLoadToken) return;
-                    try { player.remove(); } catch (e) {}
-                    container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
-                }, { once: true });
-                player.src = `${BACKEND_URL}${gift.mediaUrl}`;
-                container.appendChild(player);
-                telegramRocketTgsPlayer = player;
-                return;
+
+                    telegramRocketTgsPlayer = module.createTLottiePlayer(container, {
+                        src: `${BACKEND_URL}${gift.mediaUrl}`,
+                        loop: true,
+                        autoplay: false,
+                        forceRender: true,
+                        workerCount: 1
+                    });
+
+                    const playerHandle = telegramRocketTgsPlayer;
+                    playerHandle.tlottie.on('load', () => {
+                        if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
+                        fallback?.classList.add('telegram-fallback-hidden');
+                        container.classList.remove('hidden');
+                        playerHandle.tlottie.play();
+                    });
+                    playerHandle.tlottie.on('error', (payload) => {
+                        if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
+                        console.warn('Telegram TGS renderer error:', payload?.error || payload);
+                        try { playerHandle.destroy(); } catch (e) {}
+                        telegramRocketTgsPlayer = null;
+                        container.classList.add('hidden');
+                        fallback?.classList.remove('telegram-fallback-hidden');
+                    });
+                    return;
+                } catch (error) {
+                    console.warn('Telegram TGS renderer initialization failed:', error);
+                    container.classList.add('hidden');
+                    fallback?.classList.remove('telegram-fallback-hidden');
+                    return;
+                }
             }
 
             const video = document.createElement('video');
@@ -4110,7 +4143,7 @@
             if (!gift?.mediaUrl) return;
 
             if (activeTelegramRocketIndex === index && !container.classList.contains('hidden')) {
-                if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.play(); } catch (e) {} }
+                if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {} }
                 else if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.goToAndPlay(0, true);
                 else if (telegramRocketVideo) { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); }
                 fallback?.classList.add('telegram-fallback-hidden');
@@ -4133,7 +4166,7 @@
             const fallback = document.getElementById('rocket');
             if (!container) return;
             ++telegramRocketLoadToken;
-            if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} }
+            if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} }
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.stop(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {} }
