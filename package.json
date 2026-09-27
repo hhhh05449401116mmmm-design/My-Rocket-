@@ -16,7 +16,8 @@
     "@ton/ton": "^16.3.0",
     "@ton/crypto": "^3.3.0",
     "sharp": "^0.35.4",
-    "teleproto": "^1.229.0"
+    "teleproto": "^1.229.0",
+    "tlottie": "0.1.24"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
