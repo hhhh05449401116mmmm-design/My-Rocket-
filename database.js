@@ -2956,6 +2956,7 @@ module.exports = {
     releaseCollectible,
     sellCollectibleForBalance,
     updateCollectibleMarketValue,
+    updateUserCollectibleMarketValue,
     createOrGetImportIntent,
     getLatestImportIntentForUser,
     getPendingIntentByTelegramSenderId,
