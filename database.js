@@ -463,7 +463,8 @@ function initDatabase() {
                 ['ownership_verified', 'INTEGER DEFAULT 0'],
                 ['verified_metadata', 'TEXT'],
                 ['telegram_thumbnail_file_id', 'TEXT'],
-                ['market_value_snapshot', 'REAL']
+                ['market_value_snapshot', 'REAL'],
+                ['market_value', 'REAL']
             ];
             userGiftColumns.forEach(([name, type]) => {
                 db.run(`ALTER TABLE user_gifts ADD COLUMN ${name} ${type}`, error => {
@@ -1193,6 +1194,7 @@ async function getUserCollectibles(userId, status = null) {
         SELECT g.*, ug.id AS user_gift_id, ug.status AS ownership_status,
                ug.unique_collectible_id, ug.telegram_gift_instance_id,
                ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+               ug.market_value AS collectible_market_value,
                ug.received_at, ug.updated_at
         FROM user_gifts ug
         JOIN gifts g ON ug.gift_id = g.id
@@ -1213,6 +1215,7 @@ async function getCollectibleByUniqueId(uniqueCollectibleId) {
         SELECT g.*, ug.id AS user_gift_id, ug.user_id, ug.status AS ownership_status,
                ug.unique_collectible_id, ug.telegram_gift_instance_id,
                ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+               ug.market_value AS collectible_market_value,
                ug.received_at, ug.updated_at
         FROM user_gifts ug
         JOIN gifts g ON ug.gift_id = g.id
@@ -1379,9 +1382,9 @@ async function creditVerifiedCollectible({
         }
 
         const inserted = await run(`
-            INSERT INTO user_gifts (user_id, gift_id, status, unique_collectible_id, telegram_gift_instance_id, collectible_number, ownership_verified, verified_metadata, telegram_thumbnail_file_id)
-            VALUES (?, ?, 'OWNED', ?, ?, ?, 1, ?, ?)
-        `, [userId, giftRow.id, uniqueCollectibleId, telegramGiftInstanceId, collectibleNumber, verifiedMetadata, stickerFileId || null]);
+            INSERT INTO user_gifts (user_id, gift_id, status, unique_collectible_id, telegram_gift_instance_id, collectible_number, ownership_verified, verified_metadata, telegram_thumbnail_file_id, market_value)
+            VALUES (?, ?, 'OWNED', ?, ?, ?, 1, ?, ?, ?)
+        `, [userId, giftRow.id, uniqueCollectibleId, telegramGiftInstanceId, collectibleNumber, verifiedMetadata, stickerFileId || null, Number(telegramGiftModel.value || 0)]);
 
         const userGiftId = inserted.lastID;
 
@@ -1438,6 +1441,19 @@ async function updateCollectibleMarketValue(telegramGiftId, marketValue) {
     `, [marketValue, telegramGiftId]);
 }
 
+// Update the live market value for one verified collectible without changing the shared gift-model value.
+async function updateUserCollectibleMarketValue(uniqueCollectibleId, marketValue, verifiedMetadata = null) {
+    const value = Number(marketValue);
+    if (!uniqueCollectibleId || !Number.isFinite(value) || value <= 0) return { changes: 0 };
+    return await run(`
+        UPDATE user_gifts
+        SET market_value = ?,
+            verified_metadata = COALESCE(?, verified_metadata),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE unique_collectible_id = ? AND ownership_verified = 1
+    `, [value, verifiedMetadata, uniqueCollectibleId]);
+}
+
 // ===== 5.3 نظام الرهان بالهدايا =====
 async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
     const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
@@ -1447,7 +1463,8 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
 
         // giftId can be user_gift.id, unique_collectible_id, or gift.id/telegram_gift_id
         let userGift = await get(`
-            SELECT ug.*, g.name AS gift_name, g.value AS gift_value
+            SELECT ug.*, g.name AS gift_name,
+                   COALESCE(ug.market_value, g.value) AS gift_value
             FROM user_gifts ug
             JOIN gifts g ON ug.gift_id = g.id
             WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ? OR g.id = ? OR g.telegram_gift_id = ?) AND ug.status = 'OWNED'
@@ -2781,7 +2798,7 @@ async function joinPvpRound(userId, betCurrency, betAmount, giftUniqueId) {
             if (!collectible) throw new Error('Collectible not found');
             if (collectible.user_id !== userId) throw new Error('Not your collectible');
             if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible not available');
-            actualBetAmount = collectible.value;
+            actualBetAmount = Number(collectible.collectible_market_value ?? collectible.value ?? 0);
             if (actualBetAmount <= 0) throw new Error('Collectible has no value');
             const update = await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', ['IN_BET', giftUniqueId, 'OWNED']);
             if (update.changes !== 1) throw new Error('Could not lock collectible');
@@ -2939,6 +2956,7 @@ module.exports = {
     releaseCollectible,
     sellCollectibleForBalance,
     updateCollectibleMarketValue,
+    updateUserCollectibleMarketValue,
     createOrGetImportIntent,
     getLatestImportIntentForUser,
     getPendingIntentByTelegramSenderId,
