@@ -1682,6 +1682,24 @@
             object-position: center;
             margin: 0;
         }
+        /* The collectible art rule applies to every img inside the card.
+           Override it specifically for the tiny TON price icon in the badge. */
+        .collectible-card .collectible-price-badge .ton-icon,
+        .collectible-card .collectible-price-badge img.ton-icon {
+            display: inline-block !important;
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            min-height: 18px !important;
+            max-width: 18px !important;
+            max-height: 18px !important;
+            object-fit: contain !important;
+            object-position: center !important;
+            margin: 0 !important;
+            flex: 0 0 18px !important;
+            border-radius: 50% !important;
+        }
+
         .collectible-card .collectible-price-badge {
             position: absolute;
             top: 9px;
