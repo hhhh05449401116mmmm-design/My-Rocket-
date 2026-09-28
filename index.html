@@ -1648,61 +1648,132 @@
         }
         .collectibles-header span { font-size: 14px; font-weight: 800; color: #c8e6ff; }
         .collectibles-list {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
             margin-top: 12px;
             width: 100%;
         }
         .collectible-card {
-            width: 100%;
+            width: min(100%, 380px);
             min-width: 0;
-            background: linear-gradient(145deg, #0f2847, #0a1a30);
-            border-radius: 18px;
-            padding: 8px;
+            background: #1d1d1f;
+            border-radius: 28px;
+            padding: 0 0 14px;
             text-align: center;
-            border: 1px solid rgba(100, 200, 255, 0.10);
+            border: 2px solid #7560ff;
             position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 34px rgba(0,0,0,.28);
+        }
+        .collectible-card .collectible-art-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #aaa7a2;
             overflow: hidden;
         }
         .collectible-card img {
             display: block;
             width: 100%;
-            height: auto;
-            aspect-ratio: 1 / 1;
+            height: 100%;
             object-fit: cover;
             object-position: center;
-            border-radius: 13px;
-            margin: 0 auto 7px;
+            margin: 0;
+        }
+        .collectible-card .collectible-price-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(35,35,35,.94);
+            color: #fff;
+            border-radius: 12px;
+            padding: 8px 11px;
+            font-size: 17px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .collectible-card .collectible-price-badge .ton-dot {
+            display: inline-flex;
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            background: #19a7ff;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .collectible-card .collectible-details {
+            padding: 14px 14px 0;
+        }
+        .collectible-card .number {
+            display: inline-block;
+            margin: 0 auto 10px;
+            padding: 6px 13px;
+            border-radius: 12px;
+            border: 1px solid rgba(42, 213, 164, .55);
+            background: rgba(15, 67, 57, .48);
+            color: #51e6bd;
+            font-size: 16px;
+            font-weight: 900;
+            direction: ltr;
         }
         .collectible-card .name {
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 900;
             display: block;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: #c8e6ff;
+            color: #8d78ff;
+            margin: 0 0 16px;
         }
-        .collectible-card .number { font-size: 9px; color: #7a9bcb; display: block; margin-top: 2px; }
-        .collectible-card .actions { display: flex; gap: 4px; margin-top: 6px; }
+        .collectible-card .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 0;
+        }
         .collectible-card .actions button {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.04);
-            color: #5a7a9a;
-            border: 1px solid rgba(100, 200, 255, 0.06);
-            padding: 5px 4px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 700;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        .collectible-card .actions button:not([disabled]) {
-            background: linear-gradient(135deg, #1a5a9c, #0f3a7a);
+            min-height: 58px;
+            background: #363638;
             color: #fff;
+            border: 0;
+            padding: 10px 8px;
+            border-radius: 17px;
+            font-size: 15px;
+            font-weight: 900;
             cursor: pointer;
             opacity: 1;
+        }
+        .collectible-card .actions .collectible-withdraw-btn {
+            grid-column: 1 / -1;
+            background: #8872ef;
+            min-height: 66px;
+            font-size: 20px;
+        }
+        .collectible-card .actions .collectible-sell-btn {
+            grid-column: 1 / -1;
+            background: #373739;
+            min-height: 62px;
+            font-size: 18px;
+        }
+        .collectible-card .actions .collectible-upgrade-btn {
+            background: #08ad72;
+        }
+        .collectible-card .actions .collectible-hub-btn {
+            background: #8f4ff0;
+        }
+        .collectible-card .actions button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
         }
         #empty-collectibles { padding: 24px 20px; }
         #empty-collectibles .icon { font-size: 40px; margin-bottom: 8px; }
@@ -5439,15 +5510,23 @@
                     ? `<img src="${safeImageUrl}" alt="${escapeHtmlAttribute(item.name || 'Telegram Collectible')}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
                 const isInBet = item.status === "IN_BET";
-                const betDisabledAttr = isInBet ? "disabled" : "";
+                const disabledAttr = isInBet ? "disabled" : "";
+                const price = Number(item.value || 0).toFixed(2);
+                const sellPrice = Number(item.sellValue || 0).toFixed(2);
                 card.innerHTML = `
-                    ${imageHtml}
-                    <span class="name">${escapeHtml(item.name || '')}</span>
-                    ${item.collectibleNumber ? `<span class="number">${t.collectibleNumberLabel} #${item.collectibleNumber}</span>` : ''}
-                    <div class="actions">
-                        <button type="button" onclick="sellCollectible('${item.id}')" ${isInBet ? 'disabled' : ''}>${t.sellCollectible} ${Number(item.sellValue || 0).toFixed(2)} TON</button>
-                        <button type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet ? 'disabled title="' + t.withdrawUnavailable + '"' : ''}>${t.withdrawCollectible}</button>
-                        <button type="button" ${betDisabledAttr} onclick="betWithCollectible('${item.id}')">${t.betCollectible}</button>
+                    <div class="collectible-art-wrap">
+                        ${imageHtml}
+                        <div class="collectible-price-badge">${price} <span class="ton-dot">◈</span></div>
+                    </div>
+                    <div class="collectible-details">
+                        ${item.collectibleNumber ? `<span class="number">#${item.collectibleNumber}</span>` : ''}
+                        <span class="name">${escapeHtml(item.name || '')}</span>
+                        <div class="actions">
+                            <button class="collectible-withdraw-btn" type="button" onclick="withdrawCollectible('${item.id}')" ${disabledAttr}>↗ ${t.withdrawCollectible}</button>
+                            <button class="collectible-sell-btn" type="button" onclick="sellCollectible('${item.id}')" ${disabledAttr}>${t.sellCollectible} ${sellPrice} <span style="color:#19a7ff;">◈</span></button>
+                            <button class="collectible-upgrade-btn" type="button" onclick="openUpgradeGame()" ${disabledAttr}>↗ ${t.upgradeTitle || 'Upgrade'}</button>
+                            <button class="collectible-hub-btn" type="button" onclick="openPlayHub()" ${disabledAttr}>🎮 Play Hub</button>
+                        </div>
                     </div>
                 `;
                 list.appendChild(card);
@@ -5558,25 +5637,26 @@
 
          async function withdrawCollectible(uniqueCollectibleId) {
             const t = translations[currentLanguage] || translations.ar;
+            if (actionInProgress) return;
+            actionInProgress = true;
             try {
+                showToast(t.collectibleLoading || 'جاري التحقق من الهدية وإرسالها...');
                 const response = await fetch(`${BACKEND_URL}/api/collectibles/withdraw`, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ collectibleId: uniqueCollectibleId })
                 });
-                const data = await response.json();
-                if (data.ok) {
-                    showToast(t.giftsWithdrawn || '🎁 Collectible sent to your Telegram account!');
-                    fetchCollectibles();
-                } else {
-                    if (data.reason === 'missing_can_view_gifts_and_stars') {
-                        showToast(t.withdrawUnavailable);
-                    } else {
-                        showToast(t.giftBetFailed || '❌ Withdrawal failed');
-                    }
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.error || t.withdrawUnavailable || 'Withdrawal failed');
                 }
+                showToast(t.giftsWithdrawn || '🎁 تم إرسال الهدية إلى حساب Telegram المرتبط!');
+                await fetchCollectibles();
             } catch(e) {
-                showToast(t.giftBetFailed || '❌ Withdrawal failed');
+                console.error('COLLECTIBLE WITHDRAW ERROR:', e);
+                showToast(e.message || t.withdrawUnavailable || '❌ تعذر سحب الهدية');
+            } finally {
+                actionInProgress = false;
             }
          }
 
