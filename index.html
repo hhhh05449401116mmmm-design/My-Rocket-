@@ -1757,6 +1757,21 @@
             background: #373739;
             min-height: 50px;
             font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+        .collectible-card .actions .collectible-sell-btn .ton-icon {
+            display: inline-block !important;
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            min-width: 16px !important;
+            min-height: 16px !important;
+            flex: 0 0 16px !important;
         }
         .collectible-card .actions .collectible-upgrade-btn {
             background: #08ad72;
@@ -3452,7 +3467,7 @@
         // The game and API are served by the same Railway origin. Keeping this same-origin
         // prevents auth from silently going to an old/removed Railway domain after a domain rotation.
         const BACKEND_URL = window.location.origin;
-        const TON_ICON_URL = 'https://ton.org/icons/custom/ton_logo.svg';
+        const TON_ICON_URL = '/assets/ton-icon.svg';
         // ⚠️ Public config only (not a secret) — the game's public Telegram username for receiving collectibles.
         const COLLECTIBLE_RECEIVER_USERNAME = "v_rray";
 
