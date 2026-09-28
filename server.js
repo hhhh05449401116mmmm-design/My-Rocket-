@@ -31,6 +31,132 @@ const {
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
+    
+// Live Telegram collectible pricing.
+// Normal collectibles use the current Telegram resale floor for the base gift type.
+// Black/Onyx Black backdrops use the exact live resale price when listed; otherwise
+// the current floor filtered to that backdrop. This only changes valuation data.
+const LIVE_COLLECTIBLE_PRICE_TTL_MS = 60 * 1000;
+const liveCollectiblePriceCache = new Map();
+
+function isBlackBackdropName(name) {
+    const normalized = String(name || '').trim().toLowerCase().replace(/[-_]+/g, ' ');
+    return normalized === 'black' || normalized === 'onyx black';
+}
+
+function findTonAmount(amounts) {
+    for (const amount of (Array.isArray(amounts) ? amounts : [])) {
+        const className = String(amount?.className || amount?.constructor?.className || amount?.constructor?.name || amount?._ || '').toLowerCase();
+        if (className.includes('starstonamount')) {
+            const nanograms = Number(amount?.amount);
+            if (Number.isFinite(nanograms) && nanograms > 0) return nanograms / 1e9;
+        }
+    }
+    return null;
+}
+
+function findBackdropAttributeId(uniqueGift) {
+    for (const attribute of (Array.isArray(uniqueGift?.attributes) ? uniqueGift.attributes : [])) {
+        const className = String(attribute?.className || attribute?.constructor?.className || attribute?.constructor?.name || attribute?._ || '').toLowerCase();
+        if (className.includes('backdrop')) {
+            const id = Number(attribute?.backdropId ?? attribute?.backdrop_id);
+            if (Number.isInteger(id) && id > 0) return id;
+        }
+    }
+    return null;
+}
+
+async function getLiveTelegramCollectiblePrice({ slug, giftId, backdropName }) {
+    const key = [String(slug || ''), String(giftId || ''), String(backdropName || '')].join('|');
+    const cached = liveCollectiblePriceCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    const client = await ensureTelegramMtprotoClient();
+    let uniqueGift = null;
+    try {
+        if (slug) {
+            const result = await client.api.payments.getUniqueStarGift({ slug: String(slug) });
+            uniqueGift = result?.gift || result || null;
+        }
+    } catch (error) {
+        console.warn('Live collectible lookup failed:', error.message);
+    }
+
+    const specialBackdrop = isBlackBackdropName(backdropName);
+    let value = null;
+    let source = null;
+
+    if (specialBackdrop && uniqueGift) {
+        const listedPrice = findTonAmount(uniqueGift.resellAmount || uniqueGift.resell_amount);
+        if (listedPrice != null) {
+            value = listedPrice;
+            source = 'telegram-live-resale';
+        }
+    }
+
+    if (value == null && giftId) {
+        let attributes = null;
+        if (specialBackdrop && uniqueGift) {
+            const backdropId = findBackdropAttributeId(uniqueGift);
+            if (backdropId) attributes = [{ className: 'StarGiftAttributeIdBackdrop', backdropId }];
+        }
+        try {
+            const result = await client.api.payments.getResaleStarGifts({
+                giftId: BigInt(String(giftId)),
+                sortByPrice: true,
+                starsOnly: false,
+                ...(attributes ? { attributes } : {}),
+                offset: '',
+                limit: 1
+            });
+            const first = Array.isArray(result?.gifts) ? result.gifts[0] : null;
+            const floor = findTonAmount(first?.resellAmount || first?.resell_amount);
+            if (floor != null) {
+                value = floor;
+                source = attributes ? 'telegram-live-backdrop-floor' : 'telegram-live-floor';
+            }
+        } catch (error) {
+            console.warn('Live Telegram resale floor lookup failed:', error.message);
+        }
+    }
+
+    if (value == null || !Number.isFinite(value) || value <= 0) return null;
+    const result = { value: Number(value.toFixed(9)), currency: 'TON', source, fetchedAt: Date.now() };
+    liveCollectiblePriceCache.set(key, { value: result, expiresAt: Date.now() + LIVE_COLLECTIBLE_PRICE_TTL_MS });
+    return result;
+}
+
+async function refreshVerifiedCollectibleMarketValue(identity, userGiftId = null) {
+    const telegramGiftModel = identity?.telegramGiftModel || {};
+    let metadata = {};
+    try {
+        metadata = identity?.verifiedMetadata
+            ? (typeof identity.verifiedMetadata === 'string' ? JSON.parse(identity.verifiedMetadata) : identity.verifiedMetadata)
+            : {};
+    } catch {}
+    const live = await getLiveTelegramCollectiblePrice({
+        slug: telegramGiftModel.slug || identity?.uniqueCollectibleId,
+        giftId: telegramGiftModel.telegramGiftId || metadata?.telegramGiftId || metadata?.baseName || null,
+        backdropName: metadata?.backdrop?.name || identity?.backdropName || null
+    });
+    if (!live) return null;
+
+    const liveMetadata = {
+        ...metadata,
+        marketValue: live.value,
+        marketValueCurrency: live.currency,
+        marketValueSource: live.source,
+        marketValueUpdatedAt: new Date(live.fetchedAt).toISOString()
+    };
+    if (identity?.uniqueCollectibleId) {
+        await updateUserCollectibleMarketValue(identity.uniqueCollectibleId, live.value, JSON.stringify(liveMetadata));
+    } else if (userGiftId) {
+        await run('UPDATE user_gifts SET market_value = ?, verified_metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND ownership_verified = 1',
+            [live.value, JSON.stringify(liveMetadata), userGiftId]);
+    }
+    return live;
+}
+
 
 // =========================================================
 // استيراد قاعدة البيانات
@@ -63,6 +189,7 @@ const {
     isCollectibleAlreadyCredited,
     creditVerifiedCollectible,
     updateCollectibleMarketValue,
+    updateUserCollectibleMarketValue,
     savePersistedBusinessConnection,
     getPersistedBusinessConnection,
     hasProcessedWebhookUpdate,
@@ -779,6 +906,16 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
 
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
         if (alreadyCredited) {
+            // Revalue existing verified collectibles from Telegram's live market.
+            try {
+                await refreshVerifiedCollectibleMarketValue({
+                    uniqueCollectibleId: identity.uniqueCollectibleId,
+                    verifiedMetadata: identity.verifiedMetadata,
+                    telegramGiftModel: identity.telegramGiftModel
+                }, alreadyCredited.id);
+            } catch (marketError) {
+                console.warn('Collectible live market revaluation failed:', marketError.message);
+            }
             // Existing collectibles may have been imported before Telegram sticker media was
             // persisted. Reconcile the current official Telegram sticker file id on every sweep
             // so the Backpack can recover the real image instead of falling back to 🎁.
@@ -866,6 +1003,12 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             if (creditResult.alreadyCredited) {
                 reasons.alreadyCredited++;
                 continue;
+            }
+
+            try {
+                await refreshVerifiedCollectibleMarketValue(identity, creditResult.userGift?.id || null);
+            } catch (marketError) {
+                console.warn('Collectible live market revaluation after credit failed:', marketError.message);
             }
 
             credited++;
@@ -2052,8 +2195,8 @@ function buildCollectibleApiRow(row, req) {
         stickerIsVideo: !!model.stickerIsVideo,
         imageUrl,
         rarity: row.rarity || model.rarity || 'common',
-        value: row.value,
-        sellValue: Number((Number(row.value || 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
+        value: Number(row.collectible_market_value ?? row.value ?? 0),
+        sellValue: Number((Number(row.collectible_market_value ?? row.value ?? 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
         status: row.ownership_status,
         verifiedMetadata: row.verified_metadata,
         receivedAt: row.received_at
