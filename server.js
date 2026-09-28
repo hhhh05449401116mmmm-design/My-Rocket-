@@ -107,10 +107,13 @@ async function getLiveTelegramCollectiblePrice({ slug, giftId, backdropName }) {
                 starsOnly: false,
                 ...(attributes ? { attributes } : {}),
                 offset: '',
-                limit: 1
+                limit: 100
             });
-            const first = Array.isArray(result?.gifts) ? result.gifts[0] : null;
-            const floor = findTonAmount(first?.resellAmount || first?.resell_amount);
+            const resaleGifts = Array.isArray(result?.gifts) ? result.gifts : [];
+            const tonPrices = resaleGifts
+                .map(gift => findTonAmount(gift?.resellAmount || gift?.resell_amount))
+                .filter(price => Number.isFinite(price) && price > 0);
+            const floor = tonPrices.length ? Math.min(...tonPrices) : null;
             if (floor != null) {
                 value = floor;
                 source = attributes ? 'telegram-live-backdrop-floor' : 'telegram-live-floor';
