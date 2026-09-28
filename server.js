@@ -719,12 +719,14 @@ async function ensureRuntimeBusinessConnection() {
     }
     if (!connectionId) return runtimeBusinessConnection;
 
-    if (!runtimeBusinessConnection.id || !runtimeBusinessConnection.canViewGiftsAndStars || !runtimeBusinessConnection.isEnabled) {
-        try {
-            return await recoverBusinessConnectionById(connectionId);
-        } catch (error) {
-            console.error('🔗 Business connection refresh failed:', error.message);
-        }
+    // Always re-read Telegram's live rights here. The business owner can change
+    // permissions after the previous connection snapshot was persisted, especially
+    // can_transfer_and_upgrade_gifts. Never keep a stale "false" value that blocks
+    // a withdrawal after the permission has been enabled in Telegram.
+    try {
+        return await recoverBusinessConnectionById(connectionId);
+    } catch (error) {
+        console.error('🔗 Business connection refresh failed:', error.message);
     }
     return runtimeBusinessConnection;
 }
