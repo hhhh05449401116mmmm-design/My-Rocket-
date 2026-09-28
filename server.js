@@ -2856,15 +2856,25 @@ app.get('/api/collectibles/market-value', authenticate, async (req, res) => {
         if (!collectible) {
             return res.status(404).json({ ok: false, error: 'Collectible not found' });
         }
+        const metadata = parseCollectibleMetadata(collectible);
+        const live = await refreshVerifiedCollectibleMarketValue({
+            uniqueCollectibleId: collectible.unique_collectible_id,
+            verifiedMetadata: collectible.verified_metadata,
+            telegramGiftModel: {
+                telegramGiftId: collectible.telegram_gift_id || metadata.telegramGiftId || metadata.baseName || collectible.name,
+                slug: collectible.unique_collectible_id
+            }
+        }, collectible.user_gift_id);
+        if (live) {
+            return res.json({ ok: true, available: true, marketValue: { floorPriceTon: live.value, source: live.source, currency: live.currency, lastUpdated: live.fetchedAt } });
+        }
         const gift = await get('SELECT * FROM gifts WHERE id = ?', [collectible.gift_id]);
         const marketValue = getCollectibleMarketValue({
             name: gift ? gift.name : null,
             base_name: gift ? gift.telegram_gift_id : null,
             model_name: gift ? gift.name : null
         });
-        if (!marketValue) {
-            return res.json({ ok: true, available: false, reason: 'No market data available' });
-        }
+        if (!marketValue) return res.json({ ok: true, available: false, reason: 'No market data available' });
         res.json({ ok: true, available: true, marketValue });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
@@ -2904,14 +2914,25 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
             return res.status(409).json({ ok: false, error: 'Collectible is not available for sale' });
         }
 
-        // Sale value is calculated from the latest server-side market value.
+        // Sale value is calculated from Telegram's latest server-side market value.
         // The client never supplies the amount, preventing price manipulation.
-        const market = getCollectibleMarketValue({
-            name: collectible.name,
-            base_name: collectible.telegram_gift_id,
-            model_name: collectible.name
-        });
-        const marketValue = Number(market?.floorPriceTon ?? collectible.value ?? 0);
+        const metadata = parseCollectibleMetadata(collectible);
+        const live = await refreshVerifiedCollectibleMarketValue({
+            uniqueCollectibleId: collectible.unique_collectible_id,
+            verifiedMetadata: collectible.verified_metadata,
+            telegramGiftModel: {
+                telegramGiftId: collectible.telegram_gift_id || metadata.telegramGiftId || metadata.baseName || collectible.name,
+                slug: collectible.unique_collectible_id
+            }
+        }, collectible.user_gift_id);
+        const market = live
+            ? { floorPriceTon: live.value, source: live.source }
+            : getCollectibleMarketValue({
+                name: collectible.name,
+                base_name: collectible.telegram_gift_id,
+                model_name: collectible.name
+            });
+        const marketValue = Number(market?.floorPriceTon ?? collectible.collectible_market_value ?? collectible.value ?? 0);
         const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
         if (!Number.isFinite(marketValue) || marketValue <= 0) {
             return res.status(409).json({ ok: false, error: 'No valid market value is available for this collectible' });
