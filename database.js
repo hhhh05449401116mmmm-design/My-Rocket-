@@ -1425,7 +1425,16 @@ async function creditVerifiedCollectible({
     stickerFileId
 }) {
     return await transaction(async () => {
-        const already = await isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId);
+        // Only active ownership blocks a new credit here. LOST/SOLD/SENT
+        // records are historical and may be followed by a new ownership cycle.
+        const already = await get(`
+            SELECT *
+            FROM user_gifts
+            WHERE (unique_collectible_id = ? OR telegram_gift_instance_id = ?)
+              AND status IN ('OWNED', 'IN_BET', 'LOCKED')
+            ORDER BY id DESC
+            LIMIT 1
+        `, [uniqueCollectibleId, telegramGiftInstanceId]);
 
         // A withdrawn collectible is marked SENT. If the same player sends the
         // exact same collectible back, restore that historical row.
