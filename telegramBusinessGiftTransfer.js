@@ -45,13 +45,13 @@ function numberValue(value) {
 }
 
 function savedGiftBaseId(savedGift) {
-    const id = savedGift?.gift?.id ?? savedGift?.gift?.giftId ?? savedGift?.gift?.gift_id;
+    const id = savedGift?.gift?.giftId ?? savedGift?.gift?.gift_id ?? savedGift?.gift?.id;
     if (id == null) return null;
     return String(id);
 }
 
 function savedGiftName(savedGift) {
-    return String(savedGift?.gift?.name || '').trim();
+    return String(savedGift?.gift?.name || savedGift?.gift?.title || '').trim();
 }
 
 function savedGiftUniqueId(savedGift) {
@@ -127,6 +127,27 @@ async function findBusinessGiftForType({ telegramGiftId, giftName }) {
     return candidates[index];
 }
 
+function giftMetadata(savedGift) {
+    const gift = savedGift?.gift || {};
+    const attributes = Array.isArray(gift.attributes) ? gift.attributes : [];
+    const model = attributes.find(a => String(a?.className || a?.constructor?.className || '').toLowerCase().includes('model'));
+    const backdrop = attributes.find(a => String(a?.className || a?.constructor?.className || '').toLowerCase().includes('backdrop'));
+    const pattern = attributes.find(a => String(a?.className || a?.constructor?.className || '').toLowerCase().includes('pattern'));
+    const name = savedGiftName(savedGift);
+    const number = numberValue(gift.num ?? gift.number);
+    return {
+        baseName: name,
+        uniqueName: name,
+        collectibleNumber: number,
+        ownedGiftId: savedGiftUniqueId(savedGift),
+        model: model ? { name: model.name || null, rarity: model.rarity || null } : null,
+        backdrop: backdrop ? { name: backdrop.name || null, backdropId: model?.backdropId || backdrop.backdropId || backdrop.backdrop_id || null, rarity: backdrop.rarity || null } : null,
+        symbol: pattern ? { name: pattern.name || null, rarity: pattern.rarity || null } : null,
+        transferStarCount: savedGiftTransferStars(savedGift),
+        canBeTransferred: true
+    };
+}
+
 async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
     const telegramClient = await ensureBusinessGiftClient();
     const msgId = savedGiftMsgId(savedGift);
@@ -151,8 +172,11 @@ async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
 
     return {
         uniqueCollectibleId: savedGiftUniqueId(savedGift),
+        telegramGiftInstanceId: String(msgId),
+        collectibleNumber: numberValue(savedGift?.gift?.num ?? savedGift?.gift?.number),
         msgId,
-        transferStars: transferStars || 0
+        transferStars: transferStars || 0,
+        verifiedMetadata: JSON.stringify(giftMetadata(savedGift))
     };
 }
 
