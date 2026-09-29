@@ -1356,7 +1356,59 @@ async function creditVerifiedCollectible({
 }) {
     return await transaction(async () => {
         const already = await isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId);
-        if (already) return { alreadyCredited: true, userGift: already };
+
+        // A collectible that was previously withdrawn is marked SENT because it left
+        // the game's custody. If its owner later sends that same collectible back to
+        // the game, reactivate the existing record instead of treating it as a duplicate.
+        // SOLD remains final because a real sale already credited the player's balance.
+        if (already) {
+            if (
+                already.user_id === userId &&
+                already.status === 'SENT' &&
+                String(already.unique_collectible_id || '') === String(uniqueCollectibleId)
+            ) {
+                const updated = await run(`
+                    UPDATE user_gifts
+                    SET status = 'OWNED',
+                        telegram_gift_instance_id = ?,
+                        collectible_number = ?,
+                        ownership_verified = 1,
+                        verified_metadata = ?,
+                        telegram_thumbnail_file_id = ?,
+                        market_value = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND user_id = ? AND status = 'SENT'
+                `, [
+                    telegramGiftInstanceId,
+                    collectibleNumber,
+                    verifiedMetadata,
+                    stickerFileId || null,
+                    Number(telegramGiftModel.value || already.market_value || 0),
+                    already.id,
+                    userId
+                ]);
+
+                if (updated.changes !== 1) {
+                    throw new Error('Collectible return-to-game was changed concurrently');
+                }
+
+                if (intentId) {
+                    await run(`
+                        UPDATE collectible_import_intents
+                        SET status = 'CONSUMED'
+                        WHERE id = ? AND status = 'PENDING'
+                    `, [intentId]);
+                }
+
+                return {
+                    alreadyCredited: false,
+                    reactivated: true,
+                    userGift: await get('SELECT * FROM user_gifts WHERE id = ?', [already.id])
+                };
+            }
+
+            return { alreadyCredited: true, userGift: already };
+        }
 
         let giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftModel.telegramGiftId]);
         if (!giftRow) {
