@@ -191,5 +191,6 @@ module.exports = {
     ensureBusinessGiftClient,
     listBusinessCollectibles,
     findBusinessGiftForType,
+    findBusinessGiftByUniqueId,
     transferSelectedGiftToUser
 };
