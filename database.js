@@ -1638,6 +1638,26 @@ async function reservePendingGiftForWithdrawal(userId, userGiftId) {
     });
 }
 
+async function rollbackPendingGiftWithdrawal(userId, userGiftId, failureReason) {
+    return await transaction(async () => {
+        const row = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ?', [userGiftId, userId]);
+        if (!row || row.status !== 'LOCKED' || row.unique_collectible_id) {
+            throw new Error('Gift reward is not reserved for rollback');
+        }
+        await run(`
+            UPDATE user_gifts
+            SET status = 'WON', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'LOCKED' AND unique_collectible_id IS NULL
+        `, [userGiftId, userId]);
+        await run(`
+            UPDATE gift_transactions
+            SET status = 'ROLLED_BACK', reason = ?
+            WHERE user_id = ? AND user_gift_id = ? AND transaction_type = 'WITHDRAWAL' AND status = 'PENDING'
+        `, [failureReason, userId, userGiftId]);
+        return await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]);
+    });
+}
+
 // Attach the concrete Telegram collectible only after Account 2 selected it.
 async function attachPendingGiftCollectible(userId, userGiftId, details) {
     return await transaction(async () => {
@@ -3098,6 +3118,7 @@ module.exports = {
     createPendingGiftReward,
     reservePendingGiftForWithdrawal,
     attachPendingGiftCollectible,
+    rollbackPendingGiftWithdrawal,
     getInventoryCollectibles,
     addCollectibleToInventory,
     reserveCollectibleForWithdrawal,
