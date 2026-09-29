@@ -1641,13 +1641,20 @@ async function reservePendingGiftForWithdrawal(userId, userGiftId) {
 async function rollbackPendingGiftWithdrawal(userId, userGiftId, failureReason) {
     return await transaction(async () => {
         const row = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ?', [userGiftId, userId]);
-        if (!row || row.status !== 'LOCKED' || row.unique_collectible_id) {
+        if (!row || row.status !== 'LOCKED') {
             throw new Error('Gift reward is not reserved for rollback');
         }
         await run(`
             UPDATE user_gifts
-            SET status = 'WON', updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND user_id = ? AND status = 'LOCKED' AND unique_collectible_id IS NULL
+            SET status = 'WON',
+                unique_collectible_id = NULL,
+                telegram_gift_instance_id = NULL,
+                collectible_number = NULL,
+                ownership_verified = 0,
+                verified_metadata = NULL,
+                telegram_thumbnail_file_id = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'LOCKED'
         `, [userGiftId, userId]);
         await run(`
             UPDATE gift_transactions
