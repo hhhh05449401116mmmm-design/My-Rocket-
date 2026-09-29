@@ -972,6 +972,7 @@
            MULTIPLIER - PREMIUM GLOW + SMOOTH ANIMATION
         ========================================================= */
         .multiplier {
+            display: none;
             position: absolute;
             top: 45%;
             left: 0;
@@ -987,6 +988,7 @@
             transition: color 0.2s, text-shadow 0.2s;
         }
         .multiplier.crashed {
+            display: block;
             color: #ff4f67;
             text-shadow: 0 5px 50px rgba(255, 79, 103, 0.4);
         }
@@ -1228,6 +1230,32 @@
             gap: 7px;
             overflow: hidden;
             direction: ltr;
+            align-items: center;
+        }
+        .live-multiplier-slot {
+            flex: 1;
+            min-width: 51px;
+            height: 29px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 900;
+            background: rgba(15, 40, 71, 0.6);
+            color: #4fc3f7;
+            border: 1px solid rgba(79, 195, 247, 0.12);
+            box-shadow: 0 0 18px rgba(79, 195, 247, 0.08);
+            direction: ltr;
+        }
+        .live-multiplier-slot.hidden { display: none !important; }
+        .history-items {
+            flex: 4;
+            min-width: 0;
+            display: flex;
+            gap: 7px;
+            overflow: hidden;
+            direction: ltr;
         }
         .history-item {
             flex: 1;
@@ -1341,6 +1369,13 @@
             display: flex;
             flex-direction: column;
             gap: 7px;
+            max-height: 250px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            scrollbar-width: thin;
         }
         .player-row {
             min-height: 62px;
@@ -2785,7 +2820,7 @@
                      </div>
                     <div id="status-message" class="status-message">الاتصال بالسيرفر...</div>
                 </section>
-                <section id="history" class="history"></section>
+                <section id="history" class="history"><div id="live-multiplier-slot" class="live-multiplier-slot hidden"></div><div id="history-items" class="history-items"></div></section>
                 <section class="bet-panel">
                     <button id="main-bet-button" class="place-bet-main" type="button" onclick="handleMainBetButton()">Place bet</button>
                 </section>
@@ -3504,6 +3539,8 @@
         let previousMultiplierSample = 1.00;
         let serverTimeOffset = 0;
         let flightStartedAt = null;
+        let crashDisplayUntil = 0;
+        let crashDisplayTimer = null;
         let gamePhase = "COUNTDOWN";
         let countdownSeconds = 5;
         let globalHistory = [];
@@ -4445,10 +4482,22 @@
                     displayMultiplier = 1.00;
                     multiplierSampledAt = 0;
                     previousMultiplierSample = 1.00;
-                    document.getElementById("countdown-container").classList.add("show");
+                    document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("flying");
                     document.getElementById("multiplier").classList.remove("crashed");
                     resetTelegramRocketForCountdown();
+
+                    const revealIn = Math.max(0, crashDisplayUntil - Date.now());
+                    if (crashDisplayTimer) clearTimeout(crashDisplayTimer);
+                    if (revealIn === 0) {
+                        document.getElementById("countdown-container").classList.add("show");
+                    } else {
+                        crashDisplayTimer = setTimeout(function() {
+                            if (gamePhase === "COUNTDOWN") {
+                                document.getElementById("countdown-container").classList.add("show");
+                            }
+                        }, revealIn);
+                    }
                 }
             }
             if (state.phase === "FLIGHT") {
@@ -4456,6 +4505,7 @@
                     displayMultiplier = 1.00;
                     document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("waiting");
+                    document.getElementById("multiplier").classList.remove("crashed");
                     document.getElementById("multiplier").classList.add("flying");
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
@@ -4472,6 +4522,18 @@
                 stopTelegramRocketAtCrash();
                 document.getElementById("flame").style.display = "none";
                 document.getElementById("countdown-container").classList.remove("show");
+
+                if (previousPhase !== "CRASH") {
+                    crashDisplayUntil = Date.now() + 1000;
+                    if (crashDisplayTimer) clearTimeout(crashDisplayTimer);
+                    crashDisplayTimer = setTimeout(function() {
+                        const multiplierEl = document.getElementById("multiplier");
+                        if (multiplierEl) {
+                            multiplierEl.classList.remove("crashed");
+                            multiplierEl.classList.add("waiting");
+                        }
+                    }, 1000);
+                }
             }
             gamePhase = state.phase;
             globalHistory = state.history || [];
@@ -4491,11 +4553,27 @@
                 const elapsedSeconds = flightStartedAt
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
-                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
-                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
 
-                const multEl = document.getElementById("multiplier");
-                if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
+                // UI-only smoothing: estimate the current multiplier continuously from
+                // the server's latest value without changing the server crash result.
+                const observedRate = elapsedSeconds > 0
+                    ? Math.max(multiplierRate, (Math.max(1, currentMultiplier) - 1) / elapsedSeconds)
+                    : multiplierRate;
+                const targetMultiplier = Math.max(
+                    1,
+                    1 + elapsedSeconds * observedRate
+                );
+                const frameDelta = Math.min(1, 0.12);
+                displayMultiplier += (targetMultiplier - displayMultiplier) * frameDelta;
+                if (displayMultiplier > currentMultiplier && currentMultiplier > 1) {
+                    displayMultiplier = currentMultiplier;
+                }
+
+                const liveSlot = document.getElementById("live-multiplier-slot");
+                if (liveSlot) {
+                    liveSlot.classList.remove("hidden");
+                    liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
+                }
 
                 const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
                 moveRocket(progress);
@@ -4580,10 +4658,22 @@
         }
 
         function renderHistory() {
-            const container = document.getElementById("history");
+            const container = document.getElementById("history-items");
+            const liveSlot = document.getElementById("live-multiplier-slot");
             if (!container) return;
             container.innerHTML = "";
-            globalHistory.slice(0, 5).forEach(function(value) {
+
+            if (liveSlot) {
+                if (gamePhase === "FLIGHT") {
+                    liveSlot.classList.remove("hidden");
+                    liveSlot.textContent = (Number(displayMultiplier) || 1).toFixed(2) + "x";
+                } else {
+                    liveSlot.classList.add("hidden");
+                    liveSlot.textContent = "";
+                }
+            }
+
+            globalHistory.slice(0, liveSlot && gamePhase === "FLIGHT" ? 4 : 5).forEach(function(value) {
                 const item = document.createElement("div");
                 item.className = "history-item " + historyClass(value);
                 item.textContent = Number(value).toFixed(2) + "x";
