@@ -1205,6 +1205,18 @@ async function getUserCollectibles(userId, status = null) {
     return await query(sql, params);
 }
 
+// Collectibles that are currently reserved by an active player inventory/bet/withdrawal.
+// These Telegram identities must never be assigned to another game-awarded gift.
+async function getActiveCollectibleUniqueIds() {
+    const rows = await query(`
+        SELECT unique_collectible_id
+        FROM user_gifts
+        WHERE unique_collectible_id IS NOT NULL
+          AND status IN ('OWNED', 'IN_BET', 'LOCKED')
+    `);
+    return rows.map(row => String(row.unique_collectible_id)).filter(Boolean);
+}
+
 // جلب قطعة واحدة عبر هويتها الفريدة (وليس gift_id/type).
 async function getCollectibleByUniqueId(uniqueCollectibleId) {
     return await get(`
