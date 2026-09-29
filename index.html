@@ -972,7 +972,7 @@
            MULTIPLIER - PREMIUM GLOW + SMOOTH ANIMATION
         ========================================================= */
         .multiplier {
-            display: none;
+            display: block;
             position: absolute;
             top: 45%;
             left: 0;
@@ -988,15 +988,21 @@
             transition: color 0.2s, text-shadow 0.2s;
         }
         .multiplier.crashed {
-            display: block;
-            color: #ff4f67;
-            text-shadow: 0 5px 50px rgba(255, 79, 103, 0.4);
+            display: none;
         }
         .multiplier.flying {
             color: #e8f4ff;
             text-shadow: 0 5px 50px rgba(100, 200, 255, 0.4);
         }
-        .multiplier.waiting { color: #7a9bcb; }
+        .multiplier.waiting { display: none; color: #7a9bcb; }
+        .multiplier.flying { display: block; }
+        .multiplier.crashed { display: none; }
+        .multiplier.red { color: #ff6b7f; text-shadow: 0 5px 50px rgba(255, 79, 103, 0.35); }
+        .multiplier.green { color: #4de18a; text-shadow: 0 5px 50px rgba(56, 210, 123, 0.35); }
+        .multiplier.blue { color: #4fc3f7; text-shadow: 0 5px 50px rgba(79, 195, 247, 0.4); }
+        .multiplier.purple { color: #b986ff; text-shadow: 0 5px 50px rgba(163, 86, 255, 0.35); }
+        .multiplier.gold { color: #ffd700; text-shadow: 0 5px 50px rgba(255, 215, 0, 0.35); }
+        .multiplier.fire { color: #ff8a65; text-shadow: 0 5px 50px rgba(255, 107, 53, 0.35); }
 
         /* =========================================================
            COUNTDOWN - PREMIUM CIRCLE
@@ -1105,8 +1111,9 @@
             bottom: 74px;
             width: 80px;
             height: 80px;
-            transform: rotate(-12deg);
-            transition: left 0.08s linear, bottom 0.08s linear, transform 0.08s linear, filter 0.3s ease;
+            transform: translate3d(0, 0, 0) rotate(-12deg);
+            transition: none;
+            will-change: transform;
             z-index: 5;
             display: flex;
             align-items: center;
@@ -1857,7 +1864,7 @@
             pointer-events: none;
             display: block;
             transform-origin: center center;
-            will-change: left, bottom, transform;
+            will-change: transform;
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
@@ -4425,10 +4432,13 @@
 
         function stopTelegramRocketAtCrash() {
             const container = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
             if (!container) return;
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
+            container.classList.add('hidden');
+            fallback?.classList.add('telegram-fallback-hidden');
         }
 
         function setServerStatus(connected) {
@@ -4507,6 +4517,8 @@
                     document.getElementById("multiplier").classList.remove("waiting");
                     document.getElementById("multiplier").classList.remove("crashed");
                     document.getElementById("multiplier").classList.add("flying");
+                    document.getElementById("rocket").classList.remove("crashed");
+                    document.getElementById("rocket").classList.remove("telegram-fallback-hidden");
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
@@ -4515,25 +4527,18 @@
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
-                document.getElementById("multiplier").classList.remove("flying");
-                document.getElementById("multiplier").classList.add("crashed");
+                document.getElementById("multiplier").className = "multiplier waiting";
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
-                document.getElementById("rocket").classList.add("crashed");
+                document.getElementById("rocket").classList.remove("crashed");
                 stopTelegramRocketAtCrash();
                 document.getElementById("flame").style.display = "none";
                 document.getElementById("countdown-container").classList.remove("show");
 
-                if (previousPhase !== "CRASH") {
-                    crashDisplayUntil = Date.now() + 1000;
-                    if (crashDisplayTimer) clearTimeout(crashDisplayTimer);
-                    crashDisplayTimer = setTimeout(function() {
-                        const multiplierEl = document.getElementById("multiplier");
-                        if (multiplierEl) {
-                            multiplierEl.classList.remove("crashed");
-                            multiplierEl.classList.add("waiting");
-                        }
-                    }, 1000);
+                if (crashDisplayTimer) {
+                    clearTimeout(crashDisplayTimer);
+                    crashDisplayTimer = null;
                 }
+                crashDisplayUntil = Date.now() + 1000;
             }
             gamePhase = state.phase;
             globalHistory = state.history || [];
@@ -4554,24 +4559,27 @@
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
 
-                // UI-only smoothing: estimate the current multiplier continuously from
-                // the server's latest value without changing the server crash result.
-                const observedRate = elapsedSeconds > 0
-                    ? Math.max(multiplierRate, (Math.max(1, currentMultiplier) - 1) / elapsedSeconds)
-                    : multiplierRate;
-                const targetMultiplier = Math.max(
+                // UI-only interpolation. The server still owns the real multiplier
+                // and crash result; this only fills the 1-second visual gaps.
+                const predictedMultiplier = Math.max(
                     1,
-                    1 + elapsedSeconds * observedRate
+                    1 + elapsedSeconds * multiplierRate
                 );
-                const frameDelta = Math.min(1, 0.12);
-                displayMultiplier += (targetMultiplier - displayMultiplier) * frameDelta;
-                if (displayMultiplier > currentMultiplier && currentMultiplier > 1) {
-                    displayMultiplier = currentMultiplier;
+                displayMultiplier = Math.max(
+                    Number(currentMultiplier) || 1,
+                    predictedMultiplier
+                );
+
+                const colorClass = historyClass(displayMultiplier);
+                const multEl = document.getElementById("multiplier");
+                if (multEl) {
+                    multEl.className = "multiplier flying " + colorClass;
+                    multEl.textContent = displayMultiplier.toFixed(2) + "x";
                 }
 
                 const liveSlot = document.getElementById("live-multiplier-slot");
                 if (liveSlot) {
-                    liveSlot.classList.remove("hidden");
+                    liveSlot.className = "live-multiplier-slot " + colorClass;
                     liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
                 }
 
@@ -4598,32 +4606,38 @@
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
             const particles = document.getElementById("rocket-particles");
-            if(!rocket) return;
-            
-            rocket.style.left = `${15 + progress * 58}%`;
-            rocket.style.bottom = `${74 + progress * 120}px`;
-            rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
-                telegramRocket.style.left = `${15 + progress * 58}%`;
-                telegramRocket.style.bottom = `${74 + progress * 120}px`;
-                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+            const area = document.querySelector(".rocket-area");
+            if (!rocket || !area) return;
+
+            const x = area.clientWidth * 0.58 * progress;
+            const y = area.clientHeight * 0.28 * progress;
+            const rotation = -12 - progress * 15;
+            const transform = `translate3d(${x.toFixed(1)}px, ${(-y).toFixed(1)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+
+            rocket.style.transform = transform;
+
+            if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
+                telegramRocket.style.transform = transform;
                 if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
+                else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                    telegramRocketVideo.play().catch(() => {});
+                }
             }
-            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
+
             if (flame) {
                 flame.style.display = "block";
                 flame.style.height = `${40 + progress * 20}px`;
                 flame.style.opacity = `${0.5 + progress * 0.5}`;
             }
+
             if (trail) {
                 trail.classList.add("active");
                 trail.style.width = `${140 + progress * 60}px`;
                 trail.style.opacity = `${0.3 + progress * 0.7}`;
             }
+
             if (particles) {
-                particles.style.left = rocket.style.left;
-                particles.style.bottom = rocket.style.bottom;
+                particles.style.transform = transform;
                 createParticle(particles, progress);
             }
         }
@@ -4666,7 +4680,9 @@
             if (liveSlot) {
                 if (gamePhase === "FLIGHT") {
                     liveSlot.classList.remove("hidden");
-                    liveSlot.textContent = (Number(displayMultiplier) || 1).toFixed(2) + "x";
+                    const value = Number(displayMultiplier) || 1;
+                    liveSlot.className = "live-multiplier-slot " + historyClass(value);
+                    liveSlot.textContent = value.toFixed(2) + "x";
                 } else {
                     liveSlot.classList.add("hidden");
                     liveSlot.textContent = "";
