@@ -2985,85 +2985,38 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Not a unique collectible' });
         }
 
-        // Refresh the live Business Connection from Telegram before every withdrawal.
-        // This keeps the withdrawal server-authoritative after restarts or permission changes.
-        const connection = await ensureRuntimeBusinessConnection();
-        const businessConnected = TELEGRAM_BUSINESS_CONNECTION_ID || connection.id;
-        if (!businessConnected || !connection.isEnabled) {
-            return res.status(503).json({
-                ok: false,
-                error: 'Telegram Business Connection is not available',
-                reason: 'business_connection_unavailable'
-            });
-        }
-        if (!connection.canViewGiftsAndStars) {
+        const businessConnected = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
+        if (!runtimeBusinessConnection.canViewGiftsAndStars) {
+            await createNotification(
+                req.user.id,
+                'GIFT_LOST',
+                'Withdrawal unavailable: Telegram Business Connection missing permissions',
+                { reason: 'can_view_gifts_and_stars not enabled' }
+            );
             return res.status(403).json({
                 ok: false,
-                error: 'Withdrawal requires can_view_gifts_and_stars permission.',
+                error: 'Withdrawal requires the bot to have can_view_gifts_and_stars permission. Contact admin to enable Telegram Business Connection permissions.',
                 reason: 'missing_can_view_gifts_and_stars'
             });
         }
-        if (!connection.canTransferAndUpgradeGifts) {
+        if (!runtimeBusinessConnection.canTransferAndUpgradeGifts) {
             return res.status(403).json({
                 ok: false,
-                error: 'Withdrawal requires can_transfer_and_upgrade_gifts permission.',
+                error: 'Withdrawal requires can_transfer_and_upgrade_gifts permission on the Telegram Business Connection.',
                 reason: 'missing_can_transfer_and_upgrade_gifts'
             });
         }
 
-        const userTelegramId = Number(req.user.telegram_id);
-        if (!Number.isSafeInteger(userTelegramId) || userTelegramId <= 0) {
-            return res.status(400).json({
-                ok: false,
-                error: 'Your Telegram account ID could not be verified',
-                reason: 'invalid_telegram_user'
-            });
-        }
-
-        // Re-read the managed business account's gifts from Telegram immediately before
-        // reserving the database row. This prevents withdrawing a stale/already-moved gift.
-        const liveBusinessGifts = await fetchBusinessAccountGifts();
-        const liveOwnedGift = (Array.isArray(liveBusinessGifts) ? liveBusinessGifts : [])
-            .find(gift => String(gift?.owned_gift_id || '') === String(collectible.telegram_gift_instance_id || ''));
-        if (!liveOwnedGift) {
-            return res.status(409).json({
-                ok: false,
-                error: 'Telegram no longer reports this gift as owned by the game account',
-                reason: 'gift_not_owned_by_business_account'
-            });
-        }
-        if (liveOwnedGift.type !== 'unique') {
-            return res.status(409).json({
-                ok: false,
-                error: 'Only Telegram collectible gifts can be withdrawn',
-                reason: 'gift_not_collectible'
-            });
-        }
-        if (liveOwnedGift.can_be_transferred === false) {
-            return res.status(409).json({
-                ok: false,
-                error: 'Telegram currently does not allow this gift to be transferred',
-                reason: 'gift_not_transferable'
-            });
-        }
-
+        const userTelegramId = req.user.telegram_id;
         try {
-            await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
+            const reserved = await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
             
             try {
-                // Telegram's current Bot API uses new_owner_chat_id for the recipient.
-                // If a transfer fee is required, use the live Telegram value and let
-                // Telegram enforce the business account's transfer-star permission.
-                const transferStars = Number(liveOwnedGift.transfer_star_count || 0);
-                const transferPayload = {
+                const transferResult = await callTelegramBotApi('transferGift', {
                     business_connection_id: businessConnected,
-                    owned_gift_id: liveOwnedGift.owned_gift_id,
-                    new_owner_chat_id: userTelegramId
-                };
-                if (Number.isSafeInteger(transferStars) && transferStars > 0) {
-                    transferPayload.star_count = transferStars;
-                }
-                const transferResult = await callTelegramBotApi('transferGift', transferPayload);
+                    owned_gift_id: collectible.telegram_gift_instance_id,
+                    to_user_id: Number(userTelegramId)
+                });
 
                 await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-transfer-complete');
                 await createNotification(
