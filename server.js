@@ -229,6 +229,9 @@ const {
     selectRewardFromInventory,
     getInventoryCollectibles,
     reserveCollectibleForWithdrawal,
+    reservePendingGiftForWithdrawal,
+    attachPendingGiftCollectible,
+    rollbackPendingGiftWithdrawal,
     confirmGiftWithdrawal,
     rollbackGiftWithdrawal,
     getGiftTransactions,
@@ -251,6 +254,13 @@ const {
     cashoutPvpBet,
     MAX_PVP_PLAYERS
 } = require('./database');
+
+const {
+    ensureBusinessGiftClient,
+    findBusinessGiftForType,
+    findBusinessGiftByUniqueId,
+    transferSelectedGiftToUser
+} = require('./telegramBusinessGiftTransfer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -2163,47 +2173,53 @@ function parseCollectibleMetadata(row) {
 
 function buildCollectibleApiRow(row, req) {
     const metadata = parseCollectibleMetadata(row);
-    const model = metadata.model || {};
-    const symbol = metadata.symbol || null;
-    const backdrop = metadata.backdrop || null;
-    const mediaFileId = metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null;
-    const hasMedia = !!(mediaFileId || metadata.model?.stickerFileId || metadata.symbol?.stickerFileId);
-    const imageUrl = row.unique_collectible_id && hasMedia
-        ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
-        : null;
+    const isPendingGiftReward = !row.unique_collectible_id && row.ownership_status === 'WON';
+    const model = isPendingGiftReward ? {} : (metadata.model || {});
+    const symbol = isPendingGiftReward ? null : (metadata.symbol || null);
+    const backdrop = isPendingGiftReward ? null : (metadata.backdrop || null);
+    const mediaFileId = isPendingGiftReward
+        ? null
+        : (metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null);
+    const hasMedia = !!(mediaFileId || metadata.model?.stickerFileId || metadata.symbol?.stickerFileId || (isPendingGiftReward && row.image_url));
+    const imageUrl = isPendingGiftReward && row.image_url
+        ? row.image_url
+        : (row.unique_collectible_id && hasMedia
+            ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+            : null);
     return {
-        id: row.unique_collectible_id,
+        id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
-        name: row.name || metadata.uniqueName || metadata.baseName || 'Telegram Collectible',
-        baseName: metadata.baseName || row.name || null,
-        uniqueName: metadata.uniqueName || row.name || null,
-        collectibleNumber: row.collectible_number ?? metadata.collectibleNumber ?? null,
-        model: model.name || null,
-        modelRarity: model.rarity || null,
-        modelRarityPerMille: model.rarityPerMille ?? null,
-        symbol: symbol?.name || null,
-        symbolRarityPerMille: symbol?.rarityPerMille ?? null,
-        backdrop: backdrop?.name || null,
-        backdropRarityPerMille: backdrop?.rarityPerMille ?? null,
-        backdropColors: backdrop?.colors || null,
-        sender: metadata.sender || null,
-        sendDate: metadata.sendDate || null,
-        sendDateIso: metadata.sendDateIso || null,
-        ownedGiftId: metadata.ownedGiftId || row.telegram_gift_instance_id || null,
-        isPremium: !!metadata.isPremium,
-        isFromBlockchain: !!metadata.isFromBlockchain,
-        canBeTransferred: !!metadata.canBeTransferred,
-        transferStarCount: metadata.transferStarCount ?? null,
-        nextTransferDate: metadata.nextTransferDate ?? null,
-        nextTransferDateIso: metadata.nextTransferDateIso || null,
-        stickerIsAnimated: !!model.stickerIsAnimated,
-        stickerIsVideo: !!model.stickerIsVideo,
+        pendingWithdrawal: isPendingGiftReward,
+        name: row.name || metadata.uniqueName || metadata.baseName || 'Telegram Gift',
+        baseName: isPendingGiftReward ? (row.name || null) : (metadata.baseName || row.name || null),
+        uniqueName: isPendingGiftReward ? null : (metadata.uniqueName || row.name || null),
+        collectibleNumber: isPendingGiftReward ? null : (row.collectible_number ?? metadata.collectibleNumber ?? null),
+        model: isPendingGiftReward ? null : (model.name || null),
+        modelRarity: isPendingGiftReward ? null : (model.rarity || null),
+        modelRarityPerMille: isPendingGiftReward ? null : (model.rarityPerMille ?? null),
+        symbol: isPendingGiftReward ? null : (symbol?.name || null),
+        symbolRarityPerMille: isPendingGiftReward ? null : (symbol?.rarityPerMille ?? null),
+        backdrop: isPendingGiftReward ? null : (backdrop?.name || null),
+        backdropRarityPerMille: isPendingGiftReward ? null : (backdrop?.rarityPerMille ?? null),
+        backdropColors: isPendingGiftReward ? null : (backdrop?.colors || null),
+        sender: isPendingGiftReward ? null : (metadata.sender || null),
+        sendDate: isPendingGiftReward ? null : (metadata.sendDate || null),
+        sendDateIso: isPendingGiftReward ? null : (metadata.sendDateIso || null),
+        ownedGiftId: isPendingGiftReward ? null : (metadata.ownedGiftId || row.telegram_gift_instance_id || null),
+        isPremium: isPendingGiftReward ? false : !!metadata.isPremium,
+        isFromBlockchain: isPendingGiftReward ? false : !!metadata.isFromBlockchain,
+        canBeTransferred: isPendingGiftReward ? true : !!metadata.canBeTransferred,
+        transferStarCount: isPendingGiftReward ? null : (metadata.transferStarCount ?? null),
+        nextTransferDate: isPendingGiftReward ? null : (metadata.nextTransferDate ?? null),
+        nextTransferDateIso: isPendingGiftReward ? null : (metadata.nextTransferDateIso || null),
+        stickerIsAnimated: isPendingGiftReward ? false : !!model.stickerIsAnimated,
+        stickerIsVideo: isPendingGiftReward ? false : !!model.stickerIsVideo,
         imageUrl,
         rarity: row.rarity || model.rarity || 'common',
-        value: Number(row.collectible_market_value ?? row.value ?? 0),
-        sellValue: Number((Number(row.collectible_market_value ?? row.value ?? 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
+        value: Number(row.collectible_market_value ?? row.market_value ?? row.value ?? 0),
+        sellValue: isPendingGiftReward ? 0 : Number((Number(row.collectible_market_value ?? row.value ?? 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
         status: row.ownership_status,
-        verifiedMetadata: row.verified_metadata,
+        verifiedMetadata: isPendingGiftReward ? null : row.verified_metadata,
         receivedAt: row.received_at
     };
 }
@@ -2220,7 +2236,7 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
 
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
-            .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
+             .filter(row => (row.ownership_verified === 1 && row.unique_collectible_id) || (row.status === 'WON' && !row.unique_collectible_id))
             .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {
@@ -2797,7 +2813,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
                 req.user.id,
                 'BET_WON',
                 'Collectible prize granted!',
-                { betId, multiplier: result.multiplier, rewardId: result.rewardCollectibleId }
+                { betId, multiplier: result.multiplier, rewardGiftType: result.rewardGiftType, rewardUserGiftId: result.rewardUserGiftId }
             );
             return res.json({ 
                 ok: true,
@@ -2805,7 +2821,8 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
                 multiplier: result.multiplier,
                 giftValue: result.giftValue,
                 rewardGranted: true,
-                rewardCollectibleId: result.rewardCollectibleId,
+                rewardGiftType: result.rewardGiftType,
+                rewardCollectibleId: result.rewardUserGiftId ? `pending:${result.rewardUserGiftId}` : null,
                 message: result.message,
                 balance: balance
             });
@@ -2972,9 +2989,104 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
 // ===== 5.6.3 سحب هدية =====
 app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
     try {
-        const { collectibleId } = req.body;
-        if (!collectibleId) {
-            return res.status(400).json({ ok: false, error: 'collectibleId required' });
+        const { collectibleId } = req.body || {};
+        if (!collectibleId) return res.status(400).json({ ok: false, error: 'collectibleId required' });
+
+        const userTelegramId = Number(req.user.telegram_id);
+        if (!Number.isSafeInteger(userTelegramId) || userTelegramId <= 0) {
+            return res.status(400).json({ ok: false, error: 'Your Telegram account ID could not be verified', reason: 'invalid_telegram_user' });
+        }
+
+        if (String(collectibleId).startsWith('pending:')) {
+            const userGiftId = Number(String(collectibleId).slice('pending:'.length));
+            if (!Number.isSafeInteger(userGiftId) || userGiftId <= 0) {
+                return res.status(400).json({ ok: false, error: 'Invalid pending gift reward' });
+            }
+
+            const reserved = await reservePendingGiftForWithdrawal(req.user.id, userGiftId);
+            let selectedUniqueId = null;
+            try {
+                const selected = await findBusinessGiftForType({
+                    telegramGiftId: reserved.telegram_gift_id,
+                    giftName: reserved.name
+                });
+                if (!selected) {
+                    await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, 'No transferable collectible of this gift type is currently available in Account 2');
+                    return res.status(409).json({
+                        ok: false,
+                        error: 'This gift is temporarily unavailable for withdrawal',
+                        reason: 'gift_type_unavailable',
+                        collectibleReturned: true
+                    });
+                }
+
+                // Persist the selected concrete collectible BEFORE the external transfer.
+                // This makes rollback safe if Telegram rejects the transfer.
+                selectedUniqueId = String(selected?.gift?.name || selected?.gift?.title || '').trim() +
+                    '-' + String(selected?.gift?.num ?? selected?.gift?.number ?? '');
+                if (!selectedUniqueId || selectedUniqueId.endsWith('-')) {
+                    throw new Error('Telegram did not return a valid unique collectible identity');
+                }
+
+                // transferSelectedGiftToUser performs the real transfer; attach first using
+                // the same identity, then Telegram is the final authority on success/failure.
+                const msgId = Number(selected?.msgId ?? selected?.msg_id);
+                if (!Number.isSafeInteger(msgId) || msgId <= 0) throw new Error('Telegram did not return a valid saved gift message id');
+                const transferStars = Number(selected?.transferStars ?? selected?.transfer_stars ?? 0);
+                const metadata = JSON.stringify({
+                    baseName: reserved.name,
+                    uniqueName: String(selected?.gift?.name || selected?.gift?.title || reserved.name),
+                    collectibleNumber: Number(selected?.gift?.num ?? selected?.gift?.number ?? 0) || null,
+                    ownedGiftId: selectedUniqueId,
+                    transferStarCount: Number.isSafeInteger(transferStars) ? transferStars : null,
+                    canBeTransferred: true
+                });
+
+                await attachPendingGiftCollectible(req.user.id, userGiftId, {
+                    uniqueCollectibleId: selectedUniqueId,
+                    telegramGiftInstanceId: String(msgId),
+                    collectibleNumber: Number(selected?.gift?.num ?? selected?.gift?.number ?? 0) || null,
+                    verifiedMetadata: metadata,
+                    marketValue: reserved.market_value || reserved.value || 0
+                });
+
+                const sent = await transferSelectedGiftToUser({
+                    savedGift: selected,
+                    telegramUserId: userTelegramId
+                });
+
+                const stillOwned = await findBusinessGiftByUniqueId(sent.uniqueCollectibleId);
+                if (stillOwned) {
+                    throw new Error('Telegram transfer completed but the selected collectible is still owned by Account 2');
+                }
+
+                await confirmGiftWithdrawal(req.user.id, selectedUniqueId, 'telegram-business-account2-transfer-complete');
+                await createNotification(
+                    req.user.id,
+                    'GIFT_WON',
+                    'Gift withdrawn to your Telegram account!',
+                    { collectibleId: selectedUniqueId, giftType: reserved.name }
+                );
+                return res.json({
+                    ok: true,
+                    status: 'SENT',
+                    collectibleId: selectedUniqueId,
+                    giftType: reserved.name
+                });
+            } catch (error) {
+                try {
+                    await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
+                } catch (rollbackError) {
+                    console.error('ACCOUNT2 WITHDRAW ROLLBACK ERROR:', rollbackError.message);
+                }
+                return res.status(502).json({
+                    ok: false,
+                    error: 'Telegram gift transfer failed',
+                    reason: 'transfer_failed',
+                    detail: error.message,
+                    collectibleReturned: true
+                });
+            }
         }
 
         const collectible = await getCollectibleByUniqueId(collectibleId);
@@ -2985,71 +3097,26 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Not a unique collectible' });
         }
 
-        const businessConnected = TELEGRAM_BUSINESS_CONNECTION_ID || runtimeBusinessConnection.id;
-        if (!runtimeBusinessConnection.canViewGiftsAndStars) {
-            await createNotification(
-                req.user.id,
-                'GIFT_LOST',
-                'Withdrawal unavailable: Telegram Business Connection missing permissions',
-                { reason: 'can_view_gifts_and_stars not enabled' }
-            );
-            return res.status(403).json({
-                ok: false,
-                error: 'Withdrawal requires the bot to have can_view_gifts_and_stars permission. Contact admin to enable Telegram Business Connection permissions.',
-                reason: 'missing_can_view_gifts_and_stars'
-            });
-        }
-        if (!runtimeBusinessConnection.canTransferAndUpgradeGifts) {
-            return res.status(403).json({
-                ok: false,
-                error: 'Withdrawal requires can_transfer_and_upgrade_gifts permission on the Telegram Business Connection.',
-                reason: 'missing_can_transfer_and_upgrade_gifts'
-            });
-        }
-
-        const userTelegramId = req.user.telegram_id;
+        await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
         try {
-            const reserved = await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
-            
-            try {
-                const transferResult = await callTelegramBotApi('transferGift', {
-                    business_connection_id: businessConnected,
-                    owned_gift_id: collectible.telegram_gift_instance_id,
-                    to_user_id: Number(userTelegramId)
-                });
+            const selected = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
+            if (!selected) throw new Error('This exact collectible is not currently owned by Account 2');
 
-                await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-transfer-complete');
-                await createNotification(
-                    req.user.id,
-                    'GIFT_WON',
-                    'Gift withdrawn to your Telegram account!',
-                    { collectibleId, transferResult }
-                );
-                res.json({ ok: true, status: 'SENT', collectibleId });
-            } catch (transferError) {
-                await rollbackGiftWithdrawal(req.user.id, collectibleId, transferError.message);
-                await createNotification(
-                    req.user.id,
-                    'GIFT_LOST',
-                    'Gift withdrawal failed - collectible returned to backpack',
-                    { collectibleId, error: transferError.message }
-                );
-                res.status(502).json({
-                    ok: false,
-                    error: 'Telegram gift transfer failed',
-                    reason: 'transfer_failed',
-                    detail: transferError.message,
-                    collectibleReturned: true
-                });
-            }
-        } catch (reserveError) {
-            res.status(400).json({ ok: false, error: reserveError.message });
+            await transferSelectedGiftToUser({ savedGift: selected, telegramUserId: userTelegramId });
+            const stillOwned = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
+            if (stillOwned) throw new Error('Telegram transfer completed but the collectible is still owned by Account 2');
+
+            await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-business-account2-transfer-complete');
+            await createNotification(req.user.id, 'GIFT_WON', 'Gift withdrawn to your Telegram account!', { collectibleId });
+            return res.json({ ok: true, status: 'SENT', collectibleId });
+        } catch (error) {
+            await rollbackGiftWithdrawal(req.user.id, collectibleId, error.message);
+            return res.status(502).json({ ok: false, error: 'Telegram gift transfer failed', reason: 'transfer_failed', detail: error.message, collectibleReturned: true });
         }
     } catch (error) {
-        res.status(500).json({ ok: false, error: error.message });
+        res.status(400).json({ ok: false, error: error.message });
     }
 });
-
 // ===== 5.6.4 معاملات الهدايا =====
 app.get('/api/collectibles/transactions', authenticate, async (req, res) => {
     try {

@@ -5237,6 +5237,9 @@
                 updateAutoCashoutUI();
                 if (typeof data.balance === 'number') { tonBalance = data.balance; updateTonWalletUI(); }
                 else { await fetchBalance(); }
+                if (currentBetType === "GIFT" && data.rewardGranted) {
+                    await fetchCollectibles();
+                }
                 showToast(t.cashOut);
             } catch (error) {
                 console.error("CASHOUT ERROR:", error);
@@ -5537,9 +5540,17 @@
                     ? `<img src="${safeImageUrl}" alt="${escapeHtmlAttribute(item.name || 'Telegram Collectible')}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
                 const isInBet = item.status === "IN_BET";
-                const disabledAttr = isInBet ? "disabled" : "";
+                const isPendingReward = item.pendingWithdrawal === true;
+                const disabledAttr = isInBet || isPendingReward ? "disabled" : "";
                 const price = Number(item.value || 0).toFixed(2);
                 const sellPrice = Number(item.sellValue || 0).toFixed(2);
+                const secondaryActions = isPendingReward
+                    ? ''
+                    : `
+                            <button class="collectible-sell-btn" type="button" onclick="sellCollectible('${item.id}')" ${disabledAttr}>${t.sellCollectible} ${sellPrice} <img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></button>
+                            <button class="collectible-upgrade-btn" type="button" onclick="openUpgradeGame()" ${disabledAttr}>↗ ${t.upgradeTitle || 'Upgrade'}</button>
+                            <button class="collectible-hub-btn" type="button" onclick="betCollectibleFromCard('${escapeHtmlAttribute(item.id)}')" ${disabledAttr}>↗ Bet</button>
+                      `;
                 card.innerHTML = `
                     <div class="collectible-art-wrap">
                         ${imageHtml}
@@ -5549,10 +5560,8 @@
                         ${item.collectibleNumber ? `<span class="number">#${item.collectibleNumber}</span>` : ''}
                         <span class="name">${escapeHtml(item.name || '')}</span>
                         <div class="actions">
-                            <button class="collectible-withdraw-btn" type="button" onclick="withdrawCollectible('${item.id}')" ${disabledAttr}>↗ ${t.withdrawCollectible}</button>
-                            <button class="collectible-sell-btn" type="button" onclick="sellCollectible('${item.id}')" ${disabledAttr}>${t.sellCollectible} ${sellPrice} <img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></button>
-                            <button class="collectible-upgrade-btn" type="button" onclick="openUpgradeGame()" ${disabledAttr}>↗ ${t.upgradeTitle || 'Upgrade'}</button>
-                            <button class="collectible-hub-btn" type="button" onclick="betCollectibleFromCard('${escapeHtmlAttribute(item.id)}')" ${disabledAttr}>↗ Bet</button>
+                            <button class="collectible-withdraw-btn" type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet ? "disabled" : ""}>↗ ${t.withdrawCollectible}</button>
+                            ${secondaryActions}
                         </div>
                     </div>
                 `;

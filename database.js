@@ -1042,25 +1042,21 @@ async function settleGiftCashout(bet, userId, betId, multiplier, payout) {
         VALUES (?, ?, 'BET', ?, ?, 'COMPLETED')
     `, [userId, userGift.id, bet.gift_value_at_bet, betId]);
 
-    const reward = await selectRewardFromInventory(targetPayoutValue);
+    const reward = await selectRewardGiftType(targetPayoutValue);
     if (reward) {
-        await consumeInventoryReward(reward, userId, betId);
-        await run(`
-            INSERT INTO gift_transactions (user_id, transaction_type, amount, related_collectible_id, related_bet_id, status)
-            VALUES (?, 'REWARD_GRANT', ?, ?, ?, 'COMPLETED')
-        `, [userId, reward.market_value, reward.unique_collectible_id, betId]);
+        const pendingReward = await createPendingGiftReward(userId, reward.id, reward.value, betId);
         await updateUserStats(userId, 'win', 0);
-        const rewardGift = await get('SELECT * FROM user_gifts WHERE unique_collectible_id = ?', [reward.unique_collectible_id]);
         return {
             payout: 0,
             multiplier,
-            amount: reward.market_value,
+            amount: reward.value,
             giftValue: bet.gift_value_at_bet,
             rewardGranted: true,
-            rewardCollectibleId: reward.unique_collectible_id,
-            rewardUserGiftId: rewardGift ? rewardGift.id : null,
+            rewardGiftType: reward.name,
+            rewardGiftId: reward.id,
+            rewardUserGiftId: pendingReward.id,
             originalCollectibleId: userGift.unique_collectible_id,
-            message: 'Collectible consumed, reward granted from inventory'
+            message: 'Gift type awarded; concrete Telegram collectible will be selected at withdrawal'
         };
     }
 
@@ -1569,6 +1565,144 @@ async function selectRewardFromInventory(targetValue) {
         ORDER BY ABS(market_value - ?) ASC, id ASC
         LIMIT 1
     `, [targetValue, targetValue]);
+}
+
+// Select only the gift TYPE for a game reward. The concrete Telegram collectible
+// is deliberately not assigned until the player withdraws.
+async function selectRewardGiftType(targetValue) {
+    if (!Number.isFinite(targetValue) || targetValue <= 0) return null;
+    return await get(`
+        SELECT * FROM gifts
+        WHERE value > 0 AND value <= ?
+        ORDER BY ABS(value - ?) ASC, id ASC
+        LIMIT 1
+    `, [targetValue, targetValue]);
+}
+
+// Create a pending reward that exposes only the base gift type in the Backpack.
+// No Telegram unique id, model, backdrop, or collectible number is assigned yet.
+async function createPendingGiftReward(userId, giftId, rewardValue, betId = null) {
+    const inserted = await run(`
+        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value)
+        VALUES (?, ?, 'WON', 0, ?)
+    `, [userId, giftId, Number(rewardValue || 0)]);
+
+    const userGift = await get('SELECT * FROM user_gifts WHERE id = ?', [inserted.lastID]);
+    await run(`
+        INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status, reason)
+        VALUES (?, ?, 'REWARD_GRANT', ?, ?, 'COMPLETED', 'Gift type awarded; concrete Telegram collectible selected at withdrawal')
+    `, [userId, userGift.id, Number(rewardValue || 0), betId]);
+
+    return userGift;
+}
+
+// Reserve a generic gift-type reward for the withdrawal operation.
+async function reservePendingGiftForWithdrawal(userId, userGiftId) {
+    return await transaction(async () => {
+        const collectible = await get(`
+            SELECT g.*, ug.id AS user_gift_id, ug.user_id, ug.status AS ownership_status,
+                   ug.unique_collectible_id, ug.telegram_gift_instance_id,
+                   ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+                   ug.telegram_thumbnail_file_id, ug.market_value AS collectible_market_value,
+                   ug.received_at, ug.updated_at
+            FROM user_gifts ug
+            JOIN gifts g ON ug.gift_id = g.id
+            WHERE ug.id = ? AND ug.user_id = ?
+        `, [userGiftId, userId]);
+        if (!collectible) throw new Error('Gift reward not found');
+        if (collectible.ownership_status !== 'WON' || collectible.unique_collectible_id) {
+            throw new Error('Gift reward is not available for withdrawal');
+        }
+
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = 'LOCKED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'WON' AND unique_collectible_id IS NULL
+        `, [userGiftId, userId]);
+        if (update.changes !== 1) throw new Error('Gift reward was reserved concurrently');
+
+        await run(`
+            INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, status, reason)
+            VALUES (?, ?, 'WITHDRAWAL', 0, 'PENDING', 'Generic gift type reserved; Telegram collectible selected at withdrawal')
+        `, [userId, userGiftId]);
+
+        return await get(`
+            SELECT g.*, ug.id AS user_gift_id, ug.user_id, ug.status AS ownership_status,
+                   ug.unique_collectible_id, ug.telegram_gift_instance_id,
+                   ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+                   ug.telegram_thumbnail_file_id, ug.market_value AS collectible_market_value,
+                   ug.received_at, ug.updated_at
+            FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id
+            WHERE ug.id = ?
+        `, [userGiftId]);
+    });
+}
+
+async function rollbackPendingGiftWithdrawal(userId, userGiftId, failureReason) {
+    return await transaction(async () => {
+        const row = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ?', [userGiftId, userId]);
+        if (!row || row.status !== 'LOCKED') {
+            throw new Error('Gift reward is not reserved for rollback');
+        }
+        await run(`
+            UPDATE user_gifts
+            SET status = 'WON',
+                unique_collectible_id = NULL,
+                telegram_gift_instance_id = NULL,
+                collectible_number = NULL,
+                ownership_verified = 0,
+                verified_metadata = NULL,
+                telegram_thumbnail_file_id = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'LOCKED'
+        `, [userGiftId, userId]);
+        await run(`
+            UPDATE gift_transactions
+            SET status = 'ROLLED_BACK', reason = ?
+            WHERE user_id = ? AND user_gift_id = ? AND transaction_type = 'WITHDRAWAL' AND status = 'PENDING'
+        `, [failureReason, userId, userGiftId]);
+        return await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]);
+    });
+}
+
+// Attach the concrete Telegram collectible only after Account 2 selected it.
+async function attachPendingGiftCollectible(userId, userGiftId, details) {
+    return await transaction(async () => {
+        const row = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ?', [userGiftId, userId]);
+        if (!row || row.status !== 'LOCKED' || row.unique_collectible_id) {
+            throw new Error('Gift reward is not reserved for assignment');
+        }
+        const update = await run(`
+            UPDATE user_gifts
+            SET unique_collectible_id = ?,
+                telegram_gift_instance_id = ?,
+                collectible_number = ?,
+                ownership_verified = 1,
+                verified_metadata = ?,
+                telegram_thumbnail_file_id = ?,
+                market_value = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'LOCKED' AND unique_collectible_id IS NULL
+        `, [
+            details.uniqueCollectibleId,
+            details.telegramGiftInstanceId,
+            details.collectibleNumber ?? null,
+            details.verifiedMetadata || null,
+            details.telegramThumbnailFileId || null,
+            Number(details.marketValue || row.market_value || 0),
+            userGiftId,
+            userId
+        ]);
+        if (update.changes !== 1) throw new Error('Gift reward assignment was changed concurrently');
+
+        await run(`
+            UPDATE gift_transactions
+            SET related_collectible_id = ?
+            WHERE user_id = ? AND user_gift_id = ? AND transaction_type = 'WITHDRAWAL' AND status = 'PENDING'
+        `, [details.uniqueCollectibleId, userId, userGiftId]);
+
+        return await getCollectibleByUniqueId(details.uniqueCollectibleId);
+    });
 }
 
 // استهلاك قطعة مخزون وإنشاء user_gifts للمستخدم.
@@ -2987,6 +3121,11 @@ module.exports = {
     // المخزون والسحب
     selectRewardFromInventory,
     consumeInventoryReward,
+    selectRewardGiftType,
+    createPendingGiftReward,
+    reservePendingGiftForWithdrawal,
+    attachPendingGiftCollectible,
+    rollbackPendingGiftWithdrawal,
     getInventoryCollectibles,
     addCollectibleToInventory,
     reserveCollectibleForWithdrawal,
