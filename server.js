@@ -186,6 +186,7 @@ const {
     addGiftToUser,
     updateGiftStatus,
     getUserCollectibles,
+    getActiveCollectibleUniqueIds,
     createOrGetImportIntent,
     getLatestImportIntentForUser,
     getPendingIntentByTelegramSenderId,
@@ -3006,9 +3007,11 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             const reserved = await reservePendingGiftForWithdrawal(req.user.id, userGiftId);
             let selectedUniqueId = null;
             try {
+                const activeCollectibleIds = await getActiveCollectibleUniqueIds();
                 const selected = await findBusinessGiftForType({
                     telegramGiftId: reserved.telegram_gift_id,
-                    giftName: reserved.name
+                    giftName: reserved.name,
+                    excludedUniqueIds: activeCollectibleIds
                 });
                 if (!selected) {
                     await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, 'No transferable collectible of this gift type is currently available in Account 2');
