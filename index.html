@@ -1032,7 +1032,8 @@
             border-top-color: #4de18a;
             border-right-color: #4de18a;
             transform: rotate(-45deg);
-            transition: transform 0.5s linear;
+            transition: none;
+            will-change: transform;
         }
         .countdown-inner {
             position: relative;
@@ -1048,12 +1049,7 @@
             line-height: 1;
             text-shadow: 0 0 20px rgba(79, 195, 247, 0.8);
         }
-        .countdown-txt {
-            font-size: 12px;
-            color: #4fc3f7;
-            font-weight: 700;
-            margin-top: 4px;
-        }
+        .countdown-txt { display: none; }
 
         /* =========================================================
            ROCKET AREA
@@ -1103,13 +1099,14 @@
             bottom: 74px;
             width: 80px;
             height: 80px;
-            transform: rotate(-12deg);
-            transition: left 0.08s linear, bottom 0.08s linear, transform 0.08s linear, filter 0.3s ease;
+            transform: translate3d(0, 0, 0) rotate(-12deg);
+            transition: none;
             z-index: 5;
             display: flex;
             align-items: center;
             justify-content: center;
             filter: drop-shadow(0 0 15px rgba(100, 200, 255, 0.3));
+            will-change: transform;
         }
         .rocket:hover {
             filter: drop-shadow(0 0 25px rgba(100, 200, 255, 0.5));
@@ -1134,16 +1131,7 @@
         /* =========================================================
             PARTICLE EFFECTS
         ========================================================= */
-        .rocket-particles {
-            position: absolute;
-            left: 15%;
-            bottom: 74px;
-            width: 80px;
-            height: 80px;
-            pointer-events: none;
-            z-index: 2;
-            overflow: visible;
-        }
+        .rocket-particles { display:none; }
 
         /* =========================================================
            FLAME - PREMIUM ICE FIRE
@@ -1172,22 +1160,7 @@
         /* =========================================================
            ROCKET TRAIL - PREMIUM GLOW
         ========================================================= */
-        .rocket-trail {
-            position: absolute;
-            left: 8%;
-            bottom: 78px;
-            width: 140px;
-            height: 8px;
-            border-radius: 50%;
-            background: linear-gradient(90deg, rgba(100, 200, 255, 0), rgba(100, 200, 255, 0.2), rgba(79, 195, 247, 0.7), rgba(100, 200, 255, 0.9));
-            filter: blur(5px);
-            opacity: 0;
-            transform: rotate(-12deg);
-            transform-origin: right center;
-            z-index: 3;
-            transition: left 0.1s linear, bottom 0.1s linear, width 0.1s linear, opacity 0.3s ease;
-            box-shadow: 0 0 40px rgba(79, 195, 247, 0.2);
-        }
+        .rocket-trail { display:none; }
         .rocket-trail::after {
             content: "";
             position: absolute;
@@ -1205,6 +1178,24 @@
         /* =========================================================
            STATUS MESSAGE
         ========================================================= */
+        .rocket-crash-effect {
+            position:absolute; left:15%; bottom:74px; width:76px; height:76px;
+            border:3px solid rgba(255,221,112,.98); border-radius:50%; opacity:0;
+            pointer-events:none; z-index:8; transform:translate3d(0,0,0) scale(.35);
+            box-shadow:0 0 18px rgba(255,205,80,.65), inset 0 0 16px rgba(255,205,80,.25);
+        }
+        .rocket-crash-effect::before,.rocket-crash-effect::after {
+            content:''; position:absolute; inset:-13px; border-radius:50%;
+            border:2px dashed rgba(255,221,112,.9);
+        }
+        .rocket-crash-effect::after { inset:-25px; border-style:solid; border-width:1px; opacity:.35; filter:blur(1px); }
+        .rocket-crash-effect.show { animation:rocketCrashBurst .72s ease-out forwards; }
+        @keyframes rocketCrashBurst {
+            0% { opacity:0; transform:translate3d(var(--crash-x,0px),var(--crash-y,0px),0) scale(.35); }
+            18% { opacity:1; } 60% { opacity:1; transform:translate3d(var(--crash-x,0px),var(--crash-y,0px),0) scale(1); }
+            100% { opacity:0; transform:translate3d(var(--crash-x,0px),var(--crash-y,0px),0) scale(1.28); }
+        }
+
         .status-message {
             position: absolute;
             left: 0;
@@ -2782,6 +2773,7 @@
                          <div id="telegram-rocket" class="telegram-rocket hidden" aria-hidden="true"></div>
                          <div id="rocket" class="rocket"></div>
                          <div id="rocket-particles" class="rocket-particles"></div>
+                         <div id="rocket-crash-effect" class="rocket-crash-effect" aria-hidden="true"></div>
                      </div>
                     <div id="status-message" class="status-message">الاتصال بالسيرفر...</div>
                 </section>
@@ -4452,26 +4444,29 @@
                 }
             }
             if (state.phase === "FLIGHT") {
+                document.getElementById("countdown-container").classList.remove("show");
                 if (previousPhase !== "FLIGHT") {
                     displayMultiplier = 1.00;
-                    document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("waiting");
                     document.getElementById("multiplier").classList.add("flying");
+                    document.getElementById("rocket-crash-effect")?.classList.remove("show");
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
-                // Ensure the Telegram Stellar Rocket is prepared exactly when a new flight starts.
+                document.getElementById("telegram-rocket")?.classList.remove("crashed");
                 prepareTelegramRocketForRound(currentRoundId);
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
+                document.getElementById("countdown-container").classList.remove("show");
                 document.getElementById("multiplier").classList.remove("flying");
                 document.getElementById("multiplier").classList.add("crashed");
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
                 document.getElementById("rocket").classList.add("crashed");
+                document.getElementById("telegram-rocket")?.classList.add("crashed");
+                showRocketCrashEffect();
                 stopTelegramRocketAtCrash();
                 document.getElementById("flame").style.display = "none";
-                document.getElementById("countdown-container").classList.remove("show");
             }
             gamePhase = state.phase;
             globalHistory = state.history || [];
@@ -4485,86 +4480,73 @@
            SMOOTH ANIMATION LOOP (التعديل السحري هنا!)
            هذه الدالة تجعل الرقم يصعد بشكل ناعم ومستمر نحو القيمة الجديدة
         ========================================================= */
-        function animateGameLoop() {
+        let lastAnimationFrameTime = 0;
+        function animateGameLoop(frameTime) {
+            const now = Number.isFinite(frameTime) ? frameTime : performance.now();
+            const dt = lastAnimationFrameTime ? Math.min((now-lastAnimationFrameTime)/1000,.05) : 1/60;
+            lastAnimationFrameTime = now;
             if (gamePhase === "FLIGHT") {
-                const serverNow = Date.now() + serverTimeOffset;
-                const elapsedSeconds = flightStartedAt
-                    ? Math.max((serverNow - flightStartedAt) / 1000, 0)
-                    : 0;
-                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
-                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
-
-                const multEl = document.getElementById("multiplier");
-                if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
-
-                const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
+                const target = Math.max(1, Number(currentMultiplier)||1);
+                const follow = Math.min(1, dt*14);
+                displayMultiplier += (target-displayMultiplier)*follow;
+                if (Math.abs(target-displayMultiplier)<.002) displayMultiplier=target;
+                const multEl=document.getElementById("multiplier");
+                if (multEl) {
+                    const text=displayMultiplier.toFixed(2)+"x";
+                    if (multEl.textContent!==text) multEl.textContent=text;
+                }
+                const progress=Math.min(1,1-Math.exp(-(displayMultiplier-1)/1.8));
                 moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
-                // حساب العداد الدائري
-                const now = Date.now();
-                const elapsed = now - countdownStartTime;
-                if (elapsed < countdownDuration) {
-                    const remainingSec = Math.ceil((countdownDuration - elapsed) / 1000);
-                    document.getElementById("countdown").textContent = remainingSec;
-                    
-                    const rotation = (elapsed / countdownDuration) * 360;
-                    document.getElementById("countdown-progress").style.transform = `rotate(${rotation - 45}deg)`;
-                }
+                const elapsed=Math.max(0,Date.now()-countdownStartTime);
+                const remaining=Math.max(0,Math.ceil((countdownDuration-elapsed)/1000));
+                const countdownEl=document.getElementById("countdown");
+                if(countdownEl) countdownEl.textContent=remaining;
+                const progressEl=document.getElementById("countdown-progress");
+                if(progressEl) progressEl.style.transform=`rotate(${Math.min(360,elapsed/Math.max(countdownDuration,1)*360)-45}deg)`;
             }
             requestAnimationFrame(animateGameLoop);
         }
 
         function moveRocket(progress) {
-            const rocket = document.getElementById("rocket");
-            const telegramRocket = document.getElementById("telegram-rocket");
-            const flame = document.getElementById("flame");
-            const trail = document.getElementById("rocket-trail");
-            const particles = document.getElementById("rocket-particles");
-            if(!rocket) return;
-            
-            rocket.style.left = `${15 + progress * 58}%`;
-            rocket.style.bottom = `${74 + progress * 120}px`;
-            rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
-                telegramRocket.style.left = `${15 + progress * 58}%`;
-                telegramRocket.style.bottom = `${74 + progress * 120}px`;
-                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-                if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
+            const rocket=document.getElementById("rocket");
+            const telegramRocket=document.getElementById("telegram-rocket");
+            const flame=document.getElementById("flame");
+            const line=document.getElementById("flight-line");
+            const area=document.querySelector(".rocket-area");
+            if(!rocket||!area)return;
+            const x=area.clientWidth*.58*progress;
+            const y=area.clientHeight*.28*progress;
+            const rotation=-12-progress*12;
+            const transform=`translate3d(${x.toFixed(1)}px,${(-y).toFixed(1)}px,0) rotate(${rotation.toFixed(2)}deg)`;
+            rocket.style.transform=transform;
+            if(telegramRocket&&!telegramRocket.classList.contains("hidden")){
+                telegramRocket.style.transform=transform;
+                if(telegramRocketVideo&&telegramRocketVideo.paused) telegramRocketVideo.play().catch(()=>{});
+                if(flame)flame.style.display="none";
+            }else if(flame){
+                flame.style.display="block";
+                flame.style.height=`${40+progress*18}px`;
+                flame.style.opacity=`${.5+progress*.5}`;
+                flame.style.transform=`translate3d(${x.toFixed(1)}px,${(-y).toFixed(1)}px,0) rotate(${rotation}deg)`;
             }
-            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
-            if (flame) {
-                flame.style.display = "block";
-                flame.style.height = `${40 + progress * 20}px`;
-                flame.style.opacity = `${0.5 + progress * 0.5}`;
-            }
-            if (trail) {
-                trail.classList.add("active");
-                trail.style.width = `${140 + progress * 60}px`;
-                trail.style.opacity = `${0.3 + progress * 0.7}`;
-            }
-            if (particles) {
-                particles.style.left = rocket.style.left;
-                particles.style.bottom = rocket.style.bottom;
-                createParticle(particles, progress);
+            if(line){
+                line.classList.add("active");
+                const scale=Math.min(1,Math.max(.12,(x+42)/(area.clientWidth*.65)));
+                line.style.opacity=`${.55+progress*.35}`;
+                line.style.transform=`translate3d(0,${(-y).toFixed(1)}px,0) rotate(${-10-progress*5}deg) scaleX(${scale.toFixed(3)})`;
             }
         }
-
-        var lastParticleTime = 0;
-        function createParticle(container, progress) {
-            var now = Date.now();
-            if (now - lastParticleTime < 50) return;
-            lastParticleTime = now;
-            var p = document.createElement('div');
-            p.style.cssText = `position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(100,200,255,${0.4 + progress * 0.6});pointer-events:none;box-shadow:0 0 10px rgba(100,200,255,0.5);animation:particleFloat 1s ease-out forwards;`;
-            p.style.left = '50%';
-            p.style.top = '50%';
-            container.appendChild(p);
-            setTimeout(function() { if (p.parentNode) p.parentNode.removeChild(p); }, 1000);
+        function showRocketCrashEffect(){
+            const effect=document.getElementById("rocket-crash-effect");
+            const rocket=document.getElementById("rocket");
+            if(!effect||!rocket)return;
+            const match=(rocket.style.transform||"").match(/translate3d\(([-0-9.]+)px,\s*([-0-9.]+)px/);
+            const x=match?Number(match[1]):0, y=match?Number(match[2]):0;
+            effect.style.setProperty("--crash-x",`${Number.isFinite(x)?x:0}px`);
+            effect.style.setProperty("--crash-y",`${Number.isFinite(y)?y:0}px`);
+            effect.classList.remove("show"); void effect.offsetWidth; effect.classList.add("show");
         }
-        var particleStyle = document.createElement('style');
-        particleStyle.textContent = '@keyframes particleFloat { to { transform: translate(-50%, -100px) scale(0.5); opacity: 0; } }';
-        document.head.appendChild(particleStyle);
 
         /* =========================================================
            HISTORY
