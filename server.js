@@ -2813,7 +2813,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
                 req.user.id,
                 'BET_WON',
                 'Collectible prize granted!',
-                { betId, multiplier: result.multiplier, rewardId: result.rewardCollectibleId }
+                { betId, multiplier: result.multiplier, rewardGiftType: result.rewardGiftType, rewardUserGiftId: result.rewardUserGiftId }
             );
             return res.json({ 
                 ok: true,
@@ -2821,7 +2821,8 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
                 multiplier: result.multiplier,
                 giftValue: result.giftValue,
                 rewardGranted: true,
-                rewardCollectibleId: result.rewardCollectibleId,
+                rewardGiftType: result.rewardGiftType,
+                rewardCollectibleId: result.rewardUserGiftId ? `pending:${result.rewardUserGiftId}` : null,
                 message: result.message,
                 balance: balance
             });
