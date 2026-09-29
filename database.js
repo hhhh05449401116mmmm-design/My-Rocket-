@@ -164,8 +164,16 @@ async function migrateUserGiftsConstraint() {
             } catch { /* malformed legacy metadata — nothing to backfill */ }
         }
 
+        await run(`DROP INDEX IF EXISTS idx_user_gifts_unique_collectible`);
+        await run(`DROP INDEX IF EXISTS idx_user_gifts_telegram_instance`);
         await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_unique_collectible
-            ON user_gifts(unique_collectible_id) WHERE unique_collectible_id IS NOT NULL`);
+            ON user_gifts(unique_collectible_id)
+            WHERE unique_collectible_id IS NOT NULL
+              AND status IN ('OWNED', 'IN_BET', 'LOCKED')`);
+        await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
+            ON user_gifts(telegram_gift_instance_id)
+            WHERE telegram_gift_instance_id IS NOT NULL
+              AND status IN ('OWNED', 'IN_BET', 'LOCKED')`);
         await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
             ON user_gifts(telegram_gift_instance_id) WHERE telegram_gift_instance_id IS NOT NULL`);
         await run(`CREATE INDEX IF NOT EXISTS idx_user_gifts_user_gift_lookup
@@ -473,13 +481,23 @@ function initDatabase() {
                     }
                 });
             });
-            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_unique_collectible
-                ON user_gifts(unique_collectible_id) WHERE unique_collectible_id IS NOT NULL`, error => {
-                if (error) console.error('Failed to index unique_collectible_id:', error.message);
+            db.run(`DROP INDEX IF EXISTS idx_user_gifts_unique_collectible`, error => {
+                if (error) console.error('Failed to drop legacy unique_collectible_id index:', error.message);
+                db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_unique_collectible
+                    ON user_gifts(unique_collectible_id)
+                    WHERE unique_collectible_id IS NOT NULL
+                      AND status IN ('OWNED', 'IN_BET', 'LOCKED')`, indexError => {
+                    if (indexError) console.error('Failed to create active unique_collectible_id index:', indexError.message);
+                });
             });
-            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
-                ON user_gifts(telegram_gift_instance_id) WHERE telegram_gift_instance_id IS NOT NULL`, error => {
-                if (error) console.error('Failed to index telegram_gift_instance_id:', error.message);
+            db.run(`DROP INDEX IF EXISTS idx_user_gifts_telegram_instance`, error => {
+                if (error) console.error('Failed to drop legacy telegram_gift_instance_id index:', error.message);
+                db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_gifts_telegram_instance
+                    ON user_gifts(telegram_gift_instance_id)
+                    WHERE telegram_gift_instance_id IS NOT NULL
+                      AND status IN ('OWNED', 'IN_BET', 'LOCKED')`, indexError => {
+                    if (indexError) console.error('Failed to create active telegram_gift_instance_id index:', indexError.message);
+                });
             });
 
             // Referral migrations.
@@ -1228,6 +1246,19 @@ async function getCollectibleByUniqueId(uniqueCollectibleId) {
         FROM user_gifts ug
         JOIN gifts g ON ug.gift_id = g.id
         WHERE ug.unique_collectible_id = ?
+        ORDER BY
+            CASE ug.status
+                WHEN 'OWNED' THEN 0
+                WHEN 'IN_BET' THEN 0
+                WHEN 'LOCKED' THEN 0
+                WHEN 'SENT' THEN 1
+                WHEN 'WON' THEN 2
+                WHEN 'LOST' THEN 3
+                WHEN 'SOLD' THEN 3
+                ELSE 4
+            END,
+            ug.id DESC
+        LIMIT 1
     `, [uniqueCollectibleId]);
 }
 
@@ -1346,12 +1377,39 @@ async function getPendingIntentByTelegramSenderId(telegramSenderId) {
 }
 
 // تحقق هل هذه القطعة الفريدة تم اعتمادها من قبل (idempotency ضد تكرار الاستطلاع/polling).
-async function isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId) {
-    const existing = await get(
-        'SELECT * FROM user_gifts WHERE unique_collectible_id = ? OR telegram_gift_instance_id = ?',
-        [uniqueCollectibleId, telegramGiftInstanceId]
+async function isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId, senderTelegramId = null) {
+    const existing = await get(`
+        SELECT *
+        FROM user_gifts
+        WHERE unique_collectible_id = ? OR telegram_gift_instance_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+    `, [uniqueCollectibleId, telegramGiftInstanceId]);
+
+    if (!existing) return null;
+
+    // Active ownership is authoritative and blocks duplicate ownership.
+    if (['OWNED', 'IN_BET', 'LOCKED'].includes(existing.status)) {
+        return existing;
+    }
+
+    // Legacy/diagnostic callers without sender context keep idempotent behavior.
+    if (!senderTelegramId) return existing;
+
+    const senderUser = await get(
+        'SELECT id FROM users WHERE telegram_id = ?',
+        [String(senderTelegramId)]
     );
-    return existing || null;
+
+    // The same sender seeing the same historical gift in Account 2 is normal
+    // after a loss/sale; do not credit it again on every inventory sweep.
+    if (senderUser && String(existing.user_id) === String(senderUser.id)) {
+        return existing;
+    }
+
+    // A different player can legitimately bring the exact same Telegram
+    // collectible back into the game after the previous ownership ended.
+    return null;
 }
 
 // اعتماد قطعة Telegram الحقيقية ذريًا: تُنشئ/تُحدّث user_gifts، تضبط ownership_verified=1، وتُستهلك الـ intent.
@@ -1369,59 +1427,64 @@ async function creditVerifiedCollectible({
     return await transaction(async () => {
         const already = await isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftInstanceId);
 
-        // A collectible that was previously withdrawn is marked SENT because it left
-        // the game's custody. If its owner later sends that same collectible back to
-        // the game, reactivate the existing record instead of treating it as a duplicate.
-        // SOLD remains final because a real sale already credited the player's balance.
-        if (already) {
-            if (
-                already.user_id === userId &&
-                already.status === 'SENT' &&
-                String(already.unique_collectible_id || '') === String(uniqueCollectibleId)
-            ) {
-                const updated = await run(`
-                    UPDATE user_gifts
-                    SET status = 'OWNED',
-                        telegram_gift_instance_id = ?,
-                        collectible_number = ?,
-                        ownership_verified = 1,
-                        verified_metadata = ?,
-                        telegram_thumbnail_file_id = ?,
-                        market_value = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ? AND user_id = ? AND status = 'SENT'
-                `, [
-                    telegramGiftInstanceId,
-                    collectibleNumber,
-                    verifiedMetadata,
-                    stickerFileId || null,
-                    Number(telegramGiftModel.value || already.market_value || 0),
-                    already.id,
-                    userId
-                ]);
+        // A withdrawn collectible is marked SENT. If the same player sends the
+        // exact same collectible back, restore that historical row.
+        const sentReturn = await get(`
+            SELECT *
+            FROM user_gifts
+            WHERE user_id = ? AND unique_collectible_id = ? AND status = 'SENT'
+            ORDER BY id DESC
+            LIMIT 1
+        `, [userId, uniqueCollectibleId]);
 
-                if (updated.changes !== 1) {
-                    throw new Error('Collectible return-to-game was changed concurrently');
-                }
-
-                if (intentId) {
-                    await run(`
-                        UPDATE collectible_import_intents
-                        SET status = 'CONSUMED'
-                        WHERE id = ? AND status = 'PENDING'
-                    `, [intentId]);
-                }
-
-                return {
-                    alreadyCredited: false,
-                    reactivated: true,
-                    userGift: await get('SELECT * FROM user_gifts WHERE id = ?', [already.id])
-                };
-            }
-
+        if (already && ['OWNED', 'IN_BET', 'LOCKED'].includes(already.status)) {
             return { alreadyCredited: true, userGift: already };
         }
 
+        if (sentReturn) {
+            const updated = await run(`
+                UPDATE user_gifts
+                SET status = 'OWNED',
+                    telegram_gift_instance_id = ?,
+                    collectible_number = ?,
+                    ownership_verified = 1,
+                    verified_metadata = ?,
+                    telegram_thumbnail_file_id = ?,
+                    market_value = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ? AND status = 'SENT'
+            `, [
+                telegramGiftInstanceId,
+                collectibleNumber,
+                verifiedMetadata,
+                stickerFileId || null,
+                Number(telegramGiftModel.value || sentReturn.market_value || 0),
+                sentReturn.id,
+                userId
+            ]);
+
+            if (updated.changes !== 1) {
+                throw new Error('Collectible return-to-game was changed concurrently');
+            }
+
+            if (intentId) {
+                await run(`
+                    UPDATE collectible_import_intents
+                    SET status = 'CONSUMED'
+                    WHERE id = ? AND status = 'PENDING'
+                `, [intentId]);
+            }
+
+            return {
+                alreadyCredited: false,
+                reactivated: true,
+                userGift: await get('SELECT * FROM user_gifts WHERE id = ?', [sentReturn.id])
+            };
+        }
+
+        // LOST/SOLD/SENT rows are historical and do not reserve the Telegram
+        // collectible for future assignment. The same exact unique collectible
+        // can therefore receive a new ownership row for a later player.
         let giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftModel.telegramGiftId]);
         if (!giftRow) {
             const inserted = await run(`
