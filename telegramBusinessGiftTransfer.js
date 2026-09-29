@@ -97,14 +97,16 @@ async function listBusinessCollectibles() {
     return results;
 }
 
-async function findBusinessGiftForType({ telegramGiftId, giftName }) {
+async function findBusinessGiftForType({ telegramGiftId, giftName, excludedUniqueIds = [] }) {
     const wantedId = telegramGiftId == null ? null : String(telegramGiftId);
     const wantedName = String(giftName || '').trim().toLowerCase();
     const gifts = await listBusinessCollectibles();
+    const excluded = new Set((Array.isArray(excludedUniqueIds) ? excludedUniqueIds : []).map(value => String(value)));
 
     const candidates = gifts.filter(item => {
         const gift = item?.gift;
         const unique = savedGiftUniqueId(item);
+        if (excluded.has(String(unique))) return false;
         const transferStars = savedGiftTransferStars(item);
         const canTransferAt = savedGiftCanTransferAt(item);
         const now = Math.floor(Date.now() / 1000);
