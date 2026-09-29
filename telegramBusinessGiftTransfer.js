@@ -148,6 +148,13 @@ function giftMetadata(savedGift) {
     };
 }
 
+async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
+    const wanted = String(uniqueCollectibleId || '');
+    if (!wanted) return null;
+    const gifts = await listBusinessCollectibles();
+    return gifts.find(item => savedGiftUniqueId(item) === wanted) || null;
+}
+
 async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
     const telegramClient = await ensureBusinessGiftClient();
     const msgId = savedGiftMsgId(savedGift);
