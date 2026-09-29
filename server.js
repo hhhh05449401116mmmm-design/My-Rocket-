@@ -3003,6 +3003,7 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             }
 
             const reserved = await reservePendingGiftForWithdrawal(req.user.id, userGiftId);
+            let selectedUniqueId = null;
             try {
                 const selected = await findBusinessGiftForType({
                     telegramGiftId: reserved.telegram_gift_id,
@@ -3018,13 +3019,9 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                     });
                 }
 
-                const transferInfo = {
-                    ...(await transferSelectedGiftToUser.preview ? {} : {})
-                };
-
                 // Persist the selected concrete collectible BEFORE the external transfer.
                 // This makes rollback safe if Telegram rejects the transfer.
-                const selectedUniqueId = String(selected?.gift?.name || selected?.gift?.title || '').trim() +
+                selectedUniqueId = String(selected?.gift?.name || selected?.gift?.title || '').trim() +
                     '-' + String(selected?.gift?.num ?? selected?.gift?.number ?? '');
                 if (!selectedUniqueId || selectedUniqueId.endsWith('-')) {
                     throw new Error('Telegram did not return a valid unique collectible identity');
@@ -3077,11 +3074,8 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                 });
             } catch (error) {
                 try {
-                    const current = await getCollectibleByUniqueId(
-                        String(error?.uniqueCollectibleId || '')
-                    );
-                    if (current?.unique_collectible_id) {
-                        await rollbackGiftWithdrawal(req.user.id, current.unique_collectible_id, error.message);
+                    if (selectedUniqueId) {
+                        await rollbackGiftWithdrawal(req.user.id, selectedUniqueId, error.message);
                     } else {
                         await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
                     }
