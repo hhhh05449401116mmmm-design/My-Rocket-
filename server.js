@@ -920,7 +920,7 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
         if (!identity) continue;
         uniqueDetected++;
 
-        const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId);
+        const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId, identity.senderTelegramId);
         if (alreadyCredited) {
             // Revalue existing verified collectibles from Telegram's live market.
             try {
