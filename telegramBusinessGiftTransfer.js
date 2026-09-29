@@ -157,26 +157,89 @@ async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
     return gifts.find(item => savedGiftUniqueId(item) === wanted) || null;
 }
 
+function telegramErrorDetails(error) {
+    if (!error) return { name: null, message: 'Unknown Telegram error' };
+    const details = {
+        name: error.name || error.constructor?.name || null,
+        message: error.message || String(error),
+        code: error.code ?? null,
+        errorMessage: error.errorMessage ?? error.error_message ?? null,
+        rpcError: error.rpcError ?? null
+    };
+    for (const key of ['seconds', 'retryAfter', 'retry_after', 'type', 'className']) {
+        if (error[key] != null) details[key] = error[key];
+    }
+    return details;
+}
+
+function logTelegramTransferError(stage, error, context = {}) {
+    console.error('ACCOUNT2 TELEGRAM GIFT TRANSFER ERROR:', JSON.stringify({
+        stage,
+        ...context,
+        error: telegramErrorDetails(error)
+    }));
+}
+
 async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
     const telegramClient = await ensureBusinessGiftClient();
     const msgId = savedGiftMsgId(savedGift);
     if (!Number.isSafeInteger(msgId) || msgId <= 0) throw new Error('Telegram did not return a valid saved gift message id');
 
-    const recipientPeer = await telegramClient.getInputEntity(Number(telegramUserId));
+    let recipientPeer;
+    try {
+        recipientPeer = await telegramClient.getInputEntity(Number(telegramUserId));
+    } catch (error) {
+        logTelegramTransferError('resolve_recipient', error, {
+            telegramUserId: Number(telegramUserId),
+            msgId
+        });
+        throw error;
+    }
+
     const stargift = new Api.InputSavedStarGiftUser({ msgId });
     const invoice = new Api.InputInvoiceStarGiftTransfer({ stargift, toId: recipientPeer });
     const transferStars = savedGiftTransferStars(savedGift);
 
     if (transferStars && transferStars > 0) {
-        const paymentForm = await telegramClient.api.payments.getPaymentForm({ invoice });
+        let paymentForm;
+        try {
+            paymentForm = await telegramClient.api.payments.getPaymentForm({ invoice });
+        } catch (error) {
+            logTelegramTransferError('get_payment_form', error, {
+                telegramUserId: Number(telegramUserId),
+                msgId,
+                transferStars
+            });
+            throw error;
+        }
         const formId = numberValue(paymentForm?.formId ?? paymentForm?.form_id);
         if (!Number.isSafeInteger(formId) || formId <= 0) throw new Error('Telegram did not return a valid Stars payment form');
-        await telegramClient.api.payments.sendStarsForm({ formId, invoice });
+
+        try {
+            await telegramClient.api.payments.sendStarsForm({ formId, invoice });
+        } catch (error) {
+            logTelegramTransferError('send_stars_form', error, {
+                telegramUserId: Number(telegramUserId),
+                msgId,
+                transferStars,
+                formId
+            });
+            throw error;
+        }
     } else {
-        await telegramClient.api.payments.transferStarGift({
-            stargift,
-            toId: recipientPeer
-        });
+        try {
+            await telegramClient.api.payments.transferStarGift({
+                stargift,
+                toId: recipientPeer
+            });
+        } catch (error) {
+            logTelegramTransferError('transfer_star_gift', error, {
+                telegramUserId: Number(telegramUserId),
+                msgId,
+                transferStars
+            });
+            throw error;
+        }
     }
 
     return {
