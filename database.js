@@ -1203,7 +1203,7 @@ async function updateGiftStatus(userGiftId, status) {
 // ===== 5.2.1 أساس ملكية Collectible Gifts الحقيقية (لا يُستخدم بعد من مسارات الرهان الحالية) =====
 
 // كل هدايا المستخدم مع حقول الملكية الفريدة الجديدة، دون المساس بـ getUserGifts القائمة.
-async function getUserCollectibles(userId, status = null) {
+async function getUserCollectibles(userId, status = 'ACTIVE') {
     let sql = `
         SELECT g.*, ug.id AS user_gift_id, ug.status AS ownership_status,
                ug.unique_collectible_id, ug.telegram_gift_instance_id,
@@ -1215,7 +1215,9 @@ async function getUserCollectibles(userId, status = null) {
         WHERE ug.user_id = ?
     `;
     const params = [userId];
-    if (status) {
+    if (status === 'ACTIVE') {
+        sql += " AND ug.status IN ('OWNED', 'IN_BET', 'LOCKED')";
+    } else if (status) {
         sql += ' AND ug.status = ?';
         params.push(status);
     }
