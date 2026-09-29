@@ -5237,6 +5237,9 @@
                 updateAutoCashoutUI();
                 if (typeof data.balance === 'number') { tonBalance = data.balance; updateTonWalletUI(); }
                 else { await fetchBalance(); }
+                if (currentBetType === "GIFT" && data.rewardGranted) {
+                    await fetchCollectibles();
+                }
                 showToast(t.cashOut);
             } catch (error) {
                 console.error("CASHOUT ERROR:", error);
