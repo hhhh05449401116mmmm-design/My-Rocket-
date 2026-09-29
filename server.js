@@ -2261,7 +2261,11 @@ app.get('/api/collectibles/portfolio', authenticate, async (req, res) => {
 
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
-            .filter(row => row.ownership_verified === 1 && row.unique_collectible_id)
+            .filter(row =>
+                (row.ownership_status === 'OWNED' && row.ownership_verified === 1 && row.unique_collectible_id) ||
+                (row.ownership_status === 'IN_BET' && row.ownership_verified === 1 && row.unique_collectible_id) ||
+                (row.ownership_status === 'WON' && !row.unique_collectible_id)
+            )
             .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {
