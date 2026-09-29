@@ -3074,11 +3074,7 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                 });
             } catch (error) {
                 try {
-                    if (selectedUniqueId) {
-                        await rollbackGiftWithdrawal(req.user.id, selectedUniqueId, error.message);
-                    } else {
-                        await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
-                    }
+                    await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
                 } catch (rollbackError) {
                     console.error('ACCOUNT2 WITHDRAW ROLLBACK ERROR:', rollbackError.message);
                 }
