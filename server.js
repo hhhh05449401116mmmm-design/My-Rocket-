@@ -258,6 +258,7 @@ const {
 const {
     ensureBusinessGiftClient,
     findBusinessGiftForType,
+    findBusinessGiftByUniqueId,
     transferSelectedGiftToUser
 } = require('./telegramBusinessGiftTransfer');
 
@@ -2995,8 +2996,6 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Your Telegram account ID could not be verified', reason: 'invalid_telegram_user' });
         }
 
-        // Pending reward: the game stored only the gift TYPE. Pick a concrete
-        // collectible from Account 2 now, at withdrawal time.
         if (String(collectibleId).startsWith('pending:')) {
             const userGiftId = Number(String(collectibleId).slice('pending:'.length));
             if (!Number.isSafeInteger(userGiftId) || userGiftId <= 0) {
@@ -3019,50 +3018,75 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                     });
                 }
 
-                const transferInfo = await transferSelectedGiftToUser({
+                const transferInfo = {
+                    ...(await transferSelectedGiftToUser.preview ? {} : {})
+                };
+
+                // Persist the selected concrete collectible BEFORE the external transfer.
+                // This makes rollback safe if Telegram rejects the transfer.
+                const selectedUniqueId = String(selected?.gift?.name || selected?.gift?.title || '').trim() +
+                    '-' + String(selected?.gift?.num ?? selected?.gift?.number ?? '');
+                if (!selectedUniqueId || selectedUniqueId.endsWith('-')) {
+                    throw new Error('Telegram did not return a valid unique collectible identity');
+                }
+
+                // transferSelectedGiftToUser performs the real transfer; attach first using
+                // the same identity, then Telegram is the final authority on success/failure.
+                const msgId = Number(selected?.msgId ?? selected?.msg_id);
+                if (!Number.isSafeInteger(msgId) || msgId <= 0) throw new Error('Telegram did not return a valid saved gift message id');
+                const transferStars = Number(selected?.transferStars ?? selected?.transfer_stars ?? 0);
+                const metadata = JSON.stringify({
+                    baseName: reserved.name,
+                    uniqueName: String(selected?.gift?.name || selected?.gift?.title || reserved.name),
+                    collectibleNumber: Number(selected?.gift?.num ?? selected?.gift?.number ?? 0) || null,
+                    ownedGiftId: selectedUniqueId,
+                    transferStarCount: Number.isSafeInteger(transferStars) ? transferStars : null,
+                    canBeTransferred: true
+                });
+
+                await attachPendingGiftCollectible(req.user.id, userGiftId, {
+                    uniqueCollectibleId: selectedUniqueId,
+                    telegramGiftInstanceId: String(msgId),
+                    collectibleNumber: Number(selected?.gift?.num ?? selected?.gift?.number ?? 0) || null,
+                    verifiedMetadata: metadata,
+                    marketValue: reserved.market_value || reserved.value || 0
+                });
+
+                const sent = await transferSelectedGiftToUser({
                     savedGift: selected,
                     telegramUserId: userTelegramId
                 });
 
-                await attachPendingGiftCollectible(req.user.id, userGiftId, {
-                    uniqueCollectibleId: transferInfo.uniqueCollectibleId,
-                    telegramGiftInstanceId: transferInfo.telegramGiftInstanceId,
-                    collectibleNumber: transferInfo.collectibleNumber,
-                    verifiedMetadata: transferInfo.verifiedMetadata,
-                    marketValue: reserved.market_value || reserved.value || 0
-                });
-
-                const stillOwned = await findBusinessGiftForType({
-                    telegramGiftId: reserved.telegram_gift_id,
-                    giftName: reserved.name
-                });
-                if (stillOwned && String(stillOwned?.gift?.num ?? '') === String(transferInfo.collectibleNumber ?? '')) {
+                const stillOwned = await findBusinessGiftByUniqueId(sent.uniqueCollectibleId);
+                if (stillOwned) {
                     throw new Error('Telegram transfer completed but the selected collectible is still owned by Account 2');
                 }
 
-                await confirmGiftWithdrawal(req.user.id, transferInfo.uniqueCollectibleId, 'telegram-business-account2-transfer-complete');
+                await confirmGiftWithdrawal(req.user.id, selectedUniqueId, 'telegram-business-account2-transfer-complete');
                 await createNotification(
                     req.user.id,
                     'GIFT_WON',
                     'Gift withdrawn to your Telegram account!',
-                    { collectibleId: transferInfo.uniqueCollectibleId, giftType: reserved.name }
+                    { collectibleId: selectedUniqueId, giftType: reserved.name }
                 );
                 return res.json({
                     ok: true,
                     status: 'SENT',
-                    collectibleId: transferInfo.uniqueCollectibleId,
+                    collectibleId: selectedUniqueId,
                     giftType: reserved.name
                 });
             } catch (error) {
                 try {
-                    const current = await getCollectibleByUniqueId(String(collectibleId));
+                    const current = await getCollectibleByUniqueId(
+                        String(error?.uniqueCollectibleId || '')
+                    );
                     if (current?.unique_collectible_id) {
                         await rollbackGiftWithdrawal(req.user.id, current.unique_collectible_id, error.message);
                     } else {
                         await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
                     }
                 } catch (rollbackError) {
-                    console.error('PENDING GIFT WITHDRAW ROLLBACK ERROR:', rollbackError.message);
+                    console.error('ACCOUNT2 WITHDRAW ROLLBACK ERROR:', rollbackError.message);
                 }
                 return res.status(502).json({
                     ok: false,
@@ -3074,8 +3098,6 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             }
         }
 
-        // Legacy already-specific collectible: keep the existing route behavior,
-        // but it is now a fallback for previously imported real collectibles only.
         const collectible = await getCollectibleByUniqueId(collectibleId);
         if (!collectible || collectible.user_id !== req.user.id) {
             return res.status(404).json({ ok: false, error: 'Collectible not found or not owned' });
@@ -3084,21 +3106,17 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Not a unique collectible' });
         }
 
-        const reserved = await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
+        await reserveCollectibleForWithdrawal(req.user.id, collectibleId);
         try {
-            const selected = await findBusinessGiftForType({
-                telegramGiftId: collectible.telegram_gift_id,
-                giftName: collectible.name
-            });
-            if (!selected) throw new Error('No transferable collectible of this gift type is currently available in Account 2');
+            const selected = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
+            if (!selected) throw new Error('This exact collectible is not currently owned by Account 2');
 
-            const transferInfo = await transferSelectedGiftToUser({ savedGift: selected, telegramUserId: userTelegramId });
-            if (transferInfo.uniqueCollectibleId !== collectible.unique_collectible_id) {
-                throw new Error('Selected Telegram collectible does not match the requested collectible');
-            }
+            await transferSelectedGiftToUser({ savedGift: selected, telegramUserId: userTelegramId });
+            const stillOwned = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
+            if (stillOwned) throw new Error('Telegram transfer completed but the collectible is still owned by Account 2');
 
             await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-business-account2-transfer-complete');
-            await createNotification(req.user.id, 'GIFT_WON', 'Gift withdrawn to your Telegram account!', { collectibleId, transferInfo });
+            await createNotification(req.user.id, 'GIFT_WON', 'Gift withdrawn to your Telegram account!', { collectibleId });
             return res.json({ ok: true, status: 'SENT', collectibleId });
         } catch (error) {
             await rollbackGiftWithdrawal(req.user.id, collectibleId, error.message);
