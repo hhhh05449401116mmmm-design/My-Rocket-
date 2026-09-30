@@ -7147,6 +7147,10 @@
             try { updateMainBetButton(); } catch (e) {}
             try { updateProfilePage(); } catch (e) {}
 
+            // Restore the existing local rocket renderer. This only mounts the
+            // already-defined Lottie rocket; it does not affect crash/round logic.
+            try { loadRocketAnimation(ROCKET_VARIANTS[currentRocketIndex].path); } catch (e) { console.error("Rocket renderer init error:", e); }
+
             try { document.getElementById("game-hub").classList.remove("hidden"); } catch (e) {}
             try { document.getElementById("rocket-game").classList.add("hidden"); } catch (e) {}
             try { document.getElementById("profile-page").classList.remove("show"); } catch (e) {}
