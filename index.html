@@ -5838,7 +5838,10 @@
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) {
-                    throw new Error(data.error || t.withdrawUnavailable || 'Withdrawal failed');
+                    const detail = String(data.detail || '').trim();
+                    const code = data.telegramCode != null ? ` [Telegram ${data.telegramCode}]` : '';
+                    const base = String(data.error || t.withdrawUnavailable || 'Withdrawal failed');
+                    throw new Error(detail ? `${base}: ${detail}${code}` : base);
                 }
                 showToast(t.giftsWithdrawn || '🎁 تم إرسال الهدية إلى حساب Telegram المرتبط!');
                 await fetchCollectibles();
