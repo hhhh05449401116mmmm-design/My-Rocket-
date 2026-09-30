@@ -813,6 +813,57 @@
             color: #ff6b6b;
         }
 
+        /* Rocket-only mobile performance path.
+           These overrides remove expensive blur/shadow animation from the
+           active game scene while keeping the game state and visuals intact. */
+        #rocket-game .game-card {
+            animation: none !important;
+        }
+        #rocket-game .flight-line,
+        #rocket-game .rocket,
+        #rocket-game .rocket-trail,
+        #rocket-game .flame,
+        #rocket-game .rocket-particles,
+        #rocket-game .rocket-trail::after {
+            filter: none !important;
+        }
+        #rocket-game .flight-line::after {
+            filter: none !important;
+        }
+        #rocket-game .rocket {
+            box-shadow: none !important;
+        }
+        #rocket-game .rocket svg {
+            filter: none !important;
+            animation: none !important;
+        }
+        #rocket-game .rocket-trail {
+            box-shadow: none !important;
+            transition: none !important;
+            will-change: transform, opacity;
+        }
+        #rocket-game .flame {
+            box-shadow: none !important;
+            transition: none !important;
+            animation: none !important;
+            will-change: transform, opacity;
+        }
+        #rocket-game .flight-line {
+            box-shadow: none !important;
+        }
+        #rocket-game .rocket-particles {
+            will-change: transform;
+        }
+        #rocket-game .telegram-rocket {
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            contain: layout paint;
+        }
+        #rocket-game .rocket-game-video-bg {
+            will-change: auto;
+        }
+
         /* =========================================================
            ROCKET GAME - PREMIUM ICE THEME
         ========================================================= */
@@ -3612,6 +3663,14 @@
         ========================================================= */
         let gameInterval = null;
         let gameStreamController = null;
+        let rocketAnimationFrame = 0;
+        let rocketRenderRefs = null;
+        let rocketAreaSize = { width: 0, height: 0 };
+        let rocketLastUiPaint = 0;
+        let rocketLastDecorPaint = 0;
+        let rocketLastCountdownPaint = 0;
+        let lastRenderedMultiplierText = '';
+        let lastRenderedMultiplierClass = '';
         let collectiblesEventSource = null;
         let serverConnected = false;
         let currentRoundId = 0;
@@ -4302,7 +4361,6 @@
             if (gameStreamController) gameStreamController.abort();
             connectToGameStream();
             connectToCollectiblesStream();
-            requestAnimationFrame(animateGameLoop);
         }
 
         async function connectToGameStream() {
@@ -4770,7 +4828,79 @@
            SMOOTH ANIMATION LOOP (التعديل السحري هنا!)
            هذه الدالة تجعل الرقم يصعد بشكل ناعم ومستمر نحو القيمة الجديدة
         ========================================================= */
-        function animateGameLoop() {
+        function getRocketRenderRefs() {
+            if (rocketRenderRefs) return rocketRenderRefs;
+            rocketRenderRefs = {
+                game: document.getElementById("rocket-game"),
+                rocket: document.getElementById("rocket"),
+                telegramRocket: document.getElementById("telegram-rocket"),
+                flame: document.getElementById("flame"),
+                trail: document.getElementById("rocket-trail"),
+                particles: document.getElementById("rocket-particles"),
+                area: document.querySelector(".rocket-area"),
+                multiplier: document.getElementById("multiplier"),
+                liveSlot: document.getElementById("live-multiplier-slot"),
+                countdown: document.getElementById("countdown"),
+                countdownProgress: document.getElementById("countdown-progress")
+            };
+            updateRocketAreaSize();
+            return rocketRenderRefs;
+        }
+
+        function updateRocketAreaSize() {
+            const area = rocketRenderRefs?.area;
+            if (!area) return;
+            const width = area.clientWidth;
+            const height = area.clientHeight;
+            if (width > 0 && height > 0) {
+                rocketAreaSize.width = width;
+                rocketAreaSize.height = height;
+            }
+        }
+
+        function startRocketAnimationLoop() {
+            const refs = getRocketRenderRefs();
+            if (!refs.game || refs.game.classList.contains("hidden")) return;
+            if (rocketAnimationFrame) return;
+            rocketAnimationFrame = requestAnimationFrame(animateGameLoop);
+        }
+
+        function stopRocketAnimationLoop() {
+            if (rocketAnimationFrame) {
+                cancelAnimationFrame(rocketAnimationFrame);
+                rocketAnimationFrame = 0;
+            }
+        }
+
+        function renderFlightMultiplier(timestamp) {
+            const refs = getRocketRenderRefs();
+            if (!refs.multiplier || !refs.liveSlot) return;
+            if (timestamp - rocketLastUiPaint < 33) return;
+            rocketLastUiPaint = timestamp;
+
+            const colorClass = historyClass(displayMultiplier);
+            const text = displayMultiplier.toFixed(2) + "x";
+
+            // Keep the exact visual value, but do not rewrite the DOM when
+            // nothing visible actually changed. This removes a major source
+            // of per-frame style/text work from the Rocket animation path.
+            if (text !== lastRenderedMultiplierText || colorClass !== lastRenderedMultiplierClass) {
+                refs.multiplier.className = "multiplier flying " + colorClass;
+                refs.multiplier.textContent = text;
+                refs.liveSlot.className = "live-multiplier-slot " + colorClass;
+                refs.liveSlot.textContent = text;
+                lastRenderedMultiplierText = text;
+                lastRenderedMultiplierClass = colorClass;
+            }
+        }
+
+        function animateGameLoop(timestamp) {
+            rocketAnimationFrame = 0;
+            const refs = getRocketRenderRefs();
+            if (!refs.game || refs.game.classList.contains("hidden") || document.visibilityState !== "visible") {
+                return;
+            }
+
             if (gamePhase === "FLIGHT") {
                 const serverNow = Date.now() + serverTimeOffset;
                 const elapsedSeconds = flightStartedAt
@@ -4788,57 +4918,44 @@
                     predictedMultiplier
                 );
 
-                const colorClass = historyClass(displayMultiplier);
-                const multEl = document.getElementById("multiplier");
-                if (multEl) {
-                    multEl.className = "multiplier flying " + colorClass;
-                    multEl.textContent = displayMultiplier.toFixed(2) + "x";
-                }
+                renderFlightMultiplier(timestamp);
 
-                const liveSlot = document.getElementById("live-multiplier-slot");
-                if (liveSlot) {
-                    liveSlot.className = "live-multiplier-slot " + colorClass;
-                    liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
-                }
-
-                // Visual motion follows the real flight clock at 60fps. Keep the
-                // path responsive rather than waiting on multiplier/SSE updates.
                 const visualFlightDuration = 6.5;
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
-                moveRocket(progress);
+                moveRocket(progress, timestamp);
             } else if (gamePhase === "COUNTDOWN") {
-                // حساب العداد الدائري
                 const now = Date.now();
                 const elapsed = now - countdownStartTime;
                 if (elapsed < countdownDuration) {
                     const remainingSec = Math.ceil((countdownDuration - elapsed) / 1000);
-                    document.getElementById("countdown").textContent = remainingSec;
-                    
-                    const rotation = (elapsed / countdownDuration) * 360;
-                    document.getElementById("countdown-progress").style.transform = `rotate(${rotation - 45}deg)`;
+                    if (timestamp - rocketLastCountdownPaint >= 33) {
+                        rocketLastCountdownPaint = timestamp;
+                        if (refs.countdown && refs.countdown.textContent !== String(remainingSec)) {
+                            refs.countdown.textContent = remainingSec;
+                        }
+                        const rotation = (elapsed / countdownDuration) * 360;
+                        if (refs.countdownProgress) {
+                            refs.countdownProgress.style.transform = `rotate(${rotation - 45}deg)`;
+                        }
+                    }
                 }
             }
-            requestAnimationFrame(animateGameLoop);
+
+            rocketAnimationFrame = requestAnimationFrame(animateGameLoop);
         }
 
-        function moveRocket(progress) {
-            const rocket = document.getElementById("rocket");
-            const telegramRocket = document.getElementById("telegram-rocket");
-            const flame = document.getElementById("flame");
-            const trail = document.getElementById("rocket-trail");
-            const particles = document.getElementById("rocket-particles");
-            const area = document.querySelector(".rocket-area");
+        function moveRocket(progress, timestamp) {
+            const refs = getRocketRenderRefs();
+            const rocket = refs.rocket;
+            const telegramRocket = refs.telegramRocket;
+            const area = refs.area;
             if (!rocket || !area) return;
 
-            // Drive the visual position directly from the continuously predicted
-            // flight progress. requestAnimationFrame already provides the smooth
-            // 60fps interpolation, so an extra follow-filter only adds visible lag.
+            // Cache the rocket-area dimensions instead of forcing a geometry
+            // read on every animation frame.
+            if (!rocketAreaSize.width || !rocketAreaSize.height) updateRocketAreaSize();
             const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            // Smooth Telegram-like flight path:
-            // - move forward first with only a very small vertical lift
-            // - introduce the climb gradually instead of lifting from the start
-            // - keep the whole path slower and smoother than the previous version
             const pathProgress = Math.pow(p, 0.68);
             const climbStart = 0.22;
             const climbProgress = Math.max(
@@ -4846,13 +4963,11 @@
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            const x = area.clientWidth * 0.58 * pathProgress;
-            const y = area.clientHeight * 0.30 * smoothClimb;
+            const x = rocketAreaSize.width * 0.58 * pathProgress;
+            const y = rocketAreaSize.height * 0.30 * smoothClimb;
             const rotation = -7 - smoothClimb * 20;
-            const transform = `translate3d(${x.toFixed(3)}px, ${(-y).toFixed(3)}px, 0) rotate(${rotation.toFixed(3)}deg)`;
+            const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
 
-            // Only animate the renderer that is currently visible.
-            // This avoids doing a second transform update on the hidden fallback.
             const telegramVisible = telegramRocket &&
                 !telegramRocket.classList.contains("hidden") &&
                 !telegramRocket.classList.contains("telegram-fallback-hidden") &&
@@ -4868,21 +4983,25 @@
                 telegramRocketVideo.play().catch(() => {});
             }
 
-            if (flame) {
-                flame.style.display = "block";
-                flame.style.transform = "rotate(-12deg) translate3d(0, 0, 0) scaleY(${0.9 + pathProgress * 0.55})";
-                flame.style.opacity = "${0.55 + pathProgress * 0.45}";
+            // Decorative flame/trail do not need 60 DOM writes per second.
+            // The rocket itself stays at the full display refresh rate.
+            if (timestamp - rocketLastDecorPaint >= 33) {
+                rocketLastDecorPaint = timestamp;
+                if (refs.flame) {
+                    refs.flame.style.display = "block";
+                    refs.flame.style.transform = `rotate(-12deg) translate3d(0, 0, 0) scaleY(${0.9 + pathProgress * 0.55})`;
+                    refs.flame.style.opacity = String(0.55 + pathProgress * 0.45);
+                }
+                if (refs.trail) {
+                    refs.trail.classList.add("active");
+                    refs.trail.style.transform = `rotate(-12deg) translate3d(0, 0, 0) scaleX(${0.74 + pathProgress * 0.32})`;
+                    refs.trail.style.opacity = String(0.32 + pathProgress * 0.68);
+                }
             }
 
-            if (trail) {
-                trail.classList.add("active");
-                trail.style.transform = "rotate(-12deg) translate3d(0, 0, 0) scaleX(${0.74 + pathProgress * 0.32})";
-                trail.style.opacity = "${0.32 + pathProgress * 0.68}";
-            }
-
-            if (particles) {
-                particles.style.transform = transform;
-                updateRocketParticlePool(particles, pathProgress);
+            if (refs.particles) {
+                refs.particles.style.transform = transform;
+                updateRocketParticlePool(refs.particles, pathProgress);
             }
         }
 
@@ -6470,6 +6589,8 @@
                 else video.addEventListener("loadeddata", startVideo, { once: true });
                 requestAnimationFrame(startVideo);
             }
+            updateRocketAreaSize();
+            startRocketAnimationLoop();
         }
 
         function closeRocketGame() {
@@ -6478,6 +6599,7 @@
                 try { video.pause(); } catch (e) {}
             }
             if (gameInterval) clearInterval(gameInterval);
+            stopRocketAnimationLoop();
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("playhub-screen").classList.add("hidden");
             document.getElementById("game-hub").classList.remove("hidden");
@@ -6490,7 +6612,12 @@
                 const rocketGame = document.getElementById("rocket-game");
                 if (rocketGame && !rocketGame.classList.contains("hidden")) {
                     requestAnimationFrame(playRocketBackgroundVideo);
+                    startRocketAnimationLoop();
+                } else {
+                    stopRocketAnimationLoop();
                 }
+            } else {
+                stopRocketAnimationLoop();
             }
         });
 
@@ -6498,8 +6625,13 @@
             const rocketGame = document.getElementById("rocket-game");
             if (rocketGame && !rocketGame.classList.contains("hidden")) {
                 requestAnimationFrame(playRocketBackgroundVideo);
+                startRocketAnimationLoop();
             }
         });
+
+        window.addEventListener("resize", function() {
+            updateRocketAreaSize();
+        }, { passive: true });
 
         function closeAllGames() {
             ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
