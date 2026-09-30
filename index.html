@@ -6144,6 +6144,21 @@
             });
         }
 
+        function startRocketGameBackgroundVideo() {
+            const video = document.querySelector("#rocket-game .rocket-game-video-bg");
+            if (!video) return;
+            video.muted = true;
+            video.defaultMuted = true;
+            video.setAttribute("muted", "");
+            video.setAttribute("playsinline", "");
+            video.setAttribute("webkit-playsinline", "");
+            video.removeAttribute("controls");
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+                playPromise.catch(function() {});
+            }
+        }
+
         function openRocketGame() {
             hideAllPages();
             closeAllGames();
@@ -6155,6 +6170,11 @@
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.querySelectorAll(".nav-button").forEach(function(b) { b.classList.remove("active"); });
             document.getElementById("nav-home").classList.add("active");
+
+            startRocketGameBackgroundVideo();
+            if (telegramRocketGifts.length && gamePhase === "FLIGHT") {
+                prepareTelegramRocketForRound(currentRoundId);
+            }
         }
 
         function closeRocketGame() {
