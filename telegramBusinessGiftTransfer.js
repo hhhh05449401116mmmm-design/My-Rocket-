@@ -154,8 +154,8 @@ function normalizeCollectibleName(value) {
     return String(value || '')
         .normalize('NFKC')
         .toLowerCase()
-        .replace(/[\\s_\\-]+/g, '')
-        .replace(/[^\\p{L}\\p{N}]/gu, '');
+        .replace(/[\s_\-]+/g, '')
+        .replace(/[^\p{L}\p{N}]/gu, '');
 }
 
 function parseCollectibleIdentity(uniqueCollectibleId) {
@@ -188,17 +188,43 @@ async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
 
             const candidateNames = [
                 savedGiftName(item),
+                item?.gift?.name,
+                item?.gift?.title,
                 item?.gift?.baseName,
                 item?.gift?.base_name,
-                item?.gift?.title
+                item?.gift?.slug,
+                item?.gift?.giftName,
+                item?.gift?.gift_name
             ].map(normalizeCollectibleName).filter(Boolean);
 
-            return wantedName && candidateNames.includes(wantedName);
+            if (!wantedName) return false;
+            if (candidateNames.includes(wantedName)) return true;
+
+            // Some Telegram responses expose the same collectible title with a
+            // small display suffix/prefix. Keep the exact collectible number
+            // requirement, and accept a unique normalized name that contains
+            // the stored type name or vice versa.
+            return candidateNames.some(name =>
+                name.includes(wantedName) || wantedName.includes(name)
+            );
         });
         if (matched) return matched;
     }
 
-    return gifts.find(item => savedGiftUniqueId(item) === wanted) || null;
+    const fallback = gifts.find(item => savedGiftUniqueId(item) === wanted) || null;
+    if (!fallback) {
+        const sameNumber = exact?.number
+            ? gifts.filter(item => numberValue(item?.gift?.num ?? item?.gift?.number) === exact.number)
+            : [];
+        console.warn('⚠️ Telegram Business collectible lookup miss:', JSON.stringify({
+            requested: wanted,
+            connectedUserId: client?.userId ?? null,
+            totalSavedGifts: gifts.length,
+            sameNumberCount: sameNumber.length,
+            sameNumberNames: sameNumber.slice(0, 10).map(item => savedGiftName(item))
+        }));
+    }
+    return fallback;
 }
 
 async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
