@@ -972,6 +972,7 @@
            MULTIPLIER - PREMIUM GLOW + SMOOTH ANIMATION
         ========================================================= */
         .multiplier {
+            display: none;
             position: absolute;
             top: 45%;
             left: 0;
@@ -987,14 +988,21 @@
             transition: color 0.2s, text-shadow 0.2s;
         }
         .multiplier.crashed {
-            color: #ff4f67;
-            text-shadow: 0 5px 50px rgba(255, 79, 103, 0.4);
+            display: block;
         }
         .multiplier.flying {
             color: #e8f4ff;
             text-shadow: 0 5px 50px rgba(100, 200, 255, 0.4);
         }
-        .multiplier.waiting { color: #7a9bcb; }
+        .multiplier.waiting { display: none; color: #7a9bcb; }
+        .multiplier.flying { display: none; }
+        .multiplier.crashed { display: block; }
+        .multiplier.red { color: #ff6b7f; text-shadow: 0 5px 50px rgba(255, 79, 103, 0.35); }
+        .multiplier.green { color: #4de18a; text-shadow: 0 5px 50px rgba(56, 210, 123, 0.35); }
+        .multiplier.blue { color: #4fc3f7; text-shadow: 0 5px 50px rgba(79, 195, 247, 0.4); }
+        .multiplier.purple { color: #b986ff; text-shadow: 0 5px 50px rgba(163, 86, 255, 0.35); }
+        .multiplier.gold { color: #ffd700; text-shadow: 0 5px 50px rgba(255, 215, 0, 0.35); }
+        .multiplier.fire { color: #ff8a65; text-shadow: 0 5px 50px rgba(255, 107, 53, 0.35); }
 
         /* =========================================================
            COUNTDOWN - PREMIUM CIRCLE
@@ -1103,8 +1111,9 @@
             bottom: 74px;
             width: 80px;
             height: 80px;
-            transform: rotate(-12deg);
-            transition: left 0.08s linear, bottom 0.08s linear, transform 0.08s linear, filter 0.3s ease;
+            transform: translate3d(0, 0, 0) rotate(-12deg);
+            transition: none;
+            will-change: transform;
             z-index: 5;
             display: flex;
             align-items: center;
@@ -1228,6 +1237,38 @@
             gap: 7px;
             overflow: hidden;
             direction: ltr;
+            align-items: center;
+        }
+        .live-multiplier-slot {
+            flex: 1;
+            min-width: 51px;
+            height: 29px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 900;
+            background: rgba(15, 40, 71, 0.6);
+            color: #4fc3f7;
+            border: 1px solid rgba(79, 195, 247, 0.12);
+            box-shadow: 0 0 18px rgba(79, 195, 247, 0.08);
+            direction: ltr;
+        }
+        .live-multiplier-slot.hidden { display: none !important; }
+        .live-multiplier-slot.red { color: #ff6b7f; }
+        .live-multiplier-slot.green { color: #4de18a; }
+        .live-multiplier-slot.blue { color: #4fc3f7; }
+        .live-multiplier-slot.purple { color: #b986ff; }
+        .live-multiplier-slot.gold { color: #ffd700; }
+        .live-multiplier-slot.fire { color: #ff8a65; }
+        .history-items {
+            flex: 4;
+            min-width: 0;
+            display: flex;
+            gap: 7px;
+            overflow: hidden;
+            direction: ltr;
         }
         .history-item {
             flex: 1;
@@ -1341,6 +1382,13 @@
             display: flex;
             flex-direction: column;
             gap: 7px;
+            max-height: 250px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            scrollbar-width: thin;
         }
         .player-row {
             min-height: 62px;
@@ -1822,7 +1870,7 @@
             pointer-events: none;
             display: block;
             transform-origin: center center;
-            will-change: left, bottom, transform;
+            will-change: transform;
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
@@ -2785,7 +2833,7 @@
                      </div>
                     <div id="status-message" class="status-message">الاتصال بالسيرفر...</div>
                 </section>
-                <section id="history" class="history"></section>
+                <section id="history" class="history"><div id="live-multiplier-slot" class="live-multiplier-slot hidden"></div><div id="history-items" class="history-items"></div></section>
                 <section class="bet-panel">
                     <button id="main-bet-button" class="place-bet-main" type="button" onclick="handleMainBetButton()">Place bet</button>
                 </section>
@@ -3504,6 +3552,8 @@
         let previousMultiplierSample = 1.00;
         let serverTimeOffset = 0;
         let flightStartedAt = null;
+        let crashDisplayUntil = 0;
+        let crashDisplayTimer = null;
         let gamePhase = "COUNTDOWN";
         let countdownSeconds = 5;
         let globalHistory = [];
@@ -4388,10 +4438,13 @@
 
         function stopTelegramRocketAtCrash() {
             const container = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
             if (!container) return;
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
+            container.classList.add('hidden');
+            fallback?.classList.add('telegram-fallback-hidden');
         }
 
         function setServerStatus(connected) {
@@ -4445,10 +4498,22 @@
                     displayMultiplier = 1.00;
                     multiplierSampledAt = 0;
                     previousMultiplierSample = 1.00;
-                    document.getElementById("countdown-container").classList.add("show");
+                    document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("flying");
                     document.getElementById("multiplier").classList.remove("crashed");
                     resetTelegramRocketForCountdown();
+
+                    const revealIn = Math.max(0, crashDisplayUntil - Date.now());
+                    if (crashDisplayTimer) clearTimeout(crashDisplayTimer);
+                    if (revealIn === 0) {
+                        document.getElementById("countdown-container").classList.add("show");
+                    } else {
+                        crashDisplayTimer = setTimeout(function() {
+                            if (gamePhase === "COUNTDOWN") {
+                                document.getElementById("countdown-container").classList.add("show");
+                            }
+                        }, revealIn);
+                    }
                 }
             }
             if (state.phase === "FLIGHT") {
@@ -4456,7 +4521,10 @@
                     displayMultiplier = 1.00;
                     document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("waiting");
+                    document.getElementById("multiplier").classList.remove("crashed");
                     document.getElementById("multiplier").classList.add("flying");
+                    document.getElementById("rocket").classList.remove("crashed");
+                    document.getElementById("rocket").classList.remove("telegram-fallback-hidden");
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
@@ -4465,13 +4533,18 @@
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
-                document.getElementById("multiplier").classList.remove("flying");
-                document.getElementById("multiplier").classList.add("crashed");
+                document.getElementById("multiplier").className = "multiplier crashed " + historyClass(currentStateMultiplier);
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
-                document.getElementById("rocket").classList.add("crashed");
+                document.getElementById("rocket").classList.remove("crashed");
                 stopTelegramRocketAtCrash();
                 document.getElementById("flame").style.display = "none";
                 document.getElementById("countdown-container").classList.remove("show");
+
+                if (crashDisplayTimer) {
+                    clearTimeout(crashDisplayTimer);
+                    crashDisplayTimer = null;
+                }
+                crashDisplayUntil = Date.now() + 1000;
             }
             gamePhase = state.phase;
             globalHistory = state.history || [];
@@ -4491,11 +4564,30 @@
                 const elapsedSeconds = flightStartedAt
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
-                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
-                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
 
+                // UI-only interpolation. The server still owns the real multiplier
+                // and crash result; this only fills the 1-second visual gaps.
+                const predictedMultiplier = Math.max(
+                    1,
+                    1 + elapsedSeconds * multiplierRate
+                );
+                displayMultiplier = Math.max(
+                    Number(currentMultiplier) || 1,
+                    predictedMultiplier
+                );
+
+                const colorClass = historyClass(displayMultiplier);
                 const multEl = document.getElementById("multiplier");
-                if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
+                if (multEl) {
+                    multEl.className = "multiplier flying " + colorClass;
+                    multEl.textContent = displayMultiplier.toFixed(2) + "x";
+                }
+
+                const liveSlot = document.getElementById("live-multiplier-slot");
+                if (liveSlot) {
+                    liveSlot.className = "live-multiplier-slot " + colorClass;
+                    liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
+                }
 
                 const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
                 moveRocket(progress);
@@ -4520,32 +4612,38 @@
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
             const particles = document.getElementById("rocket-particles");
-            if(!rocket) return;
-            
-            rocket.style.left = `${15 + progress * 58}%`;
-            rocket.style.bottom = `${74 + progress * 120}px`;
-            rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
-                telegramRocket.style.left = `${15 + progress * 58}%`;
-                telegramRocket.style.bottom = `${74 + progress * 120}px`;
-                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+            const area = document.querySelector(".rocket-area");
+            if (!rocket || !area) return;
+
+            const x = area.clientWidth * 0.58 * progress;
+            const y = area.clientHeight * 0.28 * progress;
+            const rotation = -12 - progress * 15;
+            const transform = `translate3d(${x.toFixed(1)}px, ${(-y).toFixed(1)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+
+            rocket.style.transform = transform;
+
+            if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
+                telegramRocket.style.transform = transform;
                 if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
+                else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                    telegramRocketVideo.play().catch(() => {});
+                }
             }
-            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
+
             if (flame) {
                 flame.style.display = "block";
                 flame.style.height = `${40 + progress * 20}px`;
                 flame.style.opacity = `${0.5 + progress * 0.5}`;
             }
+
             if (trail) {
                 trail.classList.add("active");
                 trail.style.width = `${140 + progress * 60}px`;
                 trail.style.opacity = `${0.3 + progress * 0.7}`;
             }
+
             if (particles) {
-                particles.style.left = rocket.style.left;
-                particles.style.bottom = rocket.style.bottom;
+                particles.style.transform = transform;
                 createParticle(particles, progress);
             }
         }
@@ -4580,10 +4678,24 @@
         }
 
         function renderHistory() {
-            const container = document.getElementById("history");
+            const container = document.getElementById("history-items");
+            const liveSlot = document.getElementById("live-multiplier-slot");
             if (!container) return;
             container.innerHTML = "";
-            globalHistory.slice(0, 5).forEach(function(value) {
+
+            if (liveSlot) {
+                if (gamePhase === "FLIGHT") {
+                    liveSlot.classList.remove("hidden");
+                    const value = Number(displayMultiplier) || 1;
+                    liveSlot.className = "live-multiplier-slot " + historyClass(value);
+                    liveSlot.textContent = value.toFixed(2) + "x";
+                } else {
+                    liveSlot.classList.add("hidden");
+                    liveSlot.textContent = "";
+                }
+            }
+
+            globalHistory.slice(0, liveSlot && gamePhase === "FLIGHT" ? 4 : 5).forEach(function(value) {
                 const item = document.createElement("div");
                 item.className = "history-item " + historyClass(value);
                 item.textContent = Number(value).toFixed(2) + "x";
