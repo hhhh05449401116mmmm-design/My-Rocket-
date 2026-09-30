@@ -3581,6 +3581,8 @@
         let telegramRocketLoadToken = 0;
         let telegramRocketLottieAnimation = null;
     let telegramRocketTgsPlayer = null;
+        let telegramRocketMediaReady = false;
+        let telegramRocketMediaObjectUrl = null;
         let telegramTgsRendererModulePromise = null;
 
         function loadTelegramTgsRenderer() {
@@ -4319,6 +4321,11 @@
                 try { telegramRocketVideo.pause(); telegramRocketVideo.removeAttribute('src'); telegramRocketVideo.load(); } catch (e) {}
                 telegramRocketVideo.remove(); telegramRocketVideo = null;
             }
+            if (telegramRocketMediaObjectUrl) {
+                try { URL.revokeObjectURL(telegramRocketMediaObjectUrl); } catch (e) {}
+                telegramRocketMediaObjectUrl = null;
+            }
+            telegramRocketMediaReady = false;
             const container = document.getElementById('telegram-rocket');
             if (container) container.innerHTML = '';
         }
@@ -4331,56 +4338,69 @@
             const mediaUrl = `${BACKEND_URL}${gift.mediaUrl}`;
             let renderType = '';
             let contentType = '';
+            let mediaBuffer = null;
 
-            // The backend is the source of truth for the actual Telegram media format.
-            // Do not infer TGS from the URL: /api/rocket-media can serve both TGS and WEBM.
+            // The catalog already contains Telegram's MIME type. Fetch the actual
+            // bytes exactly once during countdown, then hand those bytes directly
+            // to the renderer. This avoids the old probe GET + render GET sequence.
             try {
-                const probe = await fetch(mediaUrl, { method: 'GET', cache: 'no-store' });
-                if (!probe.ok) throw new Error(`Telegram rocket media HTTP ${probe.status}`);
-                renderType = (probe.headers.get('X-Telegram-Render-Type') || '').toLowerCase().trim();
-                contentType = (probe.headers.get('Content-Type') || '').toLowerCase().split(';')[0].trim();
-                // The probe body is intentionally discarded. TLottie/video performs the
-                // actual render fetch below, while this request gives us the authoritative format.
-                try { await probe.body?.cancel(); } catch (e) {}
+                const response = await fetch(mediaUrl, {
+                    method: 'GET',
+                    cache: 'force-cache'
+                });
+                if (!response.ok) throw new Error(`Telegram rocket media HTTP ${response.status}`);
+
+                renderType = (response.headers.get('X-Telegram-Render-Type') || '').toLowerCase().trim();
+                contentType = (response.headers.get('Content-Type') || '').toLowerCase().split(';')[0].trim();
+                mediaBuffer = await response.arrayBuffer();
             } catch (error) {
-                // Keep a safe metadata fallback for transient probe failures, but never
-                // classify every rocket-media URL as TGS.
-                renderType = '';
-                contentType = '';
-                console.warn('Telegram rocket media format probe failed:', error);
+                if (token !== telegramRocketLoadToken) return;
+                console.warn('Telegram rocket media preload failed:', error);
+                container.classList.add('hidden');
+                container.style.visibility = 'hidden';
+                fallback?.classList.remove('telegram-fallback-hidden');
+                return;
             }
 
             if (token !== telegramRocketLoadToken) return;
-            destroyTelegramRocketRenderer();
 
-            const giftMime = (gift.mimeType || '').toLowerCase();
+            const giftMime = (gift.mimeType || '').toLowerCase().split(';')[0].trim();
+            const bytes = new Uint8Array(mediaBuffer);
+            const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+            const isWebmMagic = bytes.length >= 4 &&
+                bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
+
             const isTgs =
                 renderType === 'tgs' ||
                 contentType === 'application/x-tgsticker' ||
-                giftMime.includes('application/x-tgsticker');
+                giftMime.includes('application/x-tgsticker') ||
+                isGzip;
             const isWebm =
                 renderType === 'webm' ||
                 contentType.includes('webm') ||
-                giftMime.includes('video/webm');
+                giftMime.includes('video/webm') ||
+                isWebmMagic;
+
+            destroyTelegramRocketRenderer();
+
+            // Keep the decoded renderer in the layout so TLottie/video can size and
+            // preload it on iPhone, but keep it visually invisible until FLIGHT.
+            container.classList.remove('hidden');
+            container.style.visibility = 'hidden';
 
             if (isTgs) {
                 try {
-                    // TLottie measures its canvas on the next animation frame, so the
-                    // container must be visible before the player is created.
-                    container.classList.remove('hidden');
-                    fallback?.classList.add('telegram-fallback-hidden');
-
                     const module = await loadTelegramTgsRenderer();
                     if (token !== telegramRocketLoadToken) return;
 
                     const player = module.createTLottiePlayer(container, {
-                        src: mediaUrl,
+                        data: bytes,
                         loop: true,
                         autoplay: false,
-                        forceRender: true,
                         workerCount: 1
                     });
                     telegramRocketTgsPlayer = player;
+                    telegramRocketMediaReady = false;
 
                     player.element.style.width = '100%';
                     player.element.style.height = '100%';
@@ -4392,77 +4412,100 @@
                     const playerHandle = player;
                     playerHandle.tlottie.on('load', () => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
-                        if (gamePhase === 'FLIGHT') {
-                            fallback?.classList.add('telegram-fallback-hidden');
-                            container.classList.remove('hidden');
-                        }
+                        telegramRocketMediaReady = true;
                         try {
                             playerHandle.tlottie.setSpeed?.(1);
                             if (gamePhase === 'FLIGHT') {
+                                fallback?.classList.add('telegram-fallback-hidden');
+                                container.classList.remove('hidden');
+                                container.style.visibility = 'visible';
                                 playerHandle.tlottie.goToAndPlay?.(0, true);
                             } else {
                                 playerHandle.tlottie.pause?.();
                             }
                         } catch (e) {
-                            try { playerHandle.tlottie.play(); } catch (e2) {}
+                            if (gamePhase === 'FLIGHT') {
+                                fallback?.classList.add('telegram-fallback-hidden');
+                                container.style.visibility = 'visible';
+                                try { playerHandle.tlottie.play(); } catch (e2) {}
+                            }
                         }
                     });
                     playerHandle.tlottie.on('error', (payload) => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
                         console.warn('Telegram TGS renderer error:', payload?.error || payload);
+                        telegramRocketMediaReady = false;
                         try { playerHandle.destroy(); } catch (e) {}
                         telegramRocketTgsPlayer = null;
                         container.classList.add('hidden');
+                        container.style.visibility = 'hidden';
                         fallback?.classList.remove('telegram-fallback-hidden');
                     });
                     return;
                 } catch (error) {
                     console.warn('Telegram TGS renderer initialization failed:', error);
+                    telegramRocketMediaReady = false;
                     container.classList.add('hidden');
+                    container.style.visibility = 'hidden';
                     fallback?.classList.remove('telegram-fallback-hidden');
                     return;
                 }
             }
 
-            // WEBM is rendered by the browser. This path is selected from the server's
-            // detected format instead of the rocket-media URL name.
+            // WEBM is also fetched only once. A Blob URL lets the native video
+            // element consume the already-downloaded bytes without another request.
             if (isWebm || !isTgs) {
-                const video = document.createElement('video');
-                video.autoplay = false;
-                video.loop = true;
-                video.muted = true;
-                video.playsInline = true;
-                video.preload = 'auto';
-                video.setAttribute('playsinline', '');
-                video.setAttribute('webkit-playsinline', '');
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.objectFit = 'contain';
-                video.style.display = 'block';
+                try {
+                    const video = document.createElement('video');
+                    video.autoplay = false;
+                    video.loop = true;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.preload = 'auto';
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.objectFit = 'contain';
+                    video.style.display = 'block';
 
-                video.addEventListener('loadeddata', function() {
-                    if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
-                    video.currentTime = 0;
-                    if (gamePhase === 'FLIGHT') {
-                        video.play().catch(() => {});
-                        fallback?.classList.add('telegram-fallback-hidden');
-                        container.classList.remove('hidden');
-                    } else {
-                        video.pause();
-                    }
-                }, { once: true });
+                    video.addEventListener('loadeddata', function() {
+                        if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
+                        telegramRocketMediaReady = true;
+                        video.currentTime = 0;
+                        if (gamePhase === 'FLIGHT') {
+                            video.play().catch(() => {});
+                            fallback?.classList.add('telegram-fallback-hidden');
+                            container.classList.remove('hidden');
+                            container.style.visibility = 'visible';
+                        } else {
+                            video.pause();
+                        }
+                    }, { once: true });
 
-                video.addEventListener('error', function() {
-                    if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
-                    console.warn('Telegram rocket video renderer error:', video.error || 'unknown video error');
+                    video.addEventListener('error', function() {
+                        if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
+                        telegramRocketMediaReady = false;
+                        console.warn('Telegram rocket video renderer error:', video.error || 'unknown video error');
+                        container.classList.add('hidden');
+                        container.style.visibility = 'hidden';
+                        fallback?.classList.remove('telegram-fallback-hidden');
+                    }, { once: true });
+
+                    telegramRocketVideo = video;
+                    telegramRocketMediaObjectUrl = URL.createObjectURL(
+                        new Blob([mediaBuffer], { type: giftMime || contentType || 'video/webm' })
+                    );
+                    container.appendChild(video);
+                    video.src = telegramRocketMediaObjectUrl;
+                    video.load();
+                } catch (error) {
+                    console.warn('Telegram rocket video renderer initialization failed:', error);
+                    telegramRocketMediaReady = false;
                     container.classList.add('hidden');
+                    container.style.visibility = 'hidden';
                     fallback?.classList.remove('telegram-fallback-hidden');
-                }, { once: true });
-
-                telegramRocketVideo = video;
-                container.appendChild(video);
-                video.src = mediaUrl;
-                video.load();
+                }
             }
         }
         function prepareTelegramRocketForRound(roundId) {
@@ -4474,10 +4517,11 @@
             if (!gift?.mediaUrl) return;
 
             if (activeTelegramRocketIndex === index) {
-                // During countdown the rocket is preloaded but kept invisible.
-                // At FLIGHT start we reveal the already-decoded renderer instantly.
-                if (gamePhase === 'FLIGHT') {
+                // During countdown the renderer is preloaded but visually hidden.
+                // At FLIGHT reveal only after the media has actually decoded.
+                if (gamePhase === 'FLIGHT' && telegramRocketMediaReady) {
                     container.classList.remove('hidden');
+                    container.style.visibility = 'visible';
                     fallback?.classList.add('telegram-fallback-hidden');
                     if (telegramRocketTgsPlayer) {
                         try {
@@ -4489,6 +4533,10 @@
                     } else if (telegramRocketVideo) {
                         try { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); } catch (e) {}
                     }
+                } else if (gamePhase === 'FLIGHT') {
+                    container.classList.add('hidden');
+                    container.style.visibility = 'hidden';
+                    fallback?.classList.remove('telegram-fallback-hidden');
                 }
                 return;
             }
@@ -4496,7 +4544,9 @@
             activeTelegramRocketIndex = index;
             const token = ++telegramRocketLoadToken;
             container.classList.add('hidden');
+            container.style.visibility = 'hidden';
             fallback?.classList.remove('telegram-fallback-hidden');
+            telegramRocketMediaReady = false;
             destroyTelegramRocketRenderer();
             renderTelegramRocketMedia(gift, token).catch(error => {
                 if (token !== telegramRocketLoadToken) return;
@@ -4515,7 +4565,9 @@
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} }
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.stop(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {} }
-            container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            container.classList.add('hidden');
+            container.style.visibility = 'hidden';
+            fallback?.classList.remove('telegram-fallback-hidden');
         }
 
         function stopTelegramRocketAtCrash() {
@@ -4525,7 +4577,10 @@
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
+            ++telegramRocketLoadToken;
+            telegramRocketMediaReady = false;
             container.classList.add('hidden');
+            container.style.visibility = 'hidden';
             fallback?.classList.add('telegram-fallback-hidden');
         }
 
@@ -4676,7 +4731,10 @@
                     liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
                 }
 
-                const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
+                // Visual motion is driven directly by elapsed flight time so it
+                // starts on the first animation frame and never waits for an SSE/multiplier tick.
+                const visualFlightDuration = 8;
+                const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
                 moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
                 // حساب العداد الدائري
