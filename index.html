@@ -6180,9 +6180,6 @@
             document.getElementById("rocket-game").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
-            // The rocket game is hidden during app bootstrap, so initialize the
-            // existing Lottie renderer again after the game becomes visible.
-            try { loadRocketAnimation(ROCKET_VARIANTS[currentRocketIndex].path); } catch (e) { console.error("Rocket renderer open error:", e); }
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.querySelectorAll(".nav-button").forEach(function(b) { b.classList.remove("active"); });
             document.getElementById("nav-home").classList.add("active");
@@ -7149,10 +7146,6 @@
             try { updateModalBetButton(); } catch (e) {}
             try { updateMainBetButton(); } catch (e) {}
             try { updateProfilePage(); } catch (e) {}
-
-            // Restore the existing local rocket renderer. This only mounts the
-            // already-defined Lottie rocket; it does not affect crash/round logic.
-            try { loadRocketAnimation(ROCKET_VARIANTS[currentRocketIndex].path); } catch (e) { console.error("Rocket renderer init error:", e); }
 
             try { document.getElementById("game-hub").classList.remove("hidden"); } catch (e) {}
             try { document.getElementById("rocket-game").classList.add("hidden"); } catch (e) {}
