@@ -922,30 +922,30 @@
         #rocket-game .star-layer-far {
             opacity: 0.34;
             background-image:
-                radial-gradient(circle at 18px 24px, rgba(210, 244, 255, 0.72) 0 1.1px, transparent 1.4px),
-                radial-gradient(circle at 86px 72px, rgba(160, 222, 255, 0.52) 0 0.8px, transparent 1.2px),
-                radial-gradient(circle at 142px 38px, rgba(255, 255, 255, 0.48) 0 0.7px, transparent 1.1px),
-                radial-gradient(circle at 212px 104px, rgba(170, 225, 255, 0.42) 0 0.8px, transparent 1.2px);
+                radial-gradient(circle at 18px 24px, rgba(210, 244, 255, 0.72) 0 1.4px, transparent 1.75px),
+                radial-gradient(circle at 86px 72px, rgba(160, 222, 255, 0.52) 0 1px, transparent 1.45px),
+                radial-gradient(circle at 142px 38px, rgba(255, 255, 255, 0.48) 0 0.9px, transparent 1.3px),
+                radial-gradient(circle at 212px 104px, rgba(170, 225, 255, 0.42) 0 1px, transparent 1.45px);
             background-size: 260px 220px;
         }
         #rocket-game .star-layer-mid {
             opacity: 0.52;
             background-image:
-                radial-gradient(circle at 24px 42px, rgba(215, 247, 255, 0.92) 0 1.35px, transparent 1.8px),
-                radial-gradient(circle at 76px 116px, rgba(160, 220, 255, 0.68) 0 1px, transparent 1.5px),
-                radial-gradient(circle at 132px 68px, rgba(255, 255, 255, 0.62) 0 0.9px, transparent 1.4px),
-                radial-gradient(circle at 174px 142px, rgba(180, 232, 255, 0.58) 0 1.1px, transparent 1.6px),
-                radial-gradient(circle at 222px 34px, rgba(220, 246, 255, 0.76) 0 1.15px, transparent 1.7px);
+                radial-gradient(circle at 24px 42px, rgba(215, 247, 255, 0.92) 0 1.7px, transparent 2.15px),
+                radial-gradient(circle at 76px 116px, rgba(160, 220, 255, 0.68) 0 1.25px, transparent 1.8px),
+                radial-gradient(circle at 132px 68px, rgba(255, 255, 255, 0.62) 0 1.15px, transparent 1.7px),
+                radial-gradient(circle at 174px 142px, rgba(180, 232, 255, 0.58) 0 1.35px, transparent 1.9px),
+                radial-gradient(circle at 222px 34px, rgba(220, 246, 255, 0.76) 0 1.4px, transparent 2px);
             background-size: 230px 190px;
         }
         #rocket-game .star-layer-near {
             opacity: 0.78;
             background-image:
-                radial-gradient(circle at 18px 22px, rgba(225, 249, 255, 0.98) 0 1.55px, transparent 2px),
-                radial-gradient(circle at 62px 88px, rgba(160, 226, 255, 0.8) 0 1.15px, transparent 1.8px),
-                radial-gradient(circle at 108px 38px, rgba(255, 255, 255, 0.82) 0 1.25px, transparent 1.9px),
-                radial-gradient(circle at 152px 118px, rgba(190, 236, 255, 0.78) 0 1.35px, transparent 2px),
-                radial-gradient(circle at 198px 66px, rgba(225, 248, 255, 0.92) 0 1.45px, transparent 2px);
+                radial-gradient(circle at 18px 22px, rgba(225, 249, 255, 0.98) 0 2px, transparent 2.5px),
+                radial-gradient(circle at 62px 88px, rgba(160, 226, 255, 0.8) 0 1.45px, transparent 2.1px),
+                radial-gradient(circle at 108px 38px, rgba(255, 255, 255, 0.82) 0 1.55px, transparent 2.25px),
+                radial-gradient(circle at 152px 118px, rgba(190, 236, 255, 0.78) 0 1.7px, transparent 2.5px),
+                radial-gradient(circle at 198px 66px, rgba(225, 248, 255, 0.92) 0 1.8px, transparent 2.45px);
             background-size: 205px 165px;
         }
         #rocket-game .flight-line {
@@ -1003,8 +1003,8 @@
         #rocket-game .flight-path-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
         #rocket-game .flight-path-glow,
         #rocket-game .flight-path-core { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-        #rocket-game .flight-path-glow { stroke:rgba(79,195,247,.28); stroke-width:9; }
-        #rocket-game .flight-path-core { stroke:rgba(100,205,255,.95); stroke-width:2.5; }
+        #rocket-game .flight-path-glow { stroke:rgba(79,195,247,.30); stroke-width:11; }
+        #rocket-game .flight-path-core { stroke:rgba(100,205,255,.95); stroke-width:3.2; }
         #rocket-game .flight-path-head { fill:#e9fbff; stroke:rgba(79,195,247,.95); stroke-width:3; }
         #rocket-game .flight-line.crashed .flight-path-glow { stroke:rgba(255,79,103,.30); }
         #rocket-game .flight-line.crashed .flight-path-core { stroke:rgba(255,82,105,.95); }
@@ -5007,8 +5007,10 @@
                 refs.flightPathHead.setAttribute("cy", "0");
             }
             if (refs.starLayers && refs.starLayers.length) {
-                refs.starLayers.forEach(function(layer) {
+                const starOpacities = [0.34, 0.52, 0.78];
+                refs.starLayers.forEach(function(layer,index) {
                     layer.style.transform = "translate3d(0, 0, 0)";
+                    layer.style.opacity = String(starOpacities[index] || 0.52);
                 });
             }
         }
@@ -5019,6 +5021,12 @@
             rocketBackdropPhase = phase;
             if (phase === "FLIGHT") {
                 rocketLastPathPaint=0;
+                if (refs.starLayers && refs.starLayers.length) {
+                    const starOpacities = [0.34, 0.52, 0.78];
+                    refs.starLayers.forEach(function(layer,index) {
+                        layer.style.opacity = String(starOpacities[index] || 0.52);
+                    });
+                }
                 if (refs.flightLine) {
                     refs.flightLine.classList.remove("crashed");
                     refs.flightLine.classList.add("active");
@@ -5032,9 +5040,13 @@
             }
             if (phase === "CRASH") {
                 if (refs.flightLine) {
-                    refs.flightLine.classList.remove("active");
-                    refs.flightLine.classList.add("crashed");
-                    refs.flightLine.style.opacity = "0.9";
+                    refs.flightLine.classList.remove("active", "crashed");
+                    refs.flightLine.style.opacity = "0";
+                }
+                if (refs.starLayers && refs.starLayers.length) {
+                    refs.starLayers.forEach(function(layer) {
+                        layer.style.opacity = "0";
+                    });
                 }
             }
         }
@@ -5048,11 +5060,11 @@
             if (refs.starLayers && refs.starLayers.length) {
                 const width = rocketAreaSize.width || 1;
                 const height = rocketAreaSize.height || 1;
-                const factors = [0.48, 0.82, 1.22];
+                const factors = [0.82, 1.28, 1.82];
                 refs.starLayers.forEach(function(layer,index){
                     const f=factors[index] || 0.82;
-                    const sx=-width*0.90*pathProgress*f;
-                    const sy=height*0.34*smoothClimb*f;
+                    const sx=-width*1.28*pathProgress*f;
+                    const sy=height*0.40*smoothClimb*f;
                     layer.style.transform="translate3d("+sx.toFixed(2)+"px, "+sy.toFixed(2)+"px, 0)";
                 });
             }
