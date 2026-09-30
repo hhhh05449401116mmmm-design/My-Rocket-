@@ -4326,12 +4326,44 @@
         async function renderTelegramRocketMedia(gift, token) {
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
-            if (!container || !gift?.mediaUrl) return;
-            const renderType = (gift.mimeType || '').toLowerCase();
+            if (!container || !gift?.mediaUrl || token !== telegramRocketLoadToken) return;
+
+            const mediaUrl = `${BACKEND_URL}${gift.mediaUrl}`;
+            let renderType = '';
+            let contentType = '';
+
+            // The backend is the source of truth for the actual Telegram media format.
+            // Do not infer TGS from the URL: /api/rocket-media can serve both TGS and WEBM.
+            try {
+                const probe = await fetch(mediaUrl, { method: 'GET', cache: 'no-store' });
+                if (!probe.ok) throw new Error(`Telegram rocket media HTTP ${probe.status}`);
+                renderType = (probe.headers.get('X-Telegram-Render-Type') || '').toLowerCase().trim();
+                contentType = (probe.headers.get('Content-Type') || '').toLowerCase().split(';')[0].trim();
+                // The probe body is intentionally discarded. TLottie/video performs the
+                // actual render fetch below, while this request gives us the authoritative format.
+                try { await probe.body?.cancel(); } catch (e) {}
+            } catch (error) {
+                // Keep a safe metadata fallback for transient probe failures, but never
+                // classify every rocket-media URL as TGS.
+                renderType = '';
+                contentType = '';
+                console.warn('Telegram rocket media format probe failed:', error);
+            }
+
             if (token !== telegramRocketLoadToken) return;
             destroyTelegramRocketRenderer();
 
-            if (renderType.includes('application/x-tgsticker') || gift.mediaUrl.toLowerCase().includes('rocket-media')) {
+            const giftMime = (gift.mimeType || '').toLowerCase();
+            const isTgs =
+                renderType === 'tgs' ||
+                contentType === 'application/x-tgsticker' ||
+                giftMime.includes('application/x-tgsticker');
+            const isWebm =
+                renderType === 'webm' ||
+                contentType.includes('webm') ||
+                giftMime.includes('video/webm');
+
+            if (isTgs) {
                 try {
                     // TLottie measures its canvas on the next animation frame, so the
                     // container must be visible before the player is created.
@@ -4341,28 +4373,30 @@
                     const module = await loadTelegramTgsRenderer();
                     if (token !== telegramRocketLoadToken) return;
 
-                    telegramRocketTgsPlayer = module.createTLottiePlayer(container, {
-                        src: `${BACKEND_URL}${gift.mediaUrl}`,
+                    const player = module.createTLottiePlayer(container, {
+                        src: mediaUrl,
                         loop: true,
                         autoplay: false,
                         forceRender: true,
                         workerCount: 1
                     });
-                    // The vanilla adapter stylesheet is not bundled into this app;
-                    // size the wrapper/canvas explicitly before TLottie measures it.
-                    telegramRocketTgsPlayer.element.style.width = '100%';
-                    telegramRocketTgsPlayer.element.style.height = '100%';
-                    telegramRocketTgsPlayer.canvas.style.width = '100%';
-                    telegramRocketTgsPlayer.canvas.style.height = '100%';
-                    telegramRocketTgsPlayer.canvas.style.display = 'block';
-                    telegramRocketTgsPlayer.canvas.style.background = 'transparent';
+                    telegramRocketTgsPlayer = player;
 
-                    const playerHandle = telegramRocketTgsPlayer;
+                    player.element.style.width = '100%';
+                    player.element.style.height = '100%';
+                    player.canvas.style.width = '100%';
+                    player.canvas.style.height = '100%';
+                    player.canvas.style.display = 'block';
+                    player.canvas.style.background = 'transparent';
+
+                    const playerHandle = player;
                     playerHandle.tlottie.on('load', () => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
                         fallback?.classList.add('telegram-fallback-hidden');
                         container.classList.remove('hidden');
-                        playerHandle.tlottie.play();
+                        try { playerHandle.tlottie.goToAndPlay?.(0, true); } catch (e) {
+                            try { playerHandle.tlottie.play(); } catch (e2) {}
+                        }
                     });
                     playerHandle.tlottie.on('error', (payload) => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
@@ -4381,22 +4415,43 @@
                 }
             }
 
-            const video = document.createElement('video');
-            video.autoplay = false; video.loop = true; video.muted = true; video.playsInline = true; video.preload = 'auto';
-            video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
-            video.style.width = '100%'; video.style.height = '100%'; video.style.objectFit = 'contain'; video.style.display = 'block';
-            video.addEventListener('loadeddata', function() {
-                if (token !== telegramRocketLoadToken) return;
-                telegramRocketVideo = video; video.currentTime = 0; video.play().catch(() => {});
-                fallback?.classList.add('telegram-fallback-hidden'); container.classList.remove('hidden');
-            }, { once: true });
-            video.addEventListener('error', function() {
-                if (token !== telegramRocketLoadToken) return;
-                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
-            }, { once: true });
-            video.src = `${BACKEND_URL}${gift.mediaUrl}`; container.appendChild(video); telegramRocketVideo = video; video.load();
-        }
+            // WEBM is rendered by the browser. This path is selected from the server's
+            // detected format instead of the rocket-media URL name.
+            if (isWebm || !isTgs) {
+                const video = document.createElement('video');
+                video.autoplay = false;
+                video.loop = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.preload = 'auto';
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'contain';
+                video.style.display = 'block';
 
+                video.addEventListener('loadeddata', function() {
+                    if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
+                    video.currentTime = 0;
+                    video.play().catch(() => {});
+                    fallback?.classList.add('telegram-fallback-hidden');
+                    container.classList.remove('hidden');
+                }, { once: true });
+
+                video.addEventListener('error', function() {
+                    if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
+                    console.warn('Telegram rocket video renderer error:', video.error || 'unknown video error');
+                    container.classList.add('hidden');
+                    fallback?.classList.remove('telegram-fallback-hidden');
+                }, { once: true });
+
+                telegramRocketVideo = video;
+                container.appendChild(video);
+                video.src = mediaUrl;
+                video.load();
+            }
+        }
         function prepareTelegramRocketForRound(roundId) {
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
@@ -4624,8 +4679,11 @@
 
             if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
                 telegramRocket.style.transform = transform;
-                if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                if (telegramRocketTgsPlayer) {
+                    try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {}
+                } else if (telegramRocketLottieAnimation) {
+                    telegramRocketLottieAnimation.play();
+                } else if (telegramRocketVideo && telegramRocketVideo.paused) {
                     telegramRocketVideo.play().catch(() => {});
                 }
             }
