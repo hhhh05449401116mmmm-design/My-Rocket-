@@ -4353,9 +4353,10 @@
             if (token !== telegramRocketLoadToken) return;
 
             const renderType = (gift.mimeType || '').toLowerCase();
+            // The same /api/rocket-media route serves both TGS and WEBM.
+            // MIME type is the renderer discriminator; URL alone is not.
             const isTgs = renderType.includes('application/x-tgsticker')
-                || renderType.includes('application/x-tgs')
-                || gift.mediaUrl.toLowerCase().includes('rocket-media');
+                || renderType.includes('application/x-tgs');
 
             destroyTelegramRocketRenderer();
 
