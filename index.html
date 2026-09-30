@@ -1211,6 +1211,76 @@
         }
         .rocket-trail.active { opacity: 1; }
 
+/* Rocket-only performance path:
+   keep flight visuals on compositor-friendly properties and avoid
+   per-frame geometry/filter work on iPhone/WebKit. */
+#rocket-game #rocket,
+#rocket-game #telegram-rocket,
+#rocket-game #rocket-particles,
+#rocket-game #flame,
+#rocket-game #rocket-trail {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+#rocket-game #rocket,
+#rocket-game #telegram-rocket,
+#rocket-game #rocket-particles {
+    will-change: transform;
+}
+
+#rocket-game #telegram-rocket {
+    contain: layout paint;
+}
+
+#rocket-game #rocket {
+    filter: none;
+}
+
+#rocket-game #rocket svg {
+    filter: none;
+    animation: none;
+}
+
+#rocket-game #flame {
+    filter: none;
+    box-shadow: none;
+    transition: none;
+    animation: none;
+    transform-origin: 50% 0;
+    will-change: transform, opacity;
+}
+
+#rocket-game #rocket-trail {
+    filter: none;
+    box-shadow: none;
+    transition: none;
+    width: 190px;
+    transform-origin: right center;
+    will-change: transform, opacity;
+}
+
+#rocket-game #rocket-trail::after {
+    filter: none;
+}
+
+#rocket-game .rocket-particle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    border-radius: 50%;
+    background: rgba(100, 200, 255, 0.7);
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(100, 200, 255, 0.45);
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+    will-change: transform, opacity;
+    transition: transform 700ms ease-out, opacity 700ms ease-out;
+}
+
         /* =========================================================
            STATUS MESSAGE
         ========================================================= */
@@ -4781,52 +4851,73 @@
             const rotation = -7 - smoothClimb * 20;
             const transform = `translate3d(${x.toFixed(3)}px, ${(-y).toFixed(3)}px, 0) rotate(${rotation.toFixed(3)}deg)`;
 
-            rocket.style.transform = transform;
+            // Only animate the renderer that is currently visible.
+            // This avoids doing a second transform update on the hidden fallback.
+            const telegramVisible = telegramRocket &&
+                !telegramRocket.classList.contains("hidden") &&
+                !telegramRocket.classList.contains("telegram-fallback-hidden") &&
+                telegramRocket.style.visibility !== "hidden";
 
-            if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
+            if (telegramVisible) {
                 telegramRocket.style.transform = transform;
-                // The renderer owns its own playback clock. Start/stop it only
-                // on lifecycle events (load, FLIGHT, CRASH), never on every frame.
-                // Repeated play() calls here were causing unnecessary worker/main-thread
-                // traffic on iPhone and made the Telegram animation feel sluggish.
-                if (telegramRocketVideo && telegramRocketVideo.paused && gamePhase === "FLIGHT") {
-                    telegramRocketVideo.play().catch(() => {});
-                }
+            } else {
+                rocket.style.transform = transform;
+            }
+
+            if (telegramRocketVideo && telegramVisible && telegramRocketVideo.paused && gamePhase === "FLIGHT") {
+                telegramRocketVideo.play().catch(() => {});
             }
 
             if (flame) {
                 flame.style.display = "block";
-                flame.style.height = `${40 + pathProgress * 20}px`;
-                flame.style.opacity = `${0.5 + pathProgress * 0.5}`;
+                flame.style.transform = "rotate(-12deg) translate3d(0, 0, 0) scaleY(${0.9 + pathProgress * 0.55})";
+                flame.style.opacity = "${0.55 + pathProgress * 0.45}";
             }
 
             if (trail) {
                 trail.classList.add("active");
-                trail.style.width = `${140 + pathProgress * 60}px`;
-                trail.style.opacity = `${0.3 + pathProgress * 0.7}`;
+                trail.style.transform = "rotate(-12deg) translate3d(0, 0, 0) scaleX(${0.74 + pathProgress * 0.32})";
+                trail.style.opacity = "${0.32 + pathProgress * 0.68}";
             }
 
             if (particles) {
                 particles.style.transform = transform;
-                createParticle(particles, pathProgress);
+                updateRocketParticlePool(particles, pathProgress);
             }
         }
 
+        var rocketParticlePool = [];
+        var rocketParticleIndex = 0;
         var lastParticleTime = 0;
-        function createParticle(container, progress) {
-            var now = Date.now();
-            if (now - lastParticleTime < 50) return;
-            lastParticleTime = now;
-            var p = document.createElement('div');
-            p.style.cssText = `position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(100,200,255,${0.4 + progress * 0.6});pointer-events:none;box-shadow:0 0 10px rgba(100,200,255,0.5);animation:particleFloat 1s ease-out forwards;`;
-            p.style.left = '50%';
-            p.style.top = '50%';
-            container.appendChild(p);
-            setTimeout(function() { if (p.parentNode) p.parentNode.removeChild(p); }, 1000);
+
+        function ensureRocketParticlePool(container) {
+            if (!container || rocketParticlePool.length) return;
+            for (var i = 0; i < 8; i++) {
+                var particle = document.createElement('div');
+                particle.className = 'rocket-particle';
+                container.appendChild(particle);
+                rocketParticlePool.push(particle);
+            }
         }
-        var particleStyle = document.createElement('style');
-        particleStyle.textContent = '@keyframes particleFloat { to { transform: translate(-50%, -100px) scale(0.5); opacity: 0; } }';
-        document.head.appendChild(particleStyle);
+
+        function updateRocketParticlePool(container, progress) {
+            ensureRocketParticlePool(container);
+            var now = performance.now();
+            if (now - lastParticleTime < 80) return;
+            lastParticleTime = now;
+
+            var particle = rocketParticlePool[rocketParticleIndex];
+            rocketParticleIndex = (rocketParticleIndex + 1) % rocketParticlePool.length;
+            if (!particle) return;
+
+            particle.style.transition = 'none';
+            particle.style.opacity = '${0.38 + progress * 0.42}';
+            particle.style.transform = 'translate3d(0, 0, 0) scale(1)';
+            void particle.offsetWidth;
+            particle.style.transition = 'transform 700ms ease-out, opacity 700ms ease-out';
+            particle.style.opacity = '0';
+            particle.style.transform = 'translate3d(-8px, 42px, 0) scale(0.45)';
+        }
 
         /* =========================================================
            HISTORY
@@ -7379,6 +7470,7 @@
             try { connectToServer(); } catch (e) { console.error("Server connection error:", e); }
             try { fetchCollectibles(); } catch (e) {}
             try { loadTelegramRocketGifts(); } catch (e) {}
+            try { loadTelegramTgsRenderer().catch(() => {}); } catch (e) {}
             try { initLiveStrip(); } catch (e) {}
         }
 
