@@ -4613,7 +4613,9 @@
                 }
                 document.getElementById("multiplier").classList.remove("crashed");
                 document.getElementById("rocket").classList.remove("crashed");
-                // Ensure the Telegram Stellar Rocket is prepared exactly when a new flight starts.
+                // Mark FLIGHT before revealing the preloaded Telegram rocket so the
+                // renderer can show it immediately on the first flight frame.
+                gamePhase = "FLIGHT";
                 prepareTelegramRocketForRound(currentRoundId);
             }
             if (state.phase === "CRASH") {
