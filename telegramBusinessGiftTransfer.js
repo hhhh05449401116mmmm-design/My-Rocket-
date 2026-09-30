@@ -150,10 +150,54 @@ function giftMetadata(savedGift) {
     };
 }
 
+function normalizeCollectibleName(value) {
+    return String(value || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[\\s_\\-]+/g, '')
+        .replace(/[^\\p{L}\\p{N}]/gu, '');
+}
+
+function parseCollectibleIdentity(uniqueCollectibleId) {
+    const wanted = String(uniqueCollectibleId || '').trim();
+    const match = wanted.match(/^(.*)-(\\d+)$/);
+    if (!match) return null;
+    return {
+        name: String(match[1] || '').trim(),
+        number: Number(match[2])
+    };
+}
+
 async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
-    const wanted = String(uniqueCollectibleId || '');
+    const wanted = String(uniqueCollectibleId || '').trim();
     if (!wanted) return null;
+
+    const exact = parseCollectibleIdentity(wanted);
     const gifts = await listBusinessCollectibles();
+
+    // Older verified collectibles can contain the Telegram display name without the
+    // space/punctuation normalization used by the current MTProto response
+    // (e.g. "LibertyFigure-219243" vs "Liberty Figure-219243"). Match the
+    // collectible number together with a normalized gift name so the exact
+    // collectible remains unique while tolerating that harmless formatting drift.
+    if (exact && Number.isSafeInteger(exact.number) && exact.number > 0) {
+        const wantedName = normalizeCollectibleName(exact.name);
+        const matched = gifts.find(item => {
+            const candidateNumber = numberValue(item?.gift?.num ?? item?.gift?.number);
+            if (candidateNumber !== exact.number) return false;
+
+            const candidateNames = [
+                savedGiftName(item),
+                item?.gift?.baseName,
+                item?.gift?.base_name,
+                item?.gift?.title
+            ].map(normalizeCollectibleName).filter(Boolean);
+
+            return wantedName && candidateNames.includes(wantedName);
+        });
+        if (matched) return matched;
+    }
+
     return gifts.find(item => savedGiftUniqueId(item) === wanted) || null;
 }
 
