@@ -908,9 +908,9 @@
         }
         #rocket-game .star-layer {
             position: absolute;
-            inset: -60%;
-            width: 220%;
-            height: 220%;
+            inset: -70%;
+            width: 240%;
+            height: 240%;
             pointer-events: none;
             background-repeat: repeat;
             background-position: 0 0;
@@ -982,6 +982,33 @@
         #rocket-game .flight-line.crashed::after {
             background: radial-gradient(circle, rgba(255, 235, 238, 1) 0 10%, rgba(255, 79, 103, 0.95) 24%, rgba(255, 79, 103, 0.24) 52%, transparent 72%);
         }
+        #rocket-game .flight-line {
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            right: auto;
+            bottom: auto;
+            opacity: 0;
+            transform: none;
+            background: none !important;
+            box-shadow: none !important;
+            transition: none !important;
+            z-index: 2;
+            will-change: opacity;
+        }
+        #rocket-game .flight-line.active,
+        #rocket-game .flight-line.crashed { opacity: 1; }
+        #rocket-game .flight-line::after { display: none !important; }
+        #rocket-game .flight-path-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+        #rocket-game .flight-path-glow,
+        #rocket-game .flight-path-core { fill:none; stroke-linecap:round; stroke-linejoin:round; }
+        #rocket-game .flight-path-glow { stroke:rgba(79,195,247,.28); stroke-width:9; }
+        #rocket-game .flight-path-core { stroke:rgba(100,205,255,.95); stroke-width:2.5; }
+        #rocket-game .flight-path-head { fill:#e9fbff; stroke:rgba(79,195,247,.95); stroke-width:3; }
+        #rocket-game .flight-line.crashed .flight-path-glow { stroke:rgba(255,79,103,.30); }
+        #rocket-game .flight-line.crashed .flight-path-core { stroke:rgba(255,82,105,.95); }
+        #rocket-game .flight-line.crashed .flight-path-head { fill:#fff0f2; stroke:rgba(255,82,105,.95); }
         #rocket-game .fog-effect {
             background: transparent !important;
         }
@@ -3026,7 +3053,13 @@
                     <div id="multiplier" class="multiplier waiting">1.00x</div>
 
                     <div class="rocket-area">
-                        <div id="flight-line" class="flight-line"></div>
+                        <div id="flight-line" class="flight-line" aria-hidden="true">
+    <svg class="flight-path-svg" preserveAspectRatio="none" aria-hidden="true">
+        <path class="flight-path-glow"></path>
+        <path class="flight-path-core"></path>
+        <circle class="flight-path-head" cx="0" cy="0" r="4"></circle>
+    </svg>
+</div>
                          <div id="rocket-trail" class="rocket-trail"></div>
                          <div id="flame" class="flame"></div>
                          <div id="telegram-rocket" class="telegram-rocket hidden" aria-hidden="true"></div>
@@ -3751,6 +3784,7 @@
         let rocketLastDecorPaint = 0;
         let rocketLastCountdownPaint = 0;
         let rocketBackdropPhase = '';
+        let rocketLastPathPaint = 0;
         let lastRenderedMultiplierText = '';
         let lastRenderedMultiplierClass = '';
         let collectiblesEventSource = null;
@@ -4922,6 +4956,9 @@
                 stars: document.querySelector("#rocket-game .stars"),
                 starLayers: document.querySelectorAll("#rocket-game .star-layer"),
                 flightLine: document.getElementById("flight-line"),
+                flightPathGlow: document.querySelector("#rocket-game .flight-path-glow"),
+                flightPathCore: document.querySelector("#rocket-game .flight-path-core"),
+                flightPathHead: document.querySelector("#rocket-game .flight-path-head"),
                 area: document.querySelector(".rocket-area"),
                 multiplier: document.getElementById("multiplier"),
                 liveSlot: document.getElementById("live-multiplier-slot"),
@@ -4962,7 +4999,12 @@
             if (refs.flightLine) {
                 refs.flightLine.classList.remove("active", "crashed");
                 refs.flightLine.style.opacity = "0";
-                refs.flightLine.style.transform = "translate3d(0, 0, 0) rotate(-7deg) scaleX(0.001)";
+            }
+            if (refs.flightPathGlow) refs.flightPathGlow.setAttribute("d", "");
+            if (refs.flightPathCore) refs.flightPathCore.setAttribute("d", "");
+            if (refs.flightPathHead) {
+                refs.flightPathHead.setAttribute("cx", "0");
+                refs.flightPathHead.setAttribute("cy", "0");
             }
             if (refs.starLayers && refs.starLayers.length) {
                 refs.starLayers.forEach(function(layer) {
@@ -4976,6 +5018,7 @@
             if (rocketBackdropPhase === phase) return;
             rocketBackdropPhase = phase;
             if (phase === "FLIGHT") {
+                rocketLastPathPaint=0;
                 if (refs.flightLine) {
                     refs.flightLine.classList.remove("crashed");
                     refs.flightLine.classList.add("active");
@@ -4996,23 +5039,52 @@
             }
         }
 
-        function updateRocketBackdrop(progress, pathProgress, smoothClimb, x, y, rotation) {
+        function updateRocketBackdrop(progress, pathProgress, smoothClimb, x, y, rotation, timestamp) {
             const refs = getRocketRenderRefs();
             if (gamePhase !== "FLIGHT") return;
+
+            // Strong, continuous parallax: near stars move farther and faster
+            // than distant stars, always opposite the rocket direction.
             if (refs.starLayers && refs.starLayers.length) {
                 const width = rocketAreaSize.width || 1;
                 const height = rocketAreaSize.height || 1;
-                const starFactors = [0.20, 0.38, 0.62];
-                refs.starLayers.forEach(function(layer, index) {
-                    const factor = starFactors[index] || 0.38;
-                    const starX = -width * 0.58 * pathProgress * factor;
-                    const starY = height * 0.30 * smoothClimb * factor;
-                    layer.style.transform = "translate3d(" + starX.toFixed(2) + "px, " + starY.toFixed(2) + "px, 0)";
+                const factors = [0.48, 0.82, 1.22];
+                refs.starLayers.forEach(function(layer,index){
+                    const f=factors[index] || 0.82;
+                    const sx=-width*0.90*pathProgress*f;
+                    const sy=height*0.34*smoothClimb*f;
+                    layer.style.transform="translate3d("+sx.toFixed(2)+"px, "+sy.toFixed(2)+"px, 0)";
                 });
             }
-            if (refs.flightLine) {
-                const lineScale = Math.max(0.001, pathProgress);
-                refs.flightLine.style.transform = "translate3d(0, " + (-y).toFixed(2) + "px, 0) rotate(" + rotation.toFixed(2) + "deg) scaleX(" + lineScale.toFixed(4) + ")";
+
+            // Trail is visual-only and painted at ~30fps; rocket remains 60fps.
+            if (timestamp - rocketLastPathPaint < 33) return;
+            rocketLastPathPaint=timestamp;
+            const width=rocketAreaSize.width || 1;
+            const height=rocketAreaSize.height || 1;
+            const startX=width*0.15+40;
+            const startY=height-74-40;
+            const count=24;
+            const points=[];
+            for(let i=0;i<=count;i++){
+                const t=progress*(i/count);
+                const tp=t*t*(3-2*t);
+                const cp=Math.max(0,Math.min(1,(tp-0.50)/0.50));
+                const sc=cp*cp*(3-2*cp);
+                const px=width*0.62*tp;
+                const py=height*0.34*sc;
+                const wobble=Math.sin(t*Math.PI*7.5)*(1.4+sc*2.8);
+                points.push([startX+px,startY-py+wobble]);
+            }
+            const d=points.map(function(pt,i){
+                return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
+            }).join(" ");
+            if(refs.flightPathGlow) refs.flightPathGlow.setAttribute("d",d);
+            if(refs.flightPathCore) refs.flightPathCore.setAttribute("d",d);
+            if(refs.flightPathHead && points.length){
+                const head=points[points.length-1];
+                refs.flightPathHead.setAttribute("cx",head[0].toFixed(1));
+                refs.flightPathHead.setAttribute("cy",head[1].toFixed(1));
             }
         }
 
@@ -5068,7 +5140,7 @@
 
                 renderFlightMultiplier(timestamp);
 
-                const visualFlightDuration = 6.5;
+                const visualFlightDuration = 8.8;
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
                 moveRocket(progress, timestamp);
             } else if (gamePhase === "COUNTDOWN") {
@@ -5104,16 +5176,17 @@
             if (!rocketAreaSize.width || !rocketAreaSize.height) updateRocketAreaSize();
             const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            const pathProgress = Math.pow(p, 0.68);
-            const climbStart = 0.22;
+            // Gentle forward motion to the midpoint, then a progressive upward bend.
+            const pathProgress = p * p * (3 - 2 * p);
+            const climbStart = 0.50;
             const climbProgress = Math.max(
                 0,
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            const x = rocketAreaSize.width * 0.58 * pathProgress;
-            const y = rocketAreaSize.height * 0.30 * smoothClimb;
-            const rotation = -7 - smoothClimb * 20;
+            const x = rocketAreaSize.width * 0.62 * pathProgress;
+            const y = rocketAreaSize.height * 0.34 * smoothClimb;
+            const rotation = -7 - smoothClimb * 23;
             const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
 
             const telegramVisible = telegramRocket &&
@@ -5127,7 +5200,7 @@
                 rocket.style.transform = transform;
             }
 
-            updateRocketBackdrop(p, pathProgress, smoothClimb, x, y, rotation);
+            updateRocketBackdrop(p, pathProgress, smoothClimb, x, y, rotation, timestamp);
 
             if (telegramRocketVideo && telegramVisible && telegramRocketVideo.paused && gamePhase === "FLIGHT") {
                 telegramRocketVideo.play().catch(() => {});
