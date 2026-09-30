@@ -4733,7 +4733,7 @@
 
                 // Visual motion follows the real flight clock at 60fps. Keep the
                 // path responsive rather than waiting on multiplier/SSE updates.
-                const visualFlightDuration = 5.5;
+                const visualFlightDuration = 6.5;
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
                 moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
@@ -4765,12 +4765,20 @@
             // 60fps interpolation, so an extra follow-filter only adds visible lag.
             const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            // Faster Telegram-like launch: the rocket starts moving immediately
-            // and gains speed progressively instead of crawling near 1.00x.
-            const pathProgress = Math.pow(p, 0.55);
+            // Smooth Telegram-like flight path:
+            // - move forward first with only a very small vertical lift
+            // - introduce the climb gradually instead of lifting from the start
+            // - keep the whole path slower and smoother than the previous version
+            const pathProgress = Math.pow(p, 0.68);
+            const climbStart = 0.22;
+            const climbProgress = Math.max(
+                0,
+                Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
+            );
+            const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
             const x = area.clientWidth * 0.58 * pathProgress;
-            const y = area.clientHeight * 0.28 * pathProgress;
-            const rotation = -12 - pathProgress * 15;
+            const y = area.clientHeight * 0.30 * smoothClimb;
+            const rotation = -7 - smoothClimb * 20;
             const transform = `translate3d(${x.toFixed(3)}px, ${(-y).toFixed(3)}px, 0) rotate(${rotation.toFixed(3)}deg)`;
 
             rocket.style.transform = transform;
