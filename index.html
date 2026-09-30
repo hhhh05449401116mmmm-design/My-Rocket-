@@ -2792,7 +2792,7 @@
             ROCKET GAME
          ========================================================= -->
          <div id="rocket-game" class="rocket-game-container hidden">
-            <video class="rocket-game-video-bg" autoplay loop muted playsinline preload="auto" aria-hidden="true">
+            <video class="rocket-game-video-bg" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback" aria-hidden="true">
                 <source src="/assets/295f6693d2993dcf2e98de258802fa30_720w.mp4" type="video/mp4">
             </video>
             <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
@@ -4394,7 +4394,10 @@
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
                         fallback?.classList.add('telegram-fallback-hidden');
                         container.classList.remove('hidden');
-                        try { playerHandle.tlottie.goToAndPlay?.(0, true); } catch (e) {
+                        try {
+                            playerHandle.tlottie.setSpeed?.(1);
+                            playerHandle.tlottie.goToAndPlay?.(0, true);
+                        } catch (e) {
                             try { playerHandle.tlottie.play(); } catch (e2) {}
                         }
                     });
@@ -4480,6 +4483,8 @@
         }
 
         function resetTelegramRocketForCountdown() {
+            telegramRocketMotionProgress = 0;
+            telegramRocketMotionAt = 0;
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
             if (!container) return;
@@ -4661,6 +4666,9 @@
             requestAnimationFrame(animateGameLoop);
         }
 
+        let telegramRocketMotionProgress = 0;
+        let telegramRocketMotionAt = 0;
+
         function moveRocket(progress) {
             const rocket = document.getElementById("rocket");
             const telegramRocket = document.getElementById("telegram-rocket");
@@ -4670,19 +4678,42 @@
             const area = document.querySelector(".rocket-area");
             if (!rocket || !area) return;
 
-            const x = area.clientWidth * 0.58 * progress;
-            const y = area.clientHeight * 0.28 * progress;
-            const rotation = -12 - progress * 15;
-            const transform = `translate3d(${x.toFixed(1)}px, ${(-y).toFixed(1)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+            // Keep the flight path continuously interpolated between server/UI
+            // samples. This removes visible stepping on iPhone without changing
+            // the server multiplier or crash logic.
+            const now = performance.now();
+            const dt = telegramRocketMotionAt ? Math.min((now - telegramRocketMotionAt) / 1000, 0.05) : 0;
+            telegramRocketMotionAt = now;
+            const target = Math.max(0, Math.min(1, Number(progress) || 0));
+            const follow = 1 - Math.exp(-dt * 18);
+            telegramRocketMotionProgress += (target - telegramRocketMotionProgress) * follow;
+            if (Math.abs(target - telegramRocketMotionProgress) < 0.00005) {
+                telegramRocketMotionProgress = target;
+            }
+
+            const p = telegramRocketMotionProgress;
+            // Telegram-style accelerating flight curve: slow at launch, then
+            // progressively faster while remaining tied to the real multiplier.
+            const pathProgress = 1 - Math.pow(1 - p, 1.35);
+            const x = area.clientWidth * 0.58 * pathProgress;
+            const y = area.clientHeight * 0.28 * pathProgress;
+            const rotation = -12 - pathProgress * 15;
+            const transform = `translate3d(${x.toFixed(3)}px, ${(-y).toFixed(3)}px, 0) rotate(${rotation.toFixed(3)}deg)`;
 
             rocket.style.transform = transform;
 
             if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
                 telegramRocket.style.transform = transform;
+                // TLottie owns its own animation clock. Calling play() every
+                // animation frame adds needless work and can make mobile playback
+                // feel less stable.
                 if (telegramRocketTgsPlayer) {
-                    try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {}
+                    try {
+                        const lottie = telegramRocketTgsPlayer.tlottie;
+                        if (lottie && typeof lottie.play === "function") lottie.play();
+                    } catch (e) {}
                 } else if (telegramRocketLottieAnimation) {
-                    telegramRocketLottieAnimation.play();
+                    try { telegramRocketLottieAnimation.play(); } catch (e) {}
                 } else if (telegramRocketVideo && telegramRocketVideo.paused) {
                     telegramRocketVideo.play().catch(() => {});
                 }
@@ -4690,19 +4721,19 @@
 
             if (flame) {
                 flame.style.display = "block";
-                flame.style.height = `${40 + progress * 20}px`;
-                flame.style.opacity = `${0.5 + progress * 0.5}`;
+                flame.style.height = `${40 + pathProgress * 20}px`;
+                flame.style.opacity = `${0.5 + pathProgress * 0.5}`;
             }
 
             if (trail) {
                 trail.classList.add("active");
-                trail.style.width = `${140 + progress * 60}px`;
-                trail.style.opacity = `${0.3 + progress * 0.7}`;
+                trail.style.width = `${140 + pathProgress * 60}px`;
+                trail.style.opacity = `${0.3 + pathProgress * 0.7}`;
             }
 
             if (particles) {
                 particles.style.transform = transform;
-                createParticle(particles, progress);
+                createParticle(particles, pathProgress);
             }
         }
 
@@ -6227,6 +6258,31 @@
             });
         }
 
+        function playRocketBackgroundVideo() {
+            const video = document.querySelector("#rocket-game .rocket-game-video-bg");
+            if (!video) return;
+            video.muted = true;
+            video.defaultMuted = true;
+            video.autoplay = true;
+            video.loop = true;
+            video.playsInline = true;
+            video.setAttribute("muted", "");
+            video.setAttribute("autoplay", "");
+            video.setAttribute("loop", "");
+            video.setAttribute("playsinline", "");
+            video.setAttribute("webkit-playsinline", "");
+            video.controls = false;
+            video.removeAttribute("controls");
+            try {
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.catch === "function") {
+                    playPromise.catch(() => {
+                        // iOS can defer autoplay until the page receives a user gesture.
+                    });
+                }
+            } catch (e) {}
+        }
+
         function openRocketGame() {
             hideAllPages();
             closeAllGames();
@@ -6238,9 +6294,23 @@
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.querySelectorAll(".nav-button").forEach(function(b) { b.classList.remove("active"); });
             document.getElementById("nav-home").classList.add("active");
+
+            // This runs directly from the user's tap that opened the game, which
+            // allows iOS/Telegram WebView to start muted inline playback reliably.
+            const video = document.querySelector("#rocket-game .rocket-game-video-bg");
+            if (video) {
+                const startVideo = () => playRocketBackgroundVideo();
+                if (video.readyState >= 2) startVideo();
+                else video.addEventListener("loadeddata", startVideo, { once: true });
+                requestAnimationFrame(startVideo);
+            }
         }
 
         function closeRocketGame() {
+            const video = document.querySelector("#rocket-game .rocket-game-video-bg");
+            if (video) {
+                try { video.pause(); } catch (e) {}
+            }
             if (gameInterval) clearInterval(gameInterval);
             document.getElementById("rocket-game").classList.add("hidden");
             document.getElementById("playhub-screen").classList.add("hidden");
@@ -6248,6 +6318,22 @@
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
         }
+
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === "visible") {
+                const rocketGame = document.getElementById("rocket-game");
+                if (rocketGame && !rocketGame.classList.contains("hidden")) {
+                    requestAnimationFrame(playRocketBackgroundVideo);
+                }
+            }
+        });
+
+        window.addEventListener("pageshow", function() {
+            const rocketGame = document.getElementById("rocket-game");
+            if (rocketGame && !rocketGame.classList.contains("hidden")) {
+                requestAnimationFrame(playRocketBackgroundVideo);
+            }
+        });
 
         function closeAllGames() {
             ['rocket-game','mines-game','plinko-game','dice-game','crafts-game','pvp-game','upgrade-game','lottery-game'].forEach(function(id) {
