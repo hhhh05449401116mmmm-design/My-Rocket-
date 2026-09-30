@@ -1862,24 +1862,38 @@
             position: absolute;
             width: 112px;
             height: 112px;
-            object-fit: contain;
-            object-position: center;
             left: 15%;
             bottom: 74px;
-            z-index: 5;
+            z-index: 10;
             pointer-events: none;
             display: block;
+            overflow: visible;
             transform-origin: center center;
-            will-change: left, bottom, transform;
+            will-change: transform;
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
+        }
+        .telegram-rocket > * {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            background: transparent !important;
+        }
+        .telegram-rocket canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            background: transparent !important;
         }
         .telegram-rocket.hidden { display: none !important; }
         #rocket.telegram-fallback-hidden { visibility: hidden; }
 
         /* Decorative background video: never expose native playback UI on iOS. */
         .rocket-game-video-bg { pointer-events: none; }
+        .rocket-game-video-bg::-webkit-media-controls,
+        .rocket-game-video-bg::-webkit-media-controls-enclosure,
+        .rocket-game-video-bg::-webkit-media-controls-panel,
         .rocket-game-video-bg::-webkit-media-controls-start-playback-button {
             display: none !important;
             -webkit-appearance: none;
@@ -3559,6 +3573,8 @@
         let previousMultiplierSample = 1.00;
         let serverTimeOffset = 0;
         let flightStartedAt = null;
+        // Display-only monotonic clock. It never determines the server crash result.
+        let visualFlightStartedAt = null;
         let crashDisplayUntil = 0;
         let crashDisplayTimer = null;
         let gamePhase = "COUNTDOWN";
@@ -4334,54 +4350,90 @@
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
             if (!container || !gift?.mediaUrl) return;
-            const renderType = (gift.mimeType || '').toLowerCase();
             if (token !== telegramRocketLoadToken) return;
+
+            const renderType = (gift.mimeType || '').toLowerCase();
+            const isTgs = renderType.includes('application/x-tgsticker')
+                || renderType.includes('application/x-tgs')
+                || gift.mediaUrl.toLowerCase().includes('rocket-media');
+
             destroyTelegramRocketRenderer();
 
-            if (renderType.includes('application/x-tgsticker') || gift.mediaUrl.toLowerCase().includes('rocket-media')) {
-                try {
-                    // TLottie measures its canvas on the next animation frame, so the
-                    // container must be visible before the player is created.
-                    container.classList.remove('hidden');
-                    fallback?.classList.add('telegram-fallback-hidden');
+            if (isTgs) {
+                // TLottie needs a real, laid-out container when it is created.
+                // Keep it in layout but invisible until the first frame is ready.
+                container.classList.remove('hidden');
+                container.style.visibility = 'hidden';
+                fallback?.classList.add('telegram-fallback-hidden');
 
+                try {
                     const module = await loadTelegramTgsRenderer();
                     if (token !== telegramRocketLoadToken) return;
 
-                    telegramRocketTgsPlayer = module.createTLottiePlayer(container, {
+                    const player = module.createTLottiePlayer(container, {
                         src: `${BACKEND_URL}${gift.mediaUrl}`,
                         loop: true,
                         autoplay: false,
                         forceRender: true,
                         workerCount: 1
                     });
-                    // The vanilla adapter stylesheet is not bundled into this app;
-                    // size the wrapper/canvas explicitly before TLottie measures it.
-                    telegramRocketTgsPlayer.element.style.width = '100%';
-                    telegramRocketTgsPlayer.element.style.height = '100%';
-                    telegramRocketTgsPlayer.canvas.style.width = '100%';
-                    telegramRocketTgsPlayer.canvas.style.height = '100%';
-                    telegramRocketTgsPlayer.canvas.style.display = 'block';
-                    telegramRocketTgsPlayer.canvas.style.background = 'transparent';
+                    telegramRocketTgsPlayer = player;
 
-                    const playerHandle = telegramRocketTgsPlayer;
+                    if (player.element) {
+                        player.element.style.width = '100%';
+                        player.element.style.height = '100%';
+                        player.element.style.display = 'block';
+                        player.element.style.background = 'transparent';
+                    }
+                    if (player.canvas) {
+                        player.canvas.style.width = '100%';
+                        player.canvas.style.height = '100%';
+                        player.canvas.style.display = 'block';
+                        player.canvas.style.background = 'transparent';
+                    }
+
+                    const playerHandle = player;
+                    let loaded = false;
                     playerHandle.tlottie.on('load', () => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
-                        fallback?.classList.add('telegram-fallback-hidden');
+                        loaded = true;
+                        container.style.visibility = 'visible';
                         container.classList.remove('hidden');
+                        fallback?.classList.add('telegram-fallback-hidden');
                         playerHandle.tlottie.play();
                     });
-                    playerHandle.tlottie.on('error', (payload) => {
+                    playerHandle.tlottie.on('error', async (payload) => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
-                        console.warn('Telegram TGS renderer error:', payload?.error || payload);
+                        console.warn('Telegram TGS tlottie error:', payload?.error || payload);
                         try { playerHandle.destroy(); } catch (e) {}
                         telegramRocketTgsPlayer = null;
+                        if (!loaded) {
+                            try {
+                                await renderTelegramRocketLottieFallback(gift, token);
+                                return;
+                            } catch (fallbackError) {
+                                console.warn('Telegram TGS Lottie fallback failed:', fallbackError);
+                            }
+                        }
+                        container.style.visibility = 'hidden';
                         container.classList.add('hidden');
                         fallback?.classList.remove('telegram-fallback-hidden');
                     });
+                    // Give TLottie one layout frame before its worker measures the canvas.
+                    requestAnimationFrame(() => {
+                        if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
+                        container.style.visibility = 'hidden';
+                    });
                     return;
                 } catch (error) {
-                    console.warn('Telegram TGS renderer initialization failed:', error);
+                    console.warn('Telegram TGS tlottie initialization failed:', error);
+                    try {
+                        await renderTelegramRocketLottieFallback(gift, token);
+                        return;
+                    } catch (fallbackError) {
+                        console.warn('Telegram TGS fallback initialization failed:', fallbackError);
+                    }
+                    container.style.visibility = 'hidden';
                     container.classList.add('hidden');
                     fallback?.classList.remove('telegram-fallback-hidden');
                     return;
@@ -4389,32 +4441,102 @@
             }
 
             const video = document.createElement('video');
-            video.autoplay = false; video.loop = true; video.muted = true; video.playsInline = true; video.preload = 'auto';
-            video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
-            video.style.width = '100%'; video.style.height = '100%'; video.style.objectFit = 'contain'; video.style.display = 'block';
+            video.autoplay = false;
+            video.loop = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = 'auto';
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'contain';
+            video.style.display = 'block';
             video.addEventListener('loadeddata', function() {
                 if (token !== telegramRocketLoadToken) return;
-                telegramRocketVideo = video; video.currentTime = 0; video.play().catch(() => {});
-                fallback?.classList.add('telegram-fallback-hidden'); container.classList.remove('hidden');
+                telegramRocketVideo = video;
+                video.currentTime = 0;
+                video.play().catch(() => {});
+                container.style.visibility = 'visible';
+                container.classList.remove('hidden');
+                fallback?.classList.add('telegram-fallback-hidden');
             }, { once: true });
             video.addEventListener('error', function() {
                 if (token !== telegramRocketLoadToken) return;
-                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+                container.style.visibility = 'hidden';
+                container.classList.add('hidden');
+                fallback?.classList.remove('telegram-fallback-hidden');
             }, { once: true });
-            video.src = `${BACKEND_URL}${gift.mediaUrl}`; container.appendChild(video); telegramRocketVideo = video; video.load();
+            video.src = `${BACKEND_URL}${gift.mediaUrl}`;
+            container.appendChild(video);
+            telegramRocketVideo = video;
+            video.load();
+        }
+
+        async function renderTelegramRocketLottieFallback(gift, token) {
+            const container = document.getElementById('telegram-rocket');
+            const fallback = document.getElementById('rocket');
+            if (!container || token !== telegramRocketLoadToken) return;
+
+            const response = await fetch(`${BACKEND_URL}${gift.mediaUrl}`, {
+                headers: { 'Accept': 'application/x-tgsticker,application/octet-stream' },
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`Rocket media HTTP ${response.status}`);
+
+            const bytes = await response.arrayBuffer();
+            let jsonText;
+            const first = new Uint8Array(bytes, 0, Math.min(2, bytes.byteLength));
+            const isGzip = first[0] === 0x1f && first[1] === 0x8b;
+
+            if (isGzip) {
+                if (typeof DecompressionStream !== 'function') {
+                    throw new Error('DecompressionStream unavailable for TGS fallback');
+                }
+                const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+                jsonText = await new Response(stream).text();
+            } else {
+                jsonText = new TextDecoder().decode(bytes);
+            }
+
+            const animationData = JSON.parse(jsonText);
+            if (token !== telegramRocketLoadToken) return;
+
+            destroyTelegramRocketRenderer();
+            container.classList.remove('hidden');
+            container.style.visibility = 'hidden';
+            fallback?.classList.add('telegram-fallback-hidden');
+
+            telegramRocketLottieAnimation = lottie.loadAnimation({
+                container,
+                renderer: 'canvas',
+                loop: true,
+                autoplay: false,
+                animationData
+            });
+
+            telegramRocketLottieAnimation.addEventListener('DOMLoaded', function() {
+                if (token !== telegramRocketLoadToken) return;
+                container.style.visibility = 'visible';
+                container.classList.remove('hidden');
+                fallback?.classList.add('telegram-fallback-hidden');
+                telegramRocketLottieAnimation.goToAndPlay(0, true);
+            });
         }
 
         function prepareTelegramRocketForRound(roundId) {
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
             if (!container || !telegramRocketGifts.length) return;
+
             const index = Math.abs(Number(roundId) || 0) % telegramRocketGifts.length;
             const gift = telegramRocketGifts[index];
             if (!gift?.mediaUrl) return;
 
             if (activeTelegramRocketIndex === index && !container.classList.contains('hidden')) {
+                container.style.visibility = 'visible';
                 if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {} }
-                else if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.goToAndPlay(0, true);
+                else if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.goToAndPlay(0, true); } catch (e) {} }
                 else if (telegramRocketVideo) { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); }
                 fallback?.classList.add('telegram-fallback-hidden');
                 return;
@@ -4422,12 +4544,17 @@
 
             activeTelegramRocketIndex = index;
             const token = ++telegramRocketLoadToken;
-            container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            container.classList.add('hidden');
+            container.style.visibility = 'hidden';
+            fallback?.classList.remove('telegram-fallback-hidden');
             destroyTelegramRocketRenderer();
+
             renderTelegramRocketMedia(gift, token).catch(error => {
                 if (token !== telegramRocketLoadToken) return;
                 console.warn('Telegram rocket media render failed:', error);
-                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+                container.style.visibility = 'hidden';
+                container.classList.add('hidden');
+                fallback?.classList.remove('telegram-fallback-hidden');
             });
         }
 
@@ -4440,6 +4567,7 @@
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} }
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.stop(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {} }
+            container.style.visibility = 'hidden';
             container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
         }
 
@@ -4476,6 +4604,7 @@
             currentRoundId = state.roundId;
             if (previousRoundId && previousRoundId !== currentRoundId) {
                 activeTelegramRocketIndex = -1;
+                visualFlightStartedAt = null;
                 resetTelegramRocketForCountdown();
                 hasBet = false;
                 currentBetId = null;
@@ -4522,7 +4651,12 @@
             }
             if (state.phase === "FLIGHT") {
                 if (previousPhase !== "FLIGHT") {
-                    displayMultiplier = 1.00;
+                    const serverStartMs = Number(state.flightStartedAt) || Date.now();
+                    const serverNowMs = Number(state.serverTime) || Date.now();
+                    const initialElapsedMs = Math.max(0, serverNowMs - serverStartMs);
+                    visualFlightStartedAt = performance.now() - initialElapsedMs;
+                    displayMultiplier = Math.max(1.00, currentStateMultiplier);
+
                     document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("waiting");
                     document.getElementById("multiplier").classList.remove("crashed");
@@ -4564,12 +4698,20 @@
         ========================================================= */
         function animateGameLoop() {
             if (gamePhase === "FLIGHT") {
-                const serverNow = Date.now() + serverTimeOffset;
-                const elapsedSeconds = flightStartedAt
-                    ? Math.max((serverNow - flightStartedAt) / 1000, 0)
-                    : 0;
-                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
-                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
+                if (visualFlightStartedAt == null) {
+                    visualFlightStartedAt = performance.now();
+                }
+
+                const elapsedSeconds = Math.max((performance.now() - visualFlightStartedAt) / 1000, 0);
+                const predictedMultiplier = 1 + elapsedSeconds * multiplierRate;
+
+                // UI-only value. The server's currentMultiplier remains authoritative
+                // for bets, cashout and crash outcome.
+                displayMultiplier = Math.max(
+                    Number(currentMultiplier) || 1,
+                    displayMultiplier,
+                    predictedMultiplier
+                );
 
                 const multEl = document.getElementById("multiplier");
                 if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
@@ -4577,13 +4719,11 @@
                 const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
                 moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
-                // حساب العداد الدائري
                 const now = Date.now();
                 const elapsed = now - countdownStartTime;
                 if (elapsed < countdownDuration) {
                     const remainingSec = Math.ceil((countdownDuration - elapsed) / 1000);
                     document.getElementById("countdown").textContent = remainingSec;
-                    
                     const rotation = (elapsed / countdownDuration) * 360;
                     document.getElementById("countdown-progress").style.transform = `rotate(${rotation - 45}deg)`;
                 }
@@ -4609,8 +4749,11 @@
 
             if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
                 telegramRocket.style.transform = transform;
-                if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                if (telegramRocketTgsPlayer) {
+                    try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {}
+                } else if (telegramRocketLottieAnimation) {
+                    try { telegramRocketLottieAnimation.play(); } catch (e) {}
+                } else if (telegramRocketVideo && telegramRocketVideo.paused) {
                     telegramRocketVideo.play().catch(() => {});
                 }
             }
@@ -6168,6 +6311,18 @@
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.querySelectorAll(".nav-button").forEach(function(b) { b.classList.remove("active"); });
             document.getElementById("nav-home").classList.add("active");
+
+            // The MP4 is decorative only. On iOS, a failed autoplay can expose
+            // WebKit's large native play button, so keep that background hidden there.
+            const bgVideo = document.querySelector("#rocket-game .rocket-game-video-bg");
+            if (bgVideo) {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+                bgVideo.controls = false;
+                bgVideo.setAttribute("controlslist", "nodownload noplaybackrate nofullscreen");
+                bgVideo.setAttribute("disablepictureinpicture", "");
+                if (isIOS) bgVideo.style.visibility = "hidden";
+            }
 
             // Recreate the Telegram TGS renderer after the game becomes visible.
             if (telegramRocketGifts.length && gamePhase === "FLIGHT") {
