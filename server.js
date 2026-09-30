@@ -3118,11 +3118,13 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             const selected = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
             if (!selected) throw new Error('This exact collectible is not currently owned by Account 2');
 
-            await transferSelectedGiftToUser({ savedGift: selected, telegramUserId: userTelegramId });
-            const stillOwned = await findBusinessGiftByUniqueId(collectible.unique_collectible_id);
-            if (stillOwned) throw new Error('Telegram transfer completed but the collectible is still owned by Account 2');
+            const sent = await transferSelectedGiftToUser({
+                savedGift: selected,
+                telegramUserId: userTelegramId
+            });
 
-            await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-business-account2-transfer-complete');
+            // Telegram's successful transfer response is authoritative. Do not use an immediate Account 2 inventory read as a failure condition because inventory propagation can lag.
+            await confirmGiftWithdrawal(req.user.id, collectibleId, 'telegram-business-account2-transfer-complete:msg-' + sent.msgId);
             await createNotification(req.user.id, 'GIFT_WON', 'Gift withdrawn to your Telegram account!', { collectibleId });
             return res.json({ ok: true, status: 'SENT', collectibleId });
         } catch (error) {
