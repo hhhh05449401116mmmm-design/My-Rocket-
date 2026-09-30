@@ -1877,6 +1877,13 @@
         }
         .telegram-rocket.hidden { display: none !important; }
         #rocket.telegram-fallback-hidden { visibility: hidden; }
+
+        /* Decorative background video: never expose native playback UI on iOS. */
+        .rocket-game-video-bg { pointer-events: none; }
+        .rocket-game-video-bg::-webkit-media-controls-start-playback-button {
+            display: none !important;
+            -webkit-appearance: none;
+        }
         
         .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; }
         .image-banner .banner-art { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; z-index:0; }
@@ -4590,32 +4597,38 @@
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
             const particles = document.getElementById("rocket-particles");
-            if(!rocket) return;
-            
-            rocket.style.left = `${15 + progress * 58}%`;
-            rocket.style.bottom = `${74 + progress * 120}px`;
-            rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
-            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
-                telegramRocket.style.left = `${15 + progress * 58}%`;
-                telegramRocket.style.bottom = `${74 + progress * 120}px`;
-                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+            const area = document.querySelector(".rocket-area");
+            if (!rocket || !area) return;
+
+            const x = area.clientWidth * 0.58 * progress;
+            const y = area.clientHeight * 0.28 * progress;
+            const rotation = -12 - progress * 15;
+            const transform = `translate3d(${x.toFixed(1)}px, ${(-y).toFixed(1)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+
+            rocket.style.transform = transform;
+
+            if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
+                telegramRocket.style.transform = transform;
                 if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
+                else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                    telegramRocketVideo.play().catch(() => {});
+                }
             }
-            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
+
             if (flame) {
                 flame.style.display = "block";
                 flame.style.height = `${40 + progress * 20}px`;
                 flame.style.opacity = `${0.5 + progress * 0.5}`;
             }
+
             if (trail) {
                 trail.classList.add("active");
                 trail.style.width = `${140 + progress * 60}px`;
                 trail.style.opacity = `${0.3 + progress * 0.7}`;
             }
+
             if (particles) {
-                particles.style.left = rocket.style.left;
-                particles.style.bottom = rocket.style.bottom;
+                particles.style.transform = transform;
                 createParticle(particles, progress);
             }
         }
@@ -6144,21 +6157,6 @@
             });
         }
 
-        function startRocketGameBackgroundVideo() {
-            const video = document.querySelector("#rocket-game .rocket-game-video-bg");
-            if (!video) return;
-            video.muted = true;
-            video.defaultMuted = true;
-            video.setAttribute("muted", "");
-            video.setAttribute("playsinline", "");
-            video.setAttribute("webkit-playsinline", "");
-            video.removeAttribute("controls");
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === "function") {
-                playPromise.catch(function() {});
-            }
-        }
-
         function openRocketGame() {
             hideAllPages();
             closeAllGames();
@@ -6171,8 +6169,9 @@
             document.querySelectorAll(".nav-button").forEach(function(b) { b.classList.remove("active"); });
             document.getElementById("nav-home").classList.add("active");
 
-            startRocketGameBackgroundVideo();
+            // Recreate the Telegram TGS renderer after the game becomes visible.
             if (telegramRocketGifts.length && gamePhase === "FLIGHT") {
+                activeTelegramRocketIndex = -1;
                 prepareTelegramRocketForRound(currentRoundId);
             }
         }
