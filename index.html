@@ -4731,9 +4731,9 @@
                     liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
                 }
 
-                // Visual motion is driven directly by elapsed flight time so it
-                // starts on the first animation frame and never waits for an SSE/multiplier tick.
-                const visualFlightDuration = 8;
+                // Visual motion follows the real flight clock at 60fps. Keep the
+                // path responsive rather than waiting on multiplier/SSE updates.
+                const visualFlightDuration = 5.5;
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
                 moveRocket(progress);
             } else if (gamePhase === "COUNTDOWN") {
@@ -4777,17 +4777,11 @@
 
             if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
                 telegramRocket.style.transform = transform;
-                // TLottie owns its own animation clock. Calling play() every
-                // animation frame adds needless work and can make mobile playback
-                // feel less stable.
-                if (telegramRocketTgsPlayer) {
-                    try {
-                        const lottie = telegramRocketTgsPlayer.tlottie;
-                        if (lottie && typeof lottie.play === "function") lottie.play();
-                    } catch (e) {}
-                } else if (telegramRocketLottieAnimation) {
-                    try { telegramRocketLottieAnimation.play(); } catch (e) {}
-                } else if (telegramRocketVideo && telegramRocketVideo.paused) {
+                // The renderer owns its own playback clock. Start/stop it only
+                // on lifecycle events (load, FLIGHT, CRASH), never on every frame.
+                // Repeated play() calls here were causing unnecessary worker/main-thread
+                // traffic on iPhone and made the Telegram animation feel sluggish.
+                if (telegramRocketVideo && telegramRocketVideo.paused && gamePhase === "FLIGHT") {
                     telegramRocketVideo.play().catch(() => {});
                 }
             }
