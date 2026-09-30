@@ -3058,12 +3058,25 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                     telegramUserId: userTelegramId
                 });
 
-                const stillOwned = await findBusinessGiftByUniqueId(sent.uniqueCollectibleId);
-                if (stillOwned) {
-                    throw new Error('Telegram transfer completed but the selected collectible is still owned by Account 2');
-                }
+                // Telegram's successful payment/transfer response is authoritative. Do not immediately re-read
 
-                await confirmGiftWithdrawal(req.user.id, selectedUniqueId, 'telegram-business-account2-transfer-complete');
+
+                // Account 2 inventory because getSavedStarGifts can briefly lag after a successful transfer.
+
+
+                await confirmGiftWithdrawal(
+
+
+                    req.user.id,
+
+
+                    selectedUniqueId,
+
+
+                    'telegram-business-account2-transfer-complete:msg-' + sent.msgId
+
+
+                );
                 await createNotification(
                     req.user.id,
                     'GIFT_WON',
