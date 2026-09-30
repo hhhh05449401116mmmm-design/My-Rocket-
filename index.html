@@ -4392,11 +4392,17 @@
                     const playerHandle = player;
                     playerHandle.tlottie.on('load', () => {
                         if (token !== telegramRocketLoadToken || telegramRocketTgsPlayer !== playerHandle) return;
-                        fallback?.classList.add('telegram-fallback-hidden');
-                        container.classList.remove('hidden');
+                        if (gamePhase === 'FLIGHT') {
+                            fallback?.classList.add('telegram-fallback-hidden');
+                            container.classList.remove('hidden');
+                        }
                         try {
                             playerHandle.tlottie.setSpeed?.(1);
-                            playerHandle.tlottie.goToAndPlay?.(0, true);
+                            if (gamePhase === 'FLIGHT') {
+                                playerHandle.tlottie.goToAndPlay?.(0, true);
+                            } else {
+                                playerHandle.tlottie.pause?.();
+                            }
                         } catch (e) {
                             try { playerHandle.tlottie.play(); } catch (e2) {}
                         }
@@ -4437,9 +4443,13 @@
                 video.addEventListener('loadeddata', function() {
                     if (token !== telegramRocketLoadToken || telegramRocketVideo !== video) return;
                     video.currentTime = 0;
-                    video.play().catch(() => {});
-                    fallback?.classList.add('telegram-fallback-hidden');
-                    container.classList.remove('hidden');
+                    if (gamePhase === 'FLIGHT') {
+                        video.play().catch(() => {});
+                        fallback?.classList.add('telegram-fallback-hidden');
+                        container.classList.remove('hidden');
+                    } else {
+                        video.pause();
+                    }
                 }, { once: true });
 
                 video.addEventListener('error', function() {
@@ -4463,28 +4473,40 @@
             const gift = telegramRocketGifts[index];
             if (!gift?.mediaUrl) return;
 
-            if (activeTelegramRocketIndex === index && !container.classList.contains('hidden')) {
-                if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.play(); } catch (e) {} }
-                else if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.goToAndPlay(0, true);
-                else if (telegramRocketVideo) { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); }
-                fallback?.classList.add('telegram-fallback-hidden');
+            if (activeTelegramRocketIndex === index) {
+                // During countdown the rocket is preloaded but kept invisible.
+                // At FLIGHT start we reveal the already-decoded renderer instantly.
+                if (gamePhase === 'FLIGHT') {
+                    container.classList.remove('hidden');
+                    fallback?.classList.add('telegram-fallback-hidden');
+                    if (telegramRocketTgsPlayer) {
+                        try {
+                            telegramRocketTgsPlayer.tlottie.goToAndPlay?.(0, true);
+                            telegramRocketTgsPlayer.tlottie.play?.();
+                        } catch (e) {}
+                    } else if (telegramRocketLottieAnimation) {
+                        try { telegramRocketLottieAnimation.goToAndPlay(0, true); } catch (e) {}
+                    } else if (telegramRocketVideo) {
+                        try { telegramRocketVideo.currentTime = 0; telegramRocketVideo.play().catch(() => {}); } catch (e) {}
+                    }
+                }
                 return;
             }
 
             activeTelegramRocketIndex = index;
             const token = ++telegramRocketLoadToken;
-            container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+            container.classList.add('hidden');
+            fallback?.classList.remove('telegram-fallback-hidden');
             destroyTelegramRocketRenderer();
             renderTelegramRocketMedia(gift, token).catch(error => {
                 if (token !== telegramRocketLoadToken) return;
                 console.warn('Telegram rocket media render failed:', error);
-                container.classList.add('hidden'); fallback?.classList.remove('telegram-fallback-hidden');
+                container.classList.add('hidden');
+                fallback?.classList.remove('telegram-fallback-hidden');
             });
         }
 
         function resetTelegramRocketForCountdown() {
-            telegramRocketMotionProgress = 0;
-            telegramRocketMotionAt = 0;
             const container = document.getElementById('telegram-rocket');
             const fallback = document.getElementById('rocket');
             if (!container) return;
@@ -4562,6 +4584,9 @@
                     document.getElementById("multiplier").classList.remove("flying");
                     document.getElementById("multiplier").classList.remove("crashed");
                     resetTelegramRocketForCountdown();
+                    // Preload/prepare the exact rocket for the upcoming round while
+                    // the countdown is running. It will be revealed instantly at FLIGHT.
+                    prepareTelegramRocketForRound(currentRoundId);
 
                     const revealIn = Math.max(0, crashDisplayUntil - Date.now());
                     if (crashDisplayTimer) clearTimeout(crashDisplayTimer);
@@ -4666,9 +4691,6 @@
             requestAnimationFrame(animateGameLoop);
         }
 
-        let telegramRocketMotionProgress = 0;
-        let telegramRocketMotionAt = 0;
-
         function moveRocket(progress) {
             const rocket = document.getElementById("rocket");
             const telegramRocket = document.getElementById("telegram-rocket");
@@ -4678,23 +4700,14 @@
             const area = document.querySelector(".rocket-area");
             if (!rocket || !area) return;
 
-            // Keep the flight path continuously interpolated between server/UI
-            // samples. This removes visible stepping on iPhone without changing
-            // the server multiplier or crash logic.
-            const now = performance.now();
-            const dt = telegramRocketMotionAt ? Math.min((now - telegramRocketMotionAt) / 1000, 0.05) : 0;
-            telegramRocketMotionAt = now;
-            const target = Math.max(0, Math.min(1, Number(progress) || 0));
-            const follow = 1 - Math.exp(-dt * 18);
-            telegramRocketMotionProgress += (target - telegramRocketMotionProgress) * follow;
-            if (Math.abs(target - telegramRocketMotionProgress) < 0.00005) {
-                telegramRocketMotionProgress = target;
-            }
+            // Drive the visual position directly from the continuously predicted
+            // flight progress. requestAnimationFrame already provides the smooth
+            // 60fps interpolation, so an extra follow-filter only adds visible lag.
+            const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            const p = telegramRocketMotionProgress;
-            // Telegram-style accelerating flight curve: slow at launch, then
-            // progressively faster while remaining tied to the real multiplier.
-            const pathProgress = 1 - Math.pow(1 - p, 1.35);
+            // Faster Telegram-like launch: the rocket starts moving immediately
+            // and gains speed progressively instead of crawling near 1.00x.
+            const pathProgress = Math.pow(p, 0.55);
             const x = area.clientWidth * 0.58 * pathProgress;
             const y = area.clientHeight * 0.28 * pathProgress;
             const rotation = -12 - pathProgress * 15;
