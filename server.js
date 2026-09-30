@@ -3090,8 +3090,21 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                     giftType: reserved.name
                 });
             } catch (error) {
+                const telegramDetail = String(
+                    error?.errorMessage
+                    || error?.error_message
+                    || error?.message
+                    || 'Unknown Telegram transfer error'
+                );
+                const telegramCode = Number.isFinite(Number(error?.code)) ? Number(error.code) : null;
+                console.error('ACCOUNT2 COLLECTIBLE TRANSFER FAILED:', JSON.stringify({
+                    stage: 'telegram-transfer',
+                    errorName: error?.constructor?.name || null,
+                    telegramCode,
+                    telegramDetail
+                }));
                 try {
-                    await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, error.message);
+                    await rollbackPendingGiftWithdrawal(req.user.id, userGiftId, telegramDetail);
                 } catch (rollbackError) {
                     console.error('ACCOUNT2 WITHDRAW ROLLBACK ERROR:', rollbackError.message);
                 }
@@ -3099,7 +3112,8 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                     ok: false,
                     error: 'Telegram gift transfer failed',
                     reason: 'transfer_failed',
-                    detail: error.message,
+                    detail: telegramDetail,
+                    telegramCode,
                     collectibleReturned: true
                 });
             }
@@ -3128,8 +3142,28 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             await createNotification(req.user.id, 'GIFT_WON', 'Gift withdrawn to your Telegram account!', { collectibleId });
             return res.json({ ok: true, status: 'SENT', collectibleId });
         } catch (error) {
-            await rollbackGiftWithdrawal(req.user.id, collectibleId, error.message);
-            return res.status(502).json({ ok: false, error: 'Telegram gift transfer failed', reason: 'transfer_failed', detail: error.message, collectibleReturned: true });
+            const telegramDetail = String(
+                error?.errorMessage
+                || error?.error_message
+                || error?.message
+                || 'Unknown Telegram transfer error'
+            );
+            const telegramCode = Number.isFinite(Number(error?.code)) ? Number(error.code) : null;
+            console.error('ACCOUNT2 COLLECTIBLE TRANSFER FAILED:', JSON.stringify({
+                stage: 'telegram-transfer',
+                errorName: error?.constructor?.name || null,
+                telegramCode,
+                telegramDetail
+            }));
+            await rollbackGiftWithdrawal(req.user.id, collectibleId, telegramDetail);
+            return res.status(502).json({
+                ok: false,
+                error: 'Telegram gift transfer failed',
+                reason: 'transfer_failed',
+                detail: telegramDetail,
+                telegramCode,
+                collectibleReturned: true
+            });
         }
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
