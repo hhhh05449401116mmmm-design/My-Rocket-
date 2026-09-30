@@ -3785,6 +3785,11 @@
         let rocketLastCountdownPaint = 0;
         let rocketBackdropPhase = '';
         let rocketLastPathPaint = 0;
+        let rocketStarOffsetX = 0;
+        let rocketStarOffsetY = 0;
+        let rocketStarLastPathProgress = 0;
+        let rocketStarVelocity = 0;
+        let rocketStarLastTimestamp = 0;
         let lastRenderedMultiplierText = '';
         let lastRenderedMultiplierClass = '';
         let collectiblesEventSource = null;
@@ -5009,7 +5014,6 @@
             if (refs.starLayers && refs.starLayers.length) {
                 const starOpacities = [0.34, 0.52, 0.78];
                 refs.starLayers.forEach(function(layer,index) {
-                    layer.style.transform = "translate3d(0, 0, 0)";
                     layer.style.opacity = String(starOpacities[index] || 0.52);
                 });
             }
@@ -5021,6 +5025,9 @@
             rocketBackdropPhase = phase;
             if (phase === "FLIGHT") {
                 rocketLastPathPaint=0;
+                rocketStarLastPathProgress=0;
+                rocketStarLastTimestamp=0;
+                rocketStarVelocity=0;
                 if (refs.starLayers && refs.starLayers.length) {
                     const starOpacities = [0.34, 0.52, 0.78];
                     refs.starLayers.forEach(function(layer,index) {
@@ -5043,9 +5050,12 @@
                     refs.flightLine.classList.remove("active", "crashed");
                     refs.flightLine.style.opacity = "0";
                 }
+                // Stars remain visible after the crash. Their movement is
+                // handled visually below and decelerates toward a very slow drift.
                 if (refs.starLayers && refs.starLayers.length) {
-                    refs.starLayers.forEach(function(layer) {
-                        layer.style.opacity = "0";
+                    const starOpacities = [0.34, 0.52, 0.78];
+                    refs.starLayers.forEach(function(layer,index) {
+                        layer.style.opacity = String(starOpacities[index] || 0.52);
                     });
                 }
             }
@@ -5053,27 +5063,59 @@
 
         function updateRocketBackdrop(progress, pathProgress, smoothClimb, x, y, rotation, timestamp) {
             const refs = getRocketRenderRefs();
-            if (gamePhase !== "FLIGHT") return;
+            const width = rocketAreaSize.width || 1;
+            const height = rocketAreaSize.height || 1;
+            const factors = [0.82, 1.28, 1.82];
 
-            // Strong, continuous parallax: near stars move farther and faster
-            // than distant stars, always opposite the rocket direction.
+            // The starfield has its own visual position, separate from the
+            // rocket. During flight it follows the rocket direction at the
+            // configured fast parallax speed; after crash it decelerates
+            // smoothly and settles into a very slow drift.
+            if (rocketStarLastTimestamp === 0) {
+                rocketStarLastTimestamp = timestamp;
+            }
+            const dt = Math.max(0, Math.min((timestamp - rocketStarLastTimestamp) / 1000, 0.1));
+            rocketStarLastTimestamp = timestamp;
+
+            if (gamePhase === "FLIGHT") {
+                const deltaPath = Math.max(0, Math.min(1, pathProgress - rocketStarLastPathProgress));
+                if (dt > 0) {
+                    rocketStarVelocity = deltaPath / dt;
+                }
+                rocketStarLastPathProgress = pathProgress;
+                rocketStarOffsetX -= width * 1.28 * deltaPath;
+                const previousPathProgress = Math.max(0, pathProgress - deltaPath);
+                const previousClimbProgress = Math.max(
+                    0,
+                    Math.min(1, (previousPathProgress - 0.50) / 0.50)
+                );
+                const previousSmoothClimb = previousClimbProgress * previousClimbProgress * (3 - 2 * previousClimbProgress);
+                rocketStarOffsetY += height * 0.40 * Math.max(0, smoothClimb - previousSmoothClimb);
+            } else {
+                // Crash/countdown: bleed off the previous flight speed smoothly,
+                // but never freeze the stars completely.
+                const decay = Math.exp(-4.0 * dt);
+                rocketStarVelocity *= decay;
+                const minimumDrift = 0.018;
+                const driftVelocity = Math.max(rocketStarVelocity, minimumDrift);
+                rocketStarOffsetX -= width * 0.13 * driftVelocity * dt;
+                rocketStarOffsetY += height * 0.045 * driftVelocity * dt;
+            }
+
             if (refs.starLayers && refs.starLayers.length) {
-                const width = rocketAreaSize.width || 1;
-                const height = rocketAreaSize.height || 1;
-                const factors = [0.82, 1.28, 1.82];
                 refs.starLayers.forEach(function(layer,index){
                     const f=factors[index] || 0.82;
-                    const sx=-width*1.28*pathProgress*f;
-                    const sy=height*0.40*smoothClimb*f;
+                    const sx=rocketStarOffsetX*f;
+                    const sy=rocketStarOffsetY*f;
                     layer.style.transform="translate3d("+sx.toFixed(2)+"px, "+sy.toFixed(2)+"px, 0)";
                 });
             }
 
+            if (gamePhase !== "FLIGHT") return;
+
             // Trail is visual-only and painted at ~30fps; rocket remains 60fps.
             if (timestamp - rocketLastPathPaint < 33) return;
             rocketLastPathPaint=timestamp;
-            const width=rocketAreaSize.width || 1;
-            const height=rocketAreaSize.height || 1;
             const startX=width*0.15+40;
             const startY=height-74-40;
             const count=24;
@@ -5156,6 +5198,7 @@
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
                 moveRocket(progress, timestamp);
             } else if (gamePhase === "COUNTDOWN") {
+                updateRocketBackdrop(0, rocketStarLastPathProgress, 0, 0, 0, 0, timestamp);
                 const now = Date.now();
                 const elapsed = now - countdownStartTime;
                 if (elapsed < countdownDuration) {
@@ -5171,6 +5214,8 @@
                         }
                     }
                 }
+            } else if (gamePhase === "CRASH") {
+                updateRocketBackdrop(0, rocketStarLastPathProgress, 0, 0, 0, 0, timestamp);
             }
 
             rocketAnimationFrame = requestAnimationFrame(animateGameLoop);
