@@ -1870,7 +1870,7 @@
             pointer-events: none;
             display: block;
             transform-origin: center center;
-            will-change: transform;
+            will-change: left, bottom, transform;
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
@@ -4438,13 +4438,10 @@
 
         function stopTelegramRocketAtCrash() {
             const container = document.getElementById('telegram-rocket');
-            const fallback = document.getElementById('rocket');
             if (!container) return;
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
-            container.classList.add('hidden');
-            fallback?.classList.add('telegram-fallback-hidden');
         }
 
         function setServerStatus(connected) {
@@ -4564,30 +4561,11 @@
                 const elapsedSeconds = flightStartedAt
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
+                const timeBasedMultiplier = 1 + elapsedSeconds * multiplierRate;
+                displayMultiplier = Math.max(displayMultiplier, timeBasedMultiplier, currentMultiplier);
 
-                // UI-only interpolation. The server still owns the real multiplier
-                // and crash result; this only fills the 1-second visual gaps.
-                const predictedMultiplier = Math.max(
-                    1,
-                    1 + elapsedSeconds * multiplierRate
-                );
-                displayMultiplier = Math.max(
-                    Number(currentMultiplier) || 1,
-                    predictedMultiplier
-                );
-
-                const colorClass = historyClass(displayMultiplier);
                 const multEl = document.getElementById("multiplier");
-                if (multEl) {
-                    multEl.className = "multiplier flying " + colorClass;
-                    multEl.textContent = displayMultiplier.toFixed(2) + "x";
-                }
-
-                const liveSlot = document.getElementById("live-multiplier-slot");
-                if (liveSlot) {
-                    liveSlot.className = "live-multiplier-slot " + colorClass;
-                    liveSlot.textContent = displayMultiplier.toFixed(2) + "x";
-                }
+                if (multEl) multEl.textContent = displayMultiplier.toFixed(2) + "x";
 
                 const progress = Math.min(Math.max((displayMultiplier - 1) / 8, 0), 1);
                 moveRocket(progress);
@@ -4612,38 +4590,32 @@
             const flame = document.getElementById("flame");
             const trail = document.getElementById("rocket-trail");
             const particles = document.getElementById("rocket-particles");
-            const area = document.querySelector(".rocket-area");
-            if (!rocket || !area) return;
-
-            const x = area.clientWidth * 0.58 * progress;
-            const y = area.clientHeight * 0.28 * progress;
-            const rotation = -12 - progress * 15;
-            const transform = `translate3d(${x.toFixed(1)}px, ${(-y).toFixed(1)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
-
-            rocket.style.transform = transform;
-
-            if (telegramRocket && !telegramRocket.classList.contains("hidden")) {
-                telegramRocket.style.transform = transform;
+            if(!rocket) return;
+            
+            rocket.style.left = `${15 + progress * 58}%`;
+            rocket.style.bottom = `${74 + progress * 120}px`;
+            rocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
+            if (telegramRocket && !telegramRocket.classList.contains('hidden')) {
+                telegramRocket.style.left = `${15 + progress * 58}%`;
+                telegramRocket.style.bottom = `${74 + progress * 120}px`;
+                telegramRocket.style.transform = `rotate(${-12 - progress * 15}deg)`;
                 if (telegramRocketLottieAnimation) telegramRocketLottieAnimation.play();
-                else if (telegramRocketVideo && telegramRocketVideo.paused) {
-                    telegramRocketVideo.play().catch(() => {});
-                }
+                else if (telegramRocketVideo && telegramRocketVideo.paused) telegramRocketVideo.play().catch(() => {});
             }
-
+            rocket.style.filter = `drop-shadow(0 0 ${15 + progress * 20}px rgba(100, 200, 255, ${0.3 + progress * 0.3}))`;
             if (flame) {
                 flame.style.display = "block";
                 flame.style.height = `${40 + progress * 20}px`;
                 flame.style.opacity = `${0.5 + progress * 0.5}`;
             }
-
             if (trail) {
                 trail.classList.add("active");
                 trail.style.width = `${140 + progress * 60}px`;
                 trail.style.opacity = `${0.3 + progress * 0.7}`;
             }
-
             if (particles) {
-                particles.style.transform = transform;
+                particles.style.left = rocket.style.left;
+                particles.style.bottom = rocket.style.bottom;
                 createParticle(particles, progress);
             }
         }
