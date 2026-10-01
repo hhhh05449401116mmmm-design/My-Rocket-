@@ -2152,8 +2152,9 @@
             height: 112px;
             object-fit: contain;
             object-position: center;
-            left: 15%;
-            bottom: 74px;
+            left: 50%;
+            top: 50%;
+            bottom: auto;
             z-index: 5;
             pointer-events: none;
             display: block;
@@ -5231,19 +5232,24 @@
             // Trail is visual-only and painted at ~30fps; rocket remains 60fps.
             if (timestamp - rocketLastPathPaint < 33) return;
             rocketLastPathPaint=timestamp;
-            const startX=width*0.15+40;
-            const startY=height-74-40;
-            const count=24;
-            const points=[];
-            for(let i=0;i<=count;i++){
-                const t=progress*(i/count);
-                const tp=t*t*(3-2*t);
-                const cp=Math.max(0,Math.min(1,(tp-0.50)/0.50));
-                const sc=cp*cp*(3-2*cp);
-                const px=width*0.62*tp;
-                const py=height*0.34*sc;
-                const wobble=Math.sin(t*Math.PI*7.5)*(1.4+sc*2.8);
-                points.push([startX+px,startY-py+wobble]);
+            // The path is deliberately smoother than the rocket artwork:
+            // no wobble, no frame-to-frame jitter, and no copying of the rocket rotation.
+            // It represents the route only.
+            const startX = width * 0.08;
+            const startY = height * 0.50;
+            const rocketStartX = width * 0.50;
+            const rocketTravelX = width * 0.42 * progress;
+            const count = 28;
+            const points = [];
+            for (let i = 0; i <= count; i++) {
+                const t = i / count;
+                const tp = progress * t;
+                const eased = tp * tp * (3 - 2 * tp);
+                const cp = Math.max(0, Math.min(1, (eased - 0.50) / 0.50));
+                const sc = cp * cp * (3 - 2 * cp);
+                const px = rocketStartX * t + rocketTravelX * t;
+                const py = height * 0.40 * sc;
+                points.push([startX + (rocketStartX - startX) * t + rocketTravelX * t, startY - py]);
             }
             const d=points.map(function(pt,i){
                 return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
@@ -5358,7 +5364,8 @@
             if (!rocketAreaSize.width || !rocketAreaSize.height) updateRocketAreaSize();
             const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            // Gentle forward motion to the midpoint, then a progressive upward bend.
+            // Match the reference motion: begin near the middle, glide mostly
+            // horizontally, then transition into one smooth upward arc.
             const pathProgress = p * p * (3 - 2 * p);
             const climbStart = 0.50;
             const climbProgress = Math.max(
@@ -5366,10 +5373,10 @@
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            const x = rocketAreaSize.width * 0.62 * pathProgress;
-            const y = rocketAreaSize.height * 0.34 * smoothClimb;
-            const rotation = -7 - smoothClimb * 23;
-            const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+            const x = rocketAreaSize.width * 0.42 * pathProgress;
+            const y = rocketAreaSize.height * 0.40 * smoothClimb;
+            const rotation = -2 - smoothClimb * 30;
+            const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) translate3d(-50%, -50%, 0) rotate(${rotation.toFixed(2)}deg)`;
 
             const telegramVisible = telegramRocket &&
                 !telegramRocket.classList.contains("hidden") &&
