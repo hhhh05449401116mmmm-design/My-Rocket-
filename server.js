@@ -40,14 +40,16 @@ const LOOT_BOX_100_CATALOG = [
     { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
     { name: "Durov's Cap", backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
     { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
+    { name: 'Rare Bird', telegramGiftId: '5999116401002939514', slug: 'rarebird', image: 'https://tg.me/api/media/gift-art/rarebird/thumb.webp', baseName: 'Rare Bird' },
     { name: 'Precious Peach', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
     { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
     { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
     { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
     { name: 'Swiss Watch', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
+    { name: 'Westside Sign', telegramGiftId: '6014697240977737490', slug: 'westsidesign', image: 'https://tg.me/api/media/gift-art/westsidesign/thumb.webp', baseName: 'Westside Sign' },
     { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
     { name: 'Bonded Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
-    { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
+    { name: 'Astral Shard', telegramGiftId: '5933629604416717361', slug: 'astralshard', image: 'https://tg.me/api/media/gift-art/astralshard/thumb.webp', baseName: 'Astral Shard' },
     { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
     { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
     { name: 'Low Rider', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
@@ -3554,13 +3556,44 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
             const gifts = [];
             for (const catalogItem of LOOT_BOX_100_CATALOG) {
                 const baseName = catalogItem.baseName || catalogItem.name;
-                const gift = await get(
-                    'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
-                    [baseName]
-                );
+                let gift = catalogItem.telegramGiftId
+                    ? await get('SELECT * FROM gifts WHERE telegram_gift_id = ? LIMIT 1', [catalogItem.telegramGiftId])
+                    : null;
+
+                if (!gift) {
+                    gift = await get(
+                        'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                        [baseName]
+                    );
+                }
+
+                // Only the isolated 100 TON path may create a missing catalog row.
+                // This avoids global seed changes and keeps the Crash/round system untouched.
+                if (!gift && catalogItem.telegramGiftId) {
+                    await run(
+                        'INSERT OR IGNORE INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        [
+                            catalogItem.telegramGiftId,
+                            catalogItem.name,
+                            catalogItem.slug || null,
+                            '🎁',
+                            catalogItem.image || null,
+                            catalogItem.name,
+                            'common',
+                            LOOT_BOX_100_PRICE,
+                            catalogItem.name === 'Rare Bird' ? 15000 : catalogItem.name === 'Westside Sign' ? 12000 : 10000
+                        ]
+                    );
+                    gift = await get(
+                        'SELECT * FROM gifts WHERE telegram_gift_id = ? LIMIT 1',
+                        [catalogItem.telegramGiftId]
+                    );
+                }
+
                 if (!gift) {
                     throw new Error('100 TON catalog is not ready: ' + baseName);
                 }
+
                 gifts.push({ ...gift, image_url: gift.image_url || catalogItem.image });
             }
 
@@ -3592,7 +3625,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
             const market = getCollectibleMarketValue({
                 name: selectedGift.name,
-                base_name: selectedGift.telegram_gift_id,
+                base_name: selectedCatalogItem.telegramGiftId || selectedGift.telegram_gift_id,
                 model_name: selectedGift.name
             });
 
