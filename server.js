@@ -62,7 +62,7 @@ async function get100TonTelegramMarketPriceSafe(item) {
         let giftId = item?.telegramGiftId || null;
         let slug = get100TonCatalogSlug(item);
 
-        if (!giftId || !slug) {
+        if (!giftId) {
             const baseName = item?.baseName || item?.name;
             const gift = baseName
                 ? await get('SELECT telegram_gift_id, slug FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1', [baseName])
