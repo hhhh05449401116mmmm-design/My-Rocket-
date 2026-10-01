@@ -3872,12 +3872,9 @@
                  return;
              }
 
-             if (tonBalance < box.price) {
-                 showToast(t.insufficientBalance);
-                 openDeposit();
-                 return;
-             }
-
+             // Opening a paid box is only a preview action.
+             // Do NOT request a deposit here. The balance check belongs to the
+             // actual "Play / Place Bet" action below.
              showToast(t.openingBox);
          }
 
@@ -6094,6 +6091,20 @@
         async function placeBet(amount) {
             const t = translations[currentLanguage] || translations.ar;
             if (!navigator.onLine) { showToast(t.connecting); return; }
+
+            // Deposit is requested only when the player actually tries to play.
+            const numericAmount = Number(amount);
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                showToast(t.placeBet);
+                return;
+            }
+            if (numericAmount > Number(tonBalance || 0)) {
+                closeModal("bet-modal");
+                showToast(t.insufficientBalance);
+                openDeposit();
+                return;
+            }
+
             if (gamePhase === "FLIGHT") {
                 pendingNextBet = { type: "TON", amount: amount, autoCashout: autoCashoutEnabled, autoTarget: autoCashoutTarget };
                 pendingNextBetSubmitted = false;
