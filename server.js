@@ -3520,10 +3520,12 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
 app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     try {
         const cacheStatus = require('./marketPriceEngine').getCacheStatus();
-        const items = LOOT_BOX_100_CATALOG.map(item => {
+        const items = LOOT_BOX_100_CATALOG.map((item, catalogIndex) => {
             const market = getCollectibleMarketValue({ name: item.name, model_name: item.name });
             return {
+                catalogIndex,
                 name: item.name,
+                backdrop: item.backdrop || null,
                 image: item.image,
                 marketValueTon: Number(market?.floorPriceTon || 0),
                 lastUpdated: market?.lastUpdated || null
