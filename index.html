@@ -813,82 +813,44 @@
             color: #ff6b6b;
         }
 
-        /* 100 TON box: collectible preview only.
-           No black image panels/backgrounds are added behind the collectibles. */
+        /* Paid loot boxes stay clean on the home grid.
+           Collectibles are shown only after the player opens a box. */
         .loot-box.loot-collectibles-box {
-            background: linear-gradient(145deg, #182b4b, #0e1b31);
+            background: linear-gradient(145deg, #1a2a4a, #0f1a30);
         }
-        .loot-box.loot-collectibles-box .loot-box-inner {
-            justify-content: flex-start;
-            padding: 10px 8px 12px;
+
+        /* Loot-box detail modal: collectibles live inside the opened box view,
+           not on the box card itself. */
+        .loot-box-modal-card {
+            width: min(520px, 100%);
+            padding: 16px 14px 22px;
+            border-radius: 28px 28px 0 0;
+            background: linear-gradient(180deg, #171717 0%, #0b0b0d 100%);
+            border-top: 1px solid rgba(255,255,255,.08);
+            max-height: 92vh;
+            overflow-y: auto;
+            animation: modalUp .3s ease;
         }
-        .loot-collectibles-preview {
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            grid-template-rows: repeat(4, minmax(0, 1fr));
-            gap: 5px 4px;
-            align-items: center;
-            justify-items: center;
-        }
-        .loot-collectible-mini {
-            width: 100%;
-            min-width: 0;
-            height: 100%;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1px;
-            text-align: center;
-            overflow: hidden;
-        }
-        .loot-collectible-mini img {
-            display: block;
-            width: 54px;
-            height: 54px;
-            max-width: 100%;
-            object-fit: contain;
-            object-position: center;
-            background: transparent !important;
-            border: 0 !important;
-            box-shadow: none !important;
-            filter: drop-shadow(0 5px 7px rgba(0,0,0,.28));
-        }
-        .loot-collectible-mini .loot-collectible-name {
-            width: 100%;
-            color: #f4f7ff;
-            font-size: 8px;
-            line-height: 1.1;
-            font-weight: 900;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-shadow: 0 1px 3px rgba(0,0,0,.45);
-        }
-        .loot-collectible-mini .loot-collectible-value {
-            color: #ffd45c;
-            font-size: 8px;
-            line-height: 1.1;
-            font-weight: 900;
-            direction: ltr;
-            white-space: nowrap;
-            text-shadow: 0 1px 3px rgba(0,0,0,.4);
-        }
-        .loot-box.loot-collectibles-box .loot-price-badge {
-            z-index: 4;
-        }
+        .loot-box-modal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+        .loot-box-modal-title { flex:1; text-align:center; color:#fff; font-size:20px; font-weight:900; }
+        .loot-box-modal-subtitle { text-align:center; color:#8f8f96; font-size:11px; margin:-4px 0 12px; }
+        .loot-box-modal-strip { display:flex; gap:6px; padding:7px; border-radius:12px; background:rgba(255,255,255,.055); overflow-x:auto; scrollbar-width:none; }
+        .loot-box-modal-strip::-webkit-scrollbar { display:none; }
+        .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
+        .loot-box-modal-strip-item img { width:44px; height:44px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; }
+        .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; }
+        .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
+        .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
+        .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .loot-box-collectible { min-width:0; padding:8px 7px 9px; border-radius:10px; background:#202023; border:1px solid rgba(255,255,255,.07); text-align:center; }
+        .loot-box-collectible img { width:86px; height:86px; display:block; margin:0 auto 3px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; filter:drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
+        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:10px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .loot-box-collectible-value { display:block; color:#f5c34b; font-size:9px; line-height:1.2; font-weight:900; direction:ltr; margin-top:3px; }
+        .loot-box-play-button { width:100%; height:48px; margin-top:12px; border:0; border-radius:12px; background:linear-gradient(135deg,#6d43ff,#8f5cff); color:#fff; font-size:15px; font-weight:900; box-shadow:0 7px 20px rgba(115,73,255,.25); }
+        .loot-box-price-note { text-align:center; color:#8f8f96; font-size:10px; margin-top:7px; }
         @media(max-width:360px) {
-            .loot-box.loot-collectibles-box .loot-collectible-mini img {
-                width: 48px;
-                height: 48px;
-            }
-            .loot-box.loot-collectibles-box .loot-collectible-mini .loot-collectible-name,
-            .loot-box.loot-collectibles-box .loot-collectible-mini .loot-collectible-value {
-                font-size: 7px;
-            }
+            .loot-box-collectible img { width:76px; height:76px; }
+            .loot-box-modal-card { padding-left:10px; padding-right:10px; }
         }
 
         /* Rocket-only mobile performance path.
@@ -3722,6 +3684,26 @@
         </div>
 
         <!-- =========================================================
+           LOOT BOX DETAILS MODAL
+        ========================================================= -->
+        <div id="loot-box-modal" class="modal" onclick="closeModalOutside(event,'loot-box-modal')">
+            <div class="loot-box-modal-card">
+                <div class="loot-box-modal-head">
+                    <div style="width:46px;"></div>
+                    <div class="loot-box-modal-title" id="loot-box-modal-title">Epic Gift</div>
+                    <button class="close-button" type="button" onclick="closeModal('loot-box-modal')">×</button>
+                </div>
+                <div class="loot-box-modal-subtitle" id="loot-box-modal-subtitle"></div>
+                <div class="loot-box-modal-strip" id="loot-box-modal-strip"></div>
+                <button id="loot-box-topup-button" class="loot-box-topup" type="button" onclick="openDeposit()">💳 Top Up Balance</button>
+                <div class="loot-box-collections-title"><span>◈</span><span>Collections in this Box</span></div>
+                <div id="loot-box-collections" class="loot-box-collections"></div>
+                <button id="loot-box-play-button" class="loot-box-play-button" type="button" onclick="playSelectedLootBox()">🎮 Play</button>
+                <div class="loot-box-price-note" id="loot-box-price-note"></div>
+            </div>
+        </div>
+
+        <!-- =========================================================
            TOAST
         ========================================================= -->
         <div id="toast" class="toast"></div>
@@ -3818,65 +3800,104 @@
 
             LOOT_BOXES.forEach(function(box) {
                 const div = document.createElement('div');
-                div.className = 'loot-box ' + (box.price === 0 ? 'free' : '') + (box.collectibles ? ' loot-collectibles-box' : '');
+                div.className = 'loot-box ' + (box.price === 0 ? 'free' : '');
                 div.dataset.boxId = box.id;
                 div.onclick = function() { openLootBox(box); };
 
                 const nameText = box.nameKey ? t[box.nameKey] : box.name;
                 const priceDisplay = box.price === 0 ? t.freeLabel : box.price + ' TON';
-                const badgeLabels = { free: t.freeLabel, special: '⭐ ' + t.free24Label || 'FREE24', vip: '🔥 VIP', rare: '⭐ ' + t.rareLabel };
+                const badgeLabels = {
+                    free: t.freeLabel,
+                    special: '⭐ ' + t.free24Label,
+                    vip: '🔥 VIP',
+                    rare: '⭐ ' + t.rareLabel
+                };
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
-                const collectiblesHtml = Array.isArray(box.collectibles)
-                    ? `
-                        <div class="loot-collectibles-preview">
-                            ${box.collectibles.map(function(item) {
-                                return `
-                                    <div class="loot-collectible-mini">
-                                        <img src="${escapeHtmlAttribute(item.image)}" alt="${escapeHtmlAttribute(item.name)}" loading="lazy" decoding="async">
-                                        <span class="loot-collectible-name">${escapeHtml(item.name)}</span>
-                                        <span class="loot-collectible-value">${escapeHtml(item.value)}</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `
-                    : (box.image
-                        ? `<img class="loot-image" src="${box.image}" alt="${nameText}" loading="lazy">`
-                        : `<span class="loot-emoji">${box.emoji}</span>`);
+                const visual = box.image
+                    ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="lazy">'
+                    : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>';
 
-                div.innerHTML = `
-                    <div class="loot-box-inner">
-                        ${box.collectibles ? '' : `
-                            <div class="loot-box-header">
-                                <span class="loot-name">${nameText}</span>
-                                ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
-                            </div>
-                        `}
-                        ${collectiblesHtml}
-                        <span class="loot-price-badge">${priceDisplay}</span>
-                    </div>
-                `;
+                div.innerHTML = '<div class="loot-box-inner">' +
+                    '<div class="loot-box-header">' +
+                        '<span class="loot-name">' + escapeHtml(nameText) + '</span>' +
+                        (badgeText ? '<span class="loot-badge ' + box.badgeClass + '">' + escapeHtml(badgeText) + '</span>' : '') +
+                    '</div>' +
+                    visual +
+                    '<span class="loot-price-badge">' + escapeHtml(priceDisplay) + '</span>' +
+                '</div>';
                 grid.appendChild(div);
             });
         }
 
-         function openLootBox(box) {
-             const t = translations[currentLanguage] || translations.ar;
-             if (box.id === 'free') {
-                 openFreeGift();
-                 return;
-             }
-             if (box.id === 'free24') {
-                 openDailyReward();
-                 return;
-             }
+        let selectedLootBox = null;
 
-             // Opening a paid box is only a preview action.
-             // Do NOT request a deposit here. The balance check belongs to the
-             // actual "Play / Place Bet" action below.
-             showToast(t.openingBox);
-         }
+        function openLootBox(box) {
+            if (box.id === 'free') {
+                openFreeGift();
+                return;
+            }
+            if (box.id === 'free24') {
+                openDailyReward();
+                return;
+            }
+
+            selectedLootBox = box;
+            const modal = document.getElementById('loot-box-modal');
+            const title = document.getElementById('loot-box-modal-title');
+            const subtitle = document.getElementById('loot-box-modal-subtitle');
+            const strip = document.getElementById('loot-box-modal-strip');
+            const collections = document.getElementById('loot-box-collections');
+            const priceNote = document.getElementById('loot-box-price-note');
+            const playButton = document.getElementById('loot-box-play-button');
+
+            if (!modal || !title || !strip || !collections) return;
+
+            title.textContent = box.name || 'Epic Gift';
+            subtitle.textContent = Array.isArray(box.collectibles) && box.collectibles.length
+                ? 'Collections in this Box'
+                : 'محتويات الصندوق';
+
+            const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+            strip.innerHTML = items.map(function(item) {
+                return '<div class="loot-box-modal-strip-item">' +
+                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                '</div>';
+            }).join('');
+
+            collections.innerHTML = items.length
+                ? items.map(function(item) {
+                    return '<div class="loot-box-collectible">' +
+                        '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                        '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                        '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
+                    '</div>';
+                }).join('')
+                : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+
+            if (priceNote) priceNote.textContent = box.price + ' TON';
+            if (playButton) playButton.textContent = currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play';
+
+            modal.classList.add('show');
+        }
+
+        function playSelectedLootBox() {
+            if (!selectedLootBox) return;
+
+            const box = selectedLootBox;
+            const requiredBalance = Number(box.price || 0);
+            const currentBalance = Number(tonBalance || 0);
+
+            // Deposit is requested only from the Play action, never from opening the box.
+            if (requiredBalance > currentBalance) {
+                closeModal('loot-box-modal');
+                openDeposit();
+                return;
+            }
+
+            closeModal('loot-box-modal');
+            if (typeof openRocketGame === 'function') openRocketGame();
+        }
 
         /* =========================================================
            ROCKET VARIANTS
