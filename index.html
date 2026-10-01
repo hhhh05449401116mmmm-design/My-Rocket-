@@ -4067,16 +4067,22 @@
                 load100TonMarketValues(box);
             } else {
                 strip.innerHTML = items.map(function(item) {
+                    const modelImage = item.label && item.label !== 'Random'
+                        ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png'
+                        : item.image;
                     return '<div class="loot-box-modal-strip-item">' +
-                        '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                        '<img src="' + escapeHtmlAttribute(modelImage) + '" alt="' + escapeHtmlAttribute(item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : '')) + '" loading="lazy" decoding="async">' +
                     '</div>';
                 }).join('');
 
                 collections.innerHTML = items.length
                     ? items.map(function(item) {
                         const isTonReward = item.rewardType === 'ton';
+                        const modelImage = item.label && item.label !== 'Random'
+                            ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png'
+                            : item.image;
                         return '<div class="loot-box-collectible' + (isTonReward ? ' gold-frame' : '') + '">' +
-                            '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                            '<img src="' + escapeHtmlAttribute(modelImage) + '" alt="' + escapeHtmlAttribute(item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : '')) + '" loading="lazy" decoding="async">' +
                             '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                             '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
                             '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Random') + '</span>' +
