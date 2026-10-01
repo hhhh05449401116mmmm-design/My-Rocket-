@@ -3806,7 +3806,11 @@
             { name: 'Chill Flame', image: 'https://tg.me/api/media/gift-art/chillflame/thumb.webp', value: 'FREE' },
             { name: 'Instant Ramen', image: 'https://tg.me/api/media/gift-art/instantramen/thumb.webp', value: 'FREE' },
             { name: 'Vice Cream', image: 'https://tg.me/api/media/gift-art/vicecream/thumb.webp', value: 'FREE' },
-            { name: 'Ice Cream', image: 'https://tg.me/api/media/gift-art/icecream/thumb.webp', value: 'FREE' }
+            { name: 'Ice Cream', image: 'https://tg.me/api/media/gift-art/icecream/thumb.webp', value: 'FREE' },
+            { name: '0.01 TON Balance', image: '/assets/ton-icon.svg', value: '0.01 TON', rewardType: 'ton', label: 'Balance' },
+            { name: '0.02 TON Balance', image: '/assets/ton-icon.svg', value: '0.02 TON', rewardType: 'ton', label: 'Balance' },
+            { name: '0.03 TON Balance', image: '/assets/ton-icon.svg', value: '0.03 TON', rewardType: 'ton', label: 'Balance' },
+            { name: '0.05 TON Balance', image: '/assets/ton-icon.svg', value: '0.05 TON', rewardType: 'ton', label: 'Balance' }
         ];
 
         const LOOT_BOXES = [
@@ -3993,10 +3997,12 @@
 
                 collections.innerHTML = items.length
                     ? items.map(function(item) {
-                        return '<div class="loot-box-collectible">' +
+                        const isTonReward = item.rewardType === 'ton';
+                        return '<div class="loot-box-collectible' + (isTonReward ? ' gold-frame' : '') + '">' +
                             '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
                             '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                             '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
+                            '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Random') + '</span>' +
                         '</div>';
                     }).join('')
                     : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
@@ -4031,14 +4037,52 @@
                 return;
             }
 
-            if (box.id === 'free') {
-                closeModal('loot-box-modal');
-                openFreeGift();
-                return;
-            }
-            if (box.id === 'free24') {
-                closeModal('loot-box-modal');
-                openDailyReward();
+            if (box.id === 'free' || box.id === 'free24') {
+                const playButton = document.getElementById('loot-box-play-button');
+                const collections = document.getElementById('loot-box-collections');
+                const title = document.getElementById('loot-box-modal-title');
+                const subtitle = document.getElementById('loot-box-modal-subtitle');
+                if (playButton) {
+                    playButton.disabled = true;
+                    playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري الاستلام…' : '🎁 Claiming…';
+                }
+                try {
+                    const response = await fetch(BACKEND_URL + '/api/loot-box/free/claim', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        cache: 'no-store',
+                        body: JSON.stringify({ boxId: box.id })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.ok) throw new Error(data.error || 'Claim failed');
+
+                    if (title) title.textContent = currentLanguage === 'ar' ? '🎉 تمت الاستلام' : '🎉 Gift Claimed';
+                    if (subtitle) subtitle.textContent = box.id === 'free24'
+                        ? 'Daily Free Box'
+                        : 'Free Box';
+                    if (collections) {
+                        const gift = data.gift || {};
+                        collections.innerHTML =
+                            '<div class="loot-box-winner">' +
+                                '<div class="loot-box-winner-label">🎁 ' + escapeHtml(box.id === 'free24' ? 'FREE24' : 'FREE') + '</div>' +
+                                '<img src="' + escapeHtmlAttribute(gift.image_url || gift.image || '') + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '" loading="eager" decoding="async">' +
+                                '<div class="loot-box-winner-name">' + escapeHtml(gift.name || 'Telegram Gift') + '</div>' +
+                                '<div class="loot-box-winner-value">' + escapeHtml(Number(gift.value || 0).toFixed(2) + ' TON') + '</div>' +
+                            '</div>';
+                    }
+                    if (playButton) {
+                        playButton.disabled = false;
+                        playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
+                        playButton.onclick = function() { closeModal('loot-box-modal'); };
+                    }
+                } catch (error) {
+                    console.error('Free loot-box claim failed:', error);
+                    if (playButton) {
+                        playButton.disabled = false;
+                        playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                    }
+                    showToast(currentLanguage === 'ar' ? 'تعذر استلام الهدية، حاول مرة أخرى' : 'Unable to claim the gift, please try again');
+                }
                 return;
             }
             if (box.id !== 'box_100') {
