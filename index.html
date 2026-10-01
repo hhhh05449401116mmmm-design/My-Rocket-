@@ -908,9 +908,9 @@
         }
         #rocket-game .star-layer {
             position: absolute;
-            inset: -70%;
-            width: 240%;
-            height: 240%;
+            inset: -100%;
+            width: 300%;
+            height: 300%;
             pointer-events: none;
             background-repeat: repeat;
             background-position: 0 0;
@@ -5111,7 +5111,7 @@
                 refs.flightPathHead.setAttribute("cy", "0");
             }
             if (refs.starLayers && refs.starLayers.length) {
-                const starOpacities = [0.34, 0.52, 0.78];
+                const starOpacities = [0.72, 0.82, 0.94];
                 refs.starLayers.forEach(function(layer,index) {
                     layer.style.opacity = String(starOpacities[index] || 0.52);
                 });
@@ -5130,7 +5130,7 @@
                 rocketStarOffsetX=0;
                 rocketStarOffsetY=0;
                 if (refs.starLayers && refs.starLayers.length) {
-                    const starOpacities = [0.34, 0.52, 0.78];
+                    const starOpacities = [0.72, 0.82, 0.94];
                     refs.starLayers.forEach(function(layer,index) {
                         layer.style.opacity = String(starOpacities[index] || 0.52);
                     });
@@ -5154,7 +5154,7 @@
                 // Stars remain visible after the crash. Their movement is
                 // handled visually below and decelerates toward a very slow drift.
                 if (refs.starLayers && refs.starLayers.length) {
-                    const starOpacities = [0.34, 0.52, 0.78];
+                    const starOpacities = [0.72, 0.82, 0.94];
                     refs.starLayers.forEach(function(layer,index) {
                         layer.style.opacity = String(starOpacities[index] || 0.52);
                     });
