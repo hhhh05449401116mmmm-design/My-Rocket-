@@ -4998,9 +4998,41 @@
             gamePhase = state.phase;
             globalHistory = state.history || [];
             livePlayers = Array.isArray(state.players) ? state.players : [];
+            scheduleGameUiRender(previousPhase !== gamePhase);
+            updateMainBetButton();
+        }
+
+        var gameUiRenderTimer = null;
+        var gameUiRenderQueued = false;
+        var lastGameUiRenderAt = 0;
+
+        function flushGameUiRender() {
+            gameUiRenderTimer = null;
+            gameUiRenderQueued = false;
+            lastGameUiRenderAt = performance.now();
             renderHistory();
             renderPlayers();
-            updateMainBetButton();
+        }
+
+        function scheduleGameUiRender(immediate) {
+            if (immediate) {
+                if (gameUiRenderTimer) {
+                    clearTimeout(gameUiRenderTimer);
+                    gameUiRenderTimer = null;
+                }
+                gameUiRenderQueued = false;
+                flushGameUiRender();
+                return;
+            }
+
+            if (gameUiRenderQueued) return;
+            gameUiRenderQueued = true;
+
+            var now = performance.now();
+            var minInterval = gamePhase === "FLIGHT" ? 750 : 0;
+            var delay = Math.max(0, minInterval - (now - lastGameUiRenderAt));
+
+            gameUiRenderTimer = setTimeout(flushGameUiRender, delay);
         }
 
         /* =========================================================
@@ -5086,6 +5118,8 @@
                 rocketStarLastPathProgress=0;
                 rocketStarLastTimestamp=0;
                 rocketStarVelocity=0;
+                rocketStarOffsetX=0;
+                rocketStarOffsetY=0;
                 if (refs.starLayers && refs.starLayers.length) {
                     const starOpacities = [0.34, 0.52, 0.78];
                     refs.starLayers.forEach(function(layer,index) {
@@ -5327,8 +5361,11 @@
 
             updateRocketBackdrop(p, pathProgress, smoothClimb, x, y, rotation, timestamp);
 
-            if (telegramRocketVideo && telegramVisible && telegramRocketVideo.paused && gamePhase === "FLIGHT") {
-                telegramRocketVideo.play().catch(() => {});
+            if (telegramRocketVideo && telegramVisible && telegramRocketVideo.paused && gamePhase === "FLIGHT" && !telegramRocketVideo.dataset.playRequested) {
+                telegramRocketVideo.dataset.playRequested = "1";
+                telegramRocketVideo.play().catch(() => {
+                    delete telegramRocketVideo.dataset.playRequested;
+                });
             }
 
             // Decorative flame/trail do not need 60 DOM writes per second.
@@ -5378,12 +5415,16 @@
             if (!particle) return;
 
             particle.style.transition = 'none';
-            particle.style.opacity = '${0.38 + progress * 0.42}';
+            particle.style.opacity = String(0.38 + progress * 0.42);
             particle.style.transform = 'translate3d(0, 0, 0) scale(1)';
-            void particle.offsetWidth;
-            particle.style.transition = 'transform 700ms ease-out, opacity 700ms ease-out';
-            particle.style.opacity = '0';
-            particle.style.transform = 'translate3d(-8px, 42px, 0) scale(0.45)';
+
+            // Restart the transition on the next rendering tick instead of
+            // forcing synchronous layout with offsetWidth.
+            requestAnimationFrame(function() {
+                particle.style.transition = 'transform 700ms ease-out, opacity 700ms ease-out';
+                particle.style.opacity = '0';
+                particle.style.transform = 'translate3d(-8px, 42px, 0) scale(0.45)';
+            });
         }
 
         /* =========================================================
@@ -7966,6 +8007,7 @@
 
           window.addEventListener("beforeunload", function() {
              if (gameInterval) clearInterval(gameInterval);
+             if (gameUiRenderTimer) { try { clearTimeout(gameUiRenderTimer); } catch {} }
              if (depositStatusTimer) { try { clearInterval(depositStatusTimer); } catch {} }
              stopPvpTimer();
              if (pvpState && pvpState.sse) { try { pvpState.sse.close(); } catch {} }
