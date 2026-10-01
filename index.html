@@ -841,22 +841,22 @@
         .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
-        .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 14px; }
-        .loot-box-collectible { min-width:0; min-height:0; padding:10px 9px 14px; border-radius:18px; background:#2b2b2d; border:0; text-align:center; position:relative; overflow:visible; }
-        .loot-box-collectible img { width:100%; height:170px; display:block; margin:0 auto 8px; object-fit:contain; background:transparent !important; border:2px solid #c99b18 !important; border-radius:14px; box-shadow:none !important; filter:drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
-        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:15px; line-height:1.25; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 2px 9px; }
-        .loot-box-collectible-value { position:absolute; top:10px; right:9px; z-index:2; display:flex; align-items:center; justify-content:center; min-width:74px; height:34px; padding:0 9px; border-radius:9px; background:#101011; color:#fff; font-size:14px; line-height:1; font-weight:900; direction:ltr; margin:0; box-shadow:0 3px 8px rgba(0,0,0,.25); }
-        .loot-box-collectible-random { display:inline-flex; align-items:center; justify-content:center; min-width:92px; height:36px; padding:0 14px; border-radius:10px; background:#3a3549; border:1px solid rgba(143,104,255,.65); color:#9b7cff; font-size:14px; line-height:1; font-weight:900; }
+        .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 10px; }
+        .loot-box-collectible { min-width:0; min-height:0; padding:7px 7px 10px; border-radius:16px; background:#2b2b2d; border:0; text-align:center; position:relative; overflow:visible; }
+        .loot-box-collectible img { width:100%; height:142px; display:block; margin:0 auto 6px; object-fit:contain; image-rendering:auto; background:transparent !important; border:2px solid #c99b18 !important; border-radius:12px; box-shadow:none !important; filter:drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
+        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:13px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 2px 7px; }
+        .loot-box-collectible-value { position:absolute; top:8px; right:7px; z-index:2; display:flex; align-items:center; justify-content:center; min-width:62px; height:29px; padding:0 7px; border-radius:8px; background:#101011; color:#fff; font-size:12px; line-height:1; font-weight:900; direction:ltr; margin:0; box-shadow:0 3px 8px rgba(0,0,0,.25); }
+        .loot-box-collectible-random { display:inline-flex; align-items:center; justify-content:center; min-width:80px; height:32px; padding:0 12px; border-radius:9px; background:#3a3549; border:1px solid rgba(143,104,255,.65); color:#9b7cff; font-size:12.5px; line-height:1; font-weight:900; }
         .loot-box-collectible.gold-frame { border:0; background:#2b2b2d; box-shadow:none; }
-        .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
+        .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
         .loot-box-market-status { display:block; color:#8f8f96; font-size:8px; line-height:1.2; margin-top:4px; }
         @media(max-width:420px) {
-            .loot-box-collections { gap:16px 10px; }
-            .loot-box-collectible { padding-left:7px; padding-right:7px; }
-            .loot-box-collectible img { height:150px; }
-            .loot-box-collectible-name { font-size:13px; }
-            .loot-box-collectible-value { min-width:66px; height:31px; font-size:12px; top:8px; right:7px; }
-            .loot-box-collectible-random { min-width:82px; height:33px; font-size:13px; }
+            .loot-box-collections { gap:12px 8px; }
+            .loot-box-collectible { padding-left:6px; padding-right:6px; }
+            .loot-box-collectible img { height:132px; }
+            .loot-box-collectible-name { font-size:12px; }
+            .loot-box-collectible-value { min-width:58px; height:28px; font-size:11.5px; top:7px; right:6px; padding:0 6px; }
+            .loot-box-collectible-random { min-width:76px; height:30px; font-size:12px; }
         }
         .loot-box-winner { grid-column:1/-1; padding:18px 12px 20px; border-radius:16px; border:1px solid rgba(255,208,76,.95); background:radial-gradient(circle at 50% 25%,rgba(255,210,80,.14),transparent 48%),linear-gradient(145deg,#2a210c,#171717); box-shadow:0 0 28px rgba(255,196,43,.12), inset 0 0 22px rgba(255,220,100,.05); text-align:center; }
         .loot-box-winner img { width:150px; height:150px; object-fit:contain; display:block; margin:0 auto 10px; filter:drop-shadow(0 0 14px rgba(255,211,76,.3)); }
@@ -3868,7 +3868,7 @@
                     return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + '">' +
                         '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
-                        '<span class="loot-box-collectible-value">' + escapeHtml(item.value || '— TON') + '</span>' +
+                        '<span class="loot-box-collectible-value">' + escapeHtml(String(item.value || '— TON').replace(/\s*TON\s*$/i, '')) + '</span>' +
                         '<span class="loot-box-collectible-random">Random</span>' +
                         (!hasMarket && statusText ? '<span class="loot-box-market-status">' + escapeHtml(statusText) + '</span>' : '') +
                     '</div>';
