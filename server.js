@@ -33,6 +33,17 @@ const {
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
 const { getBackdropMarketPrice } = require('./lootBoxMarketEngine');
 
+async function get100TonBackdropPriceSafe(item) {
+    try {
+        const client = await ensureTelegramMtprotoClient();
+        return await getBackdropMarketPrice(client, item);
+    } catch (error) {
+        // A temporary MTProto/pricing failure must never break the 100 TON endpoint.
+        console.warn('100 TON backdrop pricing unavailable:', error.message);
+        return null;
+    }
+}
+
 // =========================================================
 // Isolated 100 TON loot-box catalog.
 // This path is intentionally independent from the Crash/round engine.
@@ -3527,7 +3538,7 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
             let source = null;
 
             if (item.backdrop) {
-                const special = await getBackdropMarketPrice(await ensureTelegramMtprotoClient(), item);
+                const special = await get100TonBackdropPriceSafe(item);
                 marketValueTon = Number(special?.value || 0);
                 lastUpdated = special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null;
                 source = special?.source || null;
@@ -3644,7 +3655,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
             let marketValueTon = 0;
             if (selectedCatalogItem.backdrop) {
-                const special = await getBackdropMarketPrice(await ensureTelegramMtprotoClient(), selectedCatalogItem);
+                const special = await get100TonBackdropPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(special?.value || 0);
             } else {
                 const market = getCollectibleMarketValue({ name: selectedGift.name });
