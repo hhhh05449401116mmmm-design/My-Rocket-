@@ -31,6 +31,22 @@ const {
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
+
+// =========================================================
+// Isolated 100 TON loot-box catalog.
+// This path is intentionally independent from the Crash/round engine.
+// =========================================================
+const LOOT_BOX_100_CATALOG = [
+    { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+    { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
+    { name: "Durov's Cap", image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
+    { name: 'Precious Peach', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
+    { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+    { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
+    { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
+    { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
+];
+const LOOT_BOX_100_PRICE = 100;
     
 // Live Telegram collectible pricing.
 // Normal collectibles use the current Telegram resale floor for the base gift type.
@@ -3481,6 +3497,89 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== Isolated 100 TON Telegram Collectibles box =====
+app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
+    try {
+        const cacheStatus = require('./marketPriceEngine').getCacheStatus();
+        const items = LOOT_BOX_100_CATALOG.map(item => {
+            const market = getCollectibleMarketValue({ name: item.name, model_name: item.name });
+            return {
+                name: item.name,
+                image: item.image,
+                marketValueTon: Number(market?.floorPriceTon || 0),
+                lastUpdated: market?.lastUpdated || null
+            };
+        });
+
+        const hasAnyPrice = items.some(item => item.marketValueTon > 0);
+        const refreshing = !cacheStatus.loaded || cacheStatus.stale;
+        if (refreshing) {
+            // Never await the external market catalog on the request path.
+            // The Crash/game loop remains completely independent of this fetch.
+            refreshMarketPrices().catch(error => console.warn('100 TON market refresh failed:', error.message));
+        }
+
+        res.json({
+            ok: true,
+            items,
+            refreshing,
+            stale: !!cacheStatus.stale,
+            available: hasAnyPrice
+        });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
+    try {
+        const result = await transaction(async () => {
+            const gifts = [];
+            for (const catalogItem of LOOT_BOX_100_CATALOG) {
+                const gift = await get(
+                    'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                    [catalogItem.name]
+                );
+                if (!gift) {
+                    throw new Error('100 TON catalog is not ready: ' + catalogItem.name);
+                }
+                gifts.push({ ...gift, image_url: gift.image_url || catalogItem.image });
+            }
+
+            const balance = Number(await getUserBalance(req.user.id) || 0);
+            if (balance < LOOT_BOX_100_PRICE) throw new Error('Insufficient balance');
+
+            // The winner is selected here, at the exact draw time, inside the server.
+            const selectedGift = gifts[Math.floor(Math.random() * gifts.length)];
+            await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
+
+            const userGift = await addGiftToUser(req.user.id, selectedGift.id);
+            await createNotification(
+                req.user.id,
+                'GIFT_WON',
+                '🎁 You won ' + selectedGift.name + ' from the 100 TON box!',
+                { giftId: selectedGift.id, box: '100 TON', random: true }
+            );
+
+            const market = getCollectibleMarketValue({
+                name: selectedGift.name,
+                base_name: selectedGift.telegram_gift_id,
+                model_name: selectedGift.name
+            });
+
+            return {
+                gift: { ...selectedGift, userGiftId: userGift.id, image_url: selectedGift.image_url || LOOT_BOX_100_CATALOG.find(item => item.name === selectedGift.name)?.image },
+                balance: Number((balance - LOOT_BOX_100_PRICE).toFixed(9)),
+                marketValueTon: Number(market?.floorPriceTon || 0)
+            };
+        });
+
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(error.message === 'Insufficient balance' ? 400 : 503).json({ ok: false, error: error.message });
     }
 });
 
