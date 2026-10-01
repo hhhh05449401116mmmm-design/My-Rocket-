@@ -903,52 +903,56 @@
             opacity: 1 !important;
             animation: none !important;
             overflow: hidden;
-            contain: paint;
+            contain: none;
             z-index: 0;
         }
         #rocket-game .star-layer {
             position: absolute;
-            inset: -70%;
-            width: 240%;
-            height: 240%;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             background-repeat: repeat;
             background-position: 0 0;
-            transform: translate3d(0, 0, 0);
-            will-change: transform;
+            transform: none !important;
+            will-change: background-position;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
         }
         #rocket-game .star-layer-far {
-            opacity: 0.34;
-            background-image:
-                radial-gradient(circle at 18px 24px, rgba(210, 244, 255, 0.72) 0 1.4px, transparent 1.75px),
-                radial-gradient(circle at 86px 72px, rgba(160, 222, 255, 0.52) 0 1px, transparent 1.45px),
-                radial-gradient(circle at 142px 38px, rgba(255, 255, 255, 0.48) 0 0.9px, transparent 1.3px),
-                radial-gradient(circle at 212px 104px, rgba(170, 225, 255, 0.42) 0 1px, transparent 1.45px);
-            background-size: 260px 220px;
-        }
-        #rocket-game .star-layer-mid {
-            opacity: 0.52;
-            background-image:
-                radial-gradient(circle at 24px 42px, rgba(215, 247, 255, 0.92) 0 1.7px, transparent 2.15px),
-                radial-gradient(circle at 76px 116px, rgba(160, 220, 255, 0.68) 0 1.25px, transparent 1.8px),
-                radial-gradient(circle at 132px 68px, rgba(255, 255, 255, 0.62) 0 1.15px, transparent 1.7px),
-                radial-gradient(circle at 174px 142px, rgba(180, 232, 255, 0.58) 0 1.35px, transparent 1.9px),
-                radial-gradient(circle at 222px 34px, rgba(220, 246, 255, 0.76) 0 1.4px, transparent 2px);
-            background-size: 230px 190px;
-        }
-        #rocket-game .star-layer-near {
             opacity: 0.78;
             background-image:
-                radial-gradient(circle at 18px 22px, rgba(225, 249, 255, 0.98) 0 2px, transparent 2.5px),
-                radial-gradient(circle at 62px 88px, rgba(160, 226, 255, 0.8) 0 1.45px, transparent 2.1px),
-                radial-gradient(circle at 108px 38px, rgba(255, 255, 255, 0.82) 0 1.55px, transparent 2.25px),
-                radial-gradient(circle at 152px 118px, rgba(190, 236, 255, 0.78) 0 1.7px, transparent 2.5px),
-                radial-gradient(circle at 198px 66px, rgba(225, 248, 255, 0.92) 0 1.8px, transparent 2.45px);
-            background-size: 205px 165px;
-        }
-        #rocket-game .flight-line {
+                radial-gradient(ellipse 1.1px 3.2px at 8% 18%, rgba(255,255,255,.92) 0 45%, transparent 60%),
+                radial-gradient(ellipse 1px 3.8px at 23% 62%, rgba(125,211,252,.92) 0 45%, transparent 60%),
+                radial-gradient(ellipse 1.2px 3.4px at 39% 34%, rgba(196,181,253,.90) 0 45%, transparent 60%),
+                radial-gradient(ellipse 1px 3.6px at 56% 78%, rgba(253,224,71,.82) 0 45%, transparent 60%),
+                radial-gradient(ellipse 1.1px 3.2px at 72% 46%, rgba(244,114,182,.86) 0 45%, transparent 60%),
+                radial-gradient(ellipse 1px 3.7px at 88% 22%, rgba(125,211,252,.90) 0 45%, transparent 60%),
+                radial-gradient(ellipse .9px 2.9px at 94% 82%, rgba(255,255,255,.88) 0 45%, transparent 60%);
+            background-size: 190px 155px;
+        }        #rocket-game .star-layer-mid {
+            opacity: 0.86;
+            background-image:
+                radial-gradient(ellipse 1.5px 4.6px at 6% 42%, rgba(255,255,255,1) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.3px 4.2px at 19% 78%, rgba(56,189,248,.98) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.6px 4.8px at 33% 24%, rgba(196,181,253,.98) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.3px 4.4px at 48% 58%, rgba(253,224,71,.94) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.5px 4.8px at 63% 86%, rgba(244,114,182,.96) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.4px 4.4px at 78% 36%, rgba(125,211,252,1) 0 42%, transparent 62%),
+                radial-gradient(ellipse 1.3px 4.1px at 92% 68%, rgba(255,255,255,.96) 0 42%, transparent 62%);
+            background-size: 205px 170px;
+        }        #rocket-game .star-layer-near {
+            opacity: 0.96;
+            background-image:
+                radial-gradient(ellipse 2px 6.4px at 7% 26%, rgba(255,255,255,1) 0 40%, transparent 62%),
+                radial-gradient(ellipse 1.8px 6px at 21% 72%, rgba(56,189,248,1) 0 40%, transparent 62%),
+                radial-gradient(ellipse 2px 6.8px at 37% 44%, rgba(196,181,253,1) 0 40%, transparent 62%),
+                radial-gradient(ellipse 1.8px 6.2px at 53% 84%, rgba(253,224,71,.98) 0 40%, transparent 62%),
+                radial-gradient(ellipse 2px 6.5px at 68% 18%, rgba(244,114,182,1) 0 40%, transparent 62%),
+                radial-gradient(ellipse 1.8px 6.2px at 82% 58%, rgba(125,211,252,1) 0 40%, transparent 62%),
+                radial-gradient(ellipse 1.7px 5.8px at 95% 34%, rgba(255,255,255,1) 0 40%, transparent 62%);
+            background-size: 220px 180px;
+        }        #rocket-game .flight-line {
             left: 15%;
             right: auto;
             width: 58%;
@@ -2149,8 +2153,9 @@
             height: 112px;
             object-fit: contain;
             object-position: center;
-            left: 15%;
-            bottom: 74px;
+            left: 50%;
+            top: 50%;
+            bottom: auto;
             z-index: 5;
             pointer-events: none;
             display: block;
@@ -3848,6 +3853,7 @@
         let rocketStarLastPathProgress = 0;
         let rocketStarVelocity = 0;
         let rocketStarLastTimestamp = 0;
+        let rocketStarLastPaint = 0;
         let lastRenderedMultiplierText = '';
         let lastRenderedMultiplierClass = '';
         let collectiblesEventSource = null;
@@ -5108,9 +5114,10 @@
                 refs.flightPathHead.setAttribute("cy", "0");
             }
             if (refs.starLayers && refs.starLayers.length) {
-                const starOpacities = [0.34, 0.52, 0.78];
+                const starOpacities = [0.72, 0.82, 0.94];
                 refs.starLayers.forEach(function(layer,index) {
                     layer.style.opacity = String(starOpacities[index] || 0.52);
+                    layer.style.backgroundPosition = "0 0";
                 });
             }
         }
@@ -5123,11 +5130,12 @@
                 rocketLastPathPaint=0;
                 rocketStarLastPathProgress=0;
                 rocketStarLastTimestamp=0;
+                rocketStarLastPaint=0;
                 rocketStarVelocity=0;
                 rocketStarOffsetX=0;
                 rocketStarOffsetY=0;
                 if (refs.starLayers && refs.starLayers.length) {
-                    const starOpacities = [0.34, 0.52, 0.78];
+                    const starOpacities = [0.72, 0.82, 0.94];
                     refs.starLayers.forEach(function(layer,index) {
                         layer.style.opacity = String(starOpacities[index] || 0.52);
                     });
@@ -5151,7 +5159,7 @@
                 // Stars remain visible after the crash. Their movement is
                 // handled visually below and decelerates toward a very slow drift.
                 if (refs.starLayers && refs.starLayers.length) {
-                    const starOpacities = [0.34, 0.52, 0.78];
+                    const starOpacities = [0.72, 0.82, 0.94];
                     refs.starLayers.forEach(function(layer,index) {
                         layer.style.opacity = String(starOpacities[index] || 0.52);
                     });
@@ -5163,7 +5171,6 @@
             const refs = getRocketRenderRefs();
             const width = rocketAreaSize.width || 1;
             const height = rocketAreaSize.height || 1;
-            const factors = [0.82, 1.28, 1.82];
 
             // The starfield has its own visual position, separate from the
             // rocket. During flight it follows the rocket direction at the
@@ -5201,12 +5208,26 @@
             }
 
             if (refs.starLayers && refs.starLayers.length) {
-                refs.starLayers.forEach(function(layer,index){
-                    const f=factors[index] || 0.82;
-                    const sx=rocketStarOffsetX*f;
-                    const sy=rocketStarOffsetY*f;
-                    layer.style.transform="translate3d("+sx.toFixed(2)+"px, "+sy.toFixed(2)+"px, 0)";
-                });
+                // Move only the repeating background itself. The layers stay
+                // exactly inside the game card, so they cannot disappear when
+                // the rocket starts or when the compositor is under load.
+                const starSpeeds = [0.42, 0.92, 1.55];
+                // These must match the CSS background-size values exactly so
+                // wrapping always lands on the same repeated tile and never
+                // exposes an empty region during a long flight.
+                const starTiles = [[190, 155], [205, 170], [220, 180]];
+                const starPaintInterval = 33;
+                if (timestamp - rocketStarLastPaint >= starPaintInterval) {
+                    rocketStarLastPaint = timestamp;
+                    refs.starLayers.forEach(function(layer,index){
+                        const f = starSpeeds[index] || 1;
+                        const tile = starTiles[index] || [220, 185];
+                        const sx = ((rocketStarOffsetX * f) % tile[0] + tile[0]) % tile[0];
+                        const sy = ((rocketStarOffsetY * f) % tile[1] + tile[1]) % tile[1];
+                        layer.style.backgroundPosition =
+                            (-sx).toFixed(2) + "px " + sy.toFixed(2) + "px";
+                    });
+                }
             }
 
             if (gamePhase !== "FLIGHT") return;
@@ -5214,23 +5235,27 @@
             // Trail is visual-only and painted at ~30fps; rocket remains 60fps.
             if (timestamp - rocketLastPathPaint < 33) return;
             rocketLastPathPaint=timestamp;
-            const startX=width*0.15+40;
-            const startY=height-74-40;
-            const count=24;
-            const points=[];
-            for(let i=0;i<=count;i++){
-                const t=progress*(i/count);
-                const tp=t*t*(3-2*t);
-                const cp=Math.max(0,Math.min(1,(tp-0.50)/0.50));
-                const sc=cp*cp*(3-2*cp);
-                const px=width*0.62*tp;
-                const py=height*0.34*sc;
-                const wobble=Math.sin(t*Math.PI*7.5)*(1.4+sc*2.8);
-                points.push([startX+px,startY-py+wobble]);
-            }
-            const d=points.map(function(pt,i){
-                return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
-            }).join(" ");
+            // The path is deliberately smoother than the rocket artwork:
+            // no wobble, no frame-to-frame jitter, and no copying of the rocket rotation.
+            // It represents the route only.
+            const startX = width * 0.04;
+            const startY = height * 0.67;
+            const eased = pathProgress;
+            const rocketCenterX = width * 0.50 + width * 0.42 * eased;
+            const rocketCenterY = height * 0.50 - height * 0.40 * smoothClimb;
+
+            // Keep the endpoint below the rocket and draw one smooth cubic
+            // curve. The rocket can rotate independently without bending this line.
+            const endX = rocketCenterX - Math.min(18, width * 0.035);
+            const endY = rocketCenterY + Math.min(34, height * 0.08);
+            const c1x = width * 0.28;
+            const c1y = startY;
+            const c2x = endX - Math.min(width * 0.20, 110);
+            const c2y = endY;
+            const d = "M " + startX.toFixed(1) + " " + startY.toFixed(1) +
+                " C " + c1x.toFixed(1) + " " + c1y.toFixed(1) +
+                ", " + c2x.toFixed(1) + " " + c2y.toFixed(1) +
+                ", " + endX.toFixed(1) + " " + endY.toFixed(1);
             if(refs.flightPathGlow) refs.flightPathGlow.setAttribute("d",d);
             if(refs.flightPathCore) refs.flightPathCore.setAttribute("d",d);
             if(refs.flightPathHead && points.length){
@@ -5341,7 +5366,8 @@
             if (!rocketAreaSize.width || !rocketAreaSize.height) updateRocketAreaSize();
             const p = Math.max(0, Math.min(1, Number(progress) || 0));
 
-            // Gentle forward motion to the midpoint, then a progressive upward bend.
+            // Match the reference motion: begin near the middle, glide mostly
+            // horizontally, then transition into one smooth upward arc.
             const pathProgress = p * p * (3 - 2 * p);
             const climbStart = 0.50;
             const climbProgress = Math.max(
@@ -5349,10 +5375,10 @@
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            const x = rocketAreaSize.width * 0.62 * pathProgress;
-            const y = rocketAreaSize.height * 0.34 * smoothClimb;
-            const rotation = -7 - smoothClimb * 23;
-            const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) rotate(${rotation.toFixed(2)}deg)`;
+            const x = rocketAreaSize.width * 0.42 * pathProgress;
+            const y = rocketAreaSize.height * 0.40 * smoothClimb;
+            const rotation = -2 - smoothClimb * 30;
+            const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) translate3d(-50%, -50%, 0) rotate(${rotation.toFixed(2)}deg)`;
 
             const telegramVisible = telegramRocket &&
                 !telegramRocket.classList.contains("hidden") &&
