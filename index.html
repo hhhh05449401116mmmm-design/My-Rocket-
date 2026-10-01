@@ -4871,7 +4871,10 @@
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.pause(); } catch (e) {} }
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.stop(); } catch (e) {} }
-            if (telegramRocketVideo) { try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {} }
+            if (telegramRocketVideo) {
+                try { telegramRocketVideo.pause(); telegramRocketVideo.currentTime = 0; } catch (e) {}
+                try { delete telegramRocketVideo.dataset.playRequested; } catch (e) {}
+            }
             container.classList.add('hidden');
             container.style.visibility = 'hidden';
             fallback?.classList.remove('telegram-fallback-hidden');
@@ -4883,7 +4886,10 @@
             if (!container) return;
             if (telegramRocketLottieAnimation) { try { telegramRocketLottieAnimation.pause(); } catch (e) {} }
             if (telegramRocketTgsPlayer) { try { telegramRocketTgsPlayer.tlottie.pause(); } catch (e) {} }
-            if (telegramRocketVideo) { try { telegramRocketVideo.pause(); } catch (e) {} }
+            if (telegramRocketVideo) {
+                try { telegramRocketVideo.pause(); } catch (e) {}
+                try { delete telegramRocketVideo.dataset.playRequested; } catch (e) {}
+            }
             ++telegramRocketLoadToken;
             telegramRocketMediaReady = false;
             container.classList.add('hidden');
