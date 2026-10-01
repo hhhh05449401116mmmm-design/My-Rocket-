@@ -35,7 +35,8 @@ const { getGeneralMarketPrice, getBackdropMarketPrice } = require('./lootBoxMark
 
 async function get100TonBackdropPriceSafe(item) {
     try {
-        return await getBackdropMarketPrice(item);
+        const client = await ensureTelegramMtprotoClient();
+        return await getBackdropMarketPrice(client, item);
     } catch (error) {
         console.warn('100 TON backdrop pricing unavailable:', error.message);
         return null;
