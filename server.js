@@ -3561,7 +3561,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                     [baseName]
                 );
                 if (!gift) {
-                    throw new Error('100 TON catalog is not ready: ' + catalogItem.name);
+                    throw new Error('100 TON catalog is not ready: ' + baseName);
                 }
                 gifts.push({ ...gift, image_url: gift.image_url || catalogItem.image });
             }
@@ -3569,28 +3569,27 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
             const balance = Number(await getUserBalance(req.user.id) || 0);
             if (balance < LOOT_BOX_100_PRICE) throw new Error('Insufficient balance');
 
-            // The winner is selected here, at the exact draw time, inside the server.
-            const selectedGift = gifts[Math.floor(Math.random() * gifts.length)];
+            // Select one catalog entry at draw time. Black/Onyx Black entries
+            // are visual variants of the same underlying gift record.
+            const selectedIndex = Math.floor(Math.random() * LOOT_BOX_100_CATALOG.length);
+            const selectedCatalogItem = LOOT_BOX_100_CATALOG[selectedIndex];
+            const selectedGift = gifts[selectedIndex];
+
             await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
 
             const userGift = await addGiftToUser(req.user.id, selectedGift.id);
             await createNotification(
                 req.user.id,
                 'GIFT_WON',
-                '🎁 You won ' + selectedGift.name + ' from the 100 TON box!',
-                { giftId: selectedGift.id, box: '100 TON', random: true }
-            );
-
-            const selectedCatalogItem = LOOT_BOX_100_CATALOG[Math.floor(Math.random() * LOOT_BOX_100_CATALOG.length)];
-            const selectedGift = gifts.find(item => item.id === gifts[LOOT_BOX_100_CATALOG.indexOf(selectedCatalogItem)].id) || gifts[0];
-            await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
-
-            const userGift = await addGiftToUser(req.user.id, selectedGift.id);
-            await createNotification(
-                req.user.id,
-                'GIFT_WON',
-                '🎁 You won ' + selectedGift.name + (selectedCatalogItem.backdrop ? ' (' + selectedCatalogItem.backdrop + ')' : '') + ' from the 100 TON box!',
-                { giftId: selectedGift.id, box: '100 TON', random: true, backdrop: selectedCatalogItem.backdrop || null }
+                '🎁 You won ' + selectedGift.name +
+                    (selectedCatalogItem.backdrop ? ' (' + selectedCatalogItem.backdrop + ')' : '') +
+                    ' from the 100 TON box!',
+                {
+                    giftId: selectedGift.id,
+                    box: '100 TON',
+                    random: true,
+                    backdrop: selectedCatalogItem.backdrop || null
+                }
             );
 
             const market = getCollectibleMarketValue({
@@ -3600,7 +3599,12 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
             });
 
             return {
-                gift: { ...selectedGift, userGiftId: userGift.id, image_url: selectedGift.image_url || LOOT_BOX_100_CATALOG.find(item => item.name === selectedGift.name)?.image },
+                gift: {
+                    ...selectedGift,
+                    userGiftId: userGift.id,
+                    image_url: selectedCatalogItem.image || selectedGift.image_url,
+                    backdrop: selectedCatalogItem.backdrop || null
+                },
                 balance: Number((balance - LOOT_BOX_100_PRICE).toFixed(9)),
                 marketValueTon: Number(market?.floorPriceTon || 0)
             };
