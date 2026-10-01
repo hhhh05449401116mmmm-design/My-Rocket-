@@ -3705,7 +3705,7 @@
         <!-- =========================================================
            LOOT BOX DETAILS MODAL
         ========================================================= -->
-        <div id="loot-box-modal" class="modal" onclick="closeModalOutside(event,'loot-box-modal')">
+        <div id="loot-box-modal" class="modal" aria-hidden="true" onclick="closeModalOutside(event,'loot-box-modal')">
             <div class="loot-box-modal-card">
                 <div class="loot-box-modal-head">
                     <div style="width:46px;"></div>
@@ -3870,7 +3870,17 @@
                 const div = document.createElement('div');
                 div.className = 'loot-box ' + (box.price === 0 ? 'free' : '');
                 div.dataset.boxId = box.id;
-                div.onclick = function() { openLootBox(box); };
+                div.setAttribute('role', 'button');
+                div.setAttribute('tabindex', '0');
+                const openBoxFromCard = function(event) {
+                    if (event) event.preventDefault();
+                    event.stopPropagation();
+                    openLootBox(box);
+                };
+                div.addEventListener('click', openBoxFromCard);
+                div.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') openBoxFromCard(event);
+                });
 
                 const nameText = box.nameKey ? t[box.nameKey] : box.name;
                 const priceDisplay = box.price === 0 ? t.freeLabel : box.price + ' TON';
@@ -4021,6 +4031,7 @@
             }
 
             modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
         }
 
         async function playSelectedLootBox() {
