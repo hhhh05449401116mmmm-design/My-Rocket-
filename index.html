@@ -3906,7 +3906,10 @@
 
                 if (data.ok && Array.isArray(data.items)) {
                     data.items.forEach(function(serverItem) {
-                        const localItem = box.collectibles.find(function(item) { return item.name === serverItem.name; });
+                        const localItem = Number.isInteger(Number(serverItem.catalogIndex))
+                            ? box.collectibles[Number(serverItem.catalogIndex)]
+                            : box.collectibles.find(function(item) { return item.name === serverItem.name && (item.backdrop || null) === (serverItem.backdrop || null); });
+                        if (!localItem) return;
                         if (!localItem) return;
                         localItem.marketValueTon = Number(serverItem.marketValueTon);
                         localItem.value = localItem.marketValueTon > 0
