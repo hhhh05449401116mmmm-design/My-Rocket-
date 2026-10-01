@@ -823,7 +823,7 @@
            not on the box card itself. */
         .loot-box-modal-card {
             width: min(520px, 100%);
-            padding: 16px 14px 22px;
+            padding: 16px 22px 24px;
             border-radius: 28px 28px 0 0;
             background: linear-gradient(180deg, #171717 0%, #0b0b0d 100%);
             border-top: 1px solid rgba(255,255,255,.08);
@@ -841,15 +841,15 @@
         .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
-        .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 10px; }
-        .loot-box-collectible { min-width:0; min-height:0; padding:7px 7px 10px; border-radius:16px; background:#2b2b2d; border:0; text-align:center; position:relative; overflow:visible; }
-        .loot-box-collectible img { width:100%; height:142px; display:block; margin:0 auto 6px; object-fit:contain; image-rendering:auto; background:transparent !important; border:2px solid #c99b18 !important; border-radius:12px; box-shadow:none !important; filter:drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
-        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:13px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 2px 7px; }
-        .loot-box-collectible-value { position:absolute; top:8px; right:7px; z-index:2; display:flex; align-items:center; justify-content:center; min-width:62px; height:29px; padding:0 7px; border-radius:8px; background:#101011; color:#fff; font-size:12px; line-height:1; font-weight:900; direction:ltr; margin:0; box-shadow:0 3px 8px rgba(0,0,0,.25); }
+        .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 10px; }
+        .loot-box-collectible { min-width:0; min-height:0; padding:11px 11px 13px; border-radius:10px; background:#2c2c2e; border:0; text-align:center; position:relative; overflow:visible; }
+        .loot-box-collectible img { width:100%; height:144px; display:block; margin:0 auto 8px; object-fit:contain; image-rendering:auto; background:linear-gradient(145deg,#454a4d 0%,#303437 52%,#25282a 100%) !important; border:2px solid #c99b18 !important; border-radius:8px; box-shadow:inset 0 0 18px rgba(255,255,255,.035), inset 0 -10px 18px rgba(0,0,0,.18) !important; filter:drop-shadow(0 5px 9px rgba(0,0,0,.38)); }
+        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:13px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 2px 9px; }
+        .loot-box-collectible-value { position:absolute; top:8px; right:8px; z-index:2; display:flex; align-items:center; justify-content:center; min-width:62px; height:29px; padding:0 7px; border-radius:8px; background:#101011; color:#fff; font-size:12px; line-height:1; font-weight:900; direction:ltr; margin:0; box-shadow:0 4px 9px rgba(0,0,0,.28); }
         .loot-box-collectible-random { display:inline-flex; align-items:center; justify-content:center; min-width:80px; height:32px; padding:0 12px; border-radius:9px; background:#3a3549; border:1px solid rgba(143,104,255,.65); color:#9b7cff; font-size:12.5px; line-height:1; font-weight:900; }
         .loot-box-collectible.gold-frame { border:0; background:#2b2b2d; box-shadow:none; }
         .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
-        .loot-box-collectible.black-backdrop img { background:#0a0a0b !important; }
+        .loot-box-collectible.black-backdrop img { background:linear-gradient(145deg,#454a4d 0%,#303437 52%,#25282a 100%) !important; }
         .loot-box-collectible .black-variant-label { background:#171719; border-color:rgba(35,35,38,.95); color:#9a9aa1; box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); }
         .loot-box-market-status { display:block; color:#8f8f96; font-size:8px; line-height:1.2; margin-top:4px; }
         @media(max-width:420px) {
