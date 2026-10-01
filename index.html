@@ -903,19 +903,19 @@
             opacity: 1 !important;
             animation: none !important;
             overflow: hidden;
-            contain: paint;
+            contain: none;
             z-index: 0;
         }
         #rocket-game .star-layer {
             position: absolute;
-            inset: -100%;
-            width: 300%;
-            height: 300%;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             background-repeat: repeat;
             background-position: 0 0;
-            transform: translate3d(0, 0, 0);
-            will-change: transform;
+            transform: none !important;
+            will-change: background-position;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
         }
@@ -3851,6 +3851,7 @@
         let rocketStarLastPathProgress = 0;
         let rocketStarVelocity = 0;
         let rocketStarLastTimestamp = 0;
+        let rocketStarLastPaint = 0;
         let lastRenderedMultiplierText = '';
         let lastRenderedMultiplierClass = '';
         let collectiblesEventSource = null;
@@ -5114,6 +5115,7 @@
                 const starOpacities = [0.72, 0.82, 0.94];
                 refs.starLayers.forEach(function(layer,index) {
                     layer.style.opacity = String(starOpacities[index] || 0.52);
+                    layer.style.backgroundPosition = "0 0";
                 });
             }
         }
@@ -5126,6 +5128,7 @@
                 rocketLastPathPaint=0;
                 rocketStarLastPathProgress=0;
                 rocketStarLastTimestamp=0;
+                rocketStarLastPaint=0;
                 rocketStarVelocity=0;
                 rocketStarOffsetX=0;
                 rocketStarOffsetY=0;
@@ -5204,17 +5207,23 @@
             }
 
             if (refs.starLayers && refs.starLayers.length) {
-                // Keep each parallax layer inside its repeating field so stars
-                // never leave the viewport. Each layer has its own speed.
+                // Move only the repeating background itself. The layers stay
+                // exactly inside the game card, so they cannot disappear when
+                // the rocket starts or when the compositor is under load.
                 const starSpeeds = [0.42, 0.92, 1.55];
-                refs.starLayers.forEach(function(layer,index){
-                    const f = starSpeeds[index] || 1;
-                    const sxRaw = rocketStarOffsetX * f;
-                    const syRaw = rocketStarOffsetY * f;
-                    const sx = ((sxRaw % width) + width) % width;
-                    const sy = ((syRaw % height) + height) % height;
-                    layer.style.transform = "translate3d(" + (-sx).toFixed(2) + "px, " + sy.toFixed(2) + "px, 0)";
-                });
+                const starTiles = [[220, 185], [215, 180], [205, 165]];
+                const starPaintInterval = 33;
+                if (timestamp - rocketStarLastPaint >= starPaintInterval) {
+                    rocketStarLastPaint = timestamp;
+                    refs.starLayers.forEach(function(layer,index){
+                        const f = starSpeeds[index] || 1;
+                        const tile = starTiles[index] || [220, 185];
+                        const sx = ((rocketStarOffsetX * f) % tile[0] + tile[0]) % tile[0];
+                        const sy = ((rocketStarOffsetY * f) % tile[1] + tile[1]) % tile[1];
+                        layer.style.backgroundPosition =
+                            (-sx).toFixed(2) + "px " + sy.toFixed(2) + "px";
+                    });
+                }
             }
 
             if (gamePhase !== "FLIGHT") return;
