@@ -906,6 +906,19 @@
             contain: none;
             z-index: 0;
         }
+        @keyframes rocket-stars-far {
+            from { background-position: 0 0; }
+            to { background-position: -190px 155px; }
+        }
+        @keyframes rocket-stars-mid {
+            from { background-position: 0 0; }
+            to { background-position: -205px 170px; }
+        }
+        @keyframes rocket-stars-near {
+            from { background-position: 0 0; }
+            to { background-position: -220px 180px; }
+        }
+
         #rocket-game .star-layer {
             position: absolute;
             inset: 0;
@@ -930,6 +943,7 @@
                 radial-gradient(ellipse 1px 3.7px at 88% 22%, rgba(125,211,252,.90) 0 45%, transparent 60%),
                 radial-gradient(ellipse .9px 2.9px at 94% 82%, rgba(255,255,255,.88) 0 45%, transparent 60%);
             background-size: 190px 155px;
+            animation: rocket-stars-far 7.5s linear infinite;
         }        #rocket-game .star-layer-mid {
             opacity: 0.86;
             background-image:
@@ -941,6 +955,7 @@
                 radial-gradient(ellipse 1.4px 4.4px at 78% 36%, rgba(125,211,252,1) 0 42%, transparent 62%),
                 radial-gradient(ellipse 1.3px 4.1px at 92% 68%, rgba(255,255,255,.96) 0 42%, transparent 62%);
             background-size: 205px 170px;
+            animation: rocket-stars-mid 4.6s linear infinite;
         }        #rocket-game .star-layer-near {
             opacity: 0.96;
             background-image:
@@ -1006,7 +1021,13 @@
         #rocket-game .flight-line::after { display: none !important; }
         #rocket-game .flight-path-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
         #rocket-game .flight-path-glow,
-        #rocket-game .flight-path-core { fill:none; stroke-linecap:round; stroke-linejoin:round; }
+        #rocket-game .flight-path-core {
+            fill:none;
+            stroke-linecap:round;
+            stroke-linejoin:round;
+            stroke-dasharray: 0 1;
+            stroke-dashoffset: 0;
+        }
         #rocket-game .flight-path-glow { stroke:rgba(79,195,247,.30); stroke-width:11; }
         #rocket-game .flight-path-core { stroke:rgba(100,205,255,.95); stroke-width:3.2; }
         #rocket-game .flight-path-head { fill:#e9fbff; stroke:rgba(79,195,247,.95); stroke-width:3; }
@@ -3118,8 +3139,8 @@
                     <div class="rocket-area">
                         <div id="flight-line" class="flight-line" aria-hidden="true">
     <svg class="flight-path-svg" preserveAspectRatio="none" aria-hidden="true">
-        <path class="flight-path-glow"></path>
-        <path class="flight-path-core"></path>
+        <path class="flight-path-glow" pathLength="1"></path>
+        <path class="flight-path-core" pathLength="1"></path>
         <circle class="flight-path-head" cx="0" cy="0" r="4"></circle>
     </svg>
 </div>
@@ -5012,6 +5033,14 @@
             livePlayers = Array.isArray(state.players) ? state.players : [];
             scheduleGameUiRender(previousPhase !== gamePhase);
             updateMainBetButton();
+            // If the animation loop was interrupted, a fresh server state must
+            // be enough to resume the visual loop without changing game logic.
+            if (document.visibilityState === "visible") {
+                const rocketGame = document.getElementById("rocket-game");
+                if (rocketGame && !rocketGame.classList.contains("hidden")) {
+                    startRocketAnimationLoop();
+                }
+            }
         }
 
         var gameUiRenderTimer = null;
@@ -5107,8 +5136,14 @@
                 refs.flightLine.classList.remove("active", "crashed");
                 refs.flightLine.style.opacity = "0";
             }
-            if (refs.flightPathGlow) refs.flightPathGlow.setAttribute("d", "");
-            if (refs.flightPathCore) refs.flightPathCore.setAttribute("d", "");
+            if (refs.flightPathGlow) {
+                refs.flightPathGlow.setAttribute("d", "");
+                refs.flightPathGlow.style.strokeDasharray = "0 1";
+            }
+            if (refs.flightPathCore) {
+                refs.flightPathCore.setAttribute("d", "");
+                refs.flightPathCore.style.strokeDasharray = "0 1";
+            }
             if (refs.flightPathHead) {
                 refs.flightPathHead.setAttribute("cx", "0");
                 refs.flightPathHead.setAttribute("cy", "0");
@@ -5207,28 +5242,9 @@
                 rocketStarOffsetY += height * 0.045 * driftVelocity * dt;
             }
 
-            if (refs.starLayers && refs.starLayers.length) {
-                // Move only the repeating background itself. The layers stay
-                // exactly inside the game card, so they cannot disappear when
-                // the rocket starts or when the compositor is under load.
-                const starSpeeds = [0.42, 0.92, 1.55];
-                // These must match the CSS background-size values exactly so
-                // wrapping always lands on the same repeated tile and never
-                // exposes an empty region during a long flight.
-                const starTiles = [[190, 155], [205, 170], [220, 180]];
-                const starPaintInterval = 33;
-                if (timestamp - rocketStarLastPaint >= starPaintInterval) {
-                    rocketStarLastPaint = timestamp;
-                    refs.starLayers.forEach(function(layer,index){
-                        const f = starSpeeds[index] || 1;
-                        const tile = starTiles[index] || [220, 185];
-                        const sx = ((rocketStarOffsetX * f) % tile[0] + tile[0]) % tile[0];
-                        const sy = ((rocketStarOffsetY * f) % tile[1] + tile[1]) % tile[1];
-                        layer.style.backgroundPosition =
-                            (-sx).toFixed(2) + "px " + sy.toFixed(2) + "px";
-                    });
-                }
-            }
+            // Star motion is CSS-driven so it remains continuous even if the
+            // game UI render loop is throttled or briefly interrupted.
+
 
             if (gamePhase !== "FLIGHT") return;
 
@@ -5256,12 +5272,19 @@
                 " C " + c1x.toFixed(1) + " " + c1y.toFixed(1) +
                 ", " + c2x.toFixed(1) + " " + c2y.toFixed(1) +
                 ", " + endX.toFixed(1) + " " + endY.toFixed(1);
-            if(refs.flightPathGlow) refs.flightPathGlow.setAttribute("d",d);
-            if(refs.flightPathCore) refs.flightPathCore.setAttribute("d",d);
-            if(refs.flightPathHead && points.length){
-                const head=points[points.length-1];
-                refs.flightPathHead.setAttribute("cx",head[0].toFixed(1));
-                refs.flightPathHead.setAttribute("cy",head[1].toFixed(1));
+            if(refs.flightPathGlow) {
+                refs.flightPathGlow.setAttribute("d",d);
+                refs.flightPathGlow.style.strokeDasharray = pathProgress.toFixed(4) + " 1";
+                refs.flightPathGlow.style.strokeDashoffset = "0";
+            }
+            if(refs.flightPathCore) {
+                refs.flightPathCore.setAttribute("d",d);
+                refs.flightPathCore.style.strokeDasharray = pathProgress.toFixed(4) + " 1";
+                refs.flightPathCore.style.strokeDashoffset = "0";
+            }
+            if (refs.flightPathHead) {
+                refs.flightPathHead.setAttribute("cx", endX.toFixed(1));
+                refs.flightPathHead.setAttribute("cy", endY.toFixed(1));
             }
         }
 
