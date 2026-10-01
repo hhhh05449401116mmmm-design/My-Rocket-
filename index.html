@@ -3778,9 +3778,40 @@
         /* =========================================================
            LOOT BOXES DATA
         ========================================================= */
+        const FREE_BOX_COLLECTIBLES = [
+            { name: 'Nail Bracelet', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', value: 'FREE' },
+            { name: 'Bonded Ring', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', value: 'FREE' },
+            { name: 'Signet Ring', image: 'https://tg.me/api/media/gift-art/signetring/thumb.webp', value: 'FREE' },
+            { name: 'Diamond Ring', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', value: 'FREE' },
+            { name: 'Cupid Charm', image: 'https://tg.me/api/media/gift-art/cupidcharm/thumb.webp', value: 'FREE' },
+            { name: 'Crystal Ball', image: 'https://tg.me/api/media/gift-art/crystalball/thumb.webp', value: 'FREE' },
+            { name: 'Love Candle', image: 'https://tg.me/api/media/gift-art/lovecandle/thumb.webp', value: 'FREE' },
+            { name: 'Fine Pen', image: 'https://tg.me/api/media/gift-art/finepen/thumb.webp', value: 'FREE' },
+            { name: 'Jolly Chimp', image: 'https://tg.me/api/media/gift-art/jollychimp/thumb.webp', value: 'FREE' },
+            { name: 'Light Sword', image: 'https://tg.me/api/media/gift-art/lightsword/thumb.webp', value: 'FREE' },
+            { name: 'Input Key', image: 'https://tg.me/api/media/gift-art/inputkey/thumb.webp', value: 'FREE' },
+            { name: 'Lush Bouquet', image: 'https://tg.me/api/media/gift-art/lushbouquet/thumb.webp', value: 'FREE' },
+            { name: 'Spring Basket', image: 'https://tg.me/api/media/gift-art/springbasket/thumb.webp', value: 'FREE' },
+            { name: 'Money Pot', image: 'https://tg.me/api/media/gift-art/moneypot/thumb.webp', value: 'FREE' },
+            { name: 'Stellar Rocket', image: 'https://tg.me/api/media/gift-art/stellarrocket/thumb.webp', value: 'FREE' },
+            { name: 'Snoop Dogg', image: 'https://tg.me/api/media/gift-art/snoopdogg/thumb.webp', value: 'FREE' },
+            { name: 'Pretty Posy', image: 'https://tg.me/api/media/gift-art/prettyposey/thumb.webp', value: 'FREE' },
+            { name: 'Jack-in-the-Box', image: 'https://tg.me/api/media/gift-art/jackinthebox/thumb.webp', value: 'FREE' },
+            { name: 'Mousse Cake', image: 'https://tg.me/api/media/gift-art/moussecake/thumb.webp', value: 'FREE' },
+            { name: 'Victory Medal', image: 'https://tg.me/api/media/gift-art/victorymedal/thumb.webp', value: 'FREE' },
+            { name: 'Fresh Socks', image: 'https://tg.me/api/media/gift-art/freshsocks/thumb.webp', value: 'FREE' },
+            { name: 'Mood Pack', image: 'https://tg.me/api/media/gift-art/moodpack/thumb.webp', value: 'FREE' },
+            { name: 'Happy Brownie', image: 'https://tg.me/api/media/gift-art/happybrownie/thumb.webp', value: 'FREE' },
+            { name: 'Whip Cupcake', image: 'https://tg.me/api/media/gift-art/whipcupcake/thumb.webp', value: 'FREE' },
+            { name: 'Chill Flame', image: 'https://tg.me/api/media/gift-art/chillflame/thumb.webp', value: 'FREE' },
+            { name: 'Instant Ramen', image: 'https://tg.me/api/media/gift-art/instantramen/thumb.webp', value: 'FREE' },
+            { name: 'Vice Cream', image: 'https://tg.me/api/media/gift-art/vicecream/thumb.webp', value: 'FREE' },
+            { name: 'Ice Cream', image: 'https://tg.me/api/media/gift-art/icecream/thumb.webp', value: 'FREE' }
+        ];
+
         const LOOT_BOXES = [
-            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge' },
-            { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge' },
+            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
+            { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge', collectibles: FREE_BOX_COLLECTIBLES },
             { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' },
             { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
             { id: 'box_2_5', name: '2.5 TON', emoji: '💎', price: 2.5, badgeType: null, badgeClass: '' },
@@ -3933,15 +3964,6 @@
         }
 
         function openLootBox(box) {
-            if (box.id === 'free') {
-                openFreeGift();
-                return;
-            }
-            if (box.id === 'free24') {
-                openDailyReward();
-                return;
-            }
-
             selectedLootBox = box;
             const modal = document.getElementById('loot-box-modal');
             const title = document.getElementById('loot-box-modal-title');
@@ -3953,10 +3975,10 @@
 
             if (!modal || !title || !strip || !collections) return;
 
-            title.textContent = box.name || 'Epic Gift';
+            title.textContent = box.name || (box.nameKey ? t[box.nameKey] : 'Epic Gift');
             subtitle.textContent = box.id === 'box_100'
                 ? 'Telegram Collectibles • TON Market Value'
-                : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق');
+                : (box.id === 'free24' ? 'Telegram Collectibles • Daily Free Box' : (box.id === 'free' ? 'Telegram Collectibles • Free Box' : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق')));
 
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
             if (box.id === 'box_100') {
@@ -3980,14 +4002,16 @@
                     : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
             }
 
-            if (priceNote) priceNote.textContent = box.price + ' TON';
+            const topupButton = document.getElementById('loot-box-topup-button');
+            if (topupButton) topupButton.style.display = box.price > 0 ? '' : 'none';
+            if (priceNote) priceNote.textContent = box.price > 0 ? box.price + ' TON' : (box.id === 'free24' ? 'FREE • 24H' : 'FREE');
             if (playButton) {
                 playButton.style.display = box.id === 'box_100' ? 'none' : '';
                 playButton.disabled = false;
                 playButton.onclick = null;
                 playButton.textContent = box.id === 'box_100'
                     ? (currentLanguage === 'ar' ? '🎲 Random' : '🎲 Random')
-                    : (currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play');
+                    : ((box.id === 'free' || box.id === 'free24') ? (currentLanguage === 'ar' ? '🎁 استلام الهدية' : '🎁 Claim Gift') : (currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play'));
             }
 
             modal.classList.add('show');
@@ -4007,6 +4031,16 @@
                 return;
             }
 
+            if (box.id === 'free') {
+                closeModal('loot-box-modal');
+                openFreeGift();
+                return;
+            }
+            if (box.id === 'free24') {
+                closeModal('loot-box-modal');
+                openDailyReward();
+                return;
+            }
             if (box.id !== 'box_100') {
                 closeModal('loot-box-modal');
                 if (typeof openRocketGame === 'function') openRocketGame();
