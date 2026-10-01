@@ -3672,6 +3672,20 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
     try {
         const boxId = req.body?.boxId === 'free24' ? 'free24' : 'free';
         const result = await transaction(async () => {
+            // Provision the isolated FREE catalog lazily on first claim so the 28
+            // collectible rewards are all real inventory records without touching global seeds.
+            for (const catalogReward of FREE_BOX_REWARDS) {
+                if (catalogReward.rewardType === 'ton') continue;
+                const rewardKey = freeBoxRewardKey(catalogReward.name);
+                const existing = await get('SELECT id FROM gifts WHERE telegram_gift_id = ? LIMIT 1', [rewardKey]);
+                if (!existing) {
+                    await run(
+                        'INSERT OR IGNORE INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        [rewardKey, catalogReward.name, rewardKey, '🎁', catalogReward.image, 'FREE', 'common', 0, 0]
+                    );
+                }
+            }
+
             const reward = FREE_BOX_REWARDS[Math.floor(Math.random() * FREE_BOX_REWARDS.length)];
             let gift = null;
             let userGift = null;
