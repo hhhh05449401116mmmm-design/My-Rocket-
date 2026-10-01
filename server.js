@@ -50,6 +50,39 @@ async function get100TonGeneralMarketPriceSafe(item) {
         return null;
     }
 }
+
+function get100TonCatalogSlug(item) {
+    if (item?.slug) return String(item.slug);
+    const match = String(item?.image || '').match(/gift-art\/([^/]+)\/thumb\.webp/i);
+    return match ? match[1] : null;
+}
+
+async function get100TonTelegramMarketPriceSafe(item) {
+    try {
+        let giftId = item?.telegramGiftId || null;
+        let slug = get100TonCatalogSlug(item);
+
+        if (!giftId || !slug) {
+            const baseName = item?.baseName || item?.name;
+            const gift = baseName
+                ? await get('SELECT telegram_gift_id, slug FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1', [baseName])
+                : null;
+            giftId = giftId || gift?.telegram_gift_id || null;
+            slug = slug || gift?.slug || null;
+        }
+
+        if (!giftId && !slug) return null;
+
+        return await getLiveTelegramCollectiblePrice({
+            slug,
+            giftId,
+            backdropName: item?.backdrop || null
+        });
+    } catch (error) {
+        console.warn('100 TON Telegram market fallback unavailable:', error.message);
+        return null;
+    }
+}
 // =========================================================
 // Isolated 100 TON loot-box catalog.
 // This path is intentionally independent from the Crash/round engine.
@@ -3544,15 +3577,17 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
             let source = null;
 
             if (item.backdrop) {
-                const special = await get100TonBackdropPriceSafe(item);
+                let special = await get100TonBackdropPriceSafe(item);
+                if (!special?.value) special = await get100TonTelegramMarketPriceSafe(item);
                 marketValueTon = Number(special?.value || 0);
                 lastUpdated = special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null;
                 source = special?.source || null;
             } else {
-                const market = await get100TonGeneralMarketPriceSafe(item);
+                let market = await get100TonGeneralMarketPriceSafe(item);
+                if (!market?.value) market = await get100TonTelegramMarketPriceSafe(item);
                 marketValueTon = Number(market?.value || 0);
-                lastUpdated = market?.lastUpdated || null;
-                source = 'general-market-floor';
+                lastUpdated = market?.lastUpdated || (market?.fetchedAt ? new Date(market.fetchedAt).toISOString() : null);
+                source = market?.source || 'general-market-floor';
             }
 
             return {
