@@ -2045,57 +2045,6 @@ app.post('/api/auth', async (req, res) => {
     }
 });
 
-// ===== 5.1.9 صندوق المقتنيات: أسعار السوق الحية بالـ TON =====
-// This endpoint is intentionally isolated from the crash/game-loop code.
-// It only reads the existing market-price engine and returns display data.
-const LOOT_BOX_100_COLLECTIBLES = [
-    { id: 'plush-pepe', name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', lookup: { name: 'Plush Pepe' } },
-    { id: 'heart-locket', name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp', lookup: { name: 'Heart Locket' } },
-    { id: 'durovs-cap', name: "Durov's Cap", image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', lookup: { name: "Durov's Cap" } },
-    { id: 'precious-peach', name: 'Precious Peach', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', lookup: { name: 'Precious Peach' } },
-    { id: 'scared-cat', name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', lookup: { name: 'Scared Cat' } },
-    { id: 'heroic-helmet', name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp', lookup: { name: 'Heroic Helmet' } },
-    { id: 'loot-bag', name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp', lookup: { name: 'Loot Bag' } },
-    { id: 'astral-shard', name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp', lookup: { name: 'Astral Shard' } }
-];
-
-app.get('/api/loot-box/100/collectibles', authenticate, async (req, res) => {
-    try {
-        await refreshMarketPrices();
-        const items = LOOT_BOX_100_COLLECTIBLES.map(item => {
-            const market = getCollectibleMarketValue(item.lookup);
-            const ton = Number(market?.floorPriceTon);
-            return {
-                id: item.id,
-                name: item.name,
-                image: item.image,
-                marketValueTon: Number.isFinite(ton) && ton > 0 ? ton : null,
-                marketLastUpdated: market?.lastUpdated || null,
-                random: true
-            };
-        });
-
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({
-            ok: true,
-            box: '100 TON',
-            selection: 'random',
-            currency: 'TON',
-            items
-        });
-    } catch (error) {
-        console.error('100 TON loot market lookup failed:', error.message);
-        res.status(503).json({
-            ok: false,
-            box: '100 TON',
-            selection: 'random',
-            currency: 'TON',
-            items: [],
-            error: 'Loot market prices temporarily unavailable'
-        });
-    }
-});
-
 // ===== 5.2 جلب حالة اللعبة =====
 app.get('/api/game/state', authenticate, async (req, res) => {
     try {
