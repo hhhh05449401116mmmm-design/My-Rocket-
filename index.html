@@ -846,6 +846,14 @@
         .loot-box-collectible img { width:86px; height:86px; display:block; margin:0 auto 3px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; filter:drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
         .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:10px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .loot-box-collectible-value { display:block; color:#f5c34b; font-size:9px; line-height:1.2; font-weight:900; direction:ltr; margin-top:3px; }
+        .loot-box-collectible.gold-frame { border:1px solid rgba(255,208,76,.9); background:linear-gradient(145deg,rgba(88,61,12,.5),#202023 58%); box-shadow:0 0 0 1px rgba(255,227,125,.18), inset 0 0 18px rgba(255,196,43,.08), 0 7px 18px rgba(255,185,35,.08); }
+        .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
+        .loot-box-market-status { display:block; color:#8f8f96; font-size:8px; line-height:1.2; margin-top:3px; }
+        .loot-box-winner { grid-column:1/-1; padding:18px 12px 20px; border-radius:16px; border:1px solid rgba(255,208,76,.95); background:radial-gradient(circle at 50% 25%,rgba(255,210,80,.14),transparent 48%),linear-gradient(145deg,#2a210c,#171717); box-shadow:0 0 28px rgba(255,196,43,.12), inset 0 0 22px rgba(255,220,100,.05); text-align:center; }
+        .loot-box-winner img { width:150px; height:150px; object-fit:contain; display:block; margin:0 auto 10px; filter:drop-shadow(0 0 14px rgba(255,211,76,.3)); }
+        .loot-box-winner-label { color:#ffd65a; font-size:12px; font-weight:900; margin-bottom:5px; }
+        .loot-box-winner-name { color:#fff; font-size:17px; font-weight:900; }
+        .loot-box-winner-value { color:#ffd65a; font-size:14px; font-weight:900; direction:ltr; margin-top:5px; }
         .loot-box-play-button { width:100%; height:48px; margin-top:12px; border:0; border-radius:12px; background:linear-gradient(135deg,#6d43ff,#8f5cff); color:#fff; font-size:15px; font-weight:900; box-shadow:0 7px 20px rgba(115,73,255,.25); }
         .loot-box-price-note { text-align:center; color:#8f8f96; font-size:10px; margin-top:7px; }
         @media(max-width:360px) {
@@ -3780,14 +3788,14 @@
                 badgeType: 'vip', 
                 badgeClass: 'popular',
                 collectibles: [
-                    { name: 'Plush Pepe', value: '6,166 ⭐', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
-                    { name: 'Heart Locket', value: '1,379 ⭐', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
-                    { name: "Durov's Cap", value: '435 ⭐', image: "https://tg.me/api/media/gift-art/durovscap/thumb.webp" },
-                    { name: 'Precious Peach', value: '260 ⭐', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
-                    { name: 'Scared Cat', value: '285 ⭐', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
-                    { name: 'Heroic Helmet', value: '148 ⭐', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
-                    { name: 'Loot Bag', value: '124 ⭐', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-                    { name: 'Astral Shard', value: '72 ⭐', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
+                    { name: 'Plush Pepe', marketKey: 'Plush Pepe', value: '— TON', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+                    { name: 'Heart Locket', marketKey: 'Heart Locket', value: '— TON', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
+                    { name: "Durov's Cap", marketKey: "Durov's Cap", value: '— TON', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
+                    { name: 'Precious Peach', marketKey: 'Precious Peach', value: '— TON', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
+                    { name: 'Scared Cat', marketKey: 'Scared Cat', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+                    { name: 'Heroic Helmet', marketKey: 'Heroic Helmet', value: '— TON', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
+                    { name: 'Loot Bag', marketKey: 'Loot Bag', value: '— TON', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
+                    { name: 'Astral Shard', marketKey: 'Astral Shard', value: '— TON', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
                 ]
             }
         ];
@@ -3831,6 +3839,68 @@
         }
 
         let selectedLootBox = null;
+        let lootBoxMarketRequestToken = 0;
+
+        function render100TonCollectibles(box, statusText) {
+            const collections = document.getElementById('loot-box-collections');
+            const strip = document.getElementById('loot-box-modal-strip');
+            if (!collections || !strip) return;
+            const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+
+            strip.innerHTML = items.map(function(item) {
+                return '<div class="loot-box-modal-strip-item">' +
+                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                '</div>';
+            }).join('');
+
+            collections.innerHTML = items.length
+                ? items.map(function(item) {
+                    const hasMarket = Number.isFinite(Number(item.marketValueTon)) && Number(item.marketValueTon) > 0;
+                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + '">' +
+                        '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                        '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                        '<span class="loot-box-collectible-value">' + escapeHtml(item.value || '— TON') + '</span>' +
+                        (!hasMarket && statusText ? '<span class="loot-box-market-status">' + escapeHtml(statusText) + '</span>' : '') +
+                    '</div>';
+                }).join('')
+                : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+        }
+
+        async function load100TonMarketValues(box) {
+            const token = ++lootBoxMarketRequestToken;
+            if (!box || box.id !== 'box_100') return;
+
+            try {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/100/market-items', {
+                    headers: getAuthHeaders(),
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                if (token !== lootBoxMarketRequestToken || selectedLootBox !== box) return;
+
+                if (data.ok && Array.isArray(data.items)) {
+                    data.items.forEach(function(serverItem) {
+                        const localItem = box.collectibles.find(function(item) { return item.name === serverItem.name; });
+                        if (!localItem) return;
+                        localItem.marketValueTon = Number(serverItem.marketValueTon);
+                        localItem.value = localItem.marketValueTon > 0
+                            ? Number(localItem.marketValueTon).toFixed(2) + ' TON'
+                            : '— TON';
+                    });
+                    render100TonCollectibles(box, data.refreshing ? 'جارٍ تحديث السوق…' : 'القيمة السوقية الحالية');
+                    if (data.refreshing || data.stale) {
+                        setTimeout(function() {
+                            if (selectedLootBox === box) load100TonMarketValues(box);
+                        }, 1200);
+                    }
+                } else {
+                    render100TonCollectibles(box, 'السعر غير متاح حالياً');
+                }
+            } catch (error) {
+                if (token !== lootBoxMarketRequestToken || selectedLootBox !== box) return;
+                render100TonCollectibles(box, 'السعر غير متاح حالياً');
+            }
+        }
 
         function openLootBox(box) {
             if (box.id === 'free') {
@@ -3854,49 +3924,123 @@
             if (!modal || !title || !strip || !collections) return;
 
             title.textContent = box.name || 'Epic Gift';
-            subtitle.textContent = Array.isArray(box.collectibles) && box.collectibles.length
-                ? 'Collections in this Box'
-                : 'محتويات الصندوق';
+            subtitle.textContent = box.id === 'box_100'
+                ? 'Telegram Collectibles • TON Market Value'
+                : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق');
 
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
-            strip.innerHTML = items.map(function(item) {
-                return '<div class="loot-box-modal-strip-item">' +
-                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
-                '</div>';
-            }).join('');
-
-            collections.innerHTML = items.length
-                ? items.map(function(item) {
-                    return '<div class="loot-box-collectible">' +
+            if (box.id === 'box_100') {
+                render100TonCollectibles(box, 'جارٍ قراءة القيمة السوقية…');
+                load100TonMarketValues(box);
+            } else {
+                strip.innerHTML = items.map(function(item) {
+                    return '<div class="loot-box-modal-strip-item">' +
                         '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
-                        '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
-                        '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
                     '</div>';
-                }).join('')
-                : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+                }).join('');
+
+                collections.innerHTML = items.length
+                    ? items.map(function(item) {
+                        return '<div class="loot-box-collectible">' +
+                            '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                            '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                            '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
+                        '</div>';
+                    }).join('')
+                    : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+            }
 
             if (priceNote) priceNote.textContent = box.price + ' TON';
-            if (playButton) playButton.textContent = currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play';
+            if (playButton) {
+                playButton.disabled = false;
+                playButton.onclick = null;
+                playButton.textContent = box.id === 'box_100'
+                    ? (currentLanguage === 'ar' ? '🎲 Random' : '🎲 Random')
+                    : (currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play');
+            }
 
             modal.classList.add('show');
         }
 
-        function playSelectedLootBox() {
+        async function playSelectedLootBox() {
             if (!selectedLootBox) return;
 
             const box = selectedLootBox;
             const requiredBalance = Number(box.price || 0);
             const currentBalance = Number(tonBalance || 0);
 
-            // Deposit is requested only from the Play action, never from opening the box.
+            // Deposit is requested only from the Play/Random action, never from opening the box.
             if (requiredBalance > currentBalance) {
                 closeModal('loot-box-modal');
                 openDeposit();
                 return;
             }
 
-            closeModal('loot-box-modal');
-            if (typeof openRocketGame === 'function') openRocketGame();
+            if (box.id !== 'box_100') {
+                closeModal('loot-box-modal');
+                if (typeof openRocketGame === 'function') openRocketGame();
+                return;
+            }
+
+            const playButton = document.getElementById('loot-box-play-button');
+            if (playButton) {
+                playButton.disabled = true;
+                playButton.textContent = currentLanguage === 'ar' ? '🎲 جاري السحب…' : '🎲 Drawing…';
+            }
+
+            try {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/100/draw', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store',
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    if (data.error === 'Insufficient balance') {
+                        closeModal('loot-box-modal');
+                        openDeposit();
+                        return;
+                    }
+                    throw new Error(data.error || 'Draw failed');
+                }
+
+                tonBalance = Number(data.balance || 0);
+                updateTonWalletUI();
+
+                const winner = data.gift || {};
+                const marketValue = Number(data.marketValueTon || 0);
+                const collections = document.getElementById('loot-box-collections');
+                const strip = document.getElementById('loot-box-modal-strip');
+                const title = document.getElementById('loot-box-modal-title');
+                const subtitle = document.getElementById('loot-box-modal-subtitle');
+
+                if (title) title.textContent = currentLanguage === 'ar' ? '🎉 الفائز' : '🎉 Winner';
+                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم السحب عشوائياً عند الضغط على Random' : 'Randomly drawn at the moment of play';
+                if (strip) strip.innerHTML = '';
+                if (collections) {
+                    collections.innerHTML =
+                        '<div class="loot-box-winner">' +
+                            '<div class="loot-box-winner-label">🎲 RANDOM</div>' +
+                            '<img src="' + escapeHtmlAttribute(winner.image_url || winner.image || '') + '" alt="' + escapeHtmlAttribute(winner.name || '') + '" loading="eager" decoding="async">' +
+                            '<div class="loot-box-winner-name">' + escapeHtml(winner.name || 'Telegram Collectible') + '</div>' +
+                            '<div class="loot-box-winner-value">' + (marketValue > 0 ? escapeHtml(marketValue.toFixed(2) + ' TON') : '— TON') + '</div>' +
+                        '</div>';
+                }
+
+                if (playButton) {
+                    playButton.disabled = false;
+                    playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
+                    playButton.onclick = function() { closeModal('loot-box-modal'); };
+                }
+            } catch (error) {
+                console.error('100 TON loot-box draw failed:', error);
+                if (playButton) {
+                    playButton.disabled = false;
+                    playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                }
+            }
         }
 
         /* =========================================================
