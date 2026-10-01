@@ -2868,53 +2868,6 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.6.0.1 أسعار صندوق 100 TON للعرض فقط =====
-// Isolated read-only display endpoint. It does not participate in crash,
-// round, betting, cashout, or reward settlement.
-const LOOT_BOX_100_MARKET_ITEMS = [
-    { id: 'plush-pepe', name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
-    { id: 'heart-locket', name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
-    { id: 'durovs-cap', name: "Durov's Cap", image: 'https://tg.me/api/media/gift-art/durovs-cap/thumb.webp' },
-    { id: 'precious-peach', name: 'Precious Peach', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
-    { id: 'scared-cat', name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scared-cat/thumb.webp' },
-    { id: 'heroic-helmet', name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/heroic-helmet/thumb.webp' },
-    { id: 'loot-bag', name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/loot-bag/thumb.webp' },
-    { id: 'astral-shard', name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/astral-shard/thumb.webp' }
-];
-
-app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
-    try {
-        const marketStatus = await refreshMarketPrices();
-        if (!marketStatus.success) {
-            return res.status(503).json({ ok: false, error: 'Market prices temporarily unavailable' });
-        }
-
-        const items = LOOT_BOX_100_MARKET_ITEMS.map(item => {
-            const market = getCollectibleMarketValue({
-                name: item.name,
-                base_name: item.name,
-                model_name: item.name
-            });
-            const ton = Number(market?.floorPriceTon);
-            return {
-                id: item.id,
-                name: item.name,
-                image: item.image,
-                marketValueTon: Number.isFinite(ton) && ton > 0 ? ton : null,
-                currency: 'TON',
-                lastUpdated: market?.lastUpdated || marketStatus.lastUpdated || null,
-                random: true
-            };
-        });
-
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, currency: 'TON', selection: 'random', items });
-    } catch (error) {
-        console.error('100 TON loot market display failed:', error.message);
-        res.status(503).json({ ok: false, currency: 'TON', selection: 'random', items: [] });
-    }
-});
-
 // ===== 5.6.1 قيمة السوق =====
 app.get('/api/collectibles/market-value', authenticate, async (req, res) => {
     try {
