@@ -44,7 +44,23 @@ const LOOT_BOX_100_CATALOG = [
     { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
     { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
     { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-    { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
+    { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
+
+    // A small set of Black/Onyx Black variants requested for the 100 TON box.
+    // These use real Telegram collectible instances only as visual variant references;
+    // the underlying game gift remains the same base collectible.
+    { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/plushpepe-1.large.jpg', baseName: 'Plush Pepe' },
+    { name: "Durov's Cap", backdrop: 'Black', image: 'https://nft.fragment.com/gift/durovscap-4675.large.jpg', baseName: "Durov's Cap" },
+    { name: 'Precious Peach', backdrop: 'Black', image: 'https://nft.fragment.com/gift/preciouspeach-1246.large.jpg', baseName: 'Precious Peach' },
+    { name: 'Scared Cat', backdrop: 'Black', image: 'https://nft.fragment.com/gift/scaredcat-3300.large.jpg', baseName: 'Scared Cat' },
+    { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/scaredcat-3300.large.jpg', baseName: 'Scared Cat' },
+    { name: 'Diamond Ring', backdrop: 'Black', image: 'https://nft.fragment.com/gift/diamondring-22815.large.jpg', baseName: 'Diamond Ring' },
+    { name: 'Toy Bear', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/toybear-11506.large.jpg', baseName: 'Toy Bear' },
+    { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://nft.fragment.com/gift/nailbracelet-3746.large.jpg', baseName: 'Nail Bracelet' },
+    { name: 'Swiss Watch', backdrop: 'Black', image: 'https://nft.fragment.com/gift/swisswatch-13295.large.jpg', baseName: 'Swiss Watch' },
+    { name: 'Bonded Ring', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/bondedring-2281.large.jpg', baseName: 'Bonded Ring' },
+    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://nft.fragment.com/gift/artisanbrick-3829.large.jpg', baseName: 'Artisan Brick' },
+    { name: 'Low Rider', backdrop: 'Black', image: 'https://nft.fragment.com/gift/lowrider-2354.large.jpg', baseName: 'Low Rider' }
 ];
 const LOOT_BOX_100_PRICE = 100;
     
@@ -3539,9 +3555,10 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
         const result = await transaction(async () => {
             const gifts = [];
             for (const catalogItem of LOOT_BOX_100_CATALOG) {
+                const baseName = catalogItem.baseName || catalogItem.name;
                 const gift = await get(
                     'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
-                    [catalogItem.name]
+                    [baseName]
                 );
                 if (!gift) {
                     throw new Error('100 TON catalog is not ready: ' + catalogItem.name);
@@ -3562,6 +3579,18 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                 'GIFT_WON',
                 '🎁 You won ' + selectedGift.name + ' from the 100 TON box!',
                 { giftId: selectedGift.id, box: '100 TON', random: true }
+            );
+
+            const selectedCatalogItem = LOOT_BOX_100_CATALOG[Math.floor(Math.random() * LOOT_BOX_100_CATALOG.length)];
+            const selectedGift = gifts.find(item => item.id === gifts[LOOT_BOX_100_CATALOG.indexOf(selectedCatalogItem)].id) || gifts[0];
+            await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
+
+            const userGift = await addGiftToUser(req.user.id, selectedGift.id);
+            await createNotification(
+                req.user.id,
+                'GIFT_WON',
+                '🎁 You won ' + selectedGift.name + (selectedCatalogItem.backdrop ? ' (' + selectedCatalogItem.backdrop + ')' : '') + ' from the 100 TON box!',
+                { giftId: selectedGift.id, box: '100 TON', random: true, backdrop: selectedCatalogItem.backdrop || null }
             );
 
             const market = getCollectibleMarketValue({
