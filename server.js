@@ -38,29 +38,25 @@ const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPric
 // =========================================================
 const LOOT_BOX_100_CATALOG = [
     { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+    { name: "Durov's Cap", backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
     { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
-    { name: "Durov's Cap", image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
-    { name: 'Precious Peach', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
+    { name: 'Precious Peach', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
     { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+    { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
     { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
+    { name: 'Swiss Watch', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
     { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
+    { name: 'Bonded Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
     { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
-
-    // A small set of Black/Onyx Black variants requested for the 100 TON box.
-    // These use real Telegram collectible instances only as visual variant references;
-    // the underlying game gift remains the same base collectible.
-    { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/plushpepe-1.large.jpg', baseName: 'Plush Pepe' },
-    { name: "Durov's Cap", backdrop: 'Black', image: 'https://nft.fragment.com/gift/durovscap-4675.large.jpg', baseName: "Durov's Cap" },
-    { name: 'Precious Peach', backdrop: 'Black', image: 'https://nft.fragment.com/gift/preciouspeach-1246.large.jpg', baseName: 'Precious Peach' },
-    { name: 'Scared Cat', backdrop: 'Black', image: 'https://nft.fragment.com/gift/scaredcat-3300.large.jpg', baseName: 'Scared Cat' },
-    { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/scaredcat-3300.large.jpg', baseName: 'Scared Cat' },
-    { name: 'Diamond Ring', backdrop: 'Black', image: 'https://nft.fragment.com/gift/diamondring-22815.large.jpg', baseName: 'Diamond Ring' },
-    { name: 'Toy Bear', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/toybear-11506.large.jpg', baseName: 'Toy Bear' },
-    { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://nft.fragment.com/gift/nailbracelet-3746.large.jpg', baseName: 'Nail Bracelet' },
-    { name: 'Swiss Watch', backdrop: 'Black', image: 'https://nft.fragment.com/gift/swisswatch-13295.large.jpg', baseName: 'Swiss Watch' },
-    { name: 'Bonded Ring', backdrop: 'Onyx Black', image: 'https://nft.fragment.com/gift/bondedring-2281.large.jpg', baseName: 'Bonded Ring' },
-    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://nft.fragment.com/gift/artisanbrick-3829.large.jpg', baseName: 'Artisan Brick' },
-    { name: 'Low Rider', backdrop: 'Black', image: 'https://nft.fragment.com/gift/lowrider-2354.large.jpg', baseName: 'Low Rider' }
+    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
+    { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
+    { name: 'Low Rider', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
+    { name: 'Diamond Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
+    { name: 'Toy Bear', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
+    { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', baseName: 'Plush Pepe' },
+    { name: 'Scared Cat', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
+    { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
+    { name: 'Toy Bear', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' }
 ];
 const LOOT_BOX_100_PRICE = 100;
     
