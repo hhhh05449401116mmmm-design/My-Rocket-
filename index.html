@@ -5258,10 +5258,9 @@
                 ", " + endX.toFixed(1) + " " + endY.toFixed(1);
             if(refs.flightPathGlow) refs.flightPathGlow.setAttribute("d",d);
             if(refs.flightPathCore) refs.flightPathCore.setAttribute("d",d);
-            if(refs.flightPathHead && points.length){
-                const head=points[points.length-1];
-                refs.flightPathHead.setAttribute("cx",head[0].toFixed(1));
-                refs.flightPathHead.setAttribute("cy",head[1].toFixed(1));
+            if (refs.flightPathHead) {
+                refs.flightPathHead.setAttribute("cx", endX.toFixed(1));
+                refs.flightPathHead.setAttribute("cy", endY.toFixed(1));
             }
         }
 
