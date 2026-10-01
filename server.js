@@ -31,6 +31,18 @@ const {
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
+const { getBackdropMarketPrice } = require('./lootBoxMarketEngine');
+
+async function get100TonBackdropPriceSafe(item) {
+    try {
+        const client = await ensureTelegramMtprotoClient();
+        return await getBackdropMarketPrice(client, item);
+    } catch (error) {
+        // A temporary MTProto/pricing failure must never break the 100 TON endpoint.
+        console.warn('100 TON backdrop pricing unavailable:', error.message);
+        return null;
+    }
+}
 
 // =========================================================
 // Isolated 100 TON loot-box catalog.
@@ -3518,17 +3530,35 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
 app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     try {
         const cacheStatus = require('./marketPriceEngine').getCacheStatus();
-        const items = LOOT_BOX_100_CATALOG.map((item, catalogIndex) => {
-            const market = getCollectibleMarketValue({ name: item.name, model_name: item.name });
+        const items = await Promise.all(LOOT_BOX_100_CATALOG.map(async (item, catalogIndex) => {
+            // Normal entries use the general collection floor.
+            // Black/Onyx Black entries use the exact Telegram backdrop floor.
+            let marketValueTon = 0;
+            let lastUpdated = null;
+            let source = null;
+
+            if (item.backdrop) {
+                const special = await get100TonBackdropPriceSafe(item);
+                marketValueTon = Number(special?.value || 0);
+                lastUpdated = special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null;
+                source = special?.source || null;
+            } else {
+                const market = getCollectibleMarketValue({ name: item.name });
+                marketValueTon = Number(market?.floorPriceTon || 0);
+                lastUpdated = market?.lastUpdated || null;
+                source = 'general-market-floor';
+            }
+
             return {
                 catalogIndex,
                 name: item.name,
                 backdrop: item.backdrop || null,
                 image: item.image,
-                marketValueTon: Number(market?.floorPriceTon || 0),
-                lastUpdated: market?.lastUpdated || null
+                marketValueTon,
+                lastUpdated,
+                source
             };
-        });
+        }));
 
         const hasAnyPrice = items.some(item => item.marketValueTon > 0);
         const refreshing = !cacheStatus.loaded || cacheStatus.stale;
@@ -3623,11 +3653,14 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                 }
             );
 
-            const market = getCollectibleMarketValue({
-                name: selectedGift.name,
-                base_name: selectedCatalogItem.telegramGiftId || selectedGift.telegram_gift_id,
-                model_name: selectedGift.name
-            });
+            let marketValueTon = 0;
+            if (selectedCatalogItem.backdrop) {
+                const special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                marketValueTon = Number(special?.value || 0);
+            } else {
+                const market = getCollectibleMarketValue({ name: selectedGift.name });
+                marketValueTon = Number(market?.floorPriceTon || 0);
+            }
 
             return {
                 gift: {
@@ -3637,7 +3670,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                     backdrop: selectedCatalogItem.backdrop || null
                 },
                 balance: Number((balance - LOOT_BOX_100_PRICE).toFixed(9)),
-                marketValueTon: Number(market?.floorPriceTon || 0)
+                marketValueTon
             };
         });
 
