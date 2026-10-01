@@ -813,6 +813,84 @@
             color: #ff6b6b;
         }
 
+        /* 100 TON box: collectible preview only.
+           No black image panels/backgrounds are added behind the collectibles. */
+        .loot-box.loot-collectibles-box {
+            background: linear-gradient(145deg, #182b4b, #0e1b31);
+        }
+        .loot-box.loot-collectibles-box .loot-box-inner {
+            justify-content: flex-start;
+            padding: 10px 8px 12px;
+        }
+        .loot-collectibles-preview {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(4, minmax(0, 1fr));
+            gap: 5px 4px;
+            align-items: center;
+            justify-items: center;
+        }
+        .loot-collectible-mini {
+            width: 100%;
+            min-width: 0;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            text-align: center;
+            overflow: hidden;
+        }
+        .loot-collectible-mini img {
+            display: block;
+            width: 54px;
+            height: 54px;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: center;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            filter: drop-shadow(0 5px 7px rgba(0,0,0,.28));
+        }
+        .loot-collectible-mini .loot-collectible-name {
+            width: 100%;
+            color: #f4f7ff;
+            font-size: 8px;
+            line-height: 1.1;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 3px rgba(0,0,0,.45);
+        }
+        .loot-collectible-mini .loot-collectible-value {
+            color: #ffd45c;
+            font-size: 8px;
+            line-height: 1.1;
+            font-weight: 900;
+            direction: ltr;
+            white-space: nowrap;
+            text-shadow: 0 1px 3px rgba(0,0,0,.4);
+        }
+        .loot-box.loot-collectibles-box .loot-price-badge {
+            z-index: 4;
+        }
+        @media(max-width:360px) {
+            .loot-box.loot-collectibles-box .loot-collectible-mini img {
+                width: 48px;
+                height: 48px;
+            }
+            .loot-box.loot-collectibles-box .loot-collectible-mini .loot-collectible-name,
+            .loot-box.loot-collectibles-box .loot-collectible-mini .loot-collectible-value {
+                font-size: 7px;
+            }
+        }
+
         /* Rocket-only mobile performance path.
            These overrides remove expensive blur/shadow animation from the
            active game scene while keeping the game state and visuals intact. */
@@ -3712,7 +3790,24 @@
             { id: 'box_20', name: '20 TON', emoji: '💎', price: 20, badgeType: null, badgeClass: '' },
             { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: null, badgeClass: '' },
             { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: null, badgeClass: '' },
-            { id: 'box_100', name: '100 TON', emoji: '💎', image: '/assets/crazy-rocket-collectibles.webp', price: 100, badgeType: 'vip', badgeClass: 'popular' }
+            { 
+                id: 'box_100', 
+                name: '100 TON', 
+                emoji: '💎', 
+                price: 100, 
+                badgeType: 'vip', 
+                badgeClass: 'popular',
+                collectibles: [
+                    { name: 'Plush Pepe', value: '5,999 TON', image: 'https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Cozy%20Galaxy.png' },
+                    { name: 'Heart Locket', value: '1,330 TON', image: 'https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Royal%20Heart.png' },
+                    { name: "Durov's Cap", value: '433 TON', image: "https://cdn.changes.tg/gifts/models/Durov%27s%20Cap/png/Sunrise.png" },
+                    { name: 'Precious Peach', value: '252 TON', image: 'https://cdn.changes.tg/gifts/models/Precious%20Peach/png/Original.png' },
+                    { name: 'Scared Cat', value: '243 TON', image: 'https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png' },
+                    { name: 'Heroic Helmet', value: '187 TON', image: 'https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Ancient%20Gold.png' },
+                    { name: 'Loot Bag', value: '123 TON', image: 'https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png' },
+                    { name: 'Astral Shard', value: '118 TON', image: 'https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png' }
+                ]
+            }
         ];
 
         function renderLootBoxes() {
@@ -3723,7 +3818,7 @@
 
             LOOT_BOXES.forEach(function(box) {
                 const div = document.createElement('div');
-                div.className = 'loot-box ' + (box.price === 0 ? 'free' : '');
+                div.className = 'loot-box ' + (box.price === 0 ? 'free' : '') + (box.collectibles ? ' loot-collectibles-box' : '');
                 div.dataset.boxId = box.id;
                 div.onclick = function() { openLootBox(box); };
 
@@ -3732,13 +3827,33 @@
                 const badgeLabels = { free: t.freeLabel, special: '⭐ ' + t.free24Label || 'FREE24', vip: '🔥 VIP', rare: '⭐ ' + t.rareLabel };
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
+                const collectiblesHtml = Array.isArray(box.collectibles)
+                    ? `
+                        <div class="loot-collectibles-preview">
+                            ${box.collectibles.map(function(item) {
+                                return `
+                                    <div class="loot-collectible-mini">
+                                        <img src="${escapeHtmlAttribute(item.image)}" alt="${escapeHtmlAttribute(item.name)}" loading="lazy" decoding="async">
+                                        <span class="loot-collectible-name">${escapeHtml(item.name)}</span>
+                                        <span class="loot-collectible-value">${escapeHtml(item.value)}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `
+                    : (box.image
+                        ? `<img class="loot-image" src="${box.image}" alt="${nameText}" loading="lazy">`
+                        : `<span class="loot-emoji">${box.emoji}</span>`);
+
                 div.innerHTML = `
                     <div class="loot-box-inner">
-                        <div class="loot-box-header">
-                            <span class="loot-name">${nameText}</span>
-                            ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
-                        </div>
-                        ${box.image ? `<img class="loot-image" src="${box.image}" alt="${nameText}" loading="lazy">` : `<span class="loot-emoji">${box.emoji}</span>`}
+                        ${box.collectibles ? '' : `
+                            <div class="loot-box-header">
+                                <span class="loot-name">${nameText}</span>
+                                ${badgeText ? `<span class="loot-badge ${box.badgeClass}">${badgeText}</span>` : ''}
+                            </div>
+                        `}
+                        ${collectiblesHtml}
                         <span class="loot-price-badge">${priceDisplay}</span>
                     </div>
                 `;
