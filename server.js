@@ -3701,10 +3701,12 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
             let marketValueTon = 0;
             if (selectedCatalogItem.backdrop) {
-                const special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                let special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                if (!special?.value) special = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(special?.value || 0);
             } else {
-                const market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                let market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                if (!market?.value) market = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(market?.value || 0);
             }
 
