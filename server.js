@@ -48,15 +48,15 @@ const LOOT_BOX_100_CATALOG = [
     { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
     { name: 'Bonded Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
     { name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
+    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
+    { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
     { name: 'Low Rider', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
     { name: 'Diamond Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
     { name: 'Toy Bear', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
-    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
-    { name: 'Scared Cat', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
     { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', baseName: 'Plush Pepe' },
+    { name: 'Scared Cat', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
     { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
-    { name: 'Toy Bear', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' },
-    { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' }
+    { name: 'Toy Bear', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' }
 ];
 const LOOT_BOX_100_PRICE = 100;
     
