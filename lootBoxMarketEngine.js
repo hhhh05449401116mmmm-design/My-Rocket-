@@ -18,7 +18,13 @@ let marketCacheAt = 0;
 let refreshInFlight = null;
 
 function normalize(value) {
-    return String(value || '').trim().toLowerCase();
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[’']/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function isSpecialBackdrop(backdrop) {
@@ -185,9 +191,11 @@ async function getBackdropMarketPrice(item) {
 }
 
 function getCacheStatus() {
+    const ageMs = marketCache ? Date.now() - marketCacheAt : null;
     return {
         loaded: Boolean(marketCache),
-        ageMs: marketCache ? Date.now() - marketCacheAt : null,
+        ageMs,
+        stale: !marketCache || ageMs >= CACHE_TTL_MS,
         collectionEntries: marketCache?.collections?.size || 0,
         backdropEntries: marketCache?.backdrops?.size || 0
     };
@@ -196,5 +204,6 @@ function getCacheStatus() {
 module.exports = {
     getGeneralMarketPrice,
     getBackdropMarketPrice,
+    refreshMarketCache,
     getCacheStatus
 };

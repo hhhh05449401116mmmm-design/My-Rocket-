@@ -31,7 +31,12 @@ const {
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
-const { getGeneralMarketPrice, getBackdropMarketPrice } = require('./lootBoxMarketEngine');
+const {
+    getGeneralMarketPrice,
+    getBackdropMarketPrice,
+    refreshMarketCache: refresh100TonMarketCache,
+    getCacheStatus: get100TonMarketCacheStatus
+} = require('./lootBoxMarketEngine');
 
 async function get100TonBackdropPriceSafe(item) {
     try {
@@ -52,9 +57,10 @@ async function get100TonGeneralMarketPriceSafe(item) {
 }
 
 function get100TonCatalogSlug(item) {
-    if (item?.slug) return String(item.slug);
-    const match = String(item?.image || '').match(/gift-art\/([^/]+)\/thumb\.webp/i);
-    return match ? match[1] : null;
+    // Only use an explicitly verified Telegram collectible slug.
+    // Image paths such as gift-art/plushpepe are collection asset slugs,
+    // not valid unique Star Gift slugs for payments.getUniqueStarGift.
+    return item?.slug ? String(item.slug) : null;
 }
 
 async function get100TonTelegramMarketPriceSafe(item) {
@@ -3568,7 +3574,7 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
 // ===== Isolated 100 TON Telegram Collectibles box =====
 app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     try {
-        const cacheStatus = require('./marketPriceEngine').getCacheStatus();
+        let cacheStatus = get100TonMarketCacheStatus();
         const items = await Promise.all(LOOT_BOX_100_CATALOG.map(async (item, catalogIndex) => {
             // Normal entries use the general collection floor.
             // Black/Onyx Black entries use the exact Telegram backdrop floor.
@@ -3604,10 +3610,9 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
         const hasAnyPrice = items.some(item => item.marketValueTon > 0);
         const refreshing = !cacheStatus.loaded || cacheStatus.stale;
         if (refreshing) {
-            // Never await the external market catalog on the request path.
-            // The Crash/game loop remains completely independent of this fetch.
-            refreshMarketPrices().catch(error => console.warn('100 TON market refresh failed:', error.message));
+            refresh100TonMarketCache().catch(error => console.warn('100 TON market refresh failed:', error.message));
         }
+        cacheStatus = get100TonMarketCacheStatus();
 
         res.json({
             ok: true,
@@ -3696,10 +3701,12 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
             let marketValueTon = 0;
             if (selectedCatalogItem.backdrop) {
-                const special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                let special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                if (!special?.value) special = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(special?.value || 0);
             } else {
-                const market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                let market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                if (!market?.value) market = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(market?.value || 0);
             }
 
