@@ -3953,6 +3953,7 @@
             if (priceNote) priceNote.textContent = box.price + ' TON';
             if (playButton) {
                 playButton.disabled = false;
+                playButton.onclick = null;
                 playButton.textContent = box.id === 'box_100'
                     ? (currentLanguage === 'ar' ? '🎲 Random' : '🎲 Random')
                     : (currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play');
