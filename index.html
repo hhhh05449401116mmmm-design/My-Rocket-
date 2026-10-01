@@ -3810,15 +3810,15 @@
                     { name: 'Loot Bag', marketKey: 'Loot Bag', value: '— TON', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
                     { name: 'Bonded Ring', marketKey: 'Bonded Ring', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp' },
                     { name: 'Astral Shard', marketKey: 'Astral Shard', value: '— TON', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
+                    { name: 'Artisan Brick', marketKey: 'Artisan Brick', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp' },
+                    { name: "Durov's Cap", marketKey: "Durov's Cap", value: '— TON', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
                     { name: 'Low Rider', marketKey: 'Low Rider', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp' },
                     { name: 'Diamond Ring', marketKey: 'Diamond Ring', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp' },
                     { name: 'Toy Bear', marketKey: 'Toy Bear', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' },
-                    { name: 'Artisan Brick', marketKey: 'Artisan Brick', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp' },
-                    { name: 'Scared Cat', marketKey: 'Scared Cat', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
                     { name: 'Plush Pepe', marketKey: 'Plush Pepe', backdrop: 'Onyx Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+                    { name: 'Scared Cat', marketKey: 'Scared Cat', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
                     { name: 'Scared Cat', marketKey: 'Scared Cat', backdrop: 'Onyx Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
-                    { name: 'Toy Bear', marketKey: 'Toy Bear', value: '— TON', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' },
-                    { name: "Durov's Cap", marketKey: "Durov's Cap", value: '— TON', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' }
+                    { name: 'Toy Bear', marketKey: 'Toy Bear', value: '— TON', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' }
                 ]
             }
         ];
@@ -3980,6 +3980,7 @@
 
             if (priceNote) priceNote.textContent = box.price + ' TON';
             if (playButton) {
+                playButton.style.display = box.id === 'box_100' ? 'none' : '';
                 playButton.disabled = false;
                 playButton.onclick = null;
                 playButton.textContent = box.id === 'box_100'
