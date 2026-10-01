@@ -1,22 +1,21 @@
 // =========================================================
 // lootBoxMarketEngine.js
-// Isolated backdrop-aware pricing for the 100 TON Telegram Collectibles box.
-// Normal gifts continue to use the existing general market engine.
-// Black/Onyx Black variants use Telegram's current resale floor filtered
-// by the exact backdrop attribute.
+// Isolated live market pricing for the 100 TON Telegram
+// Collectibles box. This module does not modify Crash, rounds,
+// betting, cashout, deposits, withdrawals, or game state.
 // =========================================================
 
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const MAX_PAGES = 8;
-const PAGE_SIZE = 100;
+const https = require('https');
 
-const priceCache = new Map();
-let giftTypeCache = null;
-let giftTypeCacheAt = 0;
-const GIFT_TYPE_CACHE_TTL_MS = 30 * 60 * 1000;
-const backdropIdCache = new Map();
-const priceInFlight = new Map();
-let giftTypeInFlight = null;
+const PRICE_LIST_URL = 'https://giftasset.gifts/api/v1/gifts/get_gifts_price_list';
+const BACKDROP_FLOOR_URL = 'https://giftasset.gifts/api/v1/gifts/get_gifts_backdrops_floor?v2=true';
+
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 10000;
+
+let marketCache = null;
+let marketCacheAt = 0;
+let refreshInFlight = null;
 
 function normalize(value) {
     return String(value || '').trim().toLowerCase();
@@ -27,174 +26,175 @@ function isSpecialBackdrop(backdrop) {
     return value === 'black' || value === 'onyx black';
 }
 
-function findTonAmount(amounts) {
-    for (const amount of (Array.isArray(amounts) ? amounts : [])) {
-        const className = String(
-            amount?.className ||
-            amount?.constructor?.className ||
-            amount?.constructor?.name ||
-            amount?._ ||
-            ''
-        ).toLowerCase();
+function fetchJson(url) {
+    return new Promise((resolve, reject) => {
+        const request = https.get(url, {
+            headers: {
+                Accept: 'application/json',
+                'User-Agent': 'CrazyRocket-100TON-Market/2.0'
+            }
+        }, response => {
+            let body = '';
+            response.setEncoding('utf8');
 
-        if (!className.includes('starstonamount')) continue;
+            response.on('data', chunk => {
+                body += chunk;
+                if (body.length > 5 * 1024 * 1024) {
+                    request.destroy(new Error('GiftAsset response too large'));
+                }
+            });
 
-        const nanograms = Number(amount?.amount);
-        if (Number.isFinite(nanograms) && nanograms > 0) return nanograms / 1e9;
-    }
-    return null;
-}
+            response.on('end', () => {
+                if (response.statusCode < 200 || response.statusCode >= 300) {
+                    reject(new Error('GiftAsset HTTP ' + response.statusCode));
+                    return;
+                }
 
-function giftTitleMatches(gift, name) {
-    const target = normalize(name);
-    return normalize(gift?.title) === target;
-}
-
-async function getGiftTypes(client) {
-    if (giftTypeCache && Date.now() - giftTypeCacheAt < GIFT_TYPE_CACHE_TTL_MS) {
-        return giftTypeCache;
-    }
-    if (giftTypeInFlight) return giftTypeInFlight;
-
-    giftTypeInFlight = client.api.payments.getStarGifts({ hash: 0 })
-        .then(result => {
-            const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
-            giftTypeCache = gifts.filter(gift => gift?.id && gift?.title);
-            giftTypeCacheAt = Date.now();
-            return giftTypeCache;
-        })
-        .finally(() => {
-            giftTypeInFlight = null;
+                try {
+                    resolve(JSON.parse(body));
+                } catch (error) {
+                    reject(error);
+                }
+            });
         });
 
-    return giftTypeInFlight;
-}
-
-async function resolveGiftId(client, name) {
-    const gifts = await getGiftTypes(client);
-    const match = gifts.find(gift => giftTitleMatches(gift, name));
-    return match?.id ? String(match.id) : null;
-}
-
-async function resolveBackdropId(client, giftId, backdropName) {
-    const key = String(giftId) + '|' + normalize(backdropName);
-    const cached = backdropIdCache.get(key);
-    if (cached) return cached;
-
-    const result = await client.api.payments.getStarGiftUpgradeAttributes({
-        giftId: BigInt(String(giftId))
-    });
-    const attributes = Array.isArray(result?.attributes) ? result.attributes : [];
-
-    const backdrop = attributes.find(attribute => {
-        const className = String(
-            attribute?.className ||
-            attribute?.constructor?.className ||
-            attribute?.constructor?.name ||
-            attribute?._ ||
-            ''
-        ).toLowerCase();
-
-        return className.includes('backdrop') &&
-            normalize(attribute?.name) === normalize(backdropName);
-    });
-
-    const backdropId = Number(backdrop?.backdropId ?? backdrop?.backdrop_id);
-    if (!Number.isInteger(backdropId) || backdropId <= 0) return null;
-
-    backdropIdCache.set(key, backdropId);
-    return backdropId;
-}
-
-async function fetchTonFloor(client, giftId, backdropId = null) {
-    let offset = '';
-    let best = null;
-
-    for (let page = 0; page < MAX_PAGES; page += 1) {
-        const attributes = backdropId
-            ? [{ className: 'StarGiftAttributeIdBackdrop', backdropId }]
-            : undefined;
-
-        const result = await client.api.payments.getResaleStarGifts({
-            giftId: BigInt(String(giftId)),
-            sortByPrice: true,
-            starsOnly: false,
-            ...(attributes ? { attributes } : {}),
-            offset,
-            limit: PAGE_SIZE
+        request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+            request.destroy(new Error('GiftAsset request timeout'));
         });
+        request.on('error', reject);
+    });
+}
 
-        const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
-        for (const gift of gifts) {
-            const amount = findTonAmount(gift?.resellAmount || gift?.resell_amount);
-            if (amount != null && (best == null || amount < best)) best = amount;
+function toPositiveNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function minProviderFloor(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+
+    const values = Object.entries(entry)
+        .filter(([key]) => key !== 'last_update')
+        .map(([, value]) => toPositiveNumber(value))
+        .filter(value => value != null);
+
+    return values.length ? Math.min(...values) : null;
+}
+
+function buildCollectionIndex(payload) {
+    const index = new Map();
+    const collections = payload?.collection_floors;
+
+    if (!collections || typeof collections !== 'object') return index;
+
+    for (const [name, entry] of Object.entries(collections)) {
+        const floor = minProviderFloor(entry);
+        if (floor != null) {
+            index.set(normalize(name), {
+                value: Number(floor.toFixed(9)),
+                source: 'giftasset-general-floor',
+                lastUpdated: entry.last_update || null
+            });
         }
-
-        const nextOffset = String(result?.nextOffset || result?.next_offset || '');
-        if (!nextOffset || !gifts.length) break;
-        offset = nextOffset;
     }
 
-    return best;
+    return index;
 }
 
-async function getBackdropMarketPrice(client, item) {
+function buildBackdropIndex(payload) {
+    const index = new Map();
+
+    if (!payload || typeof payload !== 'object') return index;
+
+    for (const [collectionName, backdrops] of Object.entries(payload)) {
+        if (!backdrops || typeof backdrops !== 'object') continue;
+
+        const collectionKey = normalize(collectionName);
+        for (const [backdropName, price] of Object.entries(backdrops)) {
+            const value = toPositiveNumber(price);
+            if (value == null) continue;
+
+            index.set(collectionKey + '|' + normalize(backdropName), {
+                value: Number(value.toFixed(9)),
+                source: 'giftasset-backdrop-floor',
+                lastUpdated: null
+            });
+        }
+    }
+
+    return index;
+}
+
+async function refreshMarketCache() {
+    if (refreshInFlight) return refreshInFlight;
+
+    refreshInFlight = Promise.all([
+        fetchJson(PRICE_LIST_URL),
+        fetchJson(BACKDROP_FLOOR_URL)
+    ]).then(([priceList, backdropFloors]) => {
+        marketCache = {
+            collections: buildCollectionIndex(priceList),
+            backdrops: buildBackdropIndex(backdropFloors),
+            fetchedAt: Date.now()
+        };
+        marketCacheAt = Date.now();
+        return marketCache;
+    }).finally(() => {
+        refreshInFlight = null;
+    });
+
+    return refreshInFlight;
+}
+
+async function ensureMarketCache() {
+    if (marketCache && Date.now() - marketCacheAt < CACHE_TTL_MS) {
+        return marketCache;
+    }
+
+    return refreshMarketCache();
+}
+
+async function getGeneralMarketPrice(item) {
+    const name = item?.baseName || item?.name;
+    if (!name) return null;
+
+    try {
+        const cache = await ensureMarketCache();
+        const result = cache.collections.get(normalize(name));
+        return result ? { ...result, fetchedAt: cache.fetchedAt } : null;
+    } catch (error) {
+        console.warn('100 TON general market lookup failed:', error.message);
+        return null;
+    }
+}
+
+async function getBackdropMarketPrice(item) {
     const name = item?.baseName || item?.name;
     const backdrop = item?.backdrop || null;
 
-    if (!client || !name || !isSpecialBackdrop(backdrop)) return null;
+    if (!name || !isSpecialBackdrop(backdrop)) return null;
 
-    const key = normalize(name) + '|' + normalize(backdrop);
-    const cached = priceCache.get(key);
-    if (cached && cached.expiresAt > Date.now()) return cached.value;
-
-    if (priceInFlight.has(key)) return priceInFlight.get(key);
-
-    const request = (async () => {
-        try {
-            const giftId = await resolveGiftId(client, name);
-            if (!giftId) throw new Error('Telegram gift type not found');
-
-            const backdropId = await resolveBackdropId(client, giftId, backdrop);
-            if (!backdropId) throw new Error('Telegram backdrop not found');
-
-            const floor = await fetchTonFloor(client, giftId, backdropId);
-            if (!Number.isFinite(floor) || floor <= 0) {
-                throw new Error('No TON listings found for this backdrop');
-            }
-
-            const value = {
-                value: Number(floor.toFixed(9)),
-                currency: 'TON',
-                source: 'telegram-live-backdrop-floor',
-                fetchedAt: Date.now()
-            };
-            priceCache.set(key, {
-                value,
-                expiresAt: Date.now() + CACHE_TTL_MS
-            });
-            return value;
-        } catch (error) {
-            console.warn('100 TON backdrop price lookup failed:', name, backdrop, error.message);
-            return null;
-        } finally {
-            priceInFlight.delete(key);
-        }
-    })();
-
-    priceInFlight.set(key, request);
-    return request;
+    try {
+        const cache = await ensureMarketCache();
+        const result = cache.backdrops.get(normalize(name) + '|' + normalize(backdrop));
+        return result ? { ...result, fetchedAt: cache.fetchedAt } : null;
+    } catch (error) {
+        console.warn('100 TON backdrop market lookup failed:', name, backdrop, error.message);
+        return null;
+    }
 }
 
 function getCacheStatus() {
-    let fresh = 0;
-    for (const entry of priceCache.values()) {
-        if (entry.expiresAt > Date.now()) fresh += 1;
-    }
-    return { entries: priceCache.size, fresh };
+    return {
+        loaded: Boolean(marketCache),
+        ageMs: marketCache ? Date.now() - marketCacheAt : null,
+        collectionEntries: marketCache?.collections?.size || 0,
+        backdropEntries: marketCache?.backdrops?.size || 0
+    };
 }
 
 module.exports = {
+    getGeneralMarketPrice,
     getBackdropMarketPrice,
     getCacheStatus
 };

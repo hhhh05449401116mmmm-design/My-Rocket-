@@ -31,19 +31,25 @@ const {
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
 const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
-const { getBackdropMarketPrice } = require('./lootBoxMarketEngine');
+const { getGeneralMarketPrice, getBackdropMarketPrice } = require('./lootBoxMarketEngine');
 
 async function get100TonBackdropPriceSafe(item) {
     try {
-        const client = await ensureTelegramMtprotoClient();
-        return await getBackdropMarketPrice(client, item);
+        return await getBackdropMarketPrice(item);
     } catch (error) {
-        // A temporary MTProto/pricing failure must never break the 100 TON endpoint.
         console.warn('100 TON backdrop pricing unavailable:', error.message);
         return null;
     }
 }
 
+async function get100TonGeneralMarketPriceSafe(item) {
+    try {
+        return await getGeneralMarketPrice(item);
+    } catch (error) {
+        console.warn('100 TON general pricing unavailable:', error.message);
+        return null;
+    }
+}
 // =========================================================
 // Isolated 100 TON loot-box catalog.
 // This path is intentionally independent from the Crash/round engine.
@@ -3543,8 +3549,8 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
                 lastUpdated = special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null;
                 source = special?.source || null;
             } else {
-                const market = getCollectibleMarketValue({ name: item.name });
-                marketValueTon = Number(market?.floorPriceTon || 0);
+                const market = await get100TonGeneralMarketPriceSafe(item);
+                marketValueTon = Number(market?.value || 0);
                 lastUpdated = market?.lastUpdated || null;
                 source = 'general-market-floor';
             }
@@ -3658,8 +3664,8 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                 const special = await get100TonBackdropPriceSafe(selectedCatalogItem);
                 marketValueTon = Number(special?.value || 0);
             } else {
-                const market = getCollectibleMarketValue({ name: selectedGift.name });
-                marketValueTon = Number(market?.floorPriceTon || 0);
+                const market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                marketValueTon = Number(market?.value || 0);
             }
 
             return {
