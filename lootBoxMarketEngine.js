@@ -15,6 +15,8 @@ let giftTypeCache = null;
 let giftTypeCacheAt = 0;
 const GIFT_TYPE_CACHE_TTL_MS = 30 * 60 * 1000;
 const backdropIdCache = new Map();
+const priceInFlight = new Map();
+let giftTypeInFlight = null;
 
 function normalize(value) {
     return String(value || '').trim().toLowerCase();
@@ -52,12 +54,20 @@ async function getGiftTypes(client) {
     if (giftTypeCache && Date.now() - giftTypeCacheAt < GIFT_TYPE_CACHE_TTL_MS) {
         return giftTypeCache;
     }
+    if (giftTypeInFlight) return giftTypeInFlight;
 
-    const result = await client.api.payments.getStarGifts({ hash: 0 });
-    const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
-    giftTypeCache = gifts.filter(gift => gift?.id && gift?.title);
-    giftTypeCacheAt = Date.now();
-    return giftTypeCache;
+    giftTypeInFlight = client.api.payments.getStarGifts({ hash: 0 })
+        .then(result => {
+            const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
+            giftTypeCache = gifts.filter(gift => gift?.id && gift?.title);
+            giftTypeCacheAt = Date.now();
+            return giftTypeCache;
+        })
+        .finally(() => {
+            giftTypeInFlight = null;
+        });
+
+    return giftTypeInFlight;
 }
 
 async function resolveGiftId(client, name) {
@@ -138,34 +148,43 @@ async function getBackdropMarketPrice(client, item) {
     const cached = priceCache.get(key);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-    try {
-        const giftId = await resolveGiftId(client, name);
-        if (!giftId) throw new Error('Telegram gift type not found');
+    if (priceInFlight.has(key)) return priceInFlight.get(key);
 
-        const backdropId = await resolveBackdropId(client, giftId, backdrop);
-        if (!backdropId) throw new Error('Telegram backdrop not found');
+    const request = (async () => {
+        try {
+            const giftId = await resolveGiftId(client, name);
+            if (!giftId) throw new Error('Telegram gift type not found');
 
-        const floor = await fetchTonFloor(client, giftId, backdropId);
-        if (!Number.isFinite(floor) || floor <= 0) {
-            throw new Error('No TON listings found for this backdrop');
+            const backdropId = await resolveBackdropId(client, giftId, backdrop);
+            if (!backdropId) throw new Error('Telegram backdrop not found');
+
+            const floor = await fetchTonFloor(client, giftId, backdropId);
+            if (!Number.isFinite(floor) || floor <= 0) {
+                throw new Error('No TON listings found for this backdrop');
+            }
+
+            const value = {
+                value: Number(floor.toFixed(9)),
+                currency: 'TON',
+                source: 'telegram-live-backdrop-floor',
+                fetchedAt: Date.now()
+            };
+            priceCache.set(key, {
+                value,
+                expiresAt: Date.now() + CACHE_TTL_MS
+            });
+            return value;
+        } catch (error) {
+            // A pricing outage must never make the loot-box endpoint fail.
+            console.warn('100 TON backdrop price lookup failed:', name, backdrop, error.message);
+            return null;
+        } finally {
+            priceInFlight.delete(key);
         }
+    })();
 
-        const value = {
-            value: Number(floor.toFixed(9)),
-            currency: 'TON',
-            source: 'telegram-live-backdrop-floor',
-            fetchedAt: Date.now()
-        };
-        priceCache.set(key, {
-            value,
-            expiresAt: Date.now() + CACHE_TTL_MS
-        });
-        return value;
-    } catch (error) {
-        // Pricing must never make the loot-box request fail.
-        console.warn('100 TON backdrop price lookup failed:', name, backdrop, error.message);
-        return null;
-    }
+    priceInFlight.set(key, request);
+    return request;
 }
 
 function getCacheStatus() {
