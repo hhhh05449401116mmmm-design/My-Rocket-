@@ -3560,6 +3560,24 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                     'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
                     [baseName]
                 );
+                let gift = await get(
+                    'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                    [baseName]
+                );
+                if (!gift && ['Rare Bird', 'Westside Sign'].includes(baseName)) {
+                    const slug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    const telegramGiftId = slug;
+                    await run(
+                        `INSERT OR IGNORE INTO gifts
+                            (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [telegramGiftId, baseName, slug, '🎁', catalogItem.image, 'Telegram Collectibles', 'rare', 0, 0]
+                    );
+                    gift = await get(
+                        'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                        [baseName]
+                    );
+                }
                 if (!gift) {
                     throw new Error('100 TON catalog is not ready: ' + baseName);
                 }
