@@ -842,10 +842,28 @@
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
         .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-        .loot-box-collectible { min-width:0; padding:8px 7px 9px; border-radius:10px; background:#202023; border:1px solid rgba(255,255,255,.07); text-align:center; }
-        .loot-box-collectible img { width:86px; height:86px; display:block; margin:0 auto 3px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; filter:drop-shadow(0 5px 8px rgba(0,0,0,.35)); }
-        .loot-box-collectible-name { display:block; color:#f3f3f5; font-size:10px; line-height:1.2; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .loot-box-collectible-value { display:block; color:#f5c34b; font-size:9px; line-height:1.2; font-weight:900; direction:ltr; margin-top:3px; }
+        .loot-box-collectible {
+            position:relative; min-width:0; padding:8px 7px 9px; border-radius:10px; background:#202023;
+            border:1px solid rgba(255,255,255,.07); text-align:center; overflow:hidden;
+        }
+        .loot-box-collectible::before {
+            content:""; position:absolute; inset:7px; border:2px solid #d5a82d; border-radius:10px;
+            pointer-events:none; opacity:.95;
+        }
+        .loot-box-collectible img {
+            width:86px; height:86px; display:block; margin:0 auto 5px; object-fit:contain;
+            background:transparent !important; border:0 !important; box-shadow:none !important;
+            filter:drop-shadow(0 5px 8px rgba(0,0,0,.35)); position:relative; z-index:1;
+        }
+        .loot-box-collectible-name {
+            display:block; color:#f3f3f5; font-size:10px; line-height:1.2; font-weight:900;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:relative; z-index:1;
+        }
+        .loot-box-collectible-value {
+            position:absolute; top:8px; right:8px; z-index:2; min-width:62px; padding:5px 7px;
+            border-radius:7px; background:#101010; color:#fff; font-size:10px; line-height:1;
+            font-weight:900; direction:ltr; box-shadow:0 2px 7px rgba(0,0,0,.4);
+        }
         .loot-box-play-button { width:100%; height:48px; margin-top:12px; border:0; border-radius:12px; background:linear-gradient(135deg,#6d43ff,#8f5cff); color:#fff; font-size:15px; font-weight:900; box-shadow:0 7px 20px rgba(115,73,255,.25); }
         .loot-box-price-note { text-align:center; color:#8f8f96; font-size:10px; margin-top:7px; }
         @media(max-width:360px) {
@@ -3773,24 +3791,23 @@
             { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: null, badgeClass: '' },
             { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: null, badgeClass: '' },
             { 
-                id: 'box_100', 
-                name: '100 TON', 
-                emoji: '💎', 
-                price: 100, 
-                badgeType: 'vip', 
+                id: 'box_100',
+                name: '100 TON',
+                emoji: '💎',
+                price: 100,
+                badgeType: 'vip',
                 badgeClass: 'popular',
                 collectibles: [
-                    { name: 'Plush Pepe', value: '6,166 ⭐', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
-                    { name: 'Heart Locket', value: '1,379 ⭐', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
-                    { name: "Durov's Cap", value: '435 ⭐', image: "https://tg.me/api/media/gift-art/durovscap/thumb.webp" },
-                    { name: 'Precious Peach', value: '260 ⭐', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
-                    { name: 'Scared Cat', value: '285 ⭐', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
-                    { name: 'Heroic Helmet', value: '148 ⭐', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
-                    { name: 'Loot Bag', value: '124 ⭐', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-                    { name: 'Astral Shard', value: '72 ⭐', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
+                    { id: 'plush-pepe', name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'heart-locket', name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'durovs-cap', name: "Durov's Cap", image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'precious-peach', name: 'Precious Peach', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'scared-cat', name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'heroic-helmet', name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'loot-bag', name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp', marketValueTon: null, random: true },
+                    { id: 'astral-shard', name: 'Astral Shard', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp', marketValueTon: null, random: true }
                 ]
-            }
-        ];
+                    ];
 
         function renderLootBoxes() {
             const grid = document.getElementById('loot-grid');
@@ -3832,15 +3849,9 @@
 
         let selectedLootBox = null;
 
-        function openLootBox(box) {
-            if (box.id === 'free') {
-                openFreeGift();
-                return;
-            }
-            if (box.id === 'free24') {
-                openDailyReward();
-                return;
-            }
+        async function openLootBox(box) {
+            if (box.id === 'free') { openFreeGift(); return; }
+            if (box.id === 'free24') { openDailyReward(); return; }
 
             selectedLootBox = box;
             const modal = document.getElementById('loot-box-modal');
@@ -3850,35 +3861,49 @@
             const collections = document.getElementById('loot-box-collections');
             const priceNote = document.getElementById('loot-box-price-note');
             const playButton = document.getElementById('loot-box-play-button');
-
             if (!modal || !title || !strip || !collections) return;
 
             title.textContent = box.name || 'Epic Gift';
-            subtitle.textContent = Array.isArray(box.collectibles) && box.collectibles.length
-                ? 'Collections in this Box'
-                : 'محتويات الصندوق';
-
+            subtitle.textContent = 'Random';
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+
             strip.innerHTML = items.map(function(item) {
-                return '<div class="loot-box-modal-strip-item">' +
-                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
-                '</div>';
+                return '<div class="loot-box-modal-strip-item"><img src="' + escapeHtmlAttribute(item.image) +
+                    '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async"></div>';
             }).join('');
 
-            collections.innerHTML = items.length
-                ? items.map(function(item) {
-                    return '<div class="loot-box-collectible">' +
-                        '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
-                        '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
-                        '<span class="loot-box-collectible-value">' + escapeHtml(item.value) + '</span>' +
-                    '</div>';
-                }).join('')
-                : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+            collections.innerHTML = items.length ? items.map(function(item) {
+                return '<div class="loot-box-collectible">' +
+                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                    '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                    '<span class="loot-box-collectible-value" data-collectible-id="' + escapeHtmlAttribute(item.id || '') + '">— TON</span>' +
+                '</div>';
+            }).join('') : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">لا توجد مقتنيات</div>';
 
             if (priceNote) priceNote.textContent = box.price + ' TON';
-            if (playButton) playButton.textContent = currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play';
-
+            if (playButton) playButton.textContent = currentLanguage === 'ar' ? '🎮 لعب — Random' : '🎮 Play — Random';
             modal.classList.add('show');
+
+            if (box.id === 'box_100') {
+                try {
+                    const response = await fetch(BACKEND_URL + '/api/loot-box/100/collectibles', {
+                        headers: getAuthHeaders(), cache: 'no-store'
+                    });
+                    const data = await response.json().catch(function() { return {}; });
+                    if (response.ok && data.ok && Array.isArray(data.items)) {
+                        data.items.forEach(function(item) {
+                            const node = collections.querySelector('[data-collectible-id="' + item.id + '"]');
+                            if (!node) return;
+                            const ton = Number(item.marketValueTon);
+                            node.textContent = Number.isFinite(ton) && ton > 0
+                                ? ton.toFixed(3).replace(/\.000$/, '') + ' TON'
+                                : '— TON';
+                        });
+                    }
+                } catch (error) {
+                    console.warn('Loot box market values unavailable:', error);
+                }
+            }
         }
 
         function playSelectedLootBox() {
