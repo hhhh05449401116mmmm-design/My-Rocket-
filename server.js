@@ -39,10 +39,12 @@ const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPric
 const LOOT_BOX_100_CATALOG = [
     { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
     { name: "Durov's Cap", backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
+    { name: 'Rare Bird', image: 'https://tg.me/api/media/gift-art/rarebird/thumb.webp' },
     { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
     { name: 'Precious Peach', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
     { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
     { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
+    { name: 'Westside Sign', image: 'https://tg.me/api/media/gift-art/westsidesign/thumb.webp' },
     { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
     { name: 'Swiss Watch', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
     { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
@@ -3558,6 +3560,24 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                     'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
                     [baseName]
                 );
+                let gift = await get(
+                    'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                    [baseName]
+                );
+                if (!gift && ['Rare Bird', 'Westside Sign'].includes(baseName)) {
+                    const slug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    const telegramGiftId = slug;
+                    await run(
+                        `INSERT OR IGNORE INTO gifts
+                            (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [telegramGiftId, baseName, slug, '🎁', catalogItem.image, 'Telegram Collectibles', 'rare', 0, 0]
+                    );
+                    gift = await get(
+                        'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                        [baseName]
+                    );
+                }
                 if (!gift) {
                     throw new Error('100 TON catalog is not ready: ' + baseName);
                 }
