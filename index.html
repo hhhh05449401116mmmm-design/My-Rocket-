@@ -849,6 +849,8 @@
         .loot-box-collectible-random { display:inline-flex; align-items:center; justify-content:center; min-width:80px; height:32px; padding:0 12px; border-radius:9px; background:#3a3549; border:1px solid rgba(143,104,255,.65); color:#9b7cff; font-size:12.5px; line-height:1; font-weight:900; }
         .loot-box-collectible.gold-frame { border:0; background:#2b2b2d; box-shadow:none; }
         .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
+        .loot-box-collectible.black-backdrop img { background:#0a0a0b !important; }
+        .loot-box-collectible .black-variant-label { background:#171719; border-color:rgba(35,35,38,.95); color:#9a9aa1; box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); }
         .loot-box-market-status { display:block; color:#8f8f96; font-size:8px; line-height:1.2; margin-top:4px; }
         @media(max-width:420px) {
             .loot-box-collections { gap:12px 8px; }
@@ -3804,7 +3806,20 @@
                     { name: 'Scared Cat', marketKey: 'Scared Cat', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
                     { name: 'Heroic Helmet', marketKey: 'Heroic Helmet', value: '— TON', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
                     { name: 'Loot Bag', marketKey: 'Loot Bag', value: '— TON', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-                    { name: 'Astral Shard', marketKey: 'Astral Shard', value: '— TON', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' }
+                    { name: 'Astral Shard', marketKey: 'Astral Shard', value: '— TON', image: 'https://tg.me/api/media/gift-art/iongem/thumb.webp' },
+
+                    { name: 'Plush Pepe', marketKey: 'Plush Pepe', backdrop: 'Onyx Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+                    { name: "Durov's Cap", marketKey: "Durov's Cap", backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
+                    { name: 'Precious Peach', marketKey: 'Precious Peach', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp' },
+                    { name: 'Scared Cat', marketKey: 'Scared Cat', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+                    { name: 'Scared Cat', marketKey: 'Scared Cat', backdrop: 'Onyx Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+                    { name: 'Nail Bracelet', marketKey: 'Nail Bracelet', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp' },
+                    { name: 'Swiss Watch', marketKey: 'Swiss Watch', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp' },
+                    { name: 'Bonded Ring', marketKey: 'Bonded Ring', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp' },
+                    { name: 'Artisan Brick', marketKey: 'Artisan Brick', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp' },
+                    { name: 'Low Rider', marketKey: 'Low Rider', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp' },
+                    { name: 'Toy Bear', marketKey: 'Toy Bear', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp' },
+                    { name: 'Diamond Ring', marketKey: 'Diamond Ring', backdrop: 'Black', value: '— TON', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp' }
                 ]
             }
         ];
@@ -3865,11 +3880,12 @@
             collections.innerHTML = items.length
                 ? items.map(function(item) {
                     const hasMarket = Number.isFinite(Number(item.marketValueTon)) && Number(item.marketValueTon) > 0;
-                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + '">' +
+                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + (item.backdrop ? ' black-backdrop' : '') + '">' +
                         '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                        (item.backdrop ? '<span class="loot-box-collectible-random black-variant-label">' + escapeHtml(item.backdrop) + '</span>' : '<span class="loot-box-collectible-random">Random</span>') +
                         '<span class="loot-box-collectible-value">' + escapeHtml(String(item.value || '— TON').replace(/\s*TON\s*$/i, '')) + '</span>' +
-                        '<span class="loot-box-collectible-random">Random</span>' +
+                        (!item.backdrop ? '' : '') +
                         (!hasMarket && statusText ? '<span class="loot-box-market-status">' + escapeHtml(statusText) + '</span>' : '') +
                     '</div>';
                 }).join('')
@@ -3890,7 +3906,10 @@
 
                 if (data.ok && Array.isArray(data.items)) {
                     data.items.forEach(function(serverItem) {
-                        const localItem = box.collectibles.find(function(item) { return item.name === serverItem.name; });
+                        const localItem = Number.isInteger(Number(serverItem.catalogIndex))
+                            ? box.collectibles[Number(serverItem.catalogIndex)]
+                            : box.collectibles.find(function(item) { return item.name === serverItem.name && (item.backdrop || null) === (serverItem.backdrop || null); });
+                        if (!localItem) return;
                         if (!localItem) return;
                         localItem.marketValueTon = Number(serverItem.marketValueTon);
                         localItem.value = localItem.marketValueTon > 0
