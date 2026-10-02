@@ -843,6 +843,7 @@
         .loot-box-strip-pointer { position:absolute; z-index:4; left:50%; top:0; width:0; height:0; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:12px solid #418bff; filter:drop-shadow(0 1px 3px rgba(65,139,255,.55)); pointer-events:none; }
         .loot-box-strip-pointer::after { content:''; position:absolute; left:-1px; top:10px; width:2px; height:48px; background:#418bff; box-shadow:0 0 7px rgba(65,139,255,.5); }
         .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .loot-box-open-button { width:100%; margin:10px 0 14px; height:48px; border:0; border-radius:12px; background:linear-gradient(90deg,#18c77a,#20d35d); color:#fff; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
         .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 10px; }
@@ -4305,11 +4306,21 @@
             const topupButton = document.getElementById('loot-box-topup-button');
             if (topupButton) {
                 const insufficient = box.price > 0 && Number(tonBalance || 0) < Number(box.price);
-                topupButton.style.display = insufficient ? 'flex' : 'none';
+                if (box.price > 0) {
+                    topupButton.style.display = 'flex';
+                    topupButton.disabled = false;
+                    topupButton.onclick = insufficient ? openDeposit : playSelectedLootBox;
+                    topupButton.className = insufficient ? 'loot-box-topup' : 'loot-box-open-button';
+                    topupButton.innerHTML = insufficient
+                        ? '<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5h13a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2h-11a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3Z"/><path d="M5.5 7.5V5.8a2 2 0 0 1 2-2h9"/><path d="M16.5 13.5h.01"/></svg><span>Top Up Balance</span>'
+                        : '<span>Open for ' + escapeHtml(String(box.price)) + ' TON</span><img src="/assets/ton-icon.svg" alt="TON" width="24" height="24">';
+                } else {
+                    topupButton.style.display = 'none';
+                }
             }
             if (priceNote) priceNote.textContent = box.price > 0 ? box.price + ' TON' : (box.id === 'free24' ? 'FREE • 24H' : 'FREE');
             if (playButton) {
-                playButton.style.display = box.price > 0 || box.id === 'free' || box.id === 'free24' ? '' : 'none';
+                playButton.style.display = box.price > 0 ? 'none' : (box.id === 'free' || box.id === 'free24' ? '' : 'none');
                 playButton.disabled = false;
                 playButton.onclick = null;
                 playButton.textContent = (box.id === 'free' || box.id === 'free24')
@@ -4390,7 +4401,7 @@
         }
 
         async function playPaidLootBox(box) {
-            const playButton = document.getElementById('loot-box-play-button');
+            const playButton = document.getElementById('loot-box-topup-button');
             const title = document.getElementById('loot-box-modal-title');
             const subtitle = document.getElementById('loot-box-modal-subtitle');
             const collections = document.getElementById('loot-box-collections');
