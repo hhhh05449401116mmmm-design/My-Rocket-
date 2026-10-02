@@ -3741,9 +3741,41 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     }
 });
 
+// ===== Read-only market values for the isolated 0.1 TON box =====
+app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
+    try {
+        try {
+            await ensureGiftMarketCache();
+        } catch (marketError) {
+            console.warn('0.1 TON market cache unavailable:', marketError.message);
+        }
+
+        const names = PAID_BOX_GIFT_NAMES.box_0_1 || [];
+        const items = names.map(name => {
+            const market = getCollectibleMarketValue({
+                name,
+                base_name: name,
+                model_name: name
+            });
+            return {
+                name,
+                image: paidBoxGiftImage(name),
+                marketValueTon: Number(market?.floorPriceTon || 0),
+                lastUpdated: market?.lastUpdated || null
+            };
+        });
+
+        res.json({ ok: true, items });
+    } catch (error) {
+        // This endpoint is read-only and isolated; a market failure must never
+        // affect the paid draw or the Crash/game loop.
+        res.status(200).json({ ok: true, items: [] });
+    }
+});
+
 // ===== Server-authoritative paid loot-box roulette =====
 const PAID_LOOT_BOX_CONFIG = {
-    box_0_1: { name: '0.1 TON', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05] },
+    box_0_1: { name: '0.1 TON', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05], nothingChance: 500, giftChance: 2500 },
     box_2:   { name: '2 TON',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
     box_2_5: { name: '2.5 TON', price: 2.5, rarity: 'rare',   tonRewards: [0.12, 0.18, 0.25, 0.35] },
     box_5:   { name: '5 TON',   price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
@@ -3757,6 +3789,7 @@ const PAID_LOOT_BOX_CONFIG = {
 };
 
 const PAID_BOX_GIFT_NAMES = {
+    box_0_1: ["Plush Pepe","Heart Locket","Durov's Cap","Precious Peach","Scared Cat","Heroic Helmet","Loot Bag","Mighty Arm","Astral Shard","Nail Bracelet","Westside Sign","Durov's Glasses","Perfume Bottle","Ion Gem","Mini Oscar","Artisan Brick","Gem Signet","Low Rider","Swiss Watch","Magic Potion","Sharp Tongue","Kissed Frog","Bonded Ring","Vintage Cigar","Voodoo Doll","Neko Helmet","Toy Bear","Genie Lamp","Signet Ring","Diamond Ring","Rare Bird","Bling Binky","Electric Skull","Khabib's Papakha","Eternal Rose","Cupid Charm","Sky Stilettos","Trapped Heart","Ionic Dryer","UFC Strike","Snoop Cigar","Love Potion","Mad Pumpkin","Crystal Ball","Flying Broom","Record Player","Skull Flower","Valentine Box","Sakura Flower","Top Hat","Love Candle","Jingle Bells","Hanging Star","Fine Pen","Chill Flame","Instant Ramen","Pool Float","Vice Cream","Candy Cane","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Bunny Muffin","Party Sparkler","Spring Basket","Star Notepad","Bow Tie","Homemade Cake","Snow Mittens","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
     box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_100: ["Plush Pepe","Durov's Cap","Heart Locket","Precious Peach","Scared Cat","Nail Bracelet","Heroic Helmet","Swiss Watch","Loot Bag","Bonded Ring","Rare Bird","Astral Shard","Westside Sign","Artisan Brick","Low Rider","Diamond Ring","Toy Bear"]
@@ -3844,16 +3877,24 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             const roll = crypto.randomInt(0, 10000);
             let gift = null;
             let tonReward = null;
+            let nothing = false;
 
-            if (roll < 7000) {
-                // 70% TON — strictly from this box's configured reward list.
+            if (boxId === 'box_0_1') {
+                // Isolated 0.1 TON rule: 5% Nothing, 25% gift, 70% TON.
+                if (roll < Number(config.nothingChance || 0)) {
+                    nothing = true;
+                } else if (roll < Number(config.nothingChance || 0) + Number(config.giftChance || 0)) {
+                    gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
+                } else {
+                    tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
+                }
+            } else if (roll < 7000) {
+                // Existing paid-box behavior remains unchanged for every other box.
                 tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
             } else if (roll < 9300) {
-                // 23% gift <= 7 TON.
                 const pool = lowValueGifts.length ? lowValueGifts : enrichedGiftPool;
                 gift = pool[crypto.randomInt(0, pool.length)];
             } else {
-                // 7% gift > 7 TON.
                 const pool = highValueGifts.length ? highValueGifts : lowValueGifts;
                 if (!pool.length) throw new Error('No gifts available for this box');
                 gift = pool[crypto.randomInt(0, pool.length)];
@@ -3881,7 +3922,13 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             }));
 
             const spinItems = [...reelGiftItems, ...reelTonItems];
-            if (gift && !spinItems.some(item => item.rewardType === 'gift' && item.name === gift.name)) {
+            if (nothing) {
+                spinItems[0] = {
+                    name: 'Nothing',
+                    image: null,
+                    rewardType: 'nothing'
+                };
+            } else if (gift && !spinItems.some(item => item.rewardType === 'gift' && item.name === gift.name)) {
                 spinItems[0] = {
                     name: gift.name,
                     image: paidBoxGiftImage(gift.name),
@@ -3929,15 +3976,22 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     req.user.id,
                     'GIFT_WON',
                     '🎁 You won ' + gift.name + ' from the ' + config.name + ' box!',
-                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: 0.07 }
+                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.25 : 0.30 }
                 );
-            } else {
+            } else if (!nothing) {
                 await updateUserBalance(req.user.id, tonReward, 'add');
                 await createNotification(
                     req.user.id,
                     'BALANCE_WON',
                     '💎 You won ' + Number(tonReward).toFixed(2) + ' TON from the ' + config.name + ' box!',
-                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: 0.93 }
+                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.70 : 0.70 }
+                );
+            } else {
+                await createNotification(
+                    req.user.id,
+                    'NOTHING_WON',
+                    '🤷 Nothing won from the ' + config.name + ' box.',
+                    { boxName: config.name, source: 'paid-loot-box', probability: 0.05 }
                 );
             }
 
@@ -3945,7 +3999,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 boxId,
                 boxName: config.name,
                 price: config.price,
-                winnerType: gift ? 'gift' : 'ton',
+                winnerType: nothing ? 'nothing' : (gift ? 'gift' : 'ton'),
                 gift: gift ? {
                     ...gift,
                     image_url: paidBoxGiftImage(gift.name),
