@@ -30,7 +30,7 @@ const {
     shouldAutoCashout,
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
-const { getCollectibleMarketValue, refreshMarketPrices, ensureCache: ensureGiftMarketCache } = require('./marketPriceEngine');
+const { getCollectibleMarketValue, getCollectibleVariantMarketValue, refreshMarketPrices, ensureCache: ensureGiftMarketCache } = require('./marketPriceEngine');
 const {
     getGeneralMarketPrice,
     getBackdropMarketPrice,
@@ -3999,6 +3999,29 @@ app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
         // This endpoint is read-only and isolated; a market failure must never
         // affect the paid draw or the Crash/game loop.
         res.status(200).json({ ok: true, items: [] });
+    }
+});
+
+// ===== Read-only exact variant market values for paid loot boxes =====
+app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
+    try {
+        await ensureGiftMarketCache();
+        const result = {};
+        for (const [boxId, names] of Object.entries(PAID_BOX_GIFT_NAMES)) {
+            result[boxId] = [];
+            for (const name of [...new Set(names || [])]) {
+                const market = await getCollectibleVariantMarketValue({ name });
+                result[boxId].push({
+                    name,
+                    marketValueTon: Number(market?.floorPriceTon || 0),
+                    source: market?.source || null,
+                    lastUpdated: market?.lastUpdated || null
+                });
+            }
+        }
+        res.json({ ok: true, boxes: result });
+    } catch (error) {
+        res.status(200).json({ ok: true, boxes: {}, available: false });
     }
 });
 
