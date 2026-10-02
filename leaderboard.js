@@ -66,8 +66,19 @@ function prizeForRank(rank) {
     return PRIZES.find(prize => numericRank >= prize.minRank && numericRank <= prize.maxRank) || null;
 }
 
+const PRIZE_IMAGE_URLS = {
+    "Durov's Cap": 'https://tg.me/api/media/gift-art/durovscap/thumb.webp',
+    "Precious Peach": 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp',
+    "Scared Cat": 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp',
+    "Gem Signet": 'https://tg.me/api/media/gift-art/gemsignet/thumb.webp',
+    "Vintage Cigar": 'https://tg.me/api/media/gift-art/vintagecigar/thumb.webp',
+    "Electric Skull": 'https://tg.me/api/media/gift-art/electricskull/thumb.webp',
+    "Pretty Posy": 'https://tg.me/api/media/gift-art/prettyposy/thumb.webp',
+    "Ice Cream": 'https://tg.me/api/media/gift-art/icecream/thumb.webp'
+};
+
 function prizeImage(name) {
-    return '/api/gift-media/' + encodeURIComponent(String(name || ''));
+    return PRIZE_IMAGE_URLS[String(name || '')] || '';
 }
 
 async function ensureSchema() {
