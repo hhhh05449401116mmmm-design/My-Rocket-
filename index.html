@@ -4395,13 +4395,14 @@
         const LOOT_BOXES = [
             { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
             { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge', collectibles: FREE_BOX_COLLECTIBLES },
-            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
-            { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
-            { id: 'box_2_5', name: '2.5 TON', emoji: '💎', price: 2.5, badgeType: null, badgeClass: '' },
+            { id: 'box_0_1', name: 'Farm', priceLabel: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
+            { id: 'box_2', name: 'Arm', priceLabel: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
+            { id: 'box_2_5', name: 'Movie', priceLabel: '4.5 TON', emoji: '💎', price: 4.5, badgeType: null, badgeClass: '' },
             // 5 TON uses fixed Telegram gift models only; no Random variants.
             { 
                 id: 'box_5', 
-                name: '5 TON', 
+                name: 'Autumn', 
+                priceLabel: '5 TON', 
                 emoji: '💎', 
                 price: 5, 
                 badgeType: null, 
@@ -4501,14 +4502,15 @@
                     { name: "0.03 TON Balance", image: '/assets/ton-icon.svg', value: '0.03 TON', rewardType: 'ton', label: 'Balance' }
                 ]
             },
-            { id: 'box_12', name: '12 TON', emoji: '💎', price: 12, badgeType: null, badgeClass: '' },
-            { id: 'box_15', name: '15 TON', emoji: '💎', price: 15, badgeType: null, badgeClass: '' },
-            { id: 'box_20', name: '20 TON', emoji: '💎', price: 20, badgeType: null, badgeClass: '' },
-            { id: 'box_25', name: '25 TON', emoji: '💎', price: 25, badgeType: null, badgeClass: '' },
-            { id: 'box_50', name: '50 TON', emoji: '💎', price: 50, badgeType: null, badgeClass: '' },
+            { id: 'box_12', name: 'Pepe', priceLabel: '12 TON', emoji: '💎', price: 12, badgeType: null, badgeClass: '' },
+            { id: 'box_15', name: 'Ring', priceLabel: '15 TON', emoji: '💎', price: 15, badgeType: null, badgeClass: '' },
+            { id: 'box_20', name: 'Black', priceLabel: '20 TON', emoji: '💎', price: 20, badgeType: null, badgeClass: '' },
+            { id: 'box_25', name: 'Cap', priceLabel: '25 TON', emoji: '💎', price: 25, badgeType: null, badgeClass: '' },
+            { id: 'box_50', name: 'Crazy', priceLabel: '50 TON', emoji: '💎', price: 50, badgeType: null, badgeClass: '' },
             { 
                 id: 'box_100', 
-                name: '100 TON', 
+                name: 'VIP', 
+                priceLabel: '100 TON', 
                 emoji: '💎', 
                 price: 100, 
                 badgeType: 'vip', 
@@ -4563,7 +4565,7 @@
                 });
 
                 const nameText = box.nameKey ? t[box.nameKey] : box.name;
-                const priceDisplay = box.price === 0 ? t.freeLabel : box.price + ' TON';
+                const priceDisplay = box.price === 0 ? t.freeLabel : (box.priceLabel || box.price + ' TON');
                 const badgeLabels = {
                     free: t.freeLabel,
                     special: '⭐ ' + t.free24Label,
