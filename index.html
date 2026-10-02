@@ -5062,7 +5062,12 @@
                 variants.forEach(function(variant, index) {
                     const value = byKey.get(String(index));
                     if (!(value > 0)) return;
-                    const localItem = items[index];
+                    const localItem = items.find(function(item) {
+                        return item &&
+                            item.name === variant.name &&
+                            (item.label || null) === (variant.label || null) &&
+                            (item.backdrop || null) === (variant.backdrop || null);
+                    });
                     if (localItem) localItem.marketValueTon = value;
                 });
 
