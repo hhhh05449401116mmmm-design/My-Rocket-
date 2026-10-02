@@ -1522,6 +1522,24 @@ async function isCollectibleAlreadyCredited(uniqueCollectibleId, telegramGiftIns
     return null;
 }
 
+// gifts is a shared gift-model catalog. Its slug must identify the model, never a
+// specific collectible instance such as "FinePen-20454". Incoming Telegram payloads
+// historically supplied instance slugs, which could collide with another model row.
+// Build a deterministic model-level slug from the stable Telegram gift model id.
+function buildVerifiedGiftModelSlug(telegramGiftModel) {
+    const rawId = String(telegramGiftModel?.telegramGiftId || '').trim();
+    const rawName = String(telegramGiftModel?.name || 'telegram-gift').trim();
+    const normalize = value => value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+
+    const namePart = normalize(rawName) || 'telegram-gift';
+    const idPart = normalize(rawId) || crypto.createHash('sha256').update(rawName).digest('hex').slice(0, 16);
+    return `tg-model-${namePart}-${idPart}`;
+}
+
 // اعتماد قطعة Telegram الحقيقية ذريًا: تُنشئ/تُحدّث user_gifts، تضبط ownership_verified=1، وتُستهلك الـ intent.
 // معلومات gift model تأتي حصرًا من بيانات Telegram الرسمية التي تم التحقق منها من السيرفر (لا مدخلات عميل).
 async function creditVerifiedCollectible({
@@ -1604,15 +1622,27 @@ async function creditVerifiedCollectible({
         // LOST/SOLD/SENT rows are historical and do not reserve the Telegram
         // collectible for future assignment. The same exact unique collectible
         // can therefore receive a new ownership row for a later player.
-        let giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftModel.telegramGiftId]);
+        const telegramGiftId = String(telegramGiftModel.telegramGiftId || '').trim();
+        if (!telegramGiftId) throw new Error('Verified Telegram gift model is missing telegramGiftId');
+
+        let giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftId]);
         if (!giftRow) {
-            const inserted = await run(`
-                INSERT INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply)
+            const modelSlug = buildVerifiedGiftModelSlug(telegramGiftModel);
+            const slugOwner = await get('SELECT telegram_gift_id FROM gifts WHERE slug = ?', [modelSlug]);
+            const finalSlug = slugOwner && String(slugOwner.telegram_gift_id) !== telegramGiftId
+                ? `${modelSlug}-${crypto.createHash('sha256').update(telegramGiftId).digest('hex').slice(0, 12)}`
+                : modelSlug;
+
+            // INSERT OR IGNORE makes concurrent sweeps idempotent on telegram_gift_id.
+            // The deterministic model slug above prevents collectible-instance slug
+            // collisions from blocking a legitimate new collectible.
+            await run(`
+                INSERT OR IGNORE INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
-                telegramGiftModel.telegramGiftId,
+                telegramGiftId,
                 telegramGiftModel.name,
-                telegramGiftModel.slug || null,
+                finalSlug,
                 telegramGiftModel.emoji || null,
                 telegramGiftModel.imageUrl || null,
                 telegramGiftModel.collection || null,
@@ -1620,7 +1650,9 @@ async function creditVerifiedCollectible({
                 telegramGiftModel.value || 0,
                 telegramGiftModel.totalSupply || 0
             ]);
-            giftRow = await get('SELECT * FROM gifts WHERE id = ?', [inserted.lastID]);
+
+            giftRow = await get('SELECT * FROM gifts WHERE telegram_gift_id = ?', [telegramGiftId]);
+            if (!giftRow) throw new Error('Verified Telegram gift model could not be persisted');
         }
 
         const inserted = await run(`
