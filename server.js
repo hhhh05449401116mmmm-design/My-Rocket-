@@ -1928,7 +1928,12 @@ async function refreshRoundPlayers() {
         avatar: row.avatar_url || null,
         amount: row.amount,
         status: row.status,
-        multiplier: row.multiplier
+        multiplier: row.multiplier,
+        betType: row.bet_type,
+        giftName: row.gift_name || null,
+        giftImageUrl: row.unique_collectible_id
+            ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+            : (row.gift_image_url || null)
     }));
 }
 
