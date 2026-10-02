@@ -2403,7 +2403,8 @@ function parseCollectibleMetadata(row) {
 
 function buildCollectibleApiRow(row, req) {
     const metadata = parseCollectibleMetadata(row);
-    const isPendingGiftReward = !row.unique_collectible_id && row.ownership_status === 'WON';
+    const isPendingGiftReward = !row.unique_collectible_id &&
+        (row.ownership_status === 'WON' || row.ownership_status === 'OWNED');
     const model = isPendingGiftReward ? {} : (metadata.model || {});
     const symbol = isPendingGiftReward ? null : (metadata.symbol || null);
     const backdrop = isPendingGiftReward ? null : (metadata.backdrop || null);
@@ -2411,8 +2412,11 @@ function buildCollectibleApiRow(row, req) {
         ? null
         : (metadata.stickerThumbnailFileId || metadata.stickerFileId || row.telegram_thumbnail_file_id || null);
     const hasMedia = !!(mediaFileId || metadata.model?.stickerFileId || metadata.symbol?.stickerFileId || (isPendingGiftReward && row.image_url));
-    const imageUrl = isPendingGiftReward && row.image_url
-        ? row.image_url
+    const genericGiftImage = row.name
+        ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(row.name)) + '/png/Original.png'
+        : null;
+    const imageUrl = isPendingGiftReward
+        ? (genericGiftImage || row.image_url || null)
         : (row.unique_collectible_id && hasMedia
             ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
             : null);
@@ -2466,7 +2470,10 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
 
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
-             .filter(row => (row.ownership_verified === 1 && row.unique_collectible_id) || (row.status === 'WON' && !row.unique_collectible_id))
+            .filter(row =>
+                (row.ownership_verified === 1 && row.unique_collectible_id) ||
+                ((row.status === 'WON' || row.status === 'OWNED') && !row.unique_collectible_id)
+            )
             .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {
