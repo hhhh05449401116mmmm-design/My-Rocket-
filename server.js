@@ -3929,17 +3929,17 @@ app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
 
 // ===== Server-authoritative paid loot-box roulette =====
 const PAID_LOOT_BOX_CONFIG = {
-    box_0_1: { name: '0.1 TON', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05], nothingChance: 500, giftChance: 2500 },
-    box_2:   { name: '2 TON',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
-    box_2_5: { name: '2.5 TON', price: 2.5, rarity: 'rare',   tonRewards: [0.12, 0.18, 0.25, 0.35] },
-    box_5:   { name: '5 TON',   price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
-    box_8:   { name: '8 TON',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
-    box_12:  { name: '12 TON',  price: 12,  rarity: 'epic',   tonRewards: [0.60, 0.90, 1.20, 1.80] },
-    box_15:  { name: '15 TON',  price: 15, rarity: 'epic',   tonRewards: [0.75, 1.10, 1.50, 2.20] },
-    box_20:  { name: '20 TON',  price: 20, rarity: 'epic',   tonRewards: [1.00, 1.50, 2.00, 3.00] },
-    box_25:  { name: '25 TON',  price: 25, rarity: 'epic',   tonRewards: [1.25, 2.00, 3.00, 4.00] },
-    box_50:  { name: '50 TON',  price: 50, rarity: 'legendary', tonRewards: [2.50, 4.00, 6.00, 8.00] },
-    box_100: { name: '100 TON', price: 100, rarity: 'legendary', tonRewards: [5.00, 8.00, 10.00, 15.00] }
+    box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05], nothingChance: 500, giftChance: 2500 },
+    box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
+    box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.12, 0.18, 0.25, 0.35] },
+    box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
+    box_8:   { name: 'space',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
+    box_12:  { name: 'Pepe',  price: 12,  rarity: 'epic',   tonRewards: [0.60, 0.90, 1.20, 1.80] },
+    box_15:  { name: 'Ring',  price: 15, rarity: 'epic',   tonRewards: [0.75, 1.10, 1.50, 2.20] },
+    box_20:  { name: 'Black',  price: 20, rarity: 'epic',   tonRewards: [1.00, 1.50, 2.00, 3.00] },
+    box_25:  { name: 'Cap',  price: 25, rarity: 'epic',   tonRewards: [1.25, 2.00, 3.00, 4.00] },
+    box_50:  { name: 'Crazy',  price: 50, rarity: 'legendary', tonRewards: [2.50, 4.00, 6.00, 8.00] },
+    box_100: { name: 'VIP', price: 100, rarity: 'legendary', tonRewards: [5.00, 8.00, 10.00, 15.00] }
 };
 
 const PAID_BOX_GIFT_NAMES = {
