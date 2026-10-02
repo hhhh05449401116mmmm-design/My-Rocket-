@@ -1241,17 +1241,22 @@ async function addGiftToUser(userId, giftId) {
 
 // صندوق الهدايا يحتاج ملكية متعددة لنفس نوع الهدية: كل فوز هو قطعة جديدة.
 // هذا المسار لا يغيّر addGiftToUser() المستخدم في الملكية القديمة/الاستيراد.
-async function addLootBoxGiftToUser(userId, giftId) {
+async function addLootBoxGiftToUser(userId, giftId, marketValue = null) {
     const gift = await getGiftById(giftId);
     if (!gift) throw new Error('Gift not found');
 
     // Loot-box rewards are pending generic gift types until the player
     // chooses Sell, Bet, or Withdraw. Keep them in WON so the existing
     // pending-withdrawal flow can resolve a concrete Telegram collectible.
+    // An isolated loot-box market snapshot may override the catalog value.
+    const requestedMarketValue = Number(marketValue);
+    const storedMarketValue = Number.isFinite(requestedMarketValue) && requestedMarketValue > 0
+        ? requestedMarketValue
+        : Number(gift.value || 0);
     const result = await run(`
         INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value)
         VALUES (?, ?, 'WON', 0, ?)
-    `, [userId, gift.id, Number(gift.value || 0)]);
+    `, [userId, gift.id, storedMarketValue]);
 
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
 }
