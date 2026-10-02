@@ -858,6 +858,50 @@
     padding:24px 18px 8px;
     gap:12px;
 }
+.loot-box-result-image-wrap {
+    position:relative;
+    width:170px;
+    height:170px;
+    margin:0 auto;
+}
+.loot-box-result-stage .loot-box-result-image-wrap {
+    width:190px;
+    height:190px;
+}
+.loot-box-result-image-wrap .loot-box-result-icon {
+    width:100%;
+    height:100%;
+}
+.loot-box-result-value-badge {
+    position:absolute;
+    top:7px;
+    right:6px;
+    z-index:3;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    min-height:28px;
+    padding:3px 7px;
+    border-radius:9px;
+    background:rgba(17,17,19,.96);
+    color:#fff;
+    font-size:11.5px;
+    line-height:1;
+    font-weight:900;
+    white-space:nowrap;
+    box-shadow:0 3px 9px rgba(0,0,0,.38);
+}
+.loot-box-result-value-badge img {
+    width:14px !important;
+    height:14px !important;
+    object-fit:contain !important;
+    margin:0 !important;
+    border:0 !important;
+    background:transparent !important;
+}
+.loot-box-result-keep {
+    background:#1689e8 !important;
+}
 .loot-box-result-icon {
     width:170px;
     height:170px;
@@ -904,6 +948,23 @@
 .loot-box-result-withdraw { background:#8872ef; }
 .loot-box-result-continue { background:#08ad72; }
 .loot-box-result-actions button:disabled { opacity:.5; }
+.loot-box-result-actions .loot-box-result-withdraw,
+.loot-box-result-actions .loot-box-result-keep {
+    width:100%;
+}
+.loot-box-result-actions .loot-box-result-withdraw + .loot-box-result-keep {
+    grid-column:auto;
+}
+.loot-box-result-actions {
+    grid-template-columns:1fr 1fr;
+}
+.loot-box-result-actions .loot-box-result-sell,
+.loot-box-result-actions .loot-box-result-bet,
+.loot-box-result-actions .loot-box-result-try-again,
+.loot-box-result-actions .loot-box-result-continue {
+    grid-column:1 / -1;
+}
+
 #loot-box-modal {
     align-items: center !important;
     justify-content: center !important;
@@ -4295,6 +4356,8 @@
 
         let selectedLootBox = null;
         let lootBoxMarketRequestToken = 0;
+        let pendingLootBoxRewardId = null;
+        let lootBoxKeepRequestInFlight = false;
         let lootBoxMarketRefreshTimer = null;
 
         function paidLootBox100GiftImage(item) {
@@ -4833,8 +4896,37 @@
             if (playButton) playButton.onclick = function() { playSelectedLootBox(); };
         }
 
+        async function keepLootBoxReward(userGiftId, silent) {
+            const rewardId = Number(userGiftId || 0);
+            if (!rewardId || lootBoxKeepRequestInFlight) return false;
+            lootBoxKeepRequestInFlight = true;
+            pendingLootBoxRewardId = null;
+            try {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/gift/keep', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store',
+                    body: JSON.stringify({ userGiftId: rewardId })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || 'Unable to keep gift');
+                if (!silent) {
+                    closeLootBoxResult();
+                    showToast(currentLanguage === 'ar' ? '🎒 تمت إضافة الهدية إلى حقيبتك' : '🎒 Gift added to your bag');
+                }
+                return true;
+            } catch (error) {
+                console.error('LOOT BOX GIFT KEEP ERROR:', error);
+                if (!silent) showToast(error.message || 'Unable to keep gift');
+                return false;
+            } finally {
+                lootBoxKeepRequestInFlight = false;
+            }
+        }
+
         async function sellLootBoxReward(userGiftId) {
             if (!userGiftId) return;
+            pendingLootBoxRewardId = null;
             try {
                 const response = await fetch(BACKEND_URL + '/api/loot-box/gift/sell', {
                     method: 'POST',
@@ -4857,6 +4949,7 @@
 
         async function betLootBoxReward(userGiftId, giftValue) {
             if (!userGiftId) return;
+            pendingLootBoxRewardId = null;
             try {
                 closeModal('loot-box-modal');
                 selectedGiftId = Number(userGiftId);
@@ -4896,6 +4989,7 @@
 
         async function withdrawLootBoxReward(userGiftId) {
             if (!userGiftId) return;
+            pendingLootBoxRewardId = null;
             try {
                 showToast(currentLanguage === 'ar' ? 'جاري إرسال الهدية إلى Telegram...' : 'Sending gift to Telegram...');
                 const response = await fetch(BACKEND_URL + '/api/collectibles/withdraw', {
@@ -4924,6 +5018,8 @@
             const playButton = document.getElementById('loot-box-play-button');
             const priceNote = document.getElementById('loot-box-price-note');
             if (!stage) return;
+
+            pendingLootBoxRewardId = null;
 
             if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار الجائزة' : 'Prize selected';
@@ -4955,19 +5051,29 @@
                     gift.image_url = paidLootBox100GiftImage(gift);
                 }
                 const sellValue = Number(gift.sellValue || 0);
+                const marketValue = Number(gift.marketValue || gift.value || sellValue || 0);
                 const userGiftId = Number(gift.userGiftId || 0);
+                if (userGiftId) pendingLootBoxRewardId = userGiftId;
+
+                const image = gift.image_url || gift.image || paidLootBox100GiftImage(gift);
+                const valueText = marketValue > 0 ? marketValue.toFixed(2) : (sellValue > 0 ? sellValue.toFixed(2) : '—');
+
                 stage.innerHTML =
                     '<div class="loot-box-result">' +
-                        '<img class="loot-box-result-icon" src="' + escapeHtmlAttribute(gift.image_url || gift.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '">' +
+                        '<div class="loot-box-result-image-wrap">' +
+                            '<img class="loot-box-result-icon" src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '" loading="eager" decoding="async">' +
+                            '<span class="loot-box-result-value-badge">' + escapeHtml(valueText) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' +
+                        '</div>' +
                         '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'مبروك! 🎁' : 'Congratulations! 🎁') + '</div>' +
                         '<div class="loot-box-result-value">' + escapeHtml(gift.name || 'Gift') + '</div>' +
                         '<div class="loot-box-result-actions">' +
-                            (sellValue > 0 ? '<button class="loot-box-result-sell" type="button" onclick="sellLootBoxReward(' + userGiftId + ')">' + (currentLanguage === 'ar' ? 'بيع مقابل ' : 'Sell for ') + sellValue.toFixed(2) + ' 💎</button>' : '') +
-                            '<button class="loot-box-result-bet" type="button" onclick="betLootBoxReward(' + userGiftId + ',' + Number(gift.marketValue || 0) + ')">' +
-                                '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="8" width="12" height="9" rx="3"></rect><path d="M9 12h3M10.5 10.5v3"></path><circle cx="16" cy="11.5" r=".7" fill="currentColor" stroke="none"></circle><circle cx="17.5" cy="13.5" r=".7" fill="currentColor" stroke="none"></circle><path d="M6 11H4.8a1.8 1.8 0 0 0-1.7 2.4l1.1 3.1A2.2 2.2 0 0 0 6.3 18l1.4-2"></path><path d="M18 11h1.2a1.8 1.8 0 0 1 1.7 2.4l-1.1 3.1a2.2 2.2 0 0 1-2.1.5l-1.4-2"></path></svg>' +
+                            '<button class="loot-box-result-sell" type="button" onclick="sellLootBoxReward(' + userGiftId + ')">' + (currentLanguage === 'ar' ? 'بيع مقابل ' : 'Sell for ') + (sellValue > 0 ? sellValue.toFixed(2) : valueText) + ' 💎</button>' +
+                            '<button class="loot-box-result-bet" type="button" onclick="betLootBoxReward(' + userGiftId + ',' + marketValue + ')">' +
+                                '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="8" width="12" height="9" rx="3"></rect><path d="M9 12h3M10.5 10.5v3"></path><circle cx="16" cy="11.5" r=".7" fill="currentColor" stroke="none"></circle><circle cx="17.5" cy="13.5" r=".7" fill="currentColor" stroke="none"></circle><path d="M6 11H4.8a1.8 1.8 0 0 0-1.7 2.4l1.1 3.1A2.2 2.2 0 0 0 6.3 18l1.4-2"></path><path d="M18 11h1.2a1.8 1.8 0 0 1 1.7 2.4l-1.1 3.1A2.2 2.2 0 0 1 17.7 18l-1.4-2"></path></svg>' +
                                 (currentLanguage === 'ar' ? 'مراهنة' : 'Bet') +
                             '</button>' +
                             '<button class="loot-box-result-withdraw" type="button" onclick="withdrawLootBoxReward(' + userGiftId + ')">↗ ' + (currentLanguage === 'ar' ? 'سحب' : 'Withdraw') + '</button>' +
+                            '<button class="loot-box-result-keep" type="button" onclick="keepLootBoxReward(' + userGiftId + ', false)">✓ ' + (currentLanguage === 'ar' ? 'احتفظ' : 'Keep') + '</button>' +
                         '</div>' +
                     '</div>';
             }
@@ -7060,6 +7166,13 @@
             if (id === 'loot-box-modal' && lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
                 lootBoxMarketRefreshTimer = null;
+            }
+            // If the player closes the winning-result modal with X/outside click,
+            // keep the won gift automatically. Sell/Bet/Withdraw/Keep clear this id first.
+            if (id === 'loot-box-modal' && pendingLootBoxRewardId && !lootBoxKeepRequestInFlight) {
+                const rewardId = Number(pendingLootBoxRewardId);
+                pendingLootBoxRewardId = null;
+                keepLootBoxReward(rewardId, true);
             }
         }
 
