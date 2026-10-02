@@ -32,6 +32,7 @@ const {
 } = require('./crashFair');
 const { getCollectibleMarketValue, getCollectibleVariantMarketValue, refreshMarketPrices, ensureCache: ensureGiftMarketCache } = require('./marketPriceEngine');
 const {
+    getModelMarketPrice,
     getGeneralMarketPrice,
     getBackdropMarketPrice,
     refreshMarketCache: refresh100TonMarketCache,
@@ -4016,7 +4017,13 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
         for (const variant of variants.slice(0, 250)) {
             const name = String(variant?.name || '').trim();
             if (!name) continue;
-            const market = await getCollectibleVariantMarketValue({
+            const market = await getModelMarketPrice({
+                name,
+                label: variant?.label || null,
+                model_name: variant?.model_name || null,
+                backdrop: variant?.backdrop || null,
+                baseName: name
+            }) || await getCollectibleVariantMarketValue({
                 name,
                 label: variant?.label || null,
                 model_name: variant?.model_name || null,
