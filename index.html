@@ -4308,7 +4308,7 @@
                 : paidLootBoxItemImage(item);
         }
 
-        function render100TonCollectibles(box, statusText) {
+        function render100TonCollectibles(box) {
             const collections = document.getElementById('loot-box-collections');
             const strip = document.getElementById('loot-box-modal-strip');
             if (!collections || !strip) return;
@@ -4321,19 +4321,37 @@
             }).join('');
 
             collections.innerHTML = items.length
-                ? items.map(function(item) {
+                ? items.map(function(item, index) {
                     const hasMarket = Number.isFinite(Number(item.marketValueTon)) && Number(item.marketValueTon) > 0;
-                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + (item.backdrop ? ' black-backdrop' : '') + '">' +
+                    const value = hasMarket ? Number(item.marketValueTon).toFixed(2) : '—';
+                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + (item.backdrop ? ' black-backdrop' : '') + '" data-box-100-index="' + index + '">' +
                         '<div class="loot-box-collectible-image-wrap">' +
                             '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
                         '</div>' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                         (item.backdrop ? '<span class="loot-box-collectible-random black-variant-label">' + escapeHtml(item.backdrop) + '</span>' : '<span class="loot-box-collectible-random">Random</span>') +
-                        '<span class="loot-box-collectible-value">' + escapeHtml(String(item.value || '— TON').replace(/\s*TON\s*$/i, '')) + '</span>' +
-                        (!hasMarket && statusText ? '<span class="loot-box-market-status">' + escapeHtml(statusText) + '</span>' : '') +
+                        '<span class="loot-box-collectible-value loot-box-100-market-value">' + escapeHtml(value) + '</span>' +
                     '</div>';
                 }).join('')
                 : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
+        }
+
+        function update100TonMarketValuesInPlace(box) {
+            const collections = document.getElementById('loot-box-collections');
+            if (!collections || !box || box.id !== 'box_100') return;
+
+            Array.from(collections.querySelectorAll('[data-box-100-index]')).forEach(function(card) {
+                const index = Number(card.getAttribute('data-box-100-index'));
+                const item = box.collectibles && box.collectibles[index];
+                if (!item) return;
+
+                const value = Number(item.marketValueTon);
+                const hasMarket = Number.isFinite(value) && value > 0;
+                const valueNode = card.querySelector('.loot-box-100-market-value');
+                if (valueNode) valueNode.textContent = hasMarket ? value.toFixed(2) : '—';
+
+                card.classList.toggle('gold-frame', hasMarket);
+            });
         }
 
         async function load100TonMarketValues(box) {
@@ -4352,26 +4370,31 @@
                     data.items.forEach(function(serverItem) {
                         const localItem = Number.isInteger(Number(serverItem.catalogIndex))
                             ? box.collectibles[Number(serverItem.catalogIndex)]
-                            : box.collectibles.find(function(item) { return item.name === serverItem.name && (item.backdrop || null) === (serverItem.backdrop || null); });
+                            : box.collectibles.find(function(item) {
+                                return item.name === serverItem.name &&
+                                    (item.backdrop || null) === (serverItem.backdrop || null);
+                            });
                         if (!localItem) return;
-                        if (!localItem) return;
+
                         localItem.marketValueTon = Number(serverItem.marketValueTon);
                         localItem.value = localItem.marketValueTon > 0
                             ? Number(localItem.marketValueTon).toFixed(2) + ' TON'
                             : '— TON';
                     });
-                    render100TonCollectibles(box, data.refreshing ? 'جارٍ تحديث السوق…' : 'القيمة السوقية الحالية');
+
+                    // Update only the numeric price and frame state.
+                    // The gift cards/images stay mounted, so market refreshes never blink.
+                    update100TonMarketValuesInPlace(box);
+
                     if (data.refreshing || data.stale) {
                         setTimeout(function() {
                             if (selectedLootBox === box) load100TonMarketValues(box);
                         }, 1200);
                     }
-                } else {
-                    render100TonCollectibles(box, 'السعر غير متاح حالياً');
                 }
             } catch (error) {
-                if (token !== lootBoxMarketRequestToken || selectedLootBox !== box) return;
-                render100TonCollectibles(box, 'السعر غير متاح حالياً');
+                // Market refresh is read-only UI work. Keep the existing prices visible
+                // and never rebuild the gift cards when a refresh fails.
             }
         }
 
@@ -4648,7 +4671,7 @@
 
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
             if (box.id === 'box_100') {
-                render100TonCollectibles(box, 'جارٍ قراءة القيمة السوقية…');
+                render100TonCollectibles(box);
                 load100TonMarketValues(box);
             } else if (box.price > 0) {
                 renderPaidLootBoxPreview(box, items, strip, collections);
