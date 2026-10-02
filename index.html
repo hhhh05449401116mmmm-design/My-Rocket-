@@ -823,7 +823,7 @@
            not on the box card itself. */
         .loot-box-result-stage {
     display:none;
-    min-height:clamp(330px, 52vh, 560px);
+    min-height:0;
     align-items:center;
     justify-content:center;
     padding:18px 8px 8px;
@@ -900,6 +900,49 @@
 .loot-box-result-withdraw { background:#8872ef; }
 .loot-box-result-continue { background:#08ad72; }
 .loot-box-result-actions button:disabled { opacity:.5; }
+#loot-box-modal {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px;
+    box-sizing: border-box;
+}
+#loot-box-modal .loot-box-modal-card {
+    width: min(520px, 100%);
+    height: min(760px, 88vh);
+    max-height: 88vh;
+    padding: 16px 22px 20px;
+    box-sizing: border-box;
+    border-radius: 28px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+#loot-box-modal .loot-box-modal-head,
+#loot-box-modal .loot-box-modal-subtitle,
+#loot-box-modal .loot-box-modal-strip-wrap {
+    flex: 0 0 auto;
+}
+#loot-box-modal .loot-box-result-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    padding: 10px 8px 4px;
+}
+#loot-box-modal .loot-box-result-stage .loot-box-result {
+    max-height: 100%;
+    overflow: hidden;
+}
+#loot-box-modal .loot-box-result-stage .loot-box-result-icon,
+#loot-box-modal .loot-box-result-stage .loot-box-result-ton {
+    width: min(190px, 30vh);
+    height: min(190px, 30vh);
+    flex: 0 0 auto;
+}
+#loot-box-modal .loot-box-result-stage .loot-box-result-actions {
+    flex: 0 0 auto;
+}
+
 .loot-box-modal-card {
             width: min(520px, 100%);
             padding: 16px 22px 24px;
@@ -4600,7 +4643,7 @@
             const priceNote = document.getElementById('loot-box-price-note');
             if (!stage) return;
 
-            if (title) title.textContent = currentLanguage === 'ar' ? '🎉 النتيجة' : '🎉 Result';
+            if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار الجائزة' : 'Prize selected';
 
             if (data.winnerType === 'ton') {
