@@ -5297,17 +5297,13 @@
         }
 
         function initGameUiIconObserver() {
-            if (!document.body || window.__gameUiIconObserver) return;
+            // Convert the initial UI once. Do NOT observe document.body.
+            // The game updates the DOM continuously during Crash/rounds; a global
+            // subtree MutationObserver can repeatedly walk large DOM subtrees and
+            // interfere with the game render loop.
+            if (!document.body || window.__gameUiIconsInitialized) return;
             replaceGameUiIcons(document.body);
-            window.__gameUiIconObserver = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(added) {
-                        if (added.nodeType === Node.ELEMENT_NODE) replaceGameUiIcons(added);
-                        else if (added.nodeType === Node.TEXT_NODE) replaceGameUiIcons(added.parentElement);
-                    });
-                });
-            });
-            window.__gameUiIconObserver.observe(document.body, { childList:true, subtree:true });
+            window.__gameUiIconsInitialized = true;
         }
         // ⚠️ Public config only (not a secret) — the game's public Telegram username for receiving collectibles.
         const COLLECTIBLE_RECEIVER_USERNAME = "v_rray";
