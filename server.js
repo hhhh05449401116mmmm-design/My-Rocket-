@@ -30,7 +30,7 @@ const {
     shouldAutoCashout,
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
-const { getCollectibleMarketValue, refreshMarketPrices } = require('./marketPriceEngine');
+const { getCollectibleMarketValue, refreshMarketPrices, ensureCache: ensureGiftMarketCache } = require('./marketPriceEngine');
 const {
     getGeneralMarketPrice,
     getBackdropMarketPrice,
@@ -3815,21 +3815,86 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             );
             if (debit.changes !== 1) throw new Error('Insufficient balance');
 
-            // Exactly 7% gift and 93% TON. This ratio is server-side only.
-            const winsGift = crypto.randomInt(0, 10000) < 700;
+            // Prize odds are server-authoritative:
+            // 70% TON, 23% gift below 7 TON, 7% gift above 7 TON.
+            // The spinner is only a visual presentation of the already-selected
+            // server result; it never decides the reward.
+            let giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
+            if (!giftPool.length) throw new Error('No gifts available for this box');
+
+            try {
+                await ensureGiftMarketCache();
+            } catch (marketError) {
+                console.warn('Paid loot-box market cache unavailable:', marketError.message);
+            }
+
+            const enrichedGiftPool = giftPool.map(item => {
+                const market = getCollectibleMarketValue({
+                    name: item.name,
+                    base_name: item.telegram_gift_id,
+                    model_name: item.name
+                });
+                const marketValue = Number(market?.floorPriceTon ?? item.value ?? 0);
+                return { ...item, marketValue };
+            });
+
+            const highValueGifts = enrichedGiftPool.filter(item => item.marketValue > 7);
+            const lowValueGifts = enrichedGiftPool.filter(item => item.marketValue <= 7);
+
+            const roll = crypto.randomInt(0, 10000);
             let gift = null;
             let tonReward = null;
 
-            let giftPool = [];
-            if (winsGift) {
-                giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
-                if (!giftPool.length) throw new Error('No gifts available for this box');
-                gift = giftPool[crypto.randomInt(0, giftPool.length)];
-            } else {
-                // TON rewards are strictly limited to this box's configured values.
+            if (roll < 7000) {
+                // 70% TON — strictly from this box's configured reward list.
                 tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
+            } else if (roll < 9300) {
+                // 23% gift <= 7 TON.
+                const pool = lowValueGifts.length ? lowValueGifts : enrichedGiftPool;
+                gift = pool[crypto.randomInt(0, pool.length)];
+            } else {
+                // 7% gift > 7 TON.
+                const pool = highValueGifts.length ? highValueGifts : lowValueGifts;
+                if (!pool.length) throw new Error('No gifts available for this box');
+                gift = pool[crypto.randomInt(0, pool.length)];
             }
 
+            // Build a neutral visual reel: 8 gift positions + 4 TON positions.
+            // Every TON position is one of this box's actual configured values.
+            const reelGiftPool = enrichedGiftPool
+                .slice()
+                .sort(() => Math.random() - 0.5)
+                .slice(0, Math.min(8, enrichedGiftPool.length));
+
+            const reelGiftItems = reelGiftPool.map(item => ({
+                name: item.name,
+                image: paidBoxGiftImage(item.name),
+                rewardType: 'gift',
+                marketValue: item.marketValue
+            }));
+
+            const reelTonItems = config.tonRewards.map(value => ({
+                name: Number(value).toFixed(2) + ' TON Balance',
+                image: '/assets/ton-icon.svg',
+                value: Number(value),
+                rewardType: 'ton'
+            }));
+
+            const spinItems = [...reelGiftItems, ...reelTonItems];
+            if (gift && !spinItems.some(item => item.rewardType === 'gift' && item.name === gift.name)) {
+                spinItems[0] = {
+                    name: gift.name,
+                    image: paidBoxGiftImage(gift.name),
+                    rewardType: 'gift',
+                    marketValue: gift.marketValue
+                };
+            }
+            if (tonReward !== null && !spinItems.some(item =>
+                item.rewardType === 'ton' && Math.abs(Number(item.value) - Number(tonReward)) < 0.000001
+            )) {
+                // Every configured TON reward is already represented in the reel.
+                throw new Error('Selected TON reward is not present in this box reel');
+            }
             // The box price was already debited atomically above.
 
             // Ensure every paid box is registered even if the historical seed predates it.
@@ -3843,12 +3908,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let userGift = null;
             let giftMarketValue = 0;
             if (gift) {
-                const market = getCollectibleMarketValue({
-                    name: gift.name,
-                    base_name: gift.telegram_gift_id,
-                    model_name: gift.name
-                });
-                giftMarketValue = Number(market?.floorPriceTon ?? gift.value ?? 0);
+                giftMarketValue = Number(gift.marketValue || 0);
                 userGift = await addLootBoxGiftToUser(req.user.id, gift.id);
                 if (giftMarketValue > 0) {
                     await run(
@@ -3881,18 +3941,6 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 );
             }
 
-            const spinGiftItems = (giftPool || []).map(item => ({
-                name: item.name,
-                image: paidBoxGiftImage(item.name),
-                rewardType: 'gift'
-            }));
-            const spinTonItems = config.tonRewards.map(value => ({
-                name: Number(value).toFixed(2) + ' TON Balance',
-                image: '/assets/ton-icon.svg',
-                value: Number(value),
-                rewardType: 'ton'
-            }));
-
             return {
                 boxId,
                 boxName: config.name,
@@ -3907,7 +3955,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     sellValue: Number((giftMarketValue * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2))
                 } : null,
                 tonReward,
-                spinItems: [...spinGiftItems, ...spinTonItems],
+                spinItems,
                 balance: Number(await getUserBalance(req.user.id) || 0)
             };
         });
