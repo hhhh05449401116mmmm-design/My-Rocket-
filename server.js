@@ -1571,10 +1571,7 @@ async function getTelegramGiftMedia(slug) {
         if (!thumbnail) throw new Error('Telegram gift thumbnail unavailable');
 
         const client = await ensureTelegramMtprotoClient();
-        const buffer = await client.downloadMedia(gift.sticker, {
-            thumb: thumbnail,
-            requestTimeout: 12000
-        });
+        const buffer = await client.downloadMedia(gift.sticker, { thumb: String(thumbnail.type) });
         if (!buffer || !Buffer.isBuffer(buffer) || !buffer.length) throw new Error('Telegram returned no gift thumbnail');
         if (buffer.length > 1024 * 1024) throw new Error('Gift thumbnail exceeds safe cache limit');
 
