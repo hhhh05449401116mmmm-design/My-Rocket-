@@ -1474,13 +1474,23 @@ app.get('/api/rocket-gifts', async (req, res) => {
 
 
 // Generic Telegram Star Gift media proxy.
-// The public tg.me thumbnail URLs are not stable for every gift slug.
-// We resolve the official Star Gift catalog through MTProto and serve the
-// gift's own Telegram sticker from our origin, so the Mini App does not
-// depend on third-party/hotlinked image hosts.
 const telegramGiftMediaCache = new Map();
-const TELEGRAM_GIFT_MEDIA_CACHE_LIMIT = 80;
+const telegramGiftMediaInFlight = new Map();
+const TELEGRAM_GIFT_MEDIA_CACHE_LIMIT = 120;
 const TELEGRAM_GIFT_MEDIA_TTL_MS = 6 * 60 * 60 * 1000;
+const TELEGRAM_GIFT_CATALOG_TTL_MS = 15 * 60 * 1000;
+const TELEGRAM_GIFT_MEDIA_MAX_CONCURRENT = 6;
+let telegramGiftCatalogCache = null;
+let telegramGiftCatalogInFlight = null;
+let telegramGiftMediaActive = 0;
+const telegramGiftMediaWaiters = [];
+
+function normalizeTelegramGiftName(value) {
+    return String(value || '').trim().toLowerCase()
+        .replace(/[’‘`]/g, "'")
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, '');
+}
 
 function detectImageMime(buffer) {
     if (!Buffer.isBuffer(buffer) || buffer.length < 4) return 'application/octet-stream';
@@ -1488,60 +1498,119 @@ function detectImageMime(buffer) {
     if (buffer.subarray(0, 3).toString('hex') === 'ffd8ff') return 'image/jpeg';
     if (buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
     if (buffer.subarray(0, 3).toString('ascii') === 'GIF') return 'image/gif';
-    if (buffer.subarray(0, 2).toString('hex') === '1f8b') return 'application/gzip';
     return 'application/octet-stream';
 }
 
+async function getTelegramStarGiftCatalog() {
+    if (telegramGiftCatalogCache && Date.now() - telegramGiftCatalogCache.loadedAt < TELEGRAM_GIFT_CATALOG_TTL_MS) {
+        return telegramGiftCatalogCache.gifts;
+    }
+    if (telegramGiftCatalogInFlight) return telegramGiftCatalogInFlight;
+
+    telegramGiftCatalogInFlight = (async () => {
+        const client = await ensureTelegramMtprotoClient();
+        const available = await client.api.payments.getStarGifts({ hash: 0 });
+        const gifts = Array.isArray(available?.gifts) ? available.gifts : [];
+        if (!gifts.length) throw new Error('Telegram returned an empty Star Gift catalog');
+        telegramGiftCatalogCache = { gifts, loadedAt: Date.now() };
+        return gifts;
+    })().finally(() => {
+        telegramGiftCatalogInFlight = null;
+    });
+
+    return telegramGiftCatalogInFlight;
+}
+
+function chooseTelegramGiftThumbnail(document) {
+    const thumbs = Array.isArray(document?.thumbs) ? document.thumbs : [];
+    const usable = thumbs.filter(thumb => {
+        return thumb && typeof thumb.type === 'string' && thumb.type !== 'j' &&
+            (Number(thumb.w || 0) > 0 || Number(thumb.size || 0) > 0);
+    });
+    usable.sort((a, b) => {
+        const areaA = Number(a.w || 0) * Number(a.h || 0);
+        const areaB = Number(b.w || 0) * Number(b.h || 0);
+        return (areaB - areaA) || (Number(b.size || 0) - Number(a.size || 0));
+    });
+    return usable[0] || null;
+}
+
+async function withTelegramGiftMediaSlot(task) {
+    if (telegramGiftMediaActive >= TELEGRAM_GIFT_MEDIA_MAX_CONCURRENT) {
+        await new Promise(resolve => telegramGiftMediaWaiters.push(resolve));
+    }
+    telegramGiftMediaActive += 1;
+    try {
+        return await task();
+    } finally {
+        telegramGiftMediaActive -= 1;
+        const next = telegramGiftMediaWaiters.shift();
+        if (next) next();
+    }
+}
+
 async function getTelegramGiftMedia(slug) {
-    const key = String(slug || '').trim().toLowerCase();
-    if (!key) throw new Error('Gift slug is required');
+    const key = normalizeTelegramGiftName(slug);
+    if (!key) throw new Error('Gift name is required');
 
     const cached = telegramGiftMediaCache.get(key);
     if (cached && Date.now() - cached.loadedAt < TELEGRAM_GIFT_MEDIA_TTL_MS) return cached;
 
-    const client = await ensureTelegramMtprotoClient();
-    const available = await client.api.payments.getStarGifts({ hash: 0 });
-    const gifts = Array.isArray(available?.gifts) ? available.gifts : [];
-    const gift = gifts.find(item => {
-        const title = String(item?.title || '').trim().toLowerCase();
-        return title.replace(/[^a-z0-9]+/g, '') === key.replace(/[^a-z0-9]+/g, '');
+    const pending = telegramGiftMediaInFlight.get(key);
+    if (pending) return pending;
+
+    const work = withTelegramGiftMediaSlot(async () => {
+        const secondCheck = telegramGiftMediaCache.get(key);
+        if (secondCheck && Date.now() - secondCheck.loadedAt < TELEGRAM_GIFT_MEDIA_TTL_MS) return secondCheck;
+
+        const gifts = await getTelegramStarGiftCatalog();
+        const gift = gifts.find(item => normalizeTelegramGiftName(item?.title) === key);
+        if (!gift?.sticker) throw new Error('Telegram Star Gift not found');
+
+        const thumbnail = chooseTelegramGiftThumbnail(gift.sticker);
+        if (!thumbnail) throw new Error('Telegram gift thumbnail unavailable');
+
+        const client = await ensureTelegramMtprotoClient();
+        const buffer = await client.downloadMedia(gift.sticker, {
+            thumb: thumbnail,
+            requestTimeout: 12000
+        });
+        if (!buffer || !Buffer.isBuffer(buffer) || !buffer.length) throw new Error('Telegram returned no gift thumbnail');
+        if (buffer.length > 1024 * 1024) throw new Error('Gift thumbnail exceeds safe cache limit');
+
+        const mimeType = detectImageMime(buffer);
+        if (mimeType !== 'image/png' && mimeType !== 'image/jpeg' && mimeType !== 'image/webp' && mimeType !== 'image/gif') {
+            throw new Error('Telegram gift thumbnail is not a browser image');
+        }
+
+        const entry = { buffer, mimeType, loadedAt: Date.now() };
+        telegramGiftMediaCache.set(key, entry);
+        while (telegramGiftMediaCache.size > TELEGRAM_GIFT_MEDIA_CACHE_LIMIT) {
+            const oldestKey = telegramGiftMediaCache.keys().next().value;
+            if (oldestKey === undefined) break;
+            telegramGiftMediaCache.delete(oldestKey);
+        }
+        return entry;
     });
 
-    if (!gift?.sticker) throw new Error('Telegram gift sticker unavailable');
-
-    const buffer = await client.downloadMedia(gift.sticker);
-    if (!buffer || !Buffer.isBuffer(buffer) || !buffer.length) {
-        throw new Error('Telegram returned no gift media');
+    telegramGiftMediaInFlight.set(key, work);
+    try {
+        return await work;
+    } finally {
+        telegramGiftMediaInFlight.delete(key);
     }
-    if (buffer.length > 5 * 1024 * 1024) throw new Error('Gift media exceeds safe cache limit');
-
-    const entry = {
-        buffer,
-        mimeType: detectImageMime(buffer),
-        loadedAt: Date.now()
-    };
-    telegramGiftMediaCache.set(key, entry);
-
-    while (telegramGiftMediaCache.size > TELEGRAM_GIFT_MEDIA_CACHE_LIMIT) {
-        const oldest = [...telegramGiftMediaCache.entries()]
-            .sort((a, b) => a[1].loadedAt - b[1].loadedAt)[0]?.[0];
-        if (!oldest) break;
-        telegramGiftMediaCache.delete(oldest);
-    }
-
-    return entry;
 }
 
 app.get('/api/gift-media/:slug', async (req, res) => {
     try {
         const entry = await getTelegramGiftMedia(decodeURIComponent(String(req.params.slug || '')));
         res.setHeader('Cache-Control', 'public, max-age=21600, stale-while-revalidate=86400');
-        res.setHeader('X-Telegram-Media', 'stargift-sticker');
+        res.setHeader('X-Telegram-Media', 'stargift-thumbnail');
         res.setHeader('Content-Type', entry.mimeType);
         res.setHeader('Content-Length', String(entry.buffer.length));
         res.end(entry.buffer);
     } catch (error) {
-        console.error('Telegram Star Gift media proxy failed:', error.message);
+        console.error('Telegram Star Gift thumbnail proxy failed:', error.message);
         if (!res.headersSent) res.status(404).end();
     }
 });
