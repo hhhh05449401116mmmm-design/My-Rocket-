@@ -963,15 +963,19 @@
         .loot-box-modal-title { flex:1; text-align:center; color:#fff; font-size:20px; font-weight:900; }
         .loot-box-modal-subtitle { text-align:center; color:#8f8f96; font-size:11px; margin:-4px 0 12px; }
         .loot-box-modal-strip-wrap { position:relative; width:100%; height:68px; overflow:hidden; border-radius:12px; background:rgba(255,255,255,.055); }
-        .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:transform 4.2s cubic-bezier(.12,.75,.18,1); overflow:visible; user-select:none; pointer-events:none; touch-action:none; }
+        .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:transform 4.2s cubic-bezier(.12,.75,.18,1); overflow:visible; user-select:none; pointer-events:auto; touch-action:pan-y; }
         .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); overflow:hidden; }
+        .loot-box-modal-strip-item.ton img { width:34px; height:34px; }
         .loot-box-modal-strip-item.gift { background:linear-gradient(145deg,#6b5210 0%,#c99b18 45%,#6f5110 100%); box-shadow:inset 0 0 12px rgba(255,221,100,.25); }
         .loot-box-modal-strip-item.ton { background:linear-gradient(145deg,#075b88 0%,#08a9ef 50%,#075b88 100%); box-shadow:inset 0 0 14px rgba(90,210,255,.28); }
         .loot-box-modal-strip-item img { width:44px; height:44px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; }
         .loot-box-strip-pointer { position:absolute; z-index:4; left:50%; top:0; width:0; height:0; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:12px solid #418bff; filter:drop-shadow(0 1px 3px rgba(65,139,255,.55)); pointer-events:none; }
         .loot-box-strip-pointer::after { content:''; position:absolute; left:-1px; top:10px; width:2px; height:48px; background:#418bff; box-shadow:0 0 7px rgba(65,139,255,.5); }
         .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; min-height:42px; flex:0 0 42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .loot-box-open-button { width:100%; margin:10px 0 14px; height:48px; min-height:48px; flex:0 0 48px; border:0; border-radius:12px; background:linear-gradient(90deg,#18c77a,#20d35d); color:#fff; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .loot-box-open-button { width:100%; margin:10px 0 14px; height:48px; min-height:48px; flex:0 0 48px; border:0; border-radius:12px; background:linear-gradient(135deg,#b88718 0%,#f1cf55 48%,#b27d12 100%); color:#17120a; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 5px 16px rgba(188,139,27,.18); }
+        .loot-box-open-button img { width:20px !important; height:20px !important; }
+        .loot-box-loading-spinner { width:17px; height:17px; flex:0 0 17px; border:2px solid rgba(23,18,10,.22); border-top-color:rgba(23,18,10,.9); border-radius:50%; animation:lootBoxSpin .8s linear infinite; }
+        @keyframes lootBoxSpin { to { transform:rotate(360deg); } }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
         .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 10px; }
@@ -4323,7 +4327,39 @@
             const winnerIsTon = winner && winner.winnerType === 'ton';
             const winnerValue = winnerIsTon ? Number(winner.tonReward || 0) : null;
             const winnerName = winner && winner.gift ? winner.gift.name : null;
+            const previewItems = Array.isArray(box && box.collectibles) ? box.collectibles.filter(Boolean) : [];
 
+            const visualForServerItem = function(item) {
+                if (item.rewardType === 'ton') {
+                    return {
+                        name: item.name || (Number(item.value || 0).toFixed(2) + ' TON'),
+                        image: '/assets/ton-icon.svg',
+                        rewardType: 'ton',
+                        value: Number(item.value || 0)
+                    };
+                }
+
+                const match = previewItems.find(function(preview) {
+                    return String(preview.name || '') === String(item.name || '');
+                });
+                if (match) {
+                    return {
+                        name: match.name,
+                        image: paidLootBoxItemImage(match),
+                        label: match.label,
+                        rewardType: 'gift',
+                        marketValue: match.marketValue
+                    };
+                }
+
+                return {
+                    name: item.name || 'Gift',
+                    image: '/assets/ton-icon.svg',
+                    rewardType: 'gift'
+                };
+            };
+
+            const visualItems = serverItems.map(visualForServerItem);
             const matchesWinner = function(item) {
                 if (winnerIsTon) {
                     return item.rewardType === 'ton' &&
@@ -4332,35 +4368,26 @@
                 return item.rewardType === 'gift' && String(item.name) === String(winnerName);
             };
 
-            let winnerIndex = serverItems.findIndex(matchesWinner);
-            if (winnerIndex < 0) {
-                winnerIndex = 0;
-            }
+            let winnerIndex = visualItems.findIndex(matchesWinner);
+            if (winnerIndex < 0) winnerIndex = 0;
 
-            // Keep the same number of gift/TON types throughout the reel.
-            // Repeat the neutral reel; the winning item is inserted at the
-            // exact stopping position instead of flooding the reel with TON.
             const repeats = 18;
             const sequence = [];
             for (let i = 0; i < repeats; i++) {
-                sequence.push.apply(sequence, serverItems);
+                sequence.push.apply(sequence, visualItems);
             }
 
-            const targetIndex = Math.floor(repeats * 0.72) * serverItems.length + winnerIndex;
-            sequence[targetIndex] = serverItems[winnerIndex];
+            const targetIndex = Math.floor(repeats * 0.72) * visualItems.length + winnerIndex;
 
             strip.style.transition = 'none';
             strip.style.transform = 'translate3d(0,0,0)';
             strip.innerHTML = sequence.map(function(item) {
                 const isTon = item.rewardType === 'ton';
-                const image = paidLootBoxItemImage(item);
                 return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                    '<img src="' + escapeHtmlAttribute(item.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
                 '</div>';
             }).join('');
 
-            // Do not start the reel until its visible prize images have had a
-            // chance to load. This keeps gifts visible during the entire spin.
             const reelImages = Array.from(strip.querySelectorAll('img'));
             await Promise.race([
                 Promise.all(reelImages.map(function(img) {
@@ -4370,7 +4397,7 @@
                         img.addEventListener('error', resolve, { once: true });
                     });
                 })),
-                new Promise(function(resolve) { window.setTimeout(resolve, 1800); })
+                new Promise(function(resolve) { window.setTimeout(resolve, 1200); })
             ]);
 
             const itemWidth = 52;
@@ -4390,7 +4417,6 @@
                 });
             });
         }
-
         function openLootBox(box) {
             selectedLootBox = box;
             const modal = document.getElementById('loot-box-modal');
@@ -4718,12 +4744,11 @@
             }
 
             playButton.disabled = true;
-            playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري فتح الصندوق…' : '🎁 Opening…';
+            playButton.innerHTML = '<span class="loot-box-loading-spinner" aria-hidden="true"></span><span>' + (currentLanguage === 'ar' ? 'جاري فتح الصندوق…' : 'Opening…') + '</span>';
             if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'جاري الدوران…' : 'Spinning…';
-            if (collections) collections.innerHTML = '';
-            if (collections) collections.style.display = 'none';
-            if (collectionsTitle) collectionsTitle.style.display = 'none';
+            if (collections) collections.style.display = '';
+            if (collectionsTitle) collectionsTitle.style.display = '';
             if (resultStage) {
                 resultStage.classList.remove('show');
                 resultStage.innerHTML = '';
