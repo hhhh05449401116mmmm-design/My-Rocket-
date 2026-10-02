@@ -5258,6 +5258,8 @@
                 if (!node.nodeValue || !/[🎁💎💰]/.test(node.nodeValue)) continue;
                 const parent = node.parentElement;
                 if (!parent || parent.closest('script,style,textarea')) continue;
+                // Keep FREE / FREE24 UI untouched.
+                if (parent.closest('.loot-box.free')) continue;
                 nodes.push(node);
             }
             nodes.forEach(function(textNode) {
