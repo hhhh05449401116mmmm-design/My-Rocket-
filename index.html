@@ -4388,7 +4388,7 @@
             strip.innerHTML = repeated.map(function(item) {
                 const isTon = item.rewardType === 'ton' || /TON/i.test(String(item.name || ''));
                 return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                    '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="lazy" decoding="async">' +
                 '</div>';
             }).join('');
 
