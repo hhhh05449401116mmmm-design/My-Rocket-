@@ -429,7 +429,7 @@ function initDatabase() {
                 CREATE TABLE IF NOT EXISTS notifications (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
-                    type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON')),
+                    type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON', 'GIFT_SOLD')),
                     message TEXT NOT NULL,
                     data TEXT,
                     is_read INTEGER DEFAULT 0,
@@ -454,7 +454,7 @@ function initDatabase() {
                     db.run(`CREATE TABLE IF NOT EXISTS notifications (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
-                        type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON')),
+                        type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON', 'GIFT_SOLD')),
                         message TEXT NOT NULL,
                         data TEXT,
                         is_read INTEGER DEFAULT 0,
@@ -1245,12 +1245,53 @@ async function addLootBoxGiftToUser(userId, giftId) {
     const gift = await getGiftById(giftId);
     if (!gift) throw new Error('Gift not found');
 
+    // Loot-box rewards are pending generic gift types until the player
+    // chooses Sell, Bet, or Withdraw. Keep them in WON so the existing
+    // pending-withdrawal flow can resolve a concrete Telegram collectible.
     const result = await run(`
-        INSERT INTO user_gifts (user_id, gift_id, status)
-        VALUES (?, ?, 'OWNED')
-    `, [userId, gift.id]);
+        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value)
+        VALUES (?, ?, 'WON', 0, ?)
+    `, [userId, gift.id, Number(gift.value || 0)]);
 
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
+}
+
+async function sellLootBoxGiftForBalance(userId, userGiftId, sellValue) {
+    return await transaction(async () => {
+        const reward = await get(`
+            SELECT ug.*, g.name AS gift_name, g.value AS gift_value
+            FROM user_gifts ug
+            JOIN gifts g ON ug.gift_id = g.id
+            WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON'
+            LIMIT 1
+        `, [userGiftId, userId]);
+        if (!reward) throw new Error('Loot-box gift not found or already used');
+
+        const amount = Number(sellValue);
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error('Invalid gift sale value');
+
+        const update = await run(`
+            UPDATE user_gifts
+            SET status = 'SOLD', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ? AND status = 'WON'
+        `, [userGiftId, userId]);
+        if (update.changes !== 1) throw new Error('Gift was already used');
+
+        const balance = Number(await getUserBalance(userId) || 0);
+        const newBalance = balance + amount;
+        await run(
+            'UPDATE users SET balance = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [newBalance, userId]
+        );
+
+        return {
+            userGiftId: reward.id,
+            giftName: reward.gift_name,
+            giftValue: Number(reward.gift_value || 0),
+            saleValue: amount,
+            balance: newBalance
+        };
+    });
 }
 
 
@@ -3281,6 +3322,7 @@ module.exports = {
     getGiftById,
     addGiftToUser,
     addLootBoxGiftToUser,
+    sellLootBoxGiftForBalance,
     updateGiftStatus,
 
     // أساس ملكية Collectible Gifts الحقيقية
