@@ -1103,7 +1103,7 @@ async function settleGiftCashout(bet, userId, betId, multiplier, payout) {
 
     // Existing non-collectible gift behavior stays unchanged.
     if (!userGift.unique_collectible_id) {
-        await run('UPDATE user_gifts SET status = 'WON', updated_at = CURRENT_TIMESTAMP WHERE id = ?', [bet.user_gift_id]);
+        await run("UPDATE user_gifts SET status = 'WON', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [bet.user_gift_id]);
         await updateUserStats(userId, 'win', payout);
         return {
             payout,
