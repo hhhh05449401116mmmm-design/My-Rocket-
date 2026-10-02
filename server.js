@@ -272,6 +272,7 @@ const {
     getGiftById,
     addGiftToUser,
     addLootBoxGiftToUser,
+    sellLootBoxGiftForBalance,
     updateGiftStatus,
     getUserCollectibles,
     getActiveCollectibleUniqueIds,
@@ -3155,6 +3156,39 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
     }
 });
 
+// ===== Loot-box pending gift sale =====
+app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
+    try {
+        const userGiftId = Number(req.body?.userGiftId);
+        if (!Number.isSafeInteger(userGiftId) || userGiftId <= 0) {
+            return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
+        }
+
+        const reward = await get('SELECT ug.*, g.name, g.value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1', [userGiftId, req.user.id]);
+        if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
+
+        const baseValue = Number(reward.value || 0);
+        const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
+        if (!Number.isFinite(baseValue) || baseValue <= 0 || !Number.isFinite(sellRate) || sellRate <= 0 || sellRate > 1) {
+            return res.status(409).json({ ok: false, error: 'No valid market value is available for this gift' });
+        }
+
+        const saleValue = Number((baseValue * sellRate).toFixed(9));
+        const result = await sellLootBoxGiftForBalance(req.user.id, userGiftId, saleValue);
+        await createNotification(
+            req.user.id,
+            'GIFT_SOLD',
+            `Gift sold for ${saleValue.toFixed(2)} TON`,
+            { userGiftId, giftName: reward.name, saleValue, source: 'paid-loot-box' }
+        );
+
+        res.json({ ok: true, userGiftId, giftName: reward.name, saleValue, balance: result.balance });
+    } catch (error) {
+        console.error('Loot-box gift sale failed:', { userId: req.user?.id, userGiftId: req.body?.userGiftId, error: error.message });
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
 // ===== 5.6.3 سحب هدية =====
 app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
     try {
@@ -3834,7 +3868,13 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 boxName: config.name,
                 price: config.price,
                 winnerType: gift ? 'gift' : 'ton',
-                gift: gift ? { ...gift, image_url: paidBoxGiftImage(gift.name) } : null,
+                gift: gift ? {
+                    ...gift,
+                    image_url: paidBoxGiftImage(gift.name),
+                    userGiftId: userGift?.id || null,
+                    pending: true,
+                    sellValue: Number(((Number(gift.value || 0)) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2))
+                } : null,
                 tonReward,
                 balance: Number(await getUserBalance(req.user.id) || 0)
             };
