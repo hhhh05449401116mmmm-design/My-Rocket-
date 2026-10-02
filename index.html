@@ -821,7 +821,41 @@
 
         /* Loot-box detail modal: collectibles live inside the opened box view,
            not on the box card itself. */
-        .loot-box-modal-card {
+        .loot-box-result {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:24px 18px 8px;
+    gap:12px;
+}
+.loot-box-result-icon {
+    width:170px;
+    height:170px;
+    border-radius:24px;
+    object-fit:contain;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 0 35px rgba(0,180,255,.18);
+}
+.loot-box-result-ton {
+    width:210px;
+    height:210px;
+    border-radius:50%;
+    object-fit:contain;
+    background:rgba(0,150,255,.08);
+    border:1px solid rgba(255,214,80,.7);
+}
+.loot-box-result-title { font-size:27px; font-weight:900; color:#fff; }
+.loot-box-result-value { font-size:22px; font-weight:900; color:#f7d66a; }
+.loot-box-result-actions { width:100%; display:grid; gap:10px; margin-top:8px; }
+.loot-box-result-actions button { min-height:52px; border:0; border-radius:15px; color:#fff; font-size:16px; font-weight:900; cursor:pointer; }
+.loot-box-result-sell { background:#373739; }
+.loot-box-result-bet { background:#8f4ff0; }
+.loot-box-result-withdraw { background:#8872ef; }
+.loot-box-result-continue { background:#08ad72; }
+.loot-box-result-actions button:disabled { opacity:.5; }
+.loot-box-modal-card {
             width: min(520px, 100%);
             padding: 16px 22px 24px;
             border-radius: 28px 28px 0 0;
@@ -4184,53 +4218,49 @@
             }).join('');
         }
 
-        function animatePaidLootBoxStrip(box, winner) {
+        function animatePaidLootBoxStrip(box, winner, spinItems) {
             const strip = document.getElementById('loot-box-modal-strip');
-            if (!strip) return;
+            if (!strip) return Promise.resolve();
 
+            const serverItems = Array.isArray(spinItems) ? spinItems : [];
             const winnerIsTon = winner && winner.winnerType === 'ton';
-            let winnerItem;
+            const winnerValue = winnerIsTon ? Number(winner.tonReward || 0) : null;
+            const winnerName = winner && winner.gift ? winner.gift.name : null;
 
+            let winnerItem = null;
             if (winnerIsTon) {
-                winnerItem = {
-                    name: Number(winner.tonReward || 0).toFixed(2) + ' TON',
-                    image: '/assets/ton-icon.svg',
-                    rewardType: 'ton'
-                };
+                winnerItem = serverItems.find(item =>
+                    item.rewardType === 'ton' && Math.abs(Number(item.value) - winnerValue) < 0.000001
+                );
             } else {
-                const winnerName = winner && winner.gift ? winner.gift.name : 'Gift';
-                const catalog = Array.isArray(box.collectibles) ? box.collectibles : [];
-                winnerItem = catalog.find(function(item) {
-                    return item.rewardType !== 'ton' && item.name === winnerName;
-                }) || {
-                    name: winnerName,
-                    image: winner && winner.gift ? (winner.gift.image_url || winner.gift.image) : '/assets/ton-icon.svg',
-                    rewardType: 'gift'
-                };
+                winnerItem = serverItems.find(item =>
+                    item.rewardType !== 'ton' && String(item.name) === String(winnerName)
+                );
+                if (!winnerItem && winnerName) {
+                    winnerItem = {
+                        name: winnerName,
+                        image: winner.gift.image_url || winner.gift.image,
+                        rewardType: 'gift'
+                    };
+                }
             }
 
-            const base = Array.isArray(box.collectibles) ? box.collectibles.slice() : [];
-            base.push(
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
-            );
+            if (!winnerItem) return Promise.resolve();
 
-            const pool = base.length ? base : [winnerItem];
-            const repeats = 18;
+            const pool = serverItems.length ? serverItems : [winnerItem];
+            const repeats = 16;
             const sequence = [];
             for (let i = 0; i < repeats; i++) sequence.push.apply(sequence, pool);
 
-            // Stop well inside the repeated sequence so the strip has no visible end.
-            const targetIndex = Math.floor(repeats / 2) * pool.length + Math.floor(pool.length * 0.62);
+            const targetIndex = Math.floor(repeats * 0.72) * pool.length + Math.floor(pool.length * 0.55);
             sequence[targetIndex] = winnerItem;
 
             strip.style.transition = 'none';
             strip.style.transform = 'translate3d(0,0,0)';
             strip.innerHTML = sequence.map(function(item) {
-                const isTon = item.rewardType === 'ton' || /TON/i.test(String(item.name || ''));
+                const isTon = item.rewardType === 'ton';
                 return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                    '<img src="' + escapeHtmlAttribute(item.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
                 '</div>';
             }).join('');
 
@@ -4241,13 +4271,17 @@
             const centerOffset = Math.max(0, ((wrap ? wrap.clientWidth : 320) / 2) - (itemWidth / 2));
             const destination = centerOffset - (targetIndex * step);
 
-            requestAnimationFrame(function() {
+            return new Promise(function(resolve) {
                 requestAnimationFrame(function() {
-                    strip.style.transition = 'transform 4.8s cubic-bezier(.12,.75,.18,1)';
-                    strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
+                    requestAnimationFrame(function() {
+                        strip.style.transition = 'transform 4.8s cubic-bezier(.12,.75,.18,1)';
+                        strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
+                        window.setTimeout(resolve, 4900);
+                    });
                 });
             });
         }
+
 
         function openLootBox(box) {
             selectedLootBox = box;
@@ -4400,6 +4434,139 @@
             closeModal('loot-box-modal');
         }
 
+        function closeLootBoxResult() {
+            closeModal('loot-box-modal');
+            const playButton = document.getElementById('loot-box-play-button');
+            if (playButton) playButton.onclick = function() { playSelectedLootBox(); };
+        }
+
+        async function sellLootBoxReward(userGiftId) {
+            if (!userGiftId) return;
+            try {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/gift/sell', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store',
+                    body: JSON.stringify({ userGiftId: Number(userGiftId) })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || 'Unable to sell gift');
+                tonBalance = Number(data.balance || 0);
+                updateTonWalletUI();
+                await fetchBalance();
+                closeLootBoxResult();
+                showToast((currentLanguage === 'ar' ? 'تم بيع الهدية مقابل ' : 'Gift sold for ') + Number(data.saleValue || 0).toFixed(2) + ' TON');
+            } catch (error) {
+                console.error('LOOT BOX GIFT SELL ERROR:', error);
+                showToast(error.message || 'Unable to sell gift');
+            }
+        }
+
+        async function betLootBoxReward(userGiftId, giftValue) {
+            if (!userGiftId) return;
+            try {
+                closeModal('loot-box-modal');
+                selectedGiftId = Number(userGiftId);
+                selectedGiftForBet = {
+                    id: Number(userGiftId),
+                    value: Number(giftValue || 0),
+                    name: 'Loot Box Gift'
+                };
+                autoCashoutEnabled = false;
+                openRocketGame();
+
+                const payload = {
+                    type: 'GIFT',
+                    giftId: Number(userGiftId),
+                    amount: Number(giftValue || 0),
+                    autoCashout: false,
+                    autoTarget: null
+                };
+
+                if (gamePhase === 'COUNTDOWN') {
+                    await sendGiftBet(payload.giftId, payload.amount, currentRoundId, false, null);
+                } else {
+                    pendingNextBet = payload;
+                    pendingNextBetSubmitted = false;
+                    isQueuedForNextRound = true;
+                    hasBet = false;
+                    updateMainBetButton();
+                    updateAutoCashoutUI();
+                    showToast(t.betQueued || 'تم حجز الهدية للجولة القادمة');
+                    if (gamePhase === 'FLIGHT') trySubmitQueuedBet();
+                }
+            } catch (error) {
+                console.error('LOOT BOX GIFT BET ERROR:', error);
+                showToast(error.message || 'Unable to bet gift');
+            }
+        }
+
+        async function withdrawLootBoxReward(userGiftId) {
+            if (!userGiftId) return;
+            try {
+                showToast(currentLanguage === 'ar' ? 'جاري إرسال الهدية إلى Telegram...' : 'Sending gift to Telegram...');
+                const response = await fetch(BACKEND_URL + '/api/collectibles/withdraw', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store',
+                    body: JSON.stringify({ collectibleId: 'pending:' + Number(userGiftId) })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || 'Withdrawal failed');
+                closeLootBoxResult();
+                showToast(currentLanguage === 'ar' ? '🎁 تم إرسال الهدية إلى Telegram' : '🎁 Gift sent to Telegram');
+            } catch (error) {
+                console.error('LOOT BOX GIFT WITHDRAW ERROR:', error);
+                showToast(error.message || 'Withdrawal failed');
+            }
+        }
+
+        function renderPaidLootBoxResult(box, data) {
+            const collections = document.getElementById('loot-box-collections');
+            const title = document.getElementById('loot-box-modal-title');
+            const subtitle = document.getElementById('loot-box-modal-subtitle');
+            const playButton = document.getElementById('loot-box-play-button');
+            const priceNote = document.getElementById('loot-box-price-note');
+            if (!collections) return;
+
+            if (title) title.textContent = currentLanguage === 'ar' ? '🎉 النتيجة' : '🎉 Result';
+            if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار الجائزة' : 'Prize selected';
+
+            if (data.winnerType === 'ton') {
+                collections.innerHTML =
+                    '<div class="loot-box-result">' +
+                        '<img class="loot-box-result-ton" src="/assets/ton-icon.svg" alt="TON">' +
+                        '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'تمت زيادة الرصيد!' : 'Balance Increased!') + '</div>' +
+                        '<div class="loot-box-result-value">💎 ' + Number(data.tonReward || 0).toFixed(2) + ' TON Balance</div>' +
+                        '<div class="loot-box-result-actions">' +
+                            '<button class="loot-box-result-continue" type="button" onclick="closeLootBoxResult()">' + (currentLanguage === 'ar' ? 'متابعة' : 'Continue') + '</button>' +
+                        '</div>' +
+                    '</div>';
+            } else {
+                const gift = data.gift || {};
+                const sellValue = Number(gift.sellValue || 0);
+                const userGiftId = Number(gift.userGiftId || 0);
+                collections.innerHTML =
+                    '<div class="loot-box-result">' +
+                        '<img class="loot-box-result-icon" src="' + escapeHtmlAttribute(gift.image_url || gift.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '">' +
+                        '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'مبروك! 🎁' : 'Congratulations! 🎁') + '</div>' +
+                        '<div class="loot-box-result-value">' + escapeHtml(gift.name || 'Gift') + '</div>' +
+                        '<div class="loot-box-result-actions">' +
+                            (sellValue > 0 ? '<button class="loot-box-result-sell" type="button" onclick="sellLootBoxReward(' + userGiftId + ')">' + (currentLanguage === 'ar' ? 'بيع مقابل ' : 'Sell for ') + sellValue.toFixed(2) + ' 💎</button>' : '') +
+                            '<button class="loot-box-result-bet" type="button" onclick="betLootBoxReward(' + userGiftId + ',' + Number(gift.marketValue || 0) + ')">🎮 Bet</button>' +
+                            '<button class="loot-box-result-withdraw" type="button" onclick="withdrawLootBoxReward(' + userGiftId + ')">↗ ' + (currentLanguage === 'ar' ? 'سحب' : 'Withdraw') + '</button>' +
+                        '</div>' +
+                    '</div>';
+            }
+
+            if (playButton) {
+                playButton.disabled = false;
+                playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
+                playButton.onclick = closeLootBoxResult;
+            }
+            if (priceNote) priceNote.textContent = '';
+        }
+
         async function playPaidLootBox(box) {
             const playButton = document.getElementById('loot-box-topup-button');
             const title = document.getElementById('loot-box-modal-title');
@@ -4414,13 +4581,14 @@
             }
 
             playButton.disabled = true;
-            playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري السحب…' : '🎁 Drawing…';
+            playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري فتح الصندوق…' : '🎁 Opening…';
+            if (title) title.textContent = box.name || 'Loot Box';
+            if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'جاري الدوران…' : 'Spinning…';
+            if (collections) collections.innerHTML = '';
 
             try {
-                // Refresh the authoritative TON balance immediately before every paid-box purchase.
                 await fetchBalance();
-                const liveBalance = Number(tonBalance || 0);
-                if (liveBalance < Number(box.price || 0)) {
+                if (Number(tonBalance || 0) < Number(box.price || 0)) {
                     closeModal('loot-box-modal');
                     openDeposit();
                     return;
@@ -4432,7 +4600,7 @@
                     cache: 'no-store',
                     body: JSON.stringify({ boxId: box.id })
                 });
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
 
                 if (!response.ok || !data.ok) {
                     if (data.error === 'Insufficient balance') {
@@ -4443,47 +4611,20 @@
                     throw new Error(data.error || 'Draw failed');
                 }
 
+                // Keep the real balance, but do not reveal the prize until the wheel stops.
                 tonBalance = Number(data.balance || 0);
                 updateTonWalletUI();
 
-                if (title) title.textContent = currentLanguage === 'ar' ? '🎉 النتيجة' : '🎉 Result';
-                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار النتيجة' : 'Result selected';
-
-                if (collections && box.id !== 'box_100') {
-                    if (data.winnerType === 'gift' && data.gift) {
-                        collections.innerHTML =
-                            '<div class="loot-box-winner">' +
-                                '<div class="loot-box-winner-label">🎁 ' + escapeHtml(data.boxName || box.name) + '</div>' +
-                                '<img src="' + escapeHtmlAttribute(data.gift.image_url || data.gift.image || '') + '" alt="' + escapeHtmlAttribute(data.gift.name || 'Gift') + '" loading="eager" decoding="async">' +
-                                '<div class="loot-box-winner-name">' + escapeHtml(data.gift.name || 'Telegram Gift') + '</div>' +
-                                '<div class="loot-box-winner-value">🎁 Gift</div>' +
-                            '</div>';
-                    } else {
-                        collections.innerHTML =
-                            '<div class="loot-box-winner">' +
-                                '<div class="loot-box-winner-label">💎 ' + escapeHtml(data.boxName || box.name) + '</div>' +
-                                '<img src="/assets/ton-icon.svg" alt="TON" loading="eager">' +
-                                '<div class="loot-box-winner-name">' + escapeHtml(Number(data.tonReward || 0).toFixed(2)) + ' TON</div>' +
-                                '<div class="loot-box-winner-value">💎 TON Balance</div>' +
-                            '</div>';
-                    }
-                }
-
-                animatePaidLootBoxStrip(box, data);
-
-                playButton.disabled = false;
-                playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
-                playButton.onclick = function() {
-                    closeModal('loot-box-modal');
-                    playButton.onclick = function() { playSelectedLootBox(); };
-                };
+                await animatePaidLootBoxStrip(box, data, data.spinItems || []);
+                renderPaidLootBoxResult(box, data);
             } catch (error) {
                 console.error('Paid loot-box draw failed:', error);
                 playButton.disabled = false;
                 playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
-                showToast(currentLanguage === 'ar' ? 'تعذر فتح الصندوق، حاول مرة أخرى' : 'Unable to open the box, please try again');
+                showToast(error.message || (currentLanguage === 'ar' ? 'تعذر فتح الصندوق، حاول مرة أخرى' : 'Unable to open the box, please try again'));
             }
         }
+
 
         /* =========================================================
            ROCKET VARIANTS
