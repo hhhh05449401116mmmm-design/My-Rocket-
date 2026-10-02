@@ -8,6 +8,7 @@
 const https = require('https');
 
 const PRICE_LIST_URL = 'https://giftasset.gifts/api/v1/gifts/get_gifts_price_list';
+const UNIQUE_PRICE_URL = 'https://giftasset.gifts/api/v1/gifts/get_unique_gifts_price_list';
 const BACKDROP_FLOOR_URL = 'https://giftasset.gifts/api/v1/gifts/get_gifts_backdrops_floor?v2=true';
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -16,6 +17,7 @@ const REQUEST_TIMEOUT_MS = 10000;
 let marketCache = null;
 let marketCacheAt = 0;
 let refreshInFlight = null;
+const modelMarketCache = new Map();
 
 function normalize(value) {
     return String(value || '')
@@ -160,6 +162,43 @@ async function ensureMarketCache() {
     return refreshMarketCache();
 }
 
+async function getModelMarketPrice(item) {
+    const collectionName = String(item?.baseName || item?.name || '').trim();
+    const modelName = String(item?.model_name || item?.label || '').trim();
+    if (!collectionName || !modelName || normalize(modelName) === 'random') return null;
+
+    const cacheKey = normalize(collectionName) + '|' + normalize(modelName);
+    const cached = modelMarketCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    try {
+        const payload = await fetchJson(
+            UNIQUE_PRICE_URL + '?collection_name=' + encodeURIComponent(collectionName)
+        );
+        const models = payload?.models_prices?.[collectionName]?.models || {};
+        const entry = Object.entries(models).find(([name]) => normalize(name) === normalize(modelName));
+        if (!entry) return null;
+
+        const prices = entry[1] || {};
+        const candidates = ['telegram', 'getgems', 'mrkt', 'portals', 'tonnel']
+            .map(provider => Number(prices[provider]))
+            .filter(value => Number.isFinite(value) && value > 0);
+        if (!candidates.length) return null;
+
+        const value = {
+            floorPriceTon: Math.min(...candidates),
+            model: entry[0],
+            providers: prices,
+            source: 'giftasset-model-market',
+            fetchedAt: Date.now()
+        };
+        modelMarketCache.set(cacheKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+        return value;
+    } catch (error) {
+        return null;
+    }
+}
+
 async function getGeneralMarketPrice(item) {
     const name = item?.baseName || item?.name;
     if (!name) return null;
@@ -202,6 +241,7 @@ function getCacheStatus() {
 }
 
 module.exports = {
+    getModelMarketPrice,
     getGeneralMarketPrice,
     getBackdropMarketPrice,
     refreshMarketCache,
