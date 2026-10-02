@@ -2508,9 +2508,9 @@
         .telegram-rocket.hidden { display: none !important; }
         #rocket.telegram-fallback-hidden { visibility: hidden; }
         
-        .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; }
-        .image-banner .banner-art { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; z-index:0; }
-        .image-banner.playhub-banner .banner-art { height:108%; object-position:center top; }
+        .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; aspect-ratio:auto !important; height:auto !important; }
+        .image-banner .banner-art { position:relative; inset:auto; width:100%; height:auto !important; aspect-ratio:auto; object-fit:contain; object-position:center; display:block; z-index:0; }
+        .image-banner.playhub-banner .banner-art { height:auto !important; object-position:center; }
 
         /* =========================================================
            EARNINGS / WITHDRAWAL
@@ -3494,13 +3494,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/B217A240-BAEF-4FB2-BC28-DE86FCF5FE11-artguru.png" alt="Rocket"></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/0F25CEC1-DC44-478B-976B-0378E8780A06-artguru.png" alt="Rocket"></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/26B497FC-6E20-4444-B996-FBB19C57EF0E-artguru.png" alt="PVP"></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/6896019A-C8B9-4954-B54C-3F3DFA6E411D-artguru.png" alt="PVP"></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/playhub-banner-user.jpg" alt="Play Hub"></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/C99467AA-DF1E-46DA-AFFC-4B717125774B-artguru.png" alt="Play Hub"></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
