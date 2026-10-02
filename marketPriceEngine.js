@@ -4,10 +4,12 @@ const { URL } = require('url');
 const GIFT_DETAILS_URL = 'https://raw.githubusercontent.com/ssamy2/TelegramGiftsAssests/main/Gifts_Details.json';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 15000;
+const MODEL_CACHE_TTL_MS = 30 * 60 * 1000;
 
 let priceCache = null;
 let cacheExpiry = 0;
 let fetchInProgress = null;
+const modelPriceCache = new Map();
 
 function fetchJson(urlString) {
     return new Promise((resolve, reject) => {
@@ -161,6 +163,55 @@ async function refreshMarketPrices() {
     }
 }
 
+async function getModelPriceIndex(collectibleName) {
+    const key = normalizeCollectibleName(collectibleName);
+    if (!key) return null;
+    const cached = modelPriceCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    await ensureCache();
+    const base = priceCache?.data?.upgraded?.find(gift => {
+        const full = normalizeCollectibleName(gift?.full_name);
+        const short = normalizeCollectibleName(gift?.short_name);
+        return full === key || short === key;
+    });
+    if (!base?.models) return null;
+    const modelUrl = 'https://raw.githubusercontent.com/ssamy2/TelegramGiftsAssests/main/' + String(base.models).replace(/^\/+/, '');
+    try {
+        const value = await fetchJson(modelUrl);
+        modelPriceCache.set(key, { value, expiresAt: Date.now() + MODEL_CACHE_TTL_MS });
+        return value;
+    } catch (error) {
+        console.warn('Gift model price lookup unavailable:', error.message);
+        return null;
+    }
+}
+
+async function getCollectibleVariantMarketValue(collectible) {
+    const name = String(collectible?.name || collectible?.base_name || '').trim();
+    if (!name) return null;
+    const label = String(collectible?.label || collectible?.model_name || '').trim();
+    const backdrop = String(collectible?.backdrop || '').trim();
+
+    if (label && !['random', 'reward', 'balance'].includes(label.toLowerCase())) {
+        const modelPrices = await getModelPriceIndex(name);
+        const modelPrice = Number(modelPrices?.models?.[label]);
+        if (Number.isFinite(modelPrice) && modelPrice > 0) {
+            return { floorPriceTon: modelPrice, providers: { model_floor_ton: modelPrice }, source: 'gift-details-model', model: label, backdrop: backdrop || null, lastUpdated: priceCache?.lastUpdated || null };
+        }
+    }
+
+    if (backdrop) {
+        const modelPrices = await getModelPriceIndex(name);
+        const backdropPrice = Number(modelPrices?.backdrops?.[backdrop]);
+        if (Number.isFinite(backdropPrice) && backdropPrice > 0) {
+            return { floorPriceTon: backdropPrice, providers: { backdrop_floor_ton: backdropPrice }, source: 'gift-details-backdrop', model: label || null, backdrop, lastUpdated: priceCache?.lastUpdated || null };
+        }
+    }
+
+    const base = getCollectibleMarketValue({ name, base_name: collectible?.base_name || name, model_name: name });
+    return base ? { ...base, source: 'gift-details-collection' } : null;
+}
+
 function getCacheStatus() {
     if (!priceCache) return { loaded: false };
     return {
@@ -175,6 +226,7 @@ function getCacheStatus() {
 
 module.exports = {
     getCollectibleMarketValue,
+    getCollectibleVariantMarketValue,
     refreshMarketPrices,
     ensureCache,
     getCacheStatus,
