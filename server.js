@@ -3820,11 +3820,13 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let gift = null;
             let tonReward = null;
 
+            let giftPool = [];
             if (winsGift) {
-                const pool = await getPaidBoxGiftPool(boxId, config.rarity);
-                if (!pool.length) throw new Error('No gifts available for this box');
-                gift = pool[crypto.randomInt(0, pool.length)];
+                giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
+                if (!giftPool.length) throw new Error('No gifts available for this box');
+                gift = giftPool[crypto.randomInt(0, giftPool.length)];
             } else {
+                // TON rewards are strictly limited to this box's configured values.
                 tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
             }
 
@@ -3839,7 +3841,23 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             if (!boxRow) throw new Error('Lootbox is not registered');
 
             let userGift = null;
-            if (gift) userGift = await addLootBoxGiftToUser(req.user.id, gift.id);
+            let giftMarketValue = 0;
+            if (gift) {
+                const market = getCollectibleMarketValue({
+                    name: gift.name,
+                    base_name: gift.telegram_gift_id,
+                    model_name: gift.name
+                });
+                giftMarketValue = Number(market?.floorPriceTon ?? gift.value ?? 0);
+                userGift = await addLootBoxGiftToUser(req.user.id, gift.id);
+                if (giftMarketValue > 0) {
+                    await run(
+                        'UPDATE user_gifts SET market_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [giftMarketValue, userGift.id]
+                    );
+                    userGift.market_value = giftMarketValue;
+                }
+            }
 
             await run(
                 'INSERT INTO lootbox_history (user_id, lootbox_id, gift_id, status) VALUES (?, ?, ?, ?)',
@@ -3863,6 +3881,18 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 );
             }
 
+            const spinGiftItems = (giftPool || []).map(item => ({
+                name: item.name,
+                image: paidBoxGiftImage(item.name),
+                rewardType: 'gift'
+            }));
+            const spinTonItems = config.tonRewards.map(value => ({
+                name: Number(value).toFixed(2) + ' TON Balance',
+                image: '/assets/ton-icon.svg',
+                value: Number(value),
+                rewardType: 'ton'
+            }));
+
             return {
                 boxId,
                 boxName: config.name,
@@ -3873,9 +3903,11 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     image_url: paidBoxGiftImage(gift.name),
                     userGiftId: userGift?.id || null,
                     pending: true,
-                    sellValue: Number(((Number(gift.value || 0)) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2))
+                    marketValue: giftMarketValue,
+                    sellValue: Number((giftMarketValue * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2))
                 } : null,
                 tonReward,
+                spinItems: [...spinGiftItems, ...spinTonItems],
                 balance: Number(await getUserBalance(req.user.id) || 0)
             };
         });
