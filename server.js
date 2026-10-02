@@ -3164,7 +3164,7 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
         }
 
-        const reward = await get('SELECT ug.*, g.name, g.value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1', [userGiftId, req.user.id]);
+        const reward = await get("SELECT ug.*, g.name, COALESCE(ug.market_value, g.value) AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
 
         const baseValue = Number(reward.value || 0);
