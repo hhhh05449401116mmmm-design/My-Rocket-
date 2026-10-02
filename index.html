@@ -834,11 +834,15 @@
         .loot-box-modal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
         .loot-box-modal-title { flex:1; text-align:center; color:#fff; font-size:20px; font-weight:900; }
         .loot-box-modal-subtitle { text-align:center; color:#8f8f96; font-size:11px; margin:-4px 0 12px; }
-        .loot-box-modal-strip { display:flex; gap:6px; padding:7px; border-radius:12px; background:rgba(255,255,255,.055); overflow-x:auto; scrollbar-width:none; }
-        .loot-box-modal-strip::-webkit-scrollbar { display:none; }
-        .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
+        .loot-box-modal-strip-wrap { position:relative; width:100%; height:68px; overflow:hidden; border-radius:12px; background:rgba(255,255,255,.055); }
+        .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:transform 4.2s cubic-bezier(.12,.75,.18,1); overflow:visible; user-select:none; pointer-events:none; touch-action:none; }
+        .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); overflow:hidden; }
+        .loot-box-modal-strip-item.gift { background:linear-gradient(145deg,#6b5210 0%,#c99b18 45%,#6f5110 100%); box-shadow:inset 0 0 12px rgba(255,221,100,.25); }
+        .loot-box-modal-strip-item.ton { background:linear-gradient(145deg,#075b88 0%,#08a9ef 50%,#075b88 100%); box-shadow:inset 0 0 14px rgba(90,210,255,.28); }
         .loot-box-modal-strip-item img { width:44px; height:44px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; }
-        .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; }
+        .loot-box-strip-pointer { position:absolute; z-index:4; left:50%; top:0; width:0; height:0; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:12px solid #418bff; filter:drop-shadow(0 1px 3px rgba(65,139,255,.55)); pointer-events:none; }
+        .loot-box-strip-pointer::after { content:''; position:absolute; left:-1px; top:10px; width:2px; height:48px; background:#418bff; box-shadow:0 0 7px rgba(65,139,255,.5); }
+        .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
         .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 10px; }
@@ -3755,8 +3759,14 @@
                     <button class="close-button" type="button" onclick="closeModal('loot-box-modal')">×</button>
                 </div>
                 <div class="loot-box-modal-subtitle" id="loot-box-modal-subtitle"></div>
-                <div class="loot-box-modal-strip" id="loot-box-modal-strip"></div>
-                <button id="loot-box-topup-button" class="loot-box-topup" type="button" onclick="openDeposit()">💳 Top Up Balance</button>
+                <div class="loot-box-modal-strip-wrap">
+                    <span class="loot-box-strip-pointer" aria-hidden="true"></span>
+                    <div class="loot-box-modal-strip" id="loot-box-modal-strip"></div>
+                </div>
+                <button id="loot-box-topup-button" class="loot-box-topup" type="button" onclick="openDeposit()">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5h13a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2h-11a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3Z"/><path d="M5.5 7.5V5.8a2 2 0 0 1 2-2h9"/><path d="M16.5 13.5h.01"/></svg>
+                    <span>Top Up Balance</span>
+                </button>
                 <div class="loot-box-collections-title"><span>◈</span><span>Collections in this Box</span></div>
                 <div id="loot-box-collections" class="loot-box-collections"></div>
                 <button id="loot-box-play-button" class="loot-box-play-button" type="button" onclick="playSelectedLootBox()">🎮 Play</button>
@@ -4120,6 +4130,124 @@
             }
         }
 
+        function paidLootBoxItemImage(item) {
+            if (!item) return '/assets/ton-icon.svg';
+            if (item.rewardType === 'ton') return '/assets/ton-icon.svg';
+            if (item.label && item.label !== 'Random') {
+                return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png';
+            }
+            return item.image || '/assets/ton-icon.svg';
+        }
+
+        function renderPaidLootBoxPreview(box, items, strip, collections) {
+            if (!strip || !collections) return;
+
+            const baseItems = Array.isArray(items) ? items.slice() : [];
+            const previewItems = baseItems.concat([
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
+            ]);
+
+            // The strip is intentionally fixed and repeated. It cannot be dragged.
+            const repeated = previewItems.length ? previewItems.concat(previewItems, previewItems) : [
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
+            ];
+            strip.style.transition = 'none';
+            strip.style.transform = 'translate3d(0,0,0)';
+            strip.innerHTML = repeated.map(function(item) {
+                const isTon = item.rewardType === 'ton' || /TON/i.test(String(item.name || ''));
+                return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
+                    '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                '</div>';
+            }).join('');
+
+            if (!items.length) {
+                collections.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض جوائز هذا الصندوق هنا</div>';
+                return;
+            }
+
+            collections.innerHTML = items.map(function(item) {
+                const isTonReward = item.rewardType === 'ton';
+                const modelImage = paidLootBoxItemImage(item);
+                const valueText = String(item.value || '— TON');
+                const hasTonValue = /TON/i.test(valueText);
+                return '<div class="loot-box-collectible' + (isTonReward ? ' gold-frame' : '') + '">' +
+                    '<div class="loot-box-collectible-image-wrap">' +
+                        '<img src="' + escapeHtmlAttribute(modelImage) + '" alt="' + escapeHtmlAttribute(item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : '')) + '" loading="lazy" decoding="async">' +
+                        (hasTonValue ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
+                    '</div>' +
+                    '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
+                    '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Reward') + '</span>' +
+                '</div>';
+            }).join('');
+        }
+
+        function animatePaidLootBoxStrip(box, winner) {
+            const strip = document.getElementById('loot-box-modal-strip');
+            if (!strip) return;
+
+            const winnerIsTon = winner && winner.winnerType === 'ton';
+            let winnerItem;
+
+            if (winnerIsTon) {
+                winnerItem = {
+                    name: Number(winner.tonReward || 0).toFixed(2) + ' TON',
+                    image: '/assets/ton-icon.svg',
+                    rewardType: 'ton'
+                };
+            } else {
+                const winnerName = winner && winner.gift ? winner.gift.name : 'Gift';
+                const catalog = Array.isArray(box.collectibles) ? box.collectibles : [];
+                winnerItem = catalog.find(function(item) {
+                    return item.rewardType !== 'ton' && item.name === winnerName;
+                }) || {
+                    name: winnerName,
+                    image: winner && winner.gift ? (winner.gift.image_url || winner.gift.image) : '/assets/ton-icon.svg',
+                    rewardType: 'gift'
+                };
+            }
+
+            const base = Array.isArray(box.collectibles) ? box.collectibles.slice() : [];
+            base.push(
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
+            );
+
+            const pool = base.length ? base : [winnerItem];
+            const repeats = 18;
+            const sequence = [];
+            for (let i = 0; i < repeats; i++) sequence.push.apply(sequence, pool);
+
+            // Stop well inside the repeated sequence so the strip has no visible end.
+            const targetIndex = Math.floor(repeats / 2) * pool.length + Math.floor(pool.length * 0.62);
+            sequence[targetIndex] = winnerItem;
+
+            strip.style.transition = 'none';
+            strip.style.transform = 'translate3d(0,0,0)';
+            strip.innerHTML = sequence.map(function(item) {
+                const isTon = item.rewardType === 'ton' || /TON/i.test(String(item.name || ''));
+                return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
+                    '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                '</div>';
+            }).join('');
+
+            const itemWidth = 52;
+            const gap = 6;
+            const step = itemWidth + gap;
+            const wrap = strip.parentElement;
+            const centerOffset = Math.max(0, ((wrap ? wrap.clientWidth : 320) / 2) - (itemWidth / 2));
+            const destination = centerOffset - (targetIndex * step);
+
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    strip.style.transition = 'transform 4.8s cubic-bezier(.12,.75,.18,1)';
+                    strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
+                });
+            });
+        }
+
         function openLootBox(box) {
             selectedLootBox = box;
             const modal = document.getElementById('loot-box-modal');
@@ -4141,6 +4269,9 @@
             if (box.id === 'box_100') {
                 render100TonCollectibles(box, 'جارٍ قراءة القيمة السوقية…');
                 load100TonMarketValues(box);
+                renderPaidLootBoxPreview(box, items, strip, collections);
+            } else if (box.price > 0) {
+                renderPaidLootBoxPreview(box, items, strip, collections);
             } else {
                 strip.innerHTML = items.map(function(item) {
                     const modelImage = item.label && item.label !== 'Random'
@@ -4172,15 +4303,18 @@
             }
 
             const topupButton = document.getElementById('loot-box-topup-button');
-            if (topupButton) topupButton.style.display = box.price > 0 ? '' : 'none';
+            if (topupButton) {
+                const insufficient = box.price > 0 && Number(tonBalance || 0) < Number(box.price);
+                topupButton.style.display = insufficient ? 'flex' : 'none';
+            }
             if (priceNote) priceNote.textContent = box.price > 0 ? box.price + ' TON' : (box.id === 'free24' ? 'FREE • 24H' : 'FREE');
             if (playButton) {
-                playButton.style.display = box.id === 'box_100' ? 'none' : '';
+                playButton.style.display = box.price > 0 || box.id === 'free' || box.id === 'free24' ? '' : 'none';
                 playButton.disabled = false;
                 playButton.onclick = null;
-                playButton.textContent = box.id === 'box_100'
-                    ? (currentLanguage === 'ar' ? '🎲 Random' : '🎲 Random')
-                    : ((box.id === 'free' || box.id === 'free24') ? (currentLanguage === 'ar' ? '🎁 استلام الهدية' : '🎁 Claim Gift') : (currentLanguage === 'ar' ? '🎮 لعب' : '🎮 Play'));
+                playButton.textContent = (box.id === 'free' || box.id === 'free24')
+                    ? (currentLanguage === 'ar' ? '🎁 استلام الهدية' : '🎁 Claim Gift')
+                    : (currentLanguage === 'ar' ? '🎮 فتح الصندوق' : '🎮 Open Box');
             }
 
             modal.classList.add('show');
@@ -4194,7 +4328,6 @@
             const requiredBalance = Number(box.price || 0);
             const currentBalance = Number(tonBalance || 0);
 
-            // Deposit is requested only from the Play/Random action, never from opening the box.
             if (requiredBalance > currentBalance) {
                 closeModal('loot-box-modal');
                 openDeposit();
@@ -4221,9 +4354,7 @@
                     if (!response.ok || !data.ok) throw new Error(data.error || 'Claim failed');
 
                     if (title) title.textContent = currentLanguage === 'ar' ? '🎉 تمت الاستلام' : '🎉 Gift Claimed';
-                    if (subtitle) subtitle.textContent = box.id === 'free24'
-                        ? 'Daily Free Box'
-                        : 'Free Box';
+                    if (subtitle) subtitle.textContent = box.id === 'free24' ? 'Daily Free Box' : 'Free Box';
                     if (collections) {
                         const gift = data.gift || {};
                         collections.innerHTML =
@@ -4249,24 +4380,37 @@
                 }
                 return;
             }
-            if (box.id !== 'box_100') {
-                closeModal('loot-box-modal');
-                if (typeof openRocketGame === 'function') openRocketGame();
+
+            if (box.price > 0) {
+                await playPaidLootBox(box);
                 return;
             }
 
+            closeModal('loot-box-modal');
+        }
+
+        async function playPaidLootBox(box) {
             const playButton = document.getElementById('loot-box-play-button');
-            if (playButton) {
-                playButton.disabled = true;
-                playButton.textContent = currentLanguage === 'ar' ? '🎲 جاري السحب…' : '🎲 Drawing…';
+            const title = document.getElementById('loot-box-modal-title');
+            const subtitle = document.getElementById('loot-box-modal-subtitle');
+            const collections = document.getElementById('loot-box-collections');
+            if (!playButton) return;
+
+            if (Number(tonBalance || 0) < Number(box.price || 0)) {
+                closeModal('loot-box-modal');
+                openDeposit();
+                return;
             }
 
+            playButton.disabled = true;
+            playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري السحب…' : '🎁 Drawing…';
+
             try {
-                const response = await fetch(BACKEND_URL + '/api/loot-box/100/draw', {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/draw', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     cache: 'no-store',
-                    body: JSON.stringify({})
+                    body: JSON.stringify({ boxId: box.id })
                 });
                 const data = await response.json();
 
@@ -4282,37 +4426,42 @@
                 tonBalance = Number(data.balance || 0);
                 updateTonWalletUI();
 
-                const winner = data.gift || {};
-                const marketValue = Number(data.marketValueTon || 0);
-                const collections = document.getElementById('loot-box-collections');
-                const strip = document.getElementById('loot-box-modal-strip');
-                const title = document.getElementById('loot-box-modal-title');
-                const subtitle = document.getElementById('loot-box-modal-subtitle');
+                if (title) title.textContent = currentLanguage === 'ar' ? '🎉 النتيجة' : '🎉 Result';
+                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار النتيجة' : 'Result selected';
 
-                if (title) title.textContent = currentLanguage === 'ar' ? '🎉 الفائز' : '🎉 Winner';
-                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم السحب عشوائياً عند الضغط على Random' : 'Randomly drawn at the moment of play';
-                if (strip) strip.innerHTML = '';
-                if (collections) {
-                    collections.innerHTML =
-                        '<div class="loot-box-winner">' +
-                            '<div class="loot-box-winner-label">🎲 RANDOM</div>' +
-                            '<img src="' + escapeHtmlAttribute(winner.image_url || winner.image || '') + '" alt="' + escapeHtmlAttribute(winner.name || '') + '" loading="eager" decoding="async">' +
-                            '<div class="loot-box-winner-name">' + escapeHtml(winner.name || 'Telegram Collectible') + '</div>' +
-                            '<div class="loot-box-winner-value">' + (marketValue > 0 ? escapeHtml(marketValue.toFixed(2) + ' TON') : '— TON') + '</div>' +
-                        '</div>';
+                if (collections && box.id !== 'box_100') {
+                    if (data.winnerType === 'gift' && data.gift) {
+                        collections.innerHTML =
+                            '<div class="loot-box-winner">' +
+                                '<div class="loot-box-winner-label">🎁 ' + escapeHtml(data.boxName || box.name) + '</div>' +
+                                '<img src="' + escapeHtmlAttribute(data.gift.image_url || data.gift.image || '') + '" alt="' + escapeHtmlAttribute(data.gift.name || 'Gift') + '" loading="eager" decoding="async">' +
+                                '<div class="loot-box-winner-name">' + escapeHtml(data.gift.name || 'Telegram Gift') + '</div>' +
+                                '<div class="loot-box-winner-value">🎁 Gift</div>' +
+                            '</div>';
+                    } else {
+                        collections.innerHTML =
+                            '<div class="loot-box-winner">' +
+                                '<div class="loot-box-winner-label">💎 ' + escapeHtml(data.boxName || box.name) + '</div>' +
+                                '<img src="/assets/ton-icon.svg" alt="TON" loading="eager">' +
+                                '<div class="loot-box-winner-name">' + escapeHtml(Number(data.tonReward || 0).toFixed(2)) + ' TON</div>' +
+                                '<div class="loot-box-winner-value">💎 TON Balance</div>' +
+                            '</div>';
+                    }
                 }
 
-                if (playButton) {
-                    playButton.disabled = false;
-                    playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
-                    playButton.onclick = function() { closeModal('loot-box-modal'); };
-                }
+                animatePaidLootBoxStrip(box, data);
+
+                playButton.disabled = false;
+                playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
+                playButton.onclick = function() {
+                    closeModal('loot-box-modal');
+                    playButton.onclick = function() { playSelectedLootBox(); };
+                };
             } catch (error) {
-                console.error('100 TON loot-box draw failed:', error);
-                if (playButton) {
-                    playButton.disabled = false;
-                    playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
-                }
+                console.error('Paid loot-box draw failed:', error);
+                playButton.disabled = false;
+                playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                showToast(currentLanguage === 'ar' ? 'تعذر فتح الصندوق، حاول مرة أخرى' : 'Unable to open the box, please try again');
             }
         }
 
