@@ -6735,8 +6735,11 @@
             flightStartedAt = state.flightStartedAt || null;
             const currentStateMultiplier = Number(state.multiplier) || 1;
             const sampledAt = performance.now();
+            const multiplierChanged = currentStateMultiplier !== previousMultiplierSample;
+            if (state.phase === "FLIGHT" && (previousPhase !== "FLIGHT" || multiplierChanged)) {
+                multiplierSampledAt = sampledAt;
+            }
             previousMultiplierSample = currentStateMultiplier;
-            multiplierSampledAt = sampledAt;
             currentMultiplier = currentStateMultiplier;
             if (state.phase === "COUNTDOWN") {
                 if (gamePhase !== "COUNTDOWN") {
@@ -7104,15 +7107,19 @@
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
 
-                // UI-only interpolation. The server still owns the real multiplier
-                // and crash result; this only fills the 1-second visual gaps.
-                const predictedMultiplier = Math.max(
-                    1,
-                    1 + elapsedSeconds * multiplierRate
-                );
+                // UI-only interpolation between authoritative server ticks.
+                // Never extrapolate beyond one server tick: the server is authoritative
+                // and updates its multiplier once per second. This prevents the UI from
+                // visually reaching 2.00x while the actual round is about to crash at 1.70x.
+                const authoritativeMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
+                const sampleElapsedSeconds = multiplierSampledAt
+                    ? Math.max((timestamp - multiplierSampledAt) / 1000, 0)
+                    : 0;
+                const interpolatedMultiplier = authoritativeMultiplier +
+                    Math.min(sampleElapsedSeconds, 1) * multiplierRate;
                 displayMultiplier = Math.max(
-                    Number(currentMultiplier) || 1,
-                    predictedMultiplier
+                    authoritativeMultiplier,
+                    Math.min(interpolatedMultiplier, authoritativeMultiplier + multiplierRate)
                 );
 
                 renderFlightMultiplier(timestamp);
