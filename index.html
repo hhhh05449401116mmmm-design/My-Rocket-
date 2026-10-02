@@ -4398,11 +4398,25 @@
             return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(name) + '/png/Original.png';
         }
 
+        const BOX_0_1_BROKEN_GIFT_IMAGES = new Set([
+            "Bunny Muffin", "Chill Flame", "Instant Ramen", "Pool Float", "Vice Cream",
+            "Mad Pumpkin", "Crystal Ball", "Flying Broom", "Record Player", "Skull Flower",
+            "Valentine Box", "Sky Stilettos", "Trapped Heart", "Ionic Dryer", "UFC Strike",
+            "Snoop Cigar", "Love Potion", "Rare Bird", "Bling Binky", "Electric Skull",
+            "Khabib's Papakha", "Eternal Rose", "Cupid Charm", "Voodoo Doll", "Neko Helmet",
+            "Toy Bear", "Genie Lamp", "Signet Ring", "Diamond Ring", "Swiss Watch",
+            "Magic Potion", "Sharp Tongue", "Kissed Frog", "Bonded Ring", "Vintage Cigar",
+            "Perfume Bottle", "Ion Gem", "Mini Oscar", "Artisan Brick", "Gem Signet",
+            "Low Rider", "Loot Bag", "Mighty Arm", "Astral Shard", "Nail Bracelet",
+            "Westside Sign", "Durov's Glasses", "Plush Pepe", "Heart Locket", "Durov's Cap",
+            "Precious Peach", "Scared Cat", "Heroic Helmet"
+        ]);
+
         function paidLootBoxItemMarkup(item, altText, loadingMode, useSprite) {
             const name = String(item && item.name || '');
             const position = useSprite ? BOX_0_1_GIFT_SPRITE_POSITIONS[name] : null;
             const alt = escapeHtmlAttribute(altText || name || 'Reward');
-            if (position) {
+            if (position && !BOX_0_1_BROKEN_GIFT_IMAGES.has(name)) {
                 const x = ((position[0] / 7) * 100).toFixed(4) + '%';
                 const y = ((position[1] / 7) * 100).toFixed(4) + '%';
                 return '<span class="paid-loot-gift-sprite" style="--paid-gift-x:' + x + ';--paid-gift-y:' + y + ';" role="img" aria-label="' + alt + '"></span>';
