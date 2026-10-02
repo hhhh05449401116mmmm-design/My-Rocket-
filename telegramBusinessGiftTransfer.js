@@ -39,6 +39,13 @@ async function ensureBusinessGiftClient() {
     try { return await initPromise; } finally { initPromise = null; }
 }
 
+function canonicalizeCollectibleSlug(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    const duplicateSuffix = raw.match(/^(.*)-(\d+)-\2$/);
+    return duplicateSuffix ? `${duplicateSuffix[1]}-${duplicateSuffix[2]}` : raw;
+}
+
 function numberValue(value) {
     const n = Number(value);
     return Number.isSafeInteger(n) ? n : null;
@@ -173,6 +180,30 @@ async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
     if (!wanted) return null;
 
     const exact = parseCollectibleIdentity(wanted);
+    const canonicalSlug = canonicalizeCollectibleSlug(wanted);
+    const telegramClient = await ensureBusinessGiftClient();
+
+    // The exact Telegram collectible is identified by its t.me/nft/<slug> slug.
+    // Query it directly first instead of relying on the paginated saved-gifts list.
+    if (canonicalSlug) {
+        try {
+            const result = await telegramClient.api.payments.getSavedStarGift({
+                stargift: [new Api.InputSavedStarGiftSlug({ slug: canonicalSlug })]
+            });
+            const matched = Array.isArray(result?.gifts) ? result.gifts[0] : null;
+            if (matched) {
+                matched.__rocketCollectibleSlug = canonicalSlug;
+                return matched;
+            }
+        } catch (error) {
+            console.warn('⚠️ Telegram Business collectible slug lookup failed:', JSON.stringify({
+                requested: wanted,
+                canonicalSlug,
+                error: error?.message || String(error)
+            }));
+        }
+    }
+
     const gifts = await listBusinessCollectibles();
 
     // Older verified collectibles can contain the Telegram display name without the
@@ -227,13 +258,18 @@ async function findBusinessGiftByUniqueId(uniqueCollectibleId) {
     return fallback;
 }
 
-async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
+async function transferSelectedGiftToUser({ savedGift, uniqueCollectibleId, telegramUserId }) {
     const telegramClient = await ensureBusinessGiftClient();
-    const msgId = savedGiftMsgId(savedGift);
-    if (!Number.isSafeInteger(msgId) || msgId <= 0) throw new Error('Telegram did not return a valid saved gift message id');
+    const collectibleSlug = canonicalizeCollectibleSlug(
+        uniqueCollectibleId
+        || savedGift?.__rocketCollectibleSlug
+        || savedGiftUniqueId(savedGift)
+    );
+    if (!collectibleSlug) throw new Error('Telegram collectible slug is missing');
 
     const recipientPeer = await telegramClient.getInputEntity(Number(telegramUserId));
-    const stargift = new Api.InputSavedStarGiftUser({ msgId });
+    // Use the canonical Telegram NFT slug for the exact collectible identity.
+    const stargift = new Api.InputSavedStarGiftSlug({ slug: collectibleSlug });
     const invoice = new Api.InputInvoiceStarGiftTransfer({ stargift, toId: recipientPeer });
     const transferStars = savedGiftTransferStars(savedGift);
 
@@ -250,8 +286,9 @@ async function transferSelectedGiftToUser({ savedGift, telegramUserId }) {
     }
 
     return {
-        uniqueCollectibleId: savedGiftUniqueId(savedGift),
-        telegramGiftInstanceId: String(msgId),
+        uniqueCollectibleId: collectibleSlug,
+        telegramGiftInstanceId: String(savedGiftMsgId(savedGift) || ''),
+
         collectibleNumber: numberValue(savedGift?.gift?.num ?? savedGift?.gift?.number),
         msgId,
         transferStars: transferStars || 0,
