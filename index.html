@@ -4372,10 +4372,12 @@
             return item.image || '/assets/ton-icon.svg';
         }
 
+        // Local gift atlas supplied for the 0.1 TON box. It contains 58 exact gift images
+        // in row-major order (8 columns x 8 rows, last row uses 2 slots).
         const BOX_0_1_GIFT_SPRITE_POSITIONS = {
             "Plush Pepe": [0, 0], "Heart Locket": [1, 0], "Durov's Cap": [2, 0], "Precious Peach": [3, 0],
             "Scared Cat": [4, 0], "Heroic Helmet": [5, 0], "Loot Bag": [6, 0], "Mighty Arm": [7, 0],
-            "Astral Shard": [0, 1], "Nail Bracelet": [1, 1], "Westside Sign": [2, 1], "Durov’s Glasses": [3, 1],
+            "Astral Shard": [0, 1], "Nail Bracelet": [1, 1], "Westside Sign": [2, 1], "Durov's Glasses": [3, 1],
             "Swiss Watch": [4, 1], "Magic Potion": [5, 1], "Sharp Tongue": [6, 1], "Kissed Frog": [7, 1],
             "Bonded Ring": [0, 2], "Vintage Cigar": [1, 2], "Perfume Bottle": [2, 2], "Ion Gem": [3, 2],
             "Mini Oscar": [4, 2], "Artisan Brick": [5, 2], "Gem Signet": [6, 2], "Low Rider": [7, 2],
@@ -4384,10 +4386,17 @@
             "Flying Broom": [0, 4], "Record Player": [1, 4], "Skull Flower": [2, 4], "Valentine Box": [3, 4],
             "Sky Stilettos": [4, 4], "Trapped Heart": [5, 4], "Ionic Dryer": [6, 4], "UFC Strike": [7, 4],
             "Snoop Cigar": [0, 5], "Love Potion": [1, 5], "Rare Bird": [2, 5], "Bling Binky": [3, 5],
-            "Electric Skull": [4, 5], "Khabib’s Papakha": [5, 5], "Eternal Rose": [6, 5], "Cupid Charm": [7, 5],
+            "Electric Skull": [4, 5], "Khabib's Papakha": [5, 5], "Eternal Rose": [6, 5], "Cupid Charm": [7, 5],
             "Chill Flame": [0, 6], "Instant Ramen": [1, 6], "Pool Float": [2, 6], "Vice Cream": [3, 6],
-            "Bunny Muffin": [4, 6]
+            "Bunny Muffin": [4, 6], "Berry Box": [5, 6], "Jelly Bunny": [6, 6], "Joyful Bundle": [7, 6],
+            "Evil Eye": [0, 7], "Jolly Chimp": [1, 7]
         };
+
+        function paidLootBoxGiftCdnImage(item) {
+            const name = String(item && item.name || '').trim();
+            if (!name) return '/assets/ton-icon.svg';
+            return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(name) + '/png/Original.png';
+        }
 
         function paidLootBoxItemMarkup(item, altText, loadingMode, useSprite) {
             const name = String(item && item.name || '');
@@ -4398,7 +4407,11 @@
                 const y = ((position[1] / 7) * 100).toFixed(4) + '%';
                 return '<span class="paid-loot-gift-sprite" style="--paid-gift-x:' + x + ';--paid-gift-y:' + y + ';" role="img" aria-label="' + alt + '"></span>';
             }
-            return '<img src="' + escapeHtmlAttribute(paidLootBoxItemImage(item)) + '" alt="' + alt + '" loading="' + (loadingMode || 'lazy') + '" decoding="async">';
+            // Remaining 0.1 TON gifts use the public static Original model image directly.
+            // This bypasses the server-side Telegram media proxy, so opening/scrolling the box
+            // does not create Telegram MTProto image work on the game server.
+            const src = useSprite ? paidLootBoxGiftCdnImage(item) : paidLootBoxItemImage(item);
+            return '<img src="' + escapeHtmlAttribute(src) + '" alt="' + alt + '" loading="' + (loadingMode || 'lazy') + '" decoding="async">';
         }
 
         function renderPaidLootBoxPreview(box, items, strip, collections) {
