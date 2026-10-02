@@ -3976,7 +3976,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     req.user.id,
                     'GIFT_WON',
                     '🎁 You won ' + gift.name + ' from the ' + config.name + ' box!',
-                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.25 : 0.30 }
+                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.25 : 0.07 }
                 );
             } else if (!nothing) {
                 await updateUserBalance(req.user.id, tonReward, 'add');
@@ -3984,7 +3984,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     req.user.id,
                     'BALANCE_WON',
                     '💎 You won ' + Number(tonReward).toFixed(2) + ' TON from the ' + config.name + ' box!',
-                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.70 : 0.70 }
+                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.70 : 0.93 }
                 );
             } else {
                 await createNotification(
