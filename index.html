@@ -4427,14 +4427,18 @@
                 clearTimeout(lootBoxMarketRefreshTimer);
                 lootBoxMarketRefreshTimer = null;
             }
+            if (!box || box.id !== 'box_100' || selectedLootBox !== box) return;
+            lootBoxMarketRefreshTimer = setTimeout(function() {
+                if (selectedLootBox === box) load100TonMarketValues(box);
+            }, 60000);
         }
 
-        async function load100TonMarketValues(box, forceRefresh) {
+        async function load100TonMarketValues(box) {
             const token = ++lootBoxMarketRequestToken;
             if (!box || box.id !== 'box_100') return;
 
             try {
-                const response = await fetch(BACKEND_URL + '/api/loot-box/100/market-items' + (forceRefresh ? '?refresh=1' : ''), {
+                const response = await fetch(BACKEND_URL + '/api/loot-box/100/market-items', {
                     headers: getAuthHeaders(),
                     cache: 'no-store'
                 });
@@ -4451,18 +4455,19 @@
                             });
                         if (!localItem) return;
 
-                        const incomingValue = Number(serverItem.marketValueTon);
-                        if (Number.isFinite(incomingValue) && incomingValue > 0) {
-                            localItem.marketValueTon = incomingValue;
-                            localItem.value = incomingValue.toFixed(2) + ' TON';
-                        }
+                        localItem.marketValueTon = Number(serverItem.marketValueTon);
+                        localItem.value = localItem.marketValueTon > 0
+                            ? Number(localItem.marketValueTon).toFixed(2) + ' TON'
+                            : '— TON';
                     });
 
                     // Update only the numeric price. Gift cards/images stay mounted.
                     update100TonMarketValuesInPlace(box);
                 }
+                schedule100TonMarketRefresh(box);
             } catch (error) {
-                // Keep the last displayed prices during temporary market failures.
+                // Keep the existing card layout and retry later without rebuilding anything.
+                schedule100TonMarketRefresh(box);
             }
         }
 
@@ -5140,11 +5145,6 @@
                     return;
                 }
 
-                if (box.id === 'box_100') {
-                    // Refresh the market only for a new opening, never during the spinner/result.
-                    await load100TonMarketValues(box, true);
-                }
-
                 const drawEndpoint = box.id === 'box_100'
                     ? '/api/loot-box/100/draw'
                     : '/api/loot-box/draw';
@@ -5247,66 +5247,6 @@
         // prevents auth from silently going to an old/removed Railway domain after a domain rotation.
         const BACKEND_URL = window.location.origin;
         const TON_ICON_URL = '/assets/ton-icon.svg';
-        const GIFT_ICON_URL = '/assets/gift-icon.svg';
-
-        function replaceGameUiIcons(root) {
-            if (!root) return;
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-            const nodes = [];
-            let node;
-            while ((node = walker.nextNode())) {
-                if (!node.nodeValue || !/[🎁💎💰]/.test(node.nodeValue)) continue;
-                const parent = node.parentElement;
-                if (!parent || parent.closest('script,style,textarea')) continue;
-                nodes.push(node);
-            }
-            nodes.forEach(function(textNode) {
-                const fragment = document.createDocumentFragment();
-                textNode.nodeValue.split(/(🎁|💎|💰)/g).forEach(function(part) {
-                    if (!part) return;
-                    if (part === '🎁') {
-                        const img = document.createElement('img');
-                        img.src = GIFT_ICON_URL;
-                        img.alt = 'Gift';
-                        img.className = 'game-ui-icon game-ui-gift-icon';
-                        img.style.cssText = 'width:1.18em;height:1.18em;display:inline-block;vertical-align:-0.2em;object-fit:contain;';
-                        fragment.appendChild(img);
-                        return;
-                    }
-                    if (part === '💎' || part === '💰') {
-                        const parent = textNode.parentElement;
-                        const vipArea = parent && parent.closest('[id*="vip"],[class*="vip"]');
-                        if (vipArea) {
-                            fragment.appendChild(document.createTextNode(part));
-                            return;
-                        }
-                        const img = document.createElement('img');
-                        img.src = TON_ICON_URL;
-                        img.alt = 'TON';
-                        img.className = 'game-ui-icon game-ui-ton-icon';
-                        img.style.cssText = 'width:1.05em;height:1.05em;display:inline-block;vertical-align:-0.16em;object-fit:contain;';
-                        fragment.appendChild(img);
-                        return;
-                    }
-                    fragment.appendChild(document.createTextNode(part));
-                });
-                textNode.parentNode.replaceChild(fragment, textNode);
-            });
-        }
-
-        function initGameUiIconObserver() {
-            if (!document.body || window.__gameUiIconObserver) return;
-            replaceGameUiIcons(document.body);
-            window.__gameUiIconObserver = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(added) {
-                        if (added.nodeType === Node.ELEMENT_NODE) replaceGameUiIcons(added);
-                        else if (added.nodeType === Node.TEXT_NODE) replaceGameUiIcons(added.parentElement);
-                    });
-                });
-            });
-            window.__gameUiIconObserver.observe(document.body, { childList:true, subtree:true });
-        }
         // ⚠️ Public config only (not a secret) — the game's public Telegram username for receiving collectibles.
         const COLLECTIBLE_RECEIVER_USERNAME = "v_rray";
 
@@ -9509,7 +9449,6 @@
         // This prevents an earlier UI/Wallet initialization error from blocking
         // Telegram signed initData authentication and the game connection.
         async function bootstrapRocketApp() {
-            try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
             const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
