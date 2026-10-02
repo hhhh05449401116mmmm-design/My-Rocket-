@@ -3222,6 +3222,44 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
     }
 });
 
+// ===== Loot-box keep pending gift =====
+app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
+    try {
+        const userGiftId = Number(req.body?.userGiftId);
+        if (!Number.isSafeInteger(userGiftId) || userGiftId <= 0) {
+            return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
+        }
+
+        const result = await run(
+            `UPDATE user_gifts
+             SET status = 'OWNED', updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ? AND status = 'WON'`,
+            [userGiftId, req.user.id]
+        );
+        if (result.changes !== 1) {
+            return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
+        }
+
+        const gift = await get(
+            `SELECT ug.id AS user_gift_id, g.name, COALESCE(ug.market_value, g.value) AS market_value
+             FROM user_gifts ug
+             JOIN gifts g ON ug.gift_id = g.id
+             WHERE ug.id = ? AND ug.user_id = ?
+             LIMIT 1`,
+            [userGiftId, req.user.id]
+        );
+
+        res.json({
+            ok: true,
+            userGiftId,
+            gift: gift || null
+        });
+    } catch (error) {
+        console.error('Loot-box gift keep failed:', { userId: req.user?.id, userGiftId: req.body?.userGiftId, error: error.message });
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
 // ===== Loot-box pending gift sale =====
 app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
     try {
