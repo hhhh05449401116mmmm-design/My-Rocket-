@@ -346,6 +346,13 @@ const {
 } = require('./database');
 
 const {
+    initializeLeaderboard,
+    getWeeklyLeaderboard,
+    startLeaderboardCycleWorker,
+    stopLeaderboardCycleWorker
+} = require('./leaderboard');
+
+const {
     ensureBusinessGiftClient,
     findBusinessGiftForType,
     findBusinessGiftByUniqueId,
@@ -4669,13 +4676,24 @@ app.get('/api/stats', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.13A المتصدرون حسب إجمالي الصرف =====
+// ===== 5.13A Weekly activity leaderboard =====
+// Isolated from Crash, core game settlement, reward probabilities, and FREE/FREE24.
 app.get('/api/spender-leaderboard', authenticate, async (req, res) => {
     try {
-        const leaderboard = await getSpenderLeaderboard(200, req.user.id);
+        const leaderboard = await getWeeklyLeaderboard(req.user.id);
         res.json({ ok: true, ...leaderboard });
     } catch (error) {
-        console.error('Spender leaderboard error:', error);
+        console.error('Weekly leaderboard error:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.get('/api/weekly-leaderboard', authenticate, async (req, res) => {
+    try {
+        const leaderboard = await getWeeklyLeaderboard(req.user.id);
+        res.json({ ok: true, ...leaderboard });
+    } catch (error) {
+        console.error('Weekly leaderboard error:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
@@ -4806,6 +4824,8 @@ async function startServer(port = PORT) {
         // تهيئة قاعدة البيانات
         await initDatabase();
         await seedDatabase();
+        await initializeLeaderboard();
+        startLeaderboardCycleWorker();
         console.log('✅ Database initialized and seeded');
 
         await verifyTonTreasuryConfiguration();
@@ -4881,6 +4901,7 @@ if (require.main === module) {
         console.log('\n🛑 Shutting down server...');
         stopGameLoop();
         stopPvpGameLoop();
+        stopLeaderboardCycleWorker();
         db.close(() => {
             console.log('✅ Database closed');
             process.exit(0);
