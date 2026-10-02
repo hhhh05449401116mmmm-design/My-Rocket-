@@ -5055,7 +5055,9 @@
                 const userGiftId = Number(gift.userGiftId || 0);
                 if (userGiftId) pendingLootBoxRewardId = userGiftId;
 
-                const image = gift.image_url || gift.image || paidLootBox100GiftImage(gift);
+                const image = box.id === 'box_100'
+                    ? paidLootBox100GiftImage(gift)
+                    : 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(gift.name || '')) + '/png/Original.png';
                 const valueText = marketValue > 0 ? marketValue.toFixed(2) : (sellValue > 0 ? sellValue.toFixed(2) : '—');
 
                 stage.innerHTML =
