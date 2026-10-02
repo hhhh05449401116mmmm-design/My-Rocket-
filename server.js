@@ -839,6 +839,14 @@ async function ensureRuntimeBusinessConnection() {
 }
 
 // يستخرج الهوية الفريدة الرسمية لهدية Telegram Collectible فقط (يتجاهل النجوم/الهدايا العادية).
+function canonicalCollectibleSlug(name, number) {
+    const rawName = String(name || '').trim();
+    const numericNumber = Number(number);
+    if (!rawName || !Number.isSafeInteger(numericNumber) || numericNumber <= 0) return null;
+    const suffix = `-${numericNumber}`;
+    return rawName.endsWith(suffix) ? rawName : `${rawName}${suffix}`;
+}
+
 function extractUniqueCollectibleIdentity(ownedGift) {
     const uniqueGift = ownedGift?.gift;
     if (!ownedGift || ownedGift.type !== 'unique' || !uniqueGift) return null;
@@ -860,7 +868,7 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     const verifiedMetadata = {
         source: 'telegram.business.getBusinessAccountGifts',
         ownedGiftId: ownedGift.owned_gift_id || null,
-        uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
+        uniqueCollectibleId: canonicalCollectibleSlug(uniqueGift.name, uniqueGift.number),
         telegramGiftId: uniqueGift.gift_id || uniqueGift.base_name || uniqueGift.name,
         baseName: uniqueGift.base_name || null,
         uniqueName: uniqueGift.name,
@@ -913,7 +921,7 @@ function extractUniqueCollectibleIdentity(ownedGift) {
     };
 
     return {
-        uniqueCollectibleId: `${uniqueGift.name}-${uniqueGift.number}`,
+        uniqueCollectibleId: canonicalCollectibleSlug(uniqueGift.name, uniqueGift.number),
         telegramGiftInstanceId: String(ownedGift.owned_gift_id || ''),
         collectibleNumber: uniqueGift.number,
         senderTelegramId: ownedGift.sender_user?.id || null,
@@ -921,7 +929,7 @@ function extractUniqueCollectibleIdentity(ownedGift) {
         telegramGiftModel: {
             telegramGiftId: uniqueGift.gift_id || uniqueGift.base_name || uniqueGift.name,
             name: uniqueGift.name || uniqueGift.base_name || 'Telegram Collectible',
-            slug: `${uniqueGift.name}-${uniqueGift.number}`,
+            slug: canonicalCollectibleSlug(uniqueGift.name, uniqueGift.number),
             imageUrl: null,
             collection: uniqueGift.base_name || uniqueGift.backdrop?.name || null,
             rarity: uniqueGift.model?.rarity || 'common',
@@ -1018,6 +1026,40 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
 
         const alreadyCredited = await isCollectibleAlreadyCredited(identity.uniqueCollectibleId, identity.telegramGiftInstanceId, identity.senderTelegramId);
         if (alreadyCredited) {
+            // Repair legacy IDs created as "Name-N-N" when Telegram's name already
+            // contained the collectible number. The canonical identity is "Name-N".
+            const legacyIdMatch = String(alreadyCredited.unique_collectible_id || '').match(/^(.*)-(\d+)-(\d+)$/);
+            const currentNumber = Number(identity.collectibleNumber);
+            if (
+                legacyIdMatch
+                && Number(legacyIdMatch[2]) === currentNumber
+                && Number(legacyIdMatch[3]) === currentNumber
+                && legacyIdMatch[1]
+                && identity.uniqueCollectibleId
+                && identity.uniqueCollectibleId !== alreadyCredited.unique_collectible_id
+            ) {
+                const canonicalOwner = await get(
+                    `SELECT id FROM user_gifts
+                     WHERE unique_collectible_id = ?
+                       AND id != ?
+                       AND status IN ('OWNED', 'IN_BET', 'LOCKED')
+                     LIMIT 1`,
+                    [identity.uniqueCollectibleId, alreadyCredited.id]
+                );
+                if (!canonicalOwner) {
+                    await run(
+                        'UPDATE user_gifts SET unique_collectible_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [identity.uniqueCollectibleId, alreadyCredited.id]
+                    );
+                    alreadyCredited.unique_collectible_id = identity.uniqueCollectibleId;
+                    console.log('🧾 Collectible identity repaired:', JSON.stringify({
+                        from: legacyIdMatch[0],
+                        to: identity.uniqueCollectibleId,
+                        userGiftId: alreadyCredited.id
+                    }));
+                }
+            }
+
             // Revalue existing verified collectibles from Telegram's live market.
             try {
                 await refreshVerifiedCollectibleMarketValue({
@@ -4925,6 +4967,7 @@ module.exports = {
     ENABLE_TEST_BALANCE,
     // Exported for tests only — real request handling never uses these directly.
     extractUniqueCollectibleIdentity,
+    canonicalCollectibleSlug,
     extractBusinessConnectionIdFromUpdate,
     runCollectibleVerificationSweep,
     paginateCollectibleGifts,
