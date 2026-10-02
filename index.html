@@ -4645,10 +4645,16 @@
                 load100TonMarketValues(box);
                 renderPaidLootBoxPreview(box, items, strip, collections);
             } else if (box.price > 0) {
-                if (box.id === 'box_0_1') {
-                    await preparePaidBoxGiftImages(box);
-                }
                 renderPaidLootBoxPreview(box, items, strip, collections);
+                if (box.id === 'box_0_1') {
+                    preparePaidBoxGiftImages(box).then(function() {
+                        if (selectedLootBox === box) {
+                            renderPaidLootBoxPreview(box, items, strip, collections);
+                        }
+                    }).catch(function(error) {
+                        console.warn('0.1 TON Telegram gift image preload failed:', error);
+                    });
+                }
             } else {
                 strip.innerHTML = items.map(function(item) {
                     const modelImage = item.label && item.label !== 'Random'
