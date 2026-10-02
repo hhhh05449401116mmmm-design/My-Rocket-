@@ -5028,6 +5028,65 @@
             return '<img src="' + escapeHtmlAttribute(src) + '" alt="' + alt + '" loading="' + (loadingMode || 'lazy') + '" decoding="async">';
         }
 
+        async function refreshPaidLootBoxVariantMarketValues(box, items, collections) {
+            if (!box || !Array.isArray(items) || !items.length || !collections) return;
+            if (box.id === 'box_100') return;
+
+            const variants = items
+                .filter(function(item) { return item && item.rewardType !== 'ton'; })
+                .map(function(item, index) {
+                    return {
+                        key: String(index),
+                        name: item.name,
+                        label: item.label || null,
+                        backdrop: item.backdrop || null,
+                        model_name: item.model_name || null
+                    };
+                });
+
+            if (!variants.length) return;
+
+            try {
+                const response = await fetch(
+                    BACKEND_URL + '/api/loot-box/market-items?variants=' +
+                    encodeURIComponent(JSON.stringify(variants)),
+                    { headers: getAuthHeaders(), cache: 'no-store' }
+                );
+                const payload = await response.json();
+                if (!payload || !payload.ok || !Array.isArray(payload.items)) return;
+
+                const byKey = new Map(payload.items.map(function(item) {
+                    return [String(item.key || ''), Number(item.marketValueTon || 0)];
+                }));
+
+                variants.forEach(function(variant, index) {
+                    const value = byKey.get(String(index));
+                    if (!(value > 0)) return;
+                    const localItem = items[index];
+                    if (localItem) localItem.marketValueTon = value;
+                });
+
+                collections.querySelectorAll('.loot-box-collectible').forEach(function(card, cardIndex) {
+                    const item = items[cardIndex];
+                    if (!item || item.rewardType === 'ton') return;
+                    const value = Number(item.marketValueTon);
+                    if (!(value > 0)) return;
+                    const imageWrap = card.querySelector('.loot-box-collectible-image-wrap');
+                    if (!imageWrap) return;
+
+                    let badge = card.querySelector('.paid-market-value-badge');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'loot-box-collectible-value-badge paid-market-value-badge';
+                        imageWrap.appendChild(badge);
+                    }
+                    badge.innerHTML = value.toFixed(2) + ' <img src="/assets/ton-icon.svg" alt="TON">';
+                });
+            } catch (error) {
+                // Market pricing is display-only; failures never affect opening the box.
+            }
+        }
+
         function renderPaidLootBoxPreview(box, items, strip, collections) {
             if (!strip || !collections) return;
 
@@ -5071,6 +5130,8 @@
                 '</div>';
             }).join('');
 
+            refreshPaidLootBoxVariantMarketValues(box, items, collections);
+            
             if (box.id === 'box_0_1') {
                 fetch(BACKEND_URL + '/api/loot-box/0_1/market-items', {
                     method: 'GET',
