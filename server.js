@@ -3420,6 +3420,7 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
 
                 const sent = await transferSelectedGiftToUser({
                     savedGift: selected,
+                    uniqueCollectibleId: selectedUniqueId,
                     telegramUserId: userTelegramId
                 });
 
@@ -3499,6 +3500,7 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
 
             const sent = await transferSelectedGiftToUser({
                 savedGift: selected,
+                uniqueCollectibleId: collectible.unique_collectible_id,
                 telegramUserId: userTelegramId
             });
 
