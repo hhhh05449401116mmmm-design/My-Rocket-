@@ -1005,13 +1005,9 @@ async function getRoundPlayers(roundNumber) {
         WHERE tb.round_id = ?
         UNION ALL
         SELECT gb.id AS bet_id, gb.user_id, gb.gift_value_at_bet AS amount, gb.status,
-               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url,
-               ug.unique_collectible_id, g.image_url AS gift_image_url, g.name AS gift_name,
-               'GIFT' AS bet_type
+               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url, 'GIFT' AS bet_type
         FROM gift_bets gb
         JOIN users u ON u.id = gb.user_id
-        JOIN user_gifts ug ON ug.id = gb.user_gift_id
-        JOIN gifts g ON g.id = ug.gift_id
         WHERE gb.round_id = ?
         ORDER BY bet_id ASC
     `, [roundNumber, roundNumber]);
@@ -1065,55 +1061,9 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
 
 async function settleGiftCashout(bet, userId, betId, multiplier, payout) {
     const userGift = await get('SELECT * FROM user_gifts WHERE id = ?', [bet.user_gift_id]);
-    if (!userGift) throw new Error('Bet gift not found');
 
-    // Phase 1 rule for real Telegram collectibles:
-    // the collectible is consumed by the bet, and a successful cashout pays
-    // its TON value multiplied by the cashout multiplier.
-    // Crash/round probability is untouched; this only changes the settlement
-    // currency for verified collectible-gift bets.
-    const isVerifiedCollectible = !!userGift.unique_collectible_id && userGift.ownership_verified === 1;
-    if (isVerifiedCollectible) {
-        const targetPayoutValue = Number((bet.gift_value_at_bet * multiplier).toFixed(9));
-
-        const update = await run(`
-            UPDATE user_gifts
-            SET status = 'LOST', updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND status = 'IN_BET'
-        `, [userGift.id]);
-        if (update.changes !== 1) throw new Error('Collectible bet was settled concurrently');
-
-        await run(`
-            INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status, reason)
-            VALUES (?, ?, 'BET', ?, ?, 'COMPLETED', 'Verified collectible consumed by Rocket bet')
-        `, [userId, userGift.id, bet.gift_value_at_bet, betId]);
-
-        await run(
-            'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [targetPayoutValue, userId]
-        );
-
-        await run(`
-            INSERT INTO gift_transactions (user_id, user_gift_id, transaction_type, amount, related_bet_id, status, reason)
-            VALUES (?, ?, 'CASHOUT_TON', ?, ?, 'COMPLETED', 'Verified collectible bet paid in TON')
-        `, [userId, userGift.id, targetPayoutValue, betId]);
-
-        await updateUserStats(userId, 'win', targetPayoutValue);
-
-        return {
-            payout: targetPayoutValue,
-            multiplier,
-            amount: bet.gift_value_at_bet,
-            giftValue: bet.gift_value_at_bet,
-            collectibleConsumed: true,
-            originalCollectibleId: userGift.unique_collectible_id,
-            message: 'Collectible consumed and paid in TON'
-        };
-    }
-
-    // Existing non-collectible gift behavior stays unchanged for now.
     if (!userGift.unique_collectible_id) {
-        await run('UPDATE user_gifts SET status = 'WON', updated_at = CURRENT_TIMESTAMP WHERE id = ?', [bet.user_gift_id]);
+        await run('UPDATE user_gifts SET status = \'WON\', updated_at = CURRENT_TIMESTAMP WHERE id = ?', [bet.user_gift_id]);
         await updateUserStats(userId, 'win', payout);
         return {
             payout,
