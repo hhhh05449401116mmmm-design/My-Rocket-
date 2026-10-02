@@ -1005,9 +1005,13 @@ async function getRoundPlayers(roundNumber) {
         WHERE tb.round_id = ?
         UNION ALL
         SELECT gb.id AS bet_id, gb.user_id, gb.gift_value_at_bet AS amount, gb.status,
-               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url, 'GIFT' AS bet_type
+               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url,
+               ug.unique_collectible_id, g.image_url AS gift_image_url, g.name AS gift_name,
+               'GIFT' AS bet_type
         FROM gift_bets gb
         JOIN users u ON u.id = gb.user_id
+        JOIN user_gifts ug ON ug.id = gb.user_gift_id
+        JOIN gifts g ON g.id = ug.gift_id
         WHERE gb.round_id = ?
         ORDER BY bet_id ASC
     `, [roundNumber, roundNumber]);
