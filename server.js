@@ -1515,12 +1515,9 @@ async function getTelegramGiftMedia(slug) {
     }
     if (buffer.length > 5 * 1024 * 1024) throw new Error('Gift media exceeds safe cache limit');
 
-    const mimeType = detectImageMime(buffer);
-    const format = detectTelegramRocketFormat(buffer, mimeType);
     const entry = {
         buffer,
-        mimeType,
-        format,
+        mimeType: detectImageMime(buffer),
         loadedAt: Date.now()
     };
     telegramGiftMediaCache.set(key, entry);
@@ -1540,14 +1537,7 @@ app.get('/api/gift-media/:slug', async (req, res) => {
         const entry = await getTelegramGiftMedia(decodeURIComponent(String(req.params.slug || '')));
         res.setHeader('Cache-Control', 'public, max-age=21600, stale-while-revalidate=86400');
         res.setHeader('X-Telegram-Media', 'stargift-sticker');
-        res.setHeader('X-Telegram-Render-Type', entry.format || 'unknown');
-        res.setHeader('X-Telegram-Original-Mime-Type', entry.mimeType || 'application/octet-stream');
-        if (entry.format === 'tgs') {
-            res.setHeader('Content-Type', 'application/x-tgsticker');
-            res.setHeader('Content-Encoding', 'identity');
-        } else {
-            res.setHeader('Content-Type', entry.mimeType);
-        }
+        res.setHeader('Content-Type', entry.mimeType);
         res.setHeader('Content-Length', String(entry.buffer.length));
         res.end(entry.buffer);
     } catch (error) {
