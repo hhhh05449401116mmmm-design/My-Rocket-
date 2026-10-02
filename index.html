@@ -913,7 +913,10 @@
     padding: 16px 22px 20px;
     box-sizing: border-box;
     border-radius: 28px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
 }
@@ -967,8 +970,8 @@
         .loot-box-modal-strip-item img { width:44px; height:44px; object-fit:contain; background:transparent !important; border:0 !important; box-shadow:none !important; }
         .loot-box-strip-pointer { position:absolute; z-index:4; left:50%; top:0; width:0; height:0; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:12px solid #418bff; filter:drop-shadow(0 1px 3px rgba(65,139,255,.55)); pointer-events:none; }
         .loot-box-strip-pointer::after { content:''; position:absolute; left:-1px; top:10px; width:2px; height:48px; background:#418bff; box-shadow:0 0 7px rgba(65,139,255,.5); }
-        .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .loot-box-open-button { width:100%; margin:10px 0 14px; height:48px; border:0; border-radius:12px; background:linear-gradient(90deg,#18c77a,#20d35d); color:#fff; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .loot-box-topup { width:100%; margin:10px 0 14px; height:42px; min-height:42px; flex:0 0 42px; border:0; border-radius:8px; background:linear-gradient(90deg,#ff6416,#ff3d24); color:#fff; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .loot-box-open-button { width:100%; margin:10px 0 14px; height:48px; min-height:48px; flex:0 0 48px; border:0; border-radius:12px; background:linear-gradient(90deg,#18c77a,#20d35d); color:#fff; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; }
         .loot-box-collections-title { display:flex; align-items:center; gap:7px; color:#f4f4f6; font-size:13px; font-weight:900; margin:0 0 9px; }
         .loot-box-collections-title span { color:#8b67ff; font-size:14px; }
         .loot-box-collections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 10px; }
@@ -4350,10 +4353,25 @@
             strip.style.transform = 'translate3d(0,0,0)';
             strip.innerHTML = sequence.map(function(item) {
                 const isTon = item.rewardType === 'ton';
+                const image = paidLootBoxItemImage(item);
                 return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(item.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                    '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
                 '</div>';
             }).join('');
+
+            // Do not start the reel until its visible prize images have had a
+            // chance to load. This keeps gifts visible during the entire spin.
+            const reelImages = Array.from(strip.querySelectorAll('img'));
+            await Promise.race([
+                Promise.all(reelImages.map(function(img) {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(function(resolve) {
+                        img.addEventListener('load', resolve, { once: true });
+                        img.addEventListener('error', resolve, { once: true });
+                    });
+                })),
+                new Promise(function(resolve) { window.setTimeout(resolve, 1800); })
+            ]);
 
             const itemWidth = 52;
             const gap = 6;
