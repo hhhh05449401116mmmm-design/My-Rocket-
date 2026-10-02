@@ -1192,6 +1192,22 @@ async function addGiftToUser(userId, giftId) {
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
 }
 
+
+// صندوق الهدايا يحتاج ملكية متعددة لنفس نوع الهدية: كل فوز هو قطعة جديدة.
+// هذا المسار لا يغيّر addGiftToUser() المستخدم في الملكية القديمة/الاستيراد.
+async function addLootBoxGiftToUser(userId, giftId) {
+    const gift = await getGiftById(giftId);
+    if (!gift) throw new Error('Gift not found');
+
+    const result = await run(`
+        INSERT INTO user_gifts (user_id, gift_id, status)
+        VALUES (?, ?, 'OWNED')
+    `, [userId, gift.id]);
+
+    return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
+}
+
+
 async function updateGiftStatus(userGiftId, status) {
     const validStatuses = ['OWNED', 'LOCKED', 'IN_BET', 'WON', 'LOST', 'SENT', 'SOLD'];
     if (!validStatuses.includes(status)) throw new Error('Invalid status');
@@ -3218,6 +3234,7 @@ module.exports = {
     getUserGifts,
     getGiftById,
     addGiftToUser,
+    addLootBoxGiftToUser,
     updateGiftStatus,
 
     // أساس ملكية Collectible Gifts الحقيقية
