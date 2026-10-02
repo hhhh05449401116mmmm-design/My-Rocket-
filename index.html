@@ -4492,7 +4492,7 @@
                     hasBet = false;
                     updateMainBetButton();
                     updateAutoCashoutUI();
-                    showToast(t.betQueued || 'تم حجز الهدية للجولة القادمة');
+                    showToast((translations[currentLanguage] || translations.ar).betQueued || 'تم حجز الهدية للجولة القادمة');
                     if (gamePhase === 'FLIGHT') trySubmitQueuedBet();
                 }
             } catch (error) {
