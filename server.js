@@ -94,24 +94,24 @@ async function get100TonTelegramMarketPriceSafe(item) {
 // This path is intentionally independent from the Crash/round engine.
 // =========================================================
 const LOOT_BOX_100_CATALOG = [
-    { name: 'Plush Pepe', telegramGiftId: '5936013938331222567', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
-    { name: "Durov's Cap", telegramGiftId: '5915521180483191380', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
-    { name: 'Heart Locket', telegramGiftId: '5868455043362980631', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
+    { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+    { name: "Durov's Cap", backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
+    { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
     { name: 'Rare Bird', telegramGiftId: '5999116401002939514', slug: 'rarebird', image: 'https://tg.me/api/media/gift-art/rarebird/thumb.webp', baseName: 'Rare Bird' },
-    { name: 'Precious Peach', telegramGiftId: '5933671725160989227', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
-    { name: 'Scared Cat', telegramGiftId: '5837059369300132790', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
-    { name: 'Nail Bracelet', telegramGiftId: '5870720080265871962', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
-    { name: 'Heroic Helmet', telegramGiftId: '5895328365971244193', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
-    { name: 'Swiss Watch', telegramGiftId: '5936043693864651359', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
+    { name: 'Precious Peach', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
+    { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+    { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
+    { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
+    { name: 'Swiss Watch', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
     { name: 'Westside Sign', telegramGiftId: '6014697240977737490', slug: 'westsidesign', image: 'https://tg.me/api/media/gift-art/westsidesign/thumb.webp', baseName: 'Westside Sign' },
-    { name: 'Loot Bag', telegramGiftId: '5868659926187901653', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-    { name: 'Bonded Ring', telegramGiftId: '5870661333703197240', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
+    { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
+    { name: 'Bonded Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
     { name: 'Astral Shard', telegramGiftId: '5933629604416717361', slug: 'astralshard', image: 'https://tg.me/api/media/gift-art/astralshard/thumb.webp', baseName: 'Astral Shard' },
-    { name: 'Artisan Brick', telegramGiftId: '6005797617768858105', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
+    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
     { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
-    { name: 'Low Rider', telegramGiftId: '6014675319464657779', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
-    { name: 'Diamond Ring', telegramGiftId: '5868503709637411929', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
-    { name: 'Toy Bear', telegramGiftId: '5868220813026526561', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
+    { name: 'Low Rider', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
+    { name: 'Diamond Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
+    { name: 'Toy Bear', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
     { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', baseName: 'Plush Pepe' },
     { name: 'Scared Cat', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
     { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
@@ -3803,6 +3803,18 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
 // ===== Isolated 100 TON Telegram Collectibles box =====
 app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     try {
+        const forceRefresh = String(req.query?.refresh || '') === '1';
+        if (forceRefresh) {
+            // A refresh is requested only when the player starts another opening.
+            // It never runs during the spinner/result view and remains read-only.
+            try { await refreshMarketPrices(); } catch (marketError) {
+                console.warn('100 TON general market forced refresh unavailable:', marketError.message);
+            }
+            try { await refresh100TonMarketCache(); } catch (marketError) {
+                console.warn('100 TON market forced refresh unavailable:', marketError.message);
+            }
+        }
+
         // Warm the same read-only gift market cache already used by the 0.1 TON box.
         // This is only a pricing fallback and is completely isolated from Crash/game state.
         try {
