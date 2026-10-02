@@ -27,10 +27,46 @@
             padding: 0;
             width: 100%;
             min-height: 100%;
-            background: #0a0e1a;
+            background:
+                radial-gradient(ellipse 90% 55% at 8% 8%, rgba(255, 132, 0, 0.28) 0%, rgba(168, 34, 0, 0.18) 28%, transparent 66%),
+                radial-gradient(ellipse 85% 60% at 92% 18%, rgba(255, 72, 0, 0.24) 0%, rgba(116, 16, 0, 0.18) 32%, transparent 70%),
+                radial-gradient(ellipse 75% 55% at 50% 58%, rgba(255, 177, 34, 0.10) 0%, transparent 62%),
+                radial-gradient(ellipse 100% 70% at 50% 100%, rgba(105, 8, 0, 0.42) 0%, transparent 68%),
+                linear-gradient(145deg, #050203 0%, #130604 38%, #070203 72%, #020102 100%);
+            background-color: #050203;
             color: #fff;
             font-family: Arial, Helvetica, sans-serif;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Luxury cosmic backdrop: static CSS layers only, no JS/canvas/animation.
+           This keeps the visual effect lightweight and avoids impacting game/server performance. */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(circle at 12% 28%, rgba(255, 192, 64, 0.20) 0 1px, transparent 2px),
+                radial-gradient(circle at 78% 22%, rgba(255, 169, 38, 0.18) 0 1px, transparent 2px),
+                radial-gradient(circle at 36% 72%, rgba(255, 220, 120, 0.16) 0 1px, transparent 2px),
+                radial-gradient(circle at 88% 74%, rgba(255, 111, 36, 0.18) 0 1.5px, transparent 3px),
+                radial-gradient(circle at 58% 42%, rgba(255, 190, 60, 0.14) 0 1px, transparent 2px);
+            background-size: 260px 220px, 340px 300px, 290px 270px, 380px 330px, 310px 280px;
+            opacity: 0.9;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                linear-gradient(90deg, rgba(0,0,0,0.42), transparent 18%, transparent 82%, rgba(0,0,0,0.42)),
+                linear-gradient(180deg, rgba(0,0,0,0.20), transparent 18%, transparent 78%, rgba(0,0,0,0.48));
         }
 
         /* =========================================================
