@@ -16,7 +16,7 @@ require('../test-helpers/no-network');
 const database = require('../database');
 const serverModule = require('../server');
 
-function makeOwnedUniqueGift({ name, number, ownedGiftId, senderTelegramId, stickerFileId = 'AgAC-fake-file-id' }) {
+function makeOwnedUniqueGift({ name, number, ownedGiftId, senderTelegramId, stickerFileId = 'AgAC-fake-file-id', telegramGiftId = null }) {
     return {
         type: 'unique',
         owned_gift_id: ownedGiftId,
@@ -24,6 +24,7 @@ function makeOwnedUniqueGift({ name, number, ownedGiftId, senderTelegramId, stic
         gift: {
             name,
             number,
+            ...(telegramGiftId ? { gift_id: telegramGiftId } : {}),
             base_name: name,
             model: { name: `${name} Model`, sticker: { file_id: stickerFileId } },
             symbol: { name: `${name} Symbol` },
@@ -64,6 +65,33 @@ test('extractUniqueCollectibleIdentity extracts a real unique collectible identi
     assert.equal(identity.senderTelegramId, 555);
     assert.equal(identity.stickerFileId, 'AgAC-fake-file-id');
     assert.equal(identity.telegramGiftModel.imageUrl, null, 'raw file_id must never be used as a browser image URL');
+});
+
+test('sweep survives a gift-model slug collision with another catalog row', async () => {
+    const sender = await database.findOrCreateUser('slug-collision-user');
+
+    await database.run(`
+        INSERT INTO gifts (telegram_gift_id, name, slug, emoji, rarity, value, collection)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, ['legacy-model-id', 'Fine Pen Legacy', 'FinePen-20454', '🎁', 'rare', 1, 'Legacy']);
+
+    const owned = makeOwnedUniqueGift({
+        name: 'FinePen',
+        number: 20454,
+        ownedGiftId: 'og-slug-collision-1',
+        senderTelegramId: 'slug-collision-user',
+        telegramGiftId: 'fine-pen-base-model'
+    });
+
+    const result = await serverModule.runCollectibleVerificationSweep(async () => [owned]);
+    assert.equal(result.credited, 1);
+    assert.equal(result.unmatched, 0);
+
+    const collectible = await database.getCollectibleByUniqueId('FinePen-20454');
+    assert.ok(collectible, 'collectible must still be credited when the incoming instance slug already exists');
+    const giftModel = await database.get('SELECT * FROM gifts WHERE telegram_gift_id = ?', ['fine-pen-base-model']);
+    assert.ok(giftModel, 'the Telegram gift model must be persisted under its stable model id');
+    assert.notEqual(giftModel.slug, 'FinePen-20454', 'gift-model slug must never reuse a collectible instance slug');
 });
 
 test('sweep credits the registered sender, not the Business Connection owner', async () => {
