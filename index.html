@@ -4417,6 +4417,15 @@
             playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري السحب…' : '🎁 Drawing…';
 
             try {
+                // Refresh the authoritative TON balance immediately before every paid-box purchase.
+                await fetchBalance();
+                const liveBalance = Number(tonBalance || 0);
+                if (liveBalance < Number(box.price || 0)) {
+                    closeModal('loot-box-modal');
+                    openDeposit();
+                    return;
+                }
+
                 const response = await fetch(BACKEND_URL + '/api/loot-box/draw', {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -8660,7 +8669,7 @@
 
         async function fetchBalance() {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/balance`, { headers: getAuthHeaders() });
+                const response = await fetch(`${BACKEND_URL}/api/balance`, { headers: getAuthHeaders(), cache: 'no-store' });
                 const data = await response.json();
                 if (data.ok) {
                     tonBalance = data.balance;
