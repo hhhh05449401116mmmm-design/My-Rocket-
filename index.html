@@ -4295,6 +4295,7 @@
 
         let selectedLootBox = null;
         let lootBoxMarketRequestToken = 0;
+        let lootBoxMarketRefreshTimer = null;
 
         function paidLootBox100GiftImage(item) {
             const name = String(item && item.name || '').trim();
@@ -4322,15 +4323,18 @@
 
             collections.innerHTML = items.length
                 ? items.map(function(item, index) {
-                    const hasMarket = Number.isFinite(Number(item.marketValueTon)) && Number(item.marketValueTon) > 0;
-                    const value = hasMarket ? Number(item.marketValueTon).toFixed(2) : '—';
-                    return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + (item.backdrop ? ' black-backdrop' : '') + '" data-box-100-index="' + index + '">' +
+                    const value = Number(item.marketValueTon);
+                    const hasMarket = Number.isFinite(value) && value > 0;
+                    const valueText = hasMarket ? value.toFixed(2) : '—';
+                    return '<div class="loot-box-collectible' + (item.backdrop ? ' black-backdrop' : '') + '" data-box-100-index="' + index + '">' +
                         '<div class="loot-box-collectible-image-wrap">' +
                             '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                            '<span class="loot-box-collectible-value-badge loot-box-100-market-value">' +
+                                escapeHtml(valueText) + ' <img src="/assets/ton-icon.svg" alt="TON">' +
+                            '</span>' +
                         '</div>' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                         (item.backdrop ? '<span class="loot-box-collectible-random black-variant-label">' + escapeHtml(item.backdrop) + '</span>' : '<span class="loot-box-collectible-random">Random</span>') +
-                        '<span class="loot-box-collectible-value loot-box-100-market-value">' + escapeHtml(value) + '</span>' +
                     '</div>';
                 }).join('')
                 : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
@@ -4346,12 +4350,24 @@
                 if (!item) return;
 
                 const value = Number(item.marketValueTon);
-                const hasMarket = Number.isFinite(value) && value > 0;
                 const valueNode = card.querySelector('.loot-box-100-market-value');
-                if (valueNode) valueNode.textContent = hasMarket ? value.toFixed(2) : '—';
-
-                card.classList.toggle('gold-frame', hasMarket);
+                if (valueNode) {
+                    valueNode.innerHTML = (Number.isFinite(value) && value > 0 ? value.toFixed(2) : '—') +
+                        ' <img src="/assets/ton-icon.svg" alt="TON">';
+                }
+                // Do not rebuild the card, image, frame, or layout when the market changes.
             });
+        }
+
+        function schedule100TonMarketRefresh(box) {
+            if (lootBoxMarketRefreshTimer) {
+                clearTimeout(lootBoxMarketRefreshTimer);
+                lootBoxMarketRefreshTimer = null;
+            }
+            if (!box || box.id !== 'box_100' || selectedLootBox !== box) return;
+            lootBoxMarketRefreshTimer = setTimeout(function() {
+                if (selectedLootBox === box) load100TonMarketValues(box);
+            }, 60000);
         }
 
         async function load100TonMarketValues(box) {
@@ -4382,19 +4398,13 @@
                             : '— TON';
                     });
 
-                    // Update only the numeric price and frame state.
-                    // The gift cards/images stay mounted, so market refreshes never blink.
+                    // Update only the numeric price. Gift cards/images stay mounted.
                     update100TonMarketValuesInPlace(box);
-
-                    if (data.refreshing || data.stale) {
-                        setTimeout(function() {
-                            if (selectedLootBox === box) load100TonMarketValues(box);
-                        }, 1200);
-                    }
                 }
+                schedule100TonMarketRefresh(box);
             } catch (error) {
-                // Market refresh is read-only UI work. Keep the existing prices visible
-                // and never rebuild the gift cards when a refresh fails.
+                // Keep the existing card layout and retry later without rebuilding anything.
+                schedule100TonMarketRefresh(box);
             }
         }
 
@@ -4643,6 +4653,10 @@
             });
         }
         function openLootBox(box) {
+            if (lootBoxMarketRefreshTimer) {
+                clearTimeout(lootBoxMarketRefreshTimer);
+                lootBoxMarketRefreshTimer = null;
+            }
             selectedLootBox = box;
             const modal = document.getElementById('loot-box-modal');
             const title = document.getElementById('loot-box-modal-title');
@@ -7043,6 +7057,10 @@
         function closeModal(id) {
             const modal = document.getElementById(id);
             if (modal) modal.classList.remove("show");
+            if (id === 'loot-box-modal' && lootBoxMarketRefreshTimer) {
+                clearTimeout(lootBoxMarketRefreshTimer);
+                lootBoxMarketRefreshTimer = null;
+            }
         }
 
         function closeModalOutside(event, id) {
