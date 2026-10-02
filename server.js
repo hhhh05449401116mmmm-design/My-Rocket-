@@ -94,24 +94,24 @@ async function get100TonTelegramMarketPriceSafe(item) {
 // This path is intentionally independent from the Crash/round engine.
 // =========================================================
 const LOOT_BOX_100_CATALOG = [
-    { name: 'Plush Pepe', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
-    { name: "Durov's Cap", backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
-    { name: 'Heart Locket', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
+    { name: 'Plush Pepe', telegramGiftId: '5936013938331222567', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp' },
+    { name: "Durov's Cap", telegramGiftId: '5915521180483191380', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp', baseName: "Durov's Cap" },
+    { name: 'Heart Locket', telegramGiftId: '5868455043362980631', image: 'https://tg.me/api/media/gift-art/heartlocket/thumb.webp' },
     { name: 'Rare Bird', telegramGiftId: '5999116401002939514', slug: 'rarebird', image: 'https://tg.me/api/media/gift-art/rarebird/thumb.webp', baseName: 'Rare Bird' },
-    { name: 'Precious Peach', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
-    { name: 'Scared Cat', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
-    { name: 'Nail Bracelet', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
-    { name: 'Heroic Helmet', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
-    { name: 'Swiss Watch', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
+    { name: 'Precious Peach', telegramGiftId: '5933671725160989227', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/preciouspeach/thumb.webp', baseName: 'Precious Peach' },
+    { name: 'Scared Cat', telegramGiftId: '5837059369300132790', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp' },
+    { name: 'Nail Bracelet', telegramGiftId: '5870720080265871962', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', baseName: 'Nail Bracelet' },
+    { name: 'Heroic Helmet', telegramGiftId: '5895328365971244193', image: 'https://tg.me/api/media/gift-art/mightyarm/thumb.webp' },
+    { name: 'Swiss Watch', telegramGiftId: '5936043693864651359', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/swisswatch/thumb.webp', baseName: 'Swiss Watch' },
     { name: 'Westside Sign', telegramGiftId: '6014697240977737490', slug: 'westsidesign', image: 'https://tg.me/api/media/gift-art/westsidesign/thumb.webp', baseName: 'Westside Sign' },
-    { name: 'Loot Bag', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
-    { name: 'Bonded Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
+    { name: 'Loot Bag', telegramGiftId: '5868659926187901653', image: 'https://tg.me/api/media/gift-art/lootbag/thumb.webp' },
+    { name: 'Bonded Ring', telegramGiftId: '5870661333703197240', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', baseName: 'Bonded Ring' },
     { name: 'Astral Shard', telegramGiftId: '5933629604416717361', slug: 'astralshard', image: 'https://tg.me/api/media/gift-art/astralshard/thumb.webp', baseName: 'Astral Shard' },
-    { name: 'Artisan Brick', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
+    { name: 'Artisan Brick', telegramGiftId: '6005797617768858105', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/artisanbrick/thumb.webp', baseName: 'Artisan Brick' },
     { name: 'Durov\'s Cap', image: 'https://tg.me/api/media/gift-art/durovscap/thumb.webp' },
-    { name: 'Low Rider', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
-    { name: 'Diamond Ring', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
-    { name: 'Toy Bear', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
+    { name: 'Low Rider', telegramGiftId: '6014675319464657779', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/lowrider/thumb.webp', baseName: 'Low Rider' },
+    { name: 'Diamond Ring', telegramGiftId: '5868503709637411929', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', baseName: 'Diamond Ring' },
+    { name: 'Toy Bear', telegramGiftId: '5868220813026526561', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/toybear/thumb.webp', baseName: 'Toy Bear' },
     { name: 'Plush Pepe', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/plushpepe/thumb.webp', baseName: 'Plush Pepe' },
     { name: 'Scared Cat', backdrop: 'Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
     { name: 'Scared Cat', backdrop: 'Onyx Black', image: 'https://tg.me/api/media/gift-art/scaredcat/thumb.webp', baseName: 'Scared Cat' },
@@ -4380,9 +4380,29 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
             const selectedCatalogItem = LOOT_BOX_100_CATALOG[selectedIndex];
             const selectedGift = gifts[selectedIndex];
 
+            // Capture the market value once for this opening. The same snapshot
+            // is persisted on the pending gift and returned to the UI; it does not
+            // change while the player is watching the result.
+            let marketValueTon = 0;
+            if (selectedCatalogItem.backdrop) {
+                let special = await get100TonBackdropPriceSafe(selectedCatalogItem);
+                if (!special?.value) special = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                if (!special?.value) special = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
+                marketValueTon = Number(special?.value || 0);
+            } else {
+                let market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
+                if (!market?.value) market = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
+                marketValueTon = Number(market?.value || 0);
+            }
+
             await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
 
-            const userGift = await addLootBoxGiftToUser(req.user.id, selectedGift.id);
+            const userGift = await addLootBoxGiftToUser(req.user.id, selectedGift.id, marketValueTon);
+            const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
+            const sellValue = marketValueTon > 0 && Number.isFinite(sellRate) && sellRate > 0 && sellRate <= 1
+                ? Number((marketValueTon * sellRate).toFixed(9))
+                : 0;
+
             await createNotification(
                 req.user.id,
                 'GIFT_WON',
@@ -4393,27 +4413,20 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                     giftId: selectedGift.id,
                     box: '100 TON',
                     random: true,
-                    backdrop: selectedCatalogItem.backdrop || null
+                    backdrop: selectedCatalogItem.backdrop || null,
+                    marketValueTon
                 }
             );
-
-            let marketValueTon = 0;
-            if (selectedCatalogItem.backdrop) {
-                let special = await get100TonBackdropPriceSafe(selectedCatalogItem);
-                if (!special?.value) special = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
-                marketValueTon = Number(special?.value || 0);
-            } else {
-                let market = await get100TonGeneralMarketPriceSafe(selectedCatalogItem);
-                if (!market?.value) market = await get100TonTelegramMarketPriceSafe(selectedCatalogItem);
-                marketValueTon = Number(market?.value || 0);
-            }
 
             return {
                 gift: {
                     ...selectedGift,
                     userGiftId: userGift.id,
                     image_url: selectedCatalogItem.image || selectedGift.image_url,
-                    backdrop: selectedCatalogItem.backdrop || null
+                    backdrop: selectedCatalogItem.backdrop || null,
+                    marketValue: marketValueTon,
+                    value: marketValueTon,
+                    sellValue
                 },
                 balance: Number((balance - LOOT_BOX_100_PRICE).toFixed(9)),
                 marketValueTon
