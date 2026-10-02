@@ -2791,6 +2791,12 @@ app.get('/api/admin/telegram-webhook-status', authenticate, async (req, res) => 
 // ===== 5.4 جلب رصيد المستخدم =====
 app.get('/api/balance', authenticate, async (req, res) => {
     try {
+        // The real TON balance is the single spendable balance used by every
+        // paid loot box and game action. Never allow a cached browser response
+        // to make the client believe it has an older balance.
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
         const balance = await getUserBalance(req.user.id);
         const response = { ok: true, balance };
         if (ENABLE_TEST_BALANCE) {
@@ -3760,7 +3766,19 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
 
         const result = await transaction(async () => {
             const balance = Number(await getUserBalance(req.user.id) || 0);
-            if (balance < config.price) throw new Error('Insufficient balance');
+            if (!Number.isFinite(balance) || balance < 0) {
+                throw new Error('Invalid TON balance');
+            }
+
+            // Debit the real in-game TON balance atomically. Every paid box uses
+            // this same path, so deposited TON and earned TON are equally spendable.
+            // The balance can never go negative, and a stale frontend balance cannot
+            // cause a valid purchase to be rejected.
+            const debit = await run(
+                'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+                [Number(config.price), req.user.id, Number(config.price)]
+            );
+            if (debit.changes !== 1) throw new Error('Insufficient balance');
 
             // Exactly 7% gift and 93% TON. This ratio is server-side only.
             const winsGift = crypto.randomInt(0, 10000) < 700;
@@ -3775,7 +3793,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
             }
 
-            await updateUserBalance(req.user.id, config.price, 'subtract');
+            // The box price was already debited atomically above.
 
             // Ensure every paid box is registered even if the historical seed predates it.
             await run(
