@@ -3334,17 +3334,6 @@
             border-radius: 28px !important;
             box-shadow: 0 8px 28px rgba(255, 110, 0, .20), inset 0 1px 0 rgba(255,230,160,.22) !important;
         }
-        .image-banner::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-            background:
-                linear-gradient(90deg, rgba(255, 118, 0, .20), transparent 28%, transparent 70%, rgba(255, 61, 0, .18)),
-                linear-gradient(180deg, rgba(255, 194, 45, .10), transparent 42%, rgba(80, 5, 0, .16));
-            mix-blend-mode: screen;
-        }
         .image-banner .banner-art { z-index: 0 !important; }
 
         .loot-section { padding-left: 10px !important; padding-right: 10px !important; }
@@ -3400,15 +3389,6 @@
            Visual-only: recolors the existing banner artwork without
            changing click handlers, navigation, game logic or assets.
         ========================================================= */
-        .rocket-banner .banner-art {
-            filter: sepia(1) saturate(5.2) hue-rotate(329deg) brightness(.82) contrast(1.16) !important;
-        }
-        .pvp-banner .banner-art {
-            filter: sepia(.82) saturate(2.25) hue-rotate(342deg) brightness(.88) contrast(1.12) !important;
-        }
-        .playhub-banner .banner-art {
-            filter: sepia(1) saturate(4.7) hue-rotate(331deg) brightness(.78) contrast(1.15) !important;
-        }
 
         .rocket-banner,
         .pvp-banner,
