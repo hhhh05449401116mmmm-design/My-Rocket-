@@ -3825,7 +3825,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }
-}
+});
 
 // ===== Isolated FREE / FREE24 reward claim =====
 // This path is independent from Crash, rounds, betting, cashout, deposits,
