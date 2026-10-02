@@ -4369,73 +4369,6 @@
             return item.image || '/assets/ton-icon.svg';
         }
 
-        const paidGiftTgsImageCache = new Map();
-
-        async function preparePaidBoxGiftImages(box) {
-            if (!box || box.id !== 'box_0_1' || !Array.isArray(box.collectibles)) return;
-            const names = [...new Set(box.collectibles
-                .filter(item => item && item.rewardType !== 'ton' && item.image)
-                .map(item => String(item.name || '').trim())
-                .filter(Boolean))];
-            await Promise.all(names.map(async function(name) {
-                if (paidGiftTgsImageCache.has(name)) return;
-                try {
-                    const response = await fetch(BACKEND_URL + '/api/gift-media/' + encodeURIComponent(name), {
-                        method: 'GET',
-                        cache: 'force-cache'
-                    });
-                    if (!response.ok) return;
-                    const renderType = (response.headers.get('X-Telegram-Render-Type') || '').toLowerCase().trim();
-                    const contentType = (response.headers.get('Content-Type') || '').toLowerCase().split(';')[0].trim();
-                    const buffer = await response.arrayBuffer();
-                    const bytes = new Uint8Array(buffer);
-                    const isTgs = renderType === 'tgs' ||
-                        contentType === 'application/x-tgsticker' ||
-                        (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b);
-                    if (!isTgs) return;
-                    const module = await loadTelegramTgsRenderer();
-                    const host = document.createElement('div');
-                    host.style.cssText = 'position:fixed;left:-10000px;top:-10000px;width:256px;height:256px;pointer-events:none;opacity:0;';
-                    document.body.appendChild(host);
-                    const player = module.createTLottiePlayer(host, {
-                        data: bytes,
-                        loop: false,
-                        autoplay: false,
-                        workerCount: 1
-                    });
-                    const canvas = player.canvas;
-                    await new Promise(function(resolve, reject) {
-                        let settled = false;
-                        const finish = function(error) {
-                            if (settled) return;
-                            settled = true;
-                            error ? reject(error) : resolve();
-                        };
-                        player.tlottie.on('load', function() { finish(); });
-                        player.tlottie.on('error', function(error) { finish(error || new Error('TGS render failed')); });
-                        window.setTimeout(function() { finish(new Error('TGS render timeout')); }, 5000);
-                    });
-                    const dataUrl = canvas.toDataURL('image/png');
-                    try { player.destroy?.(); } catch (e) {}
-                    host.remove();
-                    paidGiftTgsImageCache.set(name, dataUrl);
-                } catch (error) {
-                    console.warn('0.1 TON Telegram gift image render failed:', name, error);
-                }
-            }));
-        }
-
-        function paidLootBoxItemImage(item) {
-            if (!item) return '/assets/ton-icon.svg';
-            if (item.rewardType === 'ton') return '/assets/ton-icon.svg';
-            const cached = paidGiftTgsImageCache.get(String(item.name || '').trim());
-            if (cached) return cached;
-            if (item.label && item.label !== 'Random') {
-                return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png';
-            }
-            return item.image || '/assets/ton-icon.svg';
-        }
-
         function renderPaidLootBoxPreview(box, items, strip, collections) {
             if (!strip || !collections) return;
 
@@ -4646,15 +4579,6 @@
                 renderPaidLootBoxPreview(box, items, strip, collections);
             } else if (box.price > 0) {
                 renderPaidLootBoxPreview(box, items, strip, collections);
-                if (box.id === 'box_0_1') {
-                    preparePaidBoxGiftImages(box).then(function() {
-                        if (selectedLootBox === box) {
-                            renderPaidLootBoxPreview(box, items, strip, collections);
-                        }
-                    }).catch(function(error) {
-                        console.warn('0.1 TON Telegram gift image preload failed:', error);
-                    });
-                }
             } else {
                 strip.innerHTML = items.map(function(item) {
                     const modelImage = item.label && item.label !== 'Random'
