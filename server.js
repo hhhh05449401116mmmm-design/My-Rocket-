@@ -4006,22 +4006,35 @@ app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
 app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
     try {
         await ensureGiftMarketCache();
-        const result = {};
-        for (const [boxId, names] of Object.entries(PAID_BOX_GIFT_NAMES)) {
-            result[boxId] = [];
-            for (const name of [...new Set(names || [])]) {
-                const market = await getCollectibleVariantMarketValue({ name });
-                result[boxId].push({
-                    name,
-                    marketValueTon: Number(market?.floorPriceTon || 0),
-                    source: market?.source || null,
-                    lastUpdated: market?.lastUpdated || null
-                });
-            }
+        let variants = [];
+        try {
+            variants = JSON.parse(String(req.query?.variants || '[]'));
+        } catch {}
+        if (!Array.isArray(variants)) variants = [];
+
+        const items = [];
+        for (const variant of variants.slice(0, 250)) {
+            const name = String(variant?.name || '').trim();
+            if (!name) continue;
+            const market = await getCollectibleVariantMarketValue({
+                name,
+                label: variant?.label || null,
+                model_name: variant?.model_name || null,
+                backdrop: variant?.backdrop || null
+            });
+            items.push({
+                key: String(variant?.key || ''),
+                name,
+                label: variant?.label || null,
+                backdrop: variant?.backdrop || null,
+                marketValueTon: Number(market?.floorPriceTon || 0),
+                source: market?.source || null,
+                lastUpdated: market?.lastUpdated || null
+            });
         }
-        res.json({ ok: true, boxes: result });
+        res.json({ ok: true, items, available: items.some(item => item.marketValueTon > 0) });
     } catch (error) {
-        res.status(200).json({ ok: true, boxes: {}, available: false });
+        res.status(200).json({ ok: true, items: [], available: false });
     }
 });
 
