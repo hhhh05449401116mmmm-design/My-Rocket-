@@ -863,7 +863,10 @@
             border-top: 1px solid rgba(255,255,255,.08);
             max-height: 92vh;
             overflow-y: auto;
-            animation: modalUp .3s ease;
+            animation: none;
+        }
+        .loot-box-modal-card.loot-box-spinning {
+            animation: none !important;
         }
         .loot-box-modal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
         .loot-box-modal-title { flex:1; text-align:center; color:#fff; font-size:20px; font-weight:900; }
@@ -4222,38 +4225,37 @@
             const strip = document.getElementById('loot-box-modal-strip');
             if (!strip) return Promise.resolve();
 
-            const serverItems = Array.isArray(spinItems) ? spinItems : [];
+            const serverItems = Array.isArray(spinItems) ? spinItems.filter(Boolean) : [];
+            if (!serverItems.length) return Promise.resolve();
+
             const winnerIsTon = winner && winner.winnerType === 'ton';
             const winnerValue = winnerIsTon ? Number(winner.tonReward || 0) : null;
             const winnerName = winner && winner.gift ? winner.gift.name : null;
 
-            let winnerItem = null;
-            if (winnerIsTon) {
-                winnerItem = serverItems.find(item =>
-                    item.rewardType === 'ton' && Math.abs(Number(item.value) - winnerValue) < 0.000001
-                );
-            } else {
-                winnerItem = serverItems.find(item =>
-                    item.rewardType !== 'ton' && String(item.name) === String(winnerName)
-                );
-                if (!winnerItem && winnerName) {
-                    winnerItem = {
-                        name: winnerName,
-                        image: winner.gift.image_url || winner.gift.image,
-                        rewardType: 'gift'
-                    };
+            const matchesWinner = function(item) {
+                if (winnerIsTon) {
+                    return item.rewardType === 'ton' &&
+                        Math.abs(Number(item.value) - winnerValue) < 0.000001;
                 }
+                return item.rewardType === 'gift' && String(item.name) === String(winnerName);
+            };
+
+            let winnerIndex = serverItems.findIndex(matchesWinner);
+            if (winnerIndex < 0) {
+                winnerIndex = 0;
             }
 
-            if (!winnerItem) return Promise.resolve();
-
-            const pool = serverItems.length ? serverItems : [winnerItem];
-            const repeats = 16;
+            // Keep the same number of gift/TON types throughout the reel.
+            // Repeat the neutral reel; the winning item is inserted at the
+            // exact stopping position instead of flooding the reel with TON.
+            const repeats = 18;
             const sequence = [];
-            for (let i = 0; i < repeats; i++) sequence.push.apply(sequence, pool);
+            for (let i = 0; i < repeats; i++) {
+                sequence.push.apply(sequence, serverItems);
+            }
 
-            const targetIndex = Math.floor(repeats * 0.72) * pool.length + Math.floor(pool.length * 0.55);
-            sequence[targetIndex] = winnerItem;
+            const targetIndex = Math.floor(repeats * 0.72) * serverItems.length + winnerIndex;
+            sequence[targetIndex] = serverItems[winnerIndex];
 
             strip.style.transition = 'none';
             strip.style.transform = 'translate3d(0,0,0)';
@@ -4274,14 +4276,13 @@
             return new Promise(function(resolve) {
                 requestAnimationFrame(function() {
                     requestAnimationFrame(function() {
-                        strip.style.transition = 'transform 4.8s cubic-bezier(.12,.75,.18,1)';
+                        strip.style.transition = 'transform 5.2s cubic-bezier(.10,.78,.16,1)';
                         strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
-                        window.setTimeout(resolve, 4900);
+                        window.setTimeout(resolve, 5300);
                     });
                 });
             });
         }
-
 
         function openLootBox(box) {
             selectedLootBox = box;
@@ -4585,6 +4586,7 @@
             if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'جاري الدوران…' : 'Spinning…';
             if (collections) collections.innerHTML = '';
+            if (collections) collections.style.display = 'none';
 
             try {
                 await fetchBalance();
@@ -4616,11 +4618,13 @@
                 updateTonWalletUI();
 
                 await animatePaidLootBoxStrip(box, data, data.spinItems || []);
+                if (collections) collections.style.display = '';
                 renderPaidLootBoxResult(box, data);
             } catch (error) {
                 console.error('Paid loot-box draw failed:', error);
                 playButton.disabled = false;
                 playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                if (collections) collections.style.display = '';
                 showToast(error.message || (currentLanguage === 'ar' ? 'تعذر فتح الصندوق، حاول مرة أخرى' : 'Unable to open the box, please try again'));
             }
         }
