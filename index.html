@@ -4313,7 +4313,7 @@
             }).join('');
         }
 
-        function animatePaidLootBoxStrip(box, winner, spinItems) {
+        async function animatePaidLootBoxStrip(box, winner, spinItems) {
             const strip = document.getElementById('loot-box-modal-strip');
             if (!strip) return Promise.resolve();
 
