@@ -8078,7 +8078,10 @@
 
         function updateTonWalletUI() {
             const box = document.getElementById("ton-wallet-box");
-            if (box) box.innerHTML = `<span id="ton-balance">${Number(tonBalance).toFixed(2)}</span> TON`;
+            if (box) {
+                const balanceEl = document.getElementById("ton-balance");
+                if (balanceEl) balanceEl.textContent = Number(tonBalance).toFixed(2);
+            }
             const modalBalance = document.getElementById("modal-balance");
             if (modalBalance) modalBalance.textContent = Number(tonBalance).toFixed(2);
             updateTestBalanceUI();
