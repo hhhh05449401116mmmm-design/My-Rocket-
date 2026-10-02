@@ -4411,6 +4411,31 @@
                     '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Reward') + '</span>' +
                 '</div>';
             }).join('');
+
+            if (box.id === 'box_0_1') {
+                fetch(BACKEND_URL + '/api/loot-box/0_1/market-items', {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store'
+                }).then(function(response) {
+                    return response.json().catch(function() { return { ok: false }; });
+                }).then(function(payload) {
+                    if (!payload || !payload.ok || !Array.isArray(payload.items)) return;
+                    const byName = new Map(payload.items.map(function(item) {
+                        return [String(item.name || ''), Number(item.marketValueTon || 0)];
+                    }));
+                    collections.querySelectorAll('.loot-box-collectible').forEach(function(card) {
+                        const nameEl = card.querySelector('.loot-box-collectible-name');
+                        const badge = card.querySelector('.loot-box-collectible-value-badge');
+                        if (!nameEl || !badge) return;
+                        const value = byName.get(String(nameEl.textContent || ''));
+                        if (!(value > 0)) return;
+                        badge.innerHTML = value.toFixed(2) + ' <img src="/assets/ton-icon.svg" alt="TON">';
+                    });
+                }).catch(function(error) {
+                    console.warn('0.1 TON market values unavailable:', error);
+                });
+            }
         }
 
         async function animatePaidLootBoxStrip(box, winner, spinItems) {
