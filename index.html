@@ -213,6 +213,15 @@
             height: 20px;
             position: relative;
             z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 20px;
+        }
+        .wallet-balance .ton-icon img {
+            width: 20px;
+            height: 20px;
+            display: block;
         }
         .wallet-balance span {
             position: relative;
@@ -3525,16 +3534,8 @@
             </div>
             <div class="wallet-area">
                  <button id="ton-wallet-box" class="wallet-balance" type="button" onclick="openTonWallet()">
-                     <span class="ton-icon">
-                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                             <defs>
-                                 <linearGradient id="tonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                     <stop offset="0%" style="stop-color:#4fc3f7"/>
-                                     <stop offset="100%" style="stop-color:#0288d1"/>
-                                 </linearGradient>
-                             </defs>
-                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-5.5H7.5l3.5-7 3.5 7H13v5.5h-2zm5-5.5h-2.5l-2.5-5h2.5l2.5 5z"/>
-                         </svg>
+                     <span class="ton-icon" aria-label="TON">
+                         <img src="/assets/ton-icon.svg" alt="TON">
                      </span>
                      <span id="ton-balance">0.00</span>
                      <span style="font-size:10px;color:#5a7a9a;font-weight:700;">TON</span>
