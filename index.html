@@ -4296,6 +4296,18 @@
         let selectedLootBox = null;
         let lootBoxMarketRequestToken = 0;
 
+        function paidLootBox100GiftImage(item) {
+            const name = String(item && item.name || '').trim();
+            if (!name) return '/assets/ton-icon.svg';
+            return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(name) + '/png/Original.png';
+        }
+
+        function lootBoxVisualImage(box, item) {
+            return box && box.id === 'box_100'
+                ? paidLootBox100GiftImage(item)
+                : paidLootBoxItemImage(item);
+        }
+
         function render100TonCollectibles(box, statusText) {
             const collections = document.getElementById('loot-box-collections');
             const strip = document.getElementById('loot-box-modal-strip');
@@ -4303,8 +4315,8 @@
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
 
             strip.innerHTML = items.map(function(item) {
-                return '<div class="loot-box-modal-strip-item">' +
-                    '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                return '<div class="loot-box-modal-strip-item gift">' +
+                    '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="eager" decoding="async">' +
                 '</div>';
             }).join('');
 
@@ -4312,11 +4324,12 @@
                 ? items.map(function(item) {
                     const hasMarket = Number.isFinite(Number(item.marketValueTon)) && Number(item.marketValueTon) > 0;
                     return '<div class="loot-box-collectible ' + (hasMarket ? 'gold-frame' : '') + (item.backdrop ? ' black-backdrop' : '') + '">' +
-                        '<img src="' + escapeHtmlAttribute(item.image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                        '<div class="loot-box-collectible-image-wrap">' +
+                            '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                        '</div>' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                         (item.backdrop ? '<span class="loot-box-collectible-random black-variant-label">' + escapeHtml(item.backdrop) + '</span>' : '<span class="loot-box-collectible-random">Random</span>') +
                         '<span class="loot-box-collectible-value">' + escapeHtml(String(item.value || '— TON').replace(/\s*TON\s*$/i, '')) + '</span>' +
-                        (!item.backdrop ? '' : '') +
                         (!hasMarket && statusText ? '<span class="loot-box-market-status">' + escapeHtml(statusText) + '</span>' : '') +
                     '</div>';
                 }).join('')
@@ -4502,12 +4515,14 @@
             if (!strip) return Promise.resolve();
 
             const serverItems = Array.isArray(spinItems) ? spinItems.filter(Boolean) : [];
-            if (!serverItems.length) return Promise.resolve();
-
             const winnerIsTon = winner && winner.winnerType === 'ton';
             const winnerValue = winnerIsTon ? Number(winner.tonReward || 0) : null;
             const winnerName = winner && winner.gift ? winner.gift.name : null;
             const previewItems = Array.isArray(box && box.collectibles) ? box.collectibles.filter(Boolean) : [];
+            const visualSourceItems = serverItems.length
+                ? serverItems
+                : (box && box.id === 'box_100' ? previewItems : []);
+            if (!visualSourceItems.length) return Promise.resolve();
 
             const visualForServerItem = function(item) {
                 if (item.rewardType === 'nothing') {
@@ -4528,7 +4543,7 @@
                 if (match) {
                     return {
                         name: match.name,
-                        image: paidLootBoxItemImage(match),
+                        image: lootBoxVisualImage(box, match),
                         label: match.label,
                         rewardType: 'gift',
                         marketValue: match.marketValue
@@ -4542,7 +4557,7 @@
                 };
             };
 
-            const visualItems = serverItems.map(visualForServerItem);
+            const visualItems = visualSourceItems.map(visualForServerItem);
             const matchesWinner = function(item) {
                 if (winner && winner.winnerType === 'nothing') return item.rewardType === 'nothing';
                 if (winnerIsTon) {
@@ -4635,7 +4650,6 @@
             if (box.id === 'box_100') {
                 render100TonCollectibles(box, 'جارٍ قراءة القيمة السوقية…');
                 load100TonMarketValues(box);
-                renderPaidLootBoxPreview(box, items, strip, collections);
             } else if (box.price > 0) {
                 renderPaidLootBoxPreview(box, items, strip, collections);
             } else {
@@ -4900,6 +4914,9 @@
                     '</div>';
             } else {
                 const gift = data.gift || {};
+                if (box.id === 'box_100' && gift.name) {
+                    gift.image_url = paidLootBox100GiftImage(gift);
+                }
                 const sellValue = Number(gift.sellValue || 0);
                 const userGiftId = Number(gift.userGiftId || 0);
                 stage.innerHTML =
@@ -4982,7 +4999,10 @@
                     return;
                 }
 
-                const response = await fetch(BACKEND_URL + '/api/loot-box/draw', {
+                const drawEndpoint = box.id === 'box_100'
+                    ? '/api/loot-box/100/draw'
+                    : '/api/loot-box/draw';
+                const response = await fetch(BACKEND_URL + drawEndpoint, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     cache: 'no-store',
