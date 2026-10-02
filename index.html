@@ -875,6 +875,10 @@
     background:rgba(0,150,255,.08);
     border:1px solid rgba(255,214,80,.7);
 }
+.loot-box-modal-strip-item.nothing { background:linear-gradient(145deg,#343438,#202023); }
+.loot-box-nothing-reel { color:#a9a9b0; font-size:30px; font-weight:900; line-height:1; }
+.loot-box-result-nothing .loot-box-result-nothing-icon { width:150px; height:150px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle,#3b3b40,#1c1c1f); border:2px solid rgba(255,255,255,.14); color:#a9a9b0; font-size:64px; font-weight:900; box-shadow:inset 0 0 24px rgba(255,255,255,.04); }
+.loot-box-result-try-again { width:100%; min-height:52px; border:0; border-radius:15px; background:linear-gradient(135deg,#b88718,#f1cf55,#b27d12); color:#17120a !important; font-size:16px; font-weight:900; }
 .loot-box-result-title { font-size:27px; font-weight:900; color:#fff; }
 .loot-box-result-value { font-size:22px; font-weight:900; color:#f7d66a; }
 .loot-box-result-actions { width:100%; display:grid; gap:10px; margin-top:8px; }
@@ -3999,10 +4003,102 @@
             { name: '0.05 TON Balance', image: '/assets/ton-icon.svg', value: '0.05 TON', rewardType: 'ton', label: 'Balance' }
         ];
 
+        const BOX_0_1_COLLECTIBLES = [
+            { name: "Plush Pepe", image: '/api/gift-media/' + encodeURIComponent("Plush Pepe"), value: '— TON', label: 'Random' },
+            { name: "Heart Locket", image: '/api/gift-media/' + encodeURIComponent("Heart Locket"), value: '— TON', label: 'Random' },
+            { name: "Durov's Cap", image: '/api/gift-media/' + encodeURIComponent("Durov's Cap"), value: '380.24 TON', label: 'Random' },
+            { name: "Precious Peach", image: '/api/gift-media/' + encodeURIComponent("Precious Peach"), value: '247.42 TON', label: 'Random' },
+            { name: "Scared Cat", image: '/api/gift-media/' + encodeURIComponent("Scared Cat"), value: '227.87 TON', label: 'Random' },
+            { name: "Heroic Helmet", image: '/api/gift-media/' + encodeURIComponent("Heroic Helmet"), value: '174.59 TON', label: 'Random' },
+            { name: "Loot Bag", image: '/api/gift-media/' + encodeURIComponent("Loot Bag"), value: '199.57 TON', label: 'Random' },
+            { name: "Mighty Arm", image: '/api/gift-media/' + encodeURIComponent("Mighty Arm"), value: '— TON', label: 'Random' },
+            { name: "Astral Shard", image: '/api/gift-media/' + encodeURIComponent("Astral Shard"), value: '110.57 TON', label: 'Random' },
+            { name: "Nail Bracelet", image: '/api/gift-media/' + encodeURIComponent("Nail Bracelet"), value: '102.77 TON', label: 'Random' },
+            { name: "Westside Sign", image: '/api/gift-media/' + encodeURIComponent("Westside Sign"), value: '97.92 TON', label: 'Random' },
+            { name: "Durov's Glasses", image: '/api/gift-media/' + encodeURIComponent("Durov's Glasses"), value: '87.73 TON', label: 'Random' },
+            { name: "Perfume Bottle", image: '/api/gift-media/' + encodeURIComponent("Perfume Bottle"), value: '— TON', label: 'Random' },
+            { name: "Ion Gem", image: '/api/gift-media/' + encodeURIComponent("Ion Gem"), value: '— TON', label: 'Random' },
+            { name: "Mini Oscar", image: '/api/gift-media/' + encodeURIComponent("Mini Oscar"), value: '63.73 TON', label: 'Random' },
+            { name: "Artisan Brick", image: '/api/gift-media/' + encodeURIComponent("Artisan Brick"), value: '56.05 TON', label: 'Random' },
+            { name: "Gem Signet", image: '/api/gift-media/' + encodeURIComponent("Gem Signet"), value: '55.54 TON', label: 'Random' },
+            { name: "Low Rider", image: '/api/gift-media/' + encodeURIComponent("Low Rider"), value: '53.42 TON', label: 'Random' },
+            { name: "Swiss Watch", image: '/api/gift-media/' + encodeURIComponent("Swiss Watch"), value: '— TON', label: 'Random' },
+            { name: "Magic Potion", image: '/api/gift-media/' + encodeURIComponent("Magic Potion"), value: '— TON', label: 'Random' },
+            { name: "Sharp Tongue", image: '/api/gift-media/' + encodeURIComponent("Sharp Tongue"), value: '44.47 TON', label: 'Random' },
+            { name: "Kissed Frog", image: '/api/gift-media/' + encodeURIComponent("Kissed Frog"), value: '41.95 TON', label: 'Random' },
+            { name: "Bonded Ring", image: '/api/gift-media/' + encodeURIComponent("Bonded Ring"), value: '38.97 TON', label: 'Random' },
+            { name: "Vintage Cigar", image: '/api/gift-media/' + encodeURIComponent("Vintage Cigar"), value: '36.13 TON', label: 'Random' },
+            { name: "Voodoo Doll", image: '/api/gift-media/' + encodeURIComponent("Voodoo Doll"), value: '— TON', label: 'Random' },
+            { name: "Neko Helmet", image: '/api/gift-media/' + encodeURIComponent("Neko Helmet"), value: '— TON', label: 'Random' },
+            { name: "Toy Bear", image: '/api/gift-media/' + encodeURIComponent("Toy Bear"), value: '32.34 TON', label: 'Random' },
+            { name: "Genie Lamp", image: '/api/gift-media/' + encodeURIComponent("Genie Lamp"), value: '31.31 TON', label: 'Random' },
+            { name: "Signet Ring", image: '/api/gift-media/' + encodeURIComponent("Signet Ring"), value: '30.77 TON', label: 'Random' },
+            { name: "Diamond Ring", image: '/api/gift-media/' + encodeURIComponent("Diamond Ring"), value: '28.42 TON', label: 'Random' },
+            { name: "Rare Bird", image: '/api/gift-media/' + encodeURIComponent("Rare Bird"), value: '— TON', label: 'Random' },
+            { name: "Bling Binky", image: '/api/gift-media/' + encodeURIComponent("Bling Binky"), value: '— TON', label: 'Random' },
+            { name: "Electric Skull", image: '/api/gift-media/' + encodeURIComponent("Electric Skull"), value: '23.40 TON', label: 'Random' },
+            { name: "Khabib's Papakha", image: '/api/gift-media/' + encodeURIComponent("Khabib's Papakha"), value: '23.23 TON', label: 'Random' },
+            { name: "Eternal Rose", image: '/api/gift-media/' + encodeURIComponent("Eternal Rose"), value: '23.06 TON', label: 'Random' },
+            { name: "Cupid Charm", image: '/api/gift-media/' + encodeURIComponent("Cupid Charm"), value: '20.09 TON', label: 'Random' },
+            { name: "Sky Stilettos", image: '/api/gift-media/' + encodeURIComponent("Sky Stilettos"), value: '— TON', label: 'Random' },
+            { name: "Trapped Heart", image: '/api/gift-media/' + encodeURIComponent("Trapped Heart"), value: '— TON', label: 'Random' },
+            { name: "Ionic Dryer", image: '/api/gift-media/' + encodeURIComponent("Ionic Dryer"), value: '14.59 TON', label: 'Random' },
+            { name: "UFC Strike", image: '/api/gift-media/' + encodeURIComponent("UFC Strike"), value: '14.49 TON', label: 'Random' },
+            { name: "Snoop Cigar", image: '/api/gift-media/' + encodeURIComponent("Snoop Cigar"), value: '14.46 TON', label: 'Random' },
+            { name: "Love Potion", image: '/api/gift-media/' + encodeURIComponent("Love Potion"), value: '14.02 TON', label: 'Random' },
+            { name: "Mad Pumpkin", image: '/api/gift-media/' + encodeURIComponent("Mad Pumpkin"), value: '— TON', label: 'Random' },
+            { name: "Crystal Ball", image: '/api/gift-media/' + encodeURIComponent("Crystal Ball"), value: '— TON', label: 'Random' },
+            { name: "Flying Broom", image: '/api/gift-media/' + encodeURIComponent("Flying Broom"), value: '11.81 TON', label: 'Random' },
+            { name: "Record Player", image: '/api/gift-media/' + encodeURIComponent("Record Player"), value: '11.72 TON', label: 'Random' },
+            { name: "Skull Flower", image: '/api/gift-media/' + encodeURIComponent("Skull Flower"), value: '11.27 TON', label: 'Random' },
+            { name: "Valentine Box", image: '/api/gift-media/' + encodeURIComponent("Valentine Box"), value: '11.06 TON', label: 'Random' },
+            { name: "Sakura Flower", image: '/api/gift-media/' + encodeURIComponent("Sakura Flower"), value: '— TON', label: 'Random' },
+            { name: "Top Hat", image: '/api/gift-media/' + encodeURIComponent("Top Hat"), value: '— TON', label: 'Random' },
+            { name: "Love Candle", image: '/api/gift-media/' + encodeURIComponent("Love Candle"), value: '10.13 TON', label: 'Random' },
+            { name: "Jingle Bells", image: '/api/gift-media/' + encodeURIComponent("Jingle Bells"), value: '9.68 TON', label: 'Random' },
+            { name: "Hanging Star", image: '/api/gift-media/' + encodeURIComponent("Hanging Star"), value: '9.31 TON', label: 'Random' },
+            { name: "Fine Pen", image: '/api/gift-media/' + encodeURIComponent("Fine Pen"), value: '8.79 TON', label: 'Random' },
+            { name: "Chill Flame", image: '/api/gift-media/' + encodeURIComponent("Chill Flame"), value: '— TON', label: 'Random' },
+            { name: "Instant Ramen", image: '/api/gift-media/' + encodeURIComponent("Instant Ramen"), value: '— TON', label: 'Random' },
+            { name: "Pool Float", image: '/api/gift-media/' + encodeURIComponent("Pool Float"), value: '3.99 TON', label: 'Random' },
+            { name: "Vice Cream", image: '/api/gift-media/' + encodeURIComponent("Vice Cream"), value: '3.98 TON', label: 'Random' },
+            { name: "Candy Cane", image: '/api/gift-media/' + encodeURIComponent("Candy Cane"), value: '— TON', label: 'Random' },
+            { name: "Lush Bouquet", image: '/api/gift-media/' + encodeURIComponent("Lush Bouquet"), value: '— TON', label: 'Random' },
+            { name: "Desk Calendar", image: '/api/gift-media/' + encodeURIComponent("Desk Calendar"), value: '— TON', label: 'Random' },
+            { name: "Money Pot", image: '/api/gift-media/' + encodeURIComponent("Money Pot"), value: '— TON', label: 'Random' },
+            { name: "Jester Hat", image: '/api/gift-media/' + encodeURIComponent("Jester Hat"), value: '— TON', label: 'Random' },
+            { name: "Cookie Heart", image: '/api/gift-media/' + encodeURIComponent("Cookie Heart"), value: '— TON', label: 'Random' },
+            { name: "Restless Jar", image: '/api/gift-media/' + encodeURIComponent("Restless Jar"), value: '— TON', label: 'Random' },
+            { name: "Lol Pop", image: '/api/gift-media/' + encodeURIComponent("Lol Pop"), value: '— TON', label: 'Random' },
+            { name: "Winter Wreath", image: '/api/gift-media/' + encodeURIComponent("Winter Wreath"), value: '— TON', label: 'Random' },
+            { name: "Mousse Cake", image: '/api/gift-media/' + encodeURIComponent("Mousse Cake"), value: '— TON', label: 'Random' },
+            { name: "Snake Box", image: '/api/gift-media/' + encodeURIComponent("Snake Box"), value: '— TON', label: 'Random' },
+            { name: "Liberty Figure", image: '/api/gift-media/' + encodeURIComponent("Liberty Figure"), value: '— TON', label: 'Random' },
+            { name: "Santa Hat", image: '/api/gift-media/' + encodeURIComponent("Santa Hat"), value: '— TON', label: 'Random' },
+            { name: "Pet Snake", image: '/api/gift-media/' + encodeURIComponent("Pet Snake"), value: '— TON', label: 'Random' },
+            { name: "Snow Globe", image: '/api/gift-media/' + encodeURIComponent("Snow Globe"), value: '— TON', label: 'Random' },
+            { name: "B-Day Candle", image: '/api/gift-media/' + encodeURIComponent("B-Day Candle"), value: '— TON', label: 'Random' },
+            { name: "Bunny Muffin", image: '/api/gift-media/' + encodeURIComponent("Bunny Muffin"), value: '— TON', label: 'Random' },
+            { name: "Party Sparkler", image: '/api/gift-media/' + encodeURIComponent("Party Sparkler"), value: '— TON', label: 'Random' },
+            { name: "Spring Basket", image: '/api/gift-media/' + encodeURIComponent("Spring Basket"), value: '— TON', label: 'Random' },
+            { name: "Star Notepad", image: '/api/gift-media/' + encodeURIComponent("Star Notepad"), value: '— TON', label: 'Random' },
+            { name: "Bow Tie", image: '/api/gift-media/' + encodeURIComponent("Bow Tie"), value: '— TON', label: 'Random' },
+            { name: "Homemade Cake", image: '/api/gift-media/' + encodeURIComponent("Homemade Cake"), value: '— TON', label: 'Random' },
+            { name: "Snow Mittens", image: '/api/gift-media/' + encodeURIComponent("Snow Mittens"), value: '— TON', label: 'Random' },
+            { name: "Holiday Drink", image: '/api/gift-media/' + encodeURIComponent("Holiday Drink"), value: '— TON', label: 'Random' },
+            { name: "Sleigh Bell", image: '/api/gift-media/' + encodeURIComponent("Sleigh Bell"), value: '— TON', label: 'Random' },
+            { name: "Light Sword", image: '/api/gift-media/' + encodeURIComponent("Light Sword"), value: '— TON', label: 'Random' },
+            { name: "Input Key", image: '/api/gift-media/' + encodeURIComponent("Input Key"), value: '— TON', label: 'Random' },
+            { name: "Spiced Wine", image: '/api/gift-media/' + encodeURIComponent("Spiced Wine"), value: '— TON', label: 'Random' },
+            { name: "Jack-in-the-Box", image: '/api/gift-media/' + encodeURIComponent("Jack-in-the-Box"), value: '— TON', label: 'Random' },
+            { name: "Stellar Rocket", image: '/api/gift-media/' + encodeURIComponent("Stellar Rocket"), value: '— TON', label: 'Random' },
+            { name: "Mood Pack", image: '/api/gift-media/' + encodeURIComponent("Mood Pack"), value: '— TON', label: 'Random' },
+        ];
+
         const LOOT_BOXES = [
             { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
             { id: 'free24', nameKey: 'free24Label', emoji: '🎁', image: '/assets/free24.jpg', price: 0, badgeType: 'special', badgeClass: 'special-badge', collectibles: FREE_BOX_COLLECTIBLES },
-            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '' },
+            { id: 'box_0_1', name: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
             { id: 'box_2', name: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '' },
             { id: 'box_2_5', name: '2.5 TON', emoji: '💎', price: 2.5, badgeType: null, badgeClass: '' },
             // 5 TON uses fixed Telegram gift models only; no Random variants.
@@ -4330,6 +4426,9 @@
             const previewItems = Array.isArray(box && box.collectibles) ? box.collectibles.filter(Boolean) : [];
 
             const visualForServerItem = function(item) {
+                if (item.rewardType === 'nothing') {
+                    return { name: 'Nothing', image: null, rewardType: 'nothing' };
+                }
                 if (item.rewardType === 'ton') {
                     return {
                         name: item.name || (Number(item.value || 0).toFixed(2) + ' TON'),
@@ -4361,6 +4460,7 @@
 
             const visualItems = serverItems.map(visualForServerItem);
             const matchesWinner = function(item) {
+                if (winner && winner.winnerType === 'nothing') return item.rewardType === 'nothing';
                 if (winnerIsTon) {
                     return item.rewardType === 'ton' &&
                         Math.abs(Number(item.value) - winnerValue) < 0.000001;
@@ -4383,8 +4483,11 @@
             strip.style.transform = 'translate3d(0,0,0)';
             strip.innerHTML = sequence.map(function(item) {
                 const isTon = item.rewardType === 'ton';
-                return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(item.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">' +
+                const isNothing = item.rewardType === 'nothing';
+                return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : (isNothing ? 'nothing' : 'gift')) + '">' +
+                    (isNothing
+                        ? '<span class="loot-box-nothing-reel">—</span>'
+                        : '<img src="' + escapeHtmlAttribute(item.image || '/assets/ton-icon.svg') + '" alt="' + escapeHtmlAttribute(item.name || 'Reward') + '" loading="eager" decoding="async">') +
                 '</div>';
             }).join('');
 
@@ -4690,7 +4793,18 @@
             if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار الجائزة' : 'Prize selected';
 
-            if (data.winnerType === 'ton') {
+            if (data.winnerType === 'nothing') {
+                stage.innerHTML =
+                    '<div class="loot-box-result loot-box-result-nothing">' +
+                        '<div class="loot-box-result-nothing-icon">—</div>' +
+                        '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'لم تفز بشيء' : 'Nothing') + '</div>' +
+                        '<div class="loot-box-result-value">' + (currentLanguage === 'ar' ? 'حظ أوفر في المرة القادمة' : 'Better luck next time') + '</div>' +
+                        '<div class="loot-box-result-actions">' +
+                            '<button class="loot-box-result-try-again" type="button" onclick="retryLootBox()">' + (currentLanguage === 'ar' ? 'حاول مرة أخرى' : 'Try Again') + '</button>' +
+                            '<button class="loot-box-result-continue" type="button" onclick="closeLootBoxResult()">' + (currentLanguage === 'ar' ? 'إغلاق' : 'Close') + '</button>' +
+                        '</div>' +
+                    '</div>';
+            } else if (data.winnerType === 'ton') {
                 stage.innerHTML =
                     '<div class="loot-box-result">' +
                         '<img class="loot-box-result-ton" src="/assets/ton-icon.svg" alt="TON">' +
@@ -4726,6 +4840,28 @@
             if (topupButton) topupButton.style.display = 'none';
             if (playButton) playButton.style.display = 'none';
             if (priceNote) priceNote.textContent = '';
+        }
+
+        function retryLootBox() {
+            if (!selectedLootBox || selectedLootBox.id !== 'box_0_1') return;
+            const stage = document.getElementById('loot-box-result-stage');
+            const collections = document.getElementById('loot-box-collections');
+            const collectionsTitle = document.querySelector('.loot-box-collections-title');
+            const button = document.getElementById('loot-box-topup-button');
+            if (stage) {
+                stage.classList.remove('show');
+                stage.innerHTML = '';
+            }
+            if (collections) collections.style.display = '';
+            if (collectionsTitle) collectionsTitle.style.display = '';
+            if (button) {
+                button.style.display = 'flex';
+                button.disabled = false;
+                button.className = 'loot-box-open-button';
+                button.innerHTML = '<span>Open for 0.1 TON</span><img src="/assets/ton-icon.svg" alt="TON" width="20" height="20">';
+                button.onclick = playSelectedLootBox;
+            }
+            playPaidLootBox(selectedLootBox);
         }
 
         async function playPaidLootBox(box) {
