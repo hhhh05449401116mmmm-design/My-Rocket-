@@ -3755,22 +3755,49 @@ app.post('/api/cashout/test', authenticate, async (req, res) => {
 // ===== Isolated 100 TON Telegram Collectibles box =====
 app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     try {
+        // Warm the same read-only gift market cache already used by the 0.1 TON box.
+        // This is only a pricing fallback and is completely isolated from Crash/game state.
+        try {
+            await ensureGiftMarketCache();
+        } catch (marketError) {
+            console.warn('100 TON gift market fallback unavailable:', marketError.message);
+        }
+
         let cacheStatus = get100TonMarketCacheStatus();
         const items = await Promise.all(LOOT_BOX_100_CATALOG.map(async (item, catalogIndex) => {
-            // Normal entries use the general collection floor.
-            // Black/Onyx Black entries use the exact Telegram backdrop floor.
+            // Prefer the exact 100 TON market source. If it has no mapping for a gift,
+            // fall back to the same collection-floor source used by the other paid boxes,
+            // then use Telegram live lookup only as the last fallback.
             let marketValueTon = 0;
             let lastUpdated = null;
             let source = null;
 
+            const baseName = item.baseName || item.name;
+            const fallbackMarket = function() {
+                const match = getCollectibleMarketValue({
+                    name: baseName,
+                    base_name: baseName,
+                    model_name: baseName
+                });
+                return match && Number(match.floorPriceTon) > 0
+                    ? {
+                        value: Number(match.floorPriceTon),
+                        lastUpdated: match.lastUpdated || null,
+                        source: 'gift-details-floor'
+                    }
+                    : null;
+            };
+
             if (item.backdrop) {
                 let special = await get100TonBackdropPriceSafe(item);
+                if (!special?.value) special = fallbackMarket();
                 if (!special?.value) special = await get100TonTelegramMarketPriceSafe(item);
                 marketValueTon = Number(special?.value || 0);
-                lastUpdated = special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null;
+                lastUpdated = special?.lastUpdated || (special?.fetchedAt ? new Date(special.fetchedAt).toISOString() : null);
                 source = special?.source || null;
             } else {
                 let market = await get100TonGeneralMarketPriceSafe(item);
+                if (!market?.value) market = fallbackMarket();
                 if (!market?.value) market = await get100TonTelegramMarketPriceSafe(item);
                 marketValueTon = Number(market?.value || 0);
                 lastUpdated = market?.lastUpdated || (market?.fetchedAt ? new Date(market.fetchedAt).toISOString() : null);
@@ -3803,7 +3830,8 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
             available: hasAnyPrice
         });
     } catch (error) {
-        res.status(500).json({ ok: false, error: error.message });
+        // Pricing is read-only and isolated; a market failure must never affect the game.
+        res.status(200).json({ ok: true, items: [], refreshing: false, stale: false, available: false });
     }
 });
 
