@@ -3084,6 +3084,25 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
         const balance = await getUserBalance(req.user.id);
         await refreshRoundPlayers();
         
+        if (result.collectibleConsumed) {
+            await createNotification(
+                req.user.id,
+                'BET_WON',
+                `Collectible bet paid ${Number(result.payout || 0).toFixed(2)} TON at ${Number(result.multiplier || 0).toFixed(2)}x`,
+                { betId, multiplier: result.multiplier, payout: result.payout, collectibleId: result.originalCollectibleId }
+            );
+            return res.json({
+                ok: true,
+                payout: result.payout,
+                multiplier: result.multiplier,
+                giftValue: result.giftValue,
+                collectibleConsumed: true,
+                collectibleId: result.originalCollectibleId,
+                message: result.message,
+                balance: balance
+            });
+        }
+
         if (result.collectibleReturned) {
             await createNotification(
                 req.user.id,
