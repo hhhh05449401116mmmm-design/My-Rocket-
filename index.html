@@ -4309,7 +4309,7 @@
                 if (box.price > 0) {
                     topupButton.style.display = 'flex';
                     topupButton.disabled = false;
-                    topupButton.onclick = insufficient ? openDeposit : playSelectedLootBox;
+                    topupButton.onclick = insufficient ? openDepositFromLootBox : playSelectedLootBox;
                     topupButton.className = insufficient ? 'loot-box-topup' : 'loot-box-open-button';
                     topupButton.innerHTML = insufficient
                         ? '<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5h13a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2h-11a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3Z"/><path d="M5.5 7.5V5.8a2 2 0 0 1 2-2h9"/><path d="M16.5 13.5h.01"/></svg><span>Top Up Balance</span>'
@@ -4653,6 +4653,7 @@
         let depositStatusTimer = null;
         let depositInProgress = false;
         let depositTransactionSent = false;
+        let returnToLootBoxAfterDeposit = false;
         let toastTimer = null;
 
         /* =========================================================
@@ -8385,6 +8386,12 @@
             if (status && !depositInProgress) { status.classList.remove("show", "success", "error", "info"); status.textContent = ""; }
         }
 
+        function openDepositFromLootBox() {
+            returnToLootBoxAfterDeposit = true;
+            closeModal('loot-box-modal');
+            openDeposit();
+        }
+
         function setDepositStatus(message, type = "info") {
             const box = document.getElementById("deposit-status");
             if (!box) return;
@@ -8512,7 +8519,17 @@
             const timeout = 180000;
             return new Promise(function(resolve, reject) {
                 let finished = false;
-                async function finishSuccess() { if (finished) return; finished = true; if (depositStatusTimer) { clearInterval(depositStatusTimer); depositStatusTimer = null; } resolve(); }
+                async function finishSuccess() {
+                    if (finished) return;
+                    finished = true;
+                    if (depositStatusTimer) { clearInterval(depositStatusTimer); depositStatusTimer = null; }
+                    if (returnToLootBoxAfterDeposit && selectedLootBox) {
+                        returnToLootBoxAfterDeposit = false;
+                        closeModal('deposit-modal');
+                        openLootBox(selectedLootBox);
+                    }
+                    resolve();
+                }
                 async function check() {
                     if (finished) return;
                     if (Date.now() - startedAt > timeout) { finished = true; if (depositStatusTimer) { clearInterval(depositStatusTimer); depositStatusTimer = null; } setDepositStatus(t.depositTimeout, "info"); setDepositButtonState(false, t.depositButton); resolve(); return; }
