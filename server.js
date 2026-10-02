@@ -3700,6 +3700,133 @@ app.get('/api/loot-box/100/market-items', authenticate, async (req, res) => {
     }
 });
 
+// ===== Server-authoritative paid loot-box roulette =====
+const PAID_LOOT_BOX_CONFIG = {
+    box_0_1: { name: '0.1 TON', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05] },
+    box_2:   { name: '2 TON',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
+    box_2_5: { name: '2.5 TON', price: 2.5, rarity: 'rare',   tonRewards: [0.12, 0.18, 0.25, 0.35] },
+    box_5:   { name: '5 TON',   price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
+    box_8:   { name: '8 TON',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
+    box_12:  { name: '12 TON',  price: 12,  rarity: 'epic',   tonRewards: [0.60, 0.90, 1.20, 1.80] },
+    box_15:  { name: '15 TON',  price: 15, rarity: 'epic',   tonRewards: [0.75, 1.10, 1.50, 2.20] },
+    box_20:  { name: '20 TON',  price: 20, rarity: 'epic',   tonRewards: [1.00, 1.50, 2.00, 3.00] },
+    box_25:  { name: '25 TON',  price: 25, rarity: 'epic',   tonRewards: [1.25, 2.00, 3.00, 4.00] },
+    box_50:  { name: '50 TON',  price: 50, rarity: 'legendary', tonRewards: [2.50, 4.00, 6.00, 8.00] },
+    box_100: { name: '100 TON', price: 100, rarity: 'legendary', tonRewards: [5.00, 8.00, 10.00, 15.00] }
+};
+
+const PAID_BOX_GIFT_NAMES = {
+    box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
+    box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
+    box_100: ["Plush Pepe","Durov's Cap","Heart Locket","Precious Peach","Scared Cat","Nail Bracelet","Heroic Helmet","Swiss Watch","Loot Bag","Bonded Ring","Rare Bird","Astral Shard","Westside Sign","Artisan Brick","Low Rider","Diamond Ring","Toy Bear"]
+};
+
+function paidBoxGiftImage(name) {
+    return '/api/gift-media/' + encodeURIComponent(String(name || ''));
+}
+
+async function getPaidBoxGiftPool(boxId, rarity) {
+    const names = PAID_BOX_GIFT_NAMES[boxId] || [];
+    if (names.length) {
+        for (const name of [...new Set(names)]) {
+            const slug = 'paid-' + String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            await run(
+                'INSERT OR IGNORE INTO gifts (telegram_gift_id, name, slug, emoji, image_url, collection, rarity, value, total_supply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [slug, name, slug, '🎁', paidBoxGiftImage(name), 'Paid Loot Box', rarity, 0, 0]
+            );
+        }
+        const placeholders = names.map(() => '?').join(',');
+        const rows = await query(
+            'SELECT * FROM gifts WHERE name IN (' + placeholders + ') ORDER BY RANDOM()',
+            names
+        );
+        if (rows.length) return rows;
+    }
+
+    // Boxes that do not currently expose a gift catalog keep their existing frontend
+    // catalog untouched. If the server awards a gift, it is selected from already
+    // registered Telegram gifts of the box rarity.
+    return await query(
+        "SELECT * FROM gifts WHERE rarity = ? OR rarity = 'common' ORDER BY RANDOM() LIMIT 30",
+        [rarity]
+    );
+}
+
+app.post('/api/loot-box/draw', authenticate, async (req, res) => {
+    try {
+        const boxId = String(req.body?.boxId || '').trim();
+        const config = PAID_LOOT_BOX_CONFIG[boxId];
+        if (!config) return res.status(400).json({ ok: false, error: 'Paid loot box not found' });
+
+        const result = await transaction(async () => {
+            const balance = Number(await getUserBalance(req.user.id) || 0);
+            if (balance < config.price) throw new Error('Insufficient balance');
+
+            // Exactly 7% gift and 93% TON. This ratio is server-side only.
+            const winsGift = crypto.randomInt(0, 10000) < 700;
+            let gift = null;
+            let tonReward = null;
+
+            if (winsGift) {
+                const pool = await getPaidBoxGiftPool(boxId, config.rarity);
+                if (!pool.length) throw new Error('No gifts available for this box');
+                gift = pool[crypto.randomInt(0, pool.length)];
+            } else {
+                tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
+            }
+
+            await updateUserBalance(req.user.id, config.price, 'subtract');
+
+            // Ensure every paid box is registered even if the historical seed predates it.
+            await run(
+                'INSERT OR IGNORE INTO lootboxes (name, emoji, price, rarity) VALUES (?, ?, ?, ?)',
+                [config.name, '💎', config.price, config.rarity]
+            );
+            const boxRow = await get('SELECT * FROM lootboxes WHERE name = ? LIMIT 1', [config.name]);
+            if (!boxRow) throw new Error('Lootbox is not registered');
+
+            let userGift = null;
+            if (gift) userGift = await addGiftToUser(req.user.id, gift.id);
+
+            await run(
+                'INSERT INTO lootbox_history (user_id, lootbox_id, gift_id, status) VALUES (?, ?, ?, ?)',
+                [req.user.id, boxRow.id, userGift?.gift_id || gift?.id || null, 'OPENED']
+            );
+
+            if (gift) {
+                await createNotification(
+                    req.user.id,
+                    'GIFT_WON',
+                    '🎁 You won ' + gift.name + ' from the ' + config.name + ' box!',
+                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: 0.07 }
+                );
+            } else {
+                await updateUserBalance(req.user.id, tonReward, 'add');
+                await createNotification(
+                    req.user.id,
+                    'BALANCE_WON',
+                    '💎 You won ' + Number(tonReward).toFixed(2) + ' TON from the ' + config.name + ' box!',
+                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: 0.93 }
+                );
+            }
+
+            return {
+                boxId,
+                boxName: config.name,
+                price: config.price,
+                winnerType: gift ? 'gift' : 'ton',
+                gift: gift ? { ...gift, image_url: paidBoxGiftImage(gift.name) } : null,
+                tonReward,
+                balance: Number(await getUserBalance(req.user.id) || 0)
+            };
+        });
+
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+}
+
 // ===== Isolated FREE / FREE24 reward claim =====
 // This path is independent from Crash, rounds, betting, cashout, deposits,
 // withdrawals, MTProto, and the paid 100 TON loot-box path.
