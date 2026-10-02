@@ -429,7 +429,7 @@ function initDatabase() {
                 CREATE TABLE IF NOT EXISTS notifications (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
-                    type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT')),
+                    type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON')),
                     message TEXT NOT NULL,
                     data TEXT,
                     is_read INTEGER DEFAULT 0,
@@ -437,6 +437,52 @@ function initDatabase() {
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             `);
+
+            // Migrate the existing notifications table to include BALANCE_WON.
+            // SQLite cannot alter a CHECK constraint in place, so rebuild the table
+            // while preserving all existing notification rows.
+            db.run(`PRAGMA foreign_keys = OFF`, fkError => {
+                if (fkError) {
+                    console.error('Failed to disable foreign keys for notifications migration:', fkError.message);
+                    return;
+                }
+                db.run(`ALTER TABLE notifications RENAME TO notifications_legacy`, renameError => {
+                    if (renameError && !renameError.message.includes('already exists')) {
+                        console.error('Failed to prepare notifications migration:', renameError.message);
+                        return;
+                    }
+                    db.run(`CREATE TABLE IF NOT EXISTS notifications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        type TEXT CHECK(type IN ('GIFT_WON', 'GIFT_LOST', 'BET_WON', 'BET_LOST', 'DEPOSIT', 'ACHIEVEMENT', 'BALANCE_WON')),
+                        message TEXT NOT NULL,
+                        data TEXT,
+                        is_read INTEGER DEFAULT 0,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )`, createError => {
+                        if (createError) {
+                            console.error('Failed to create migrated notifications table:', createError.message);
+                            return;
+                        }
+                        db.run(`INSERT OR IGNORE INTO notifications
+                            (id, user_id, type, message, data, is_read, created_at)
+                            SELECT id, user_id, type, message, data, is_read, created_at
+                            FROM notifications_legacy`, copyError => {
+                            if (copyError) {
+                                console.error('Failed to copy notifications during migration:', copyError.message);
+                                return;
+                            }
+                            db.run(`DROP TABLE IF EXISTS notifications_legacy`, dropError => {
+                                if (dropError) console.error('Failed to remove legacy notifications table:', dropError.message);
+                                db.run(`PRAGMA foreign_keys = ON`, restoreError => {
+                                    if (restoreError) console.error('Failed to restore foreign keys after notifications migration:', restoreError.message);
+                                });
+                            });
+                        });
+                    });
+                });
+            });
 
             // Migrate databases created before the Provably Fair fields existed.
             const roundColumns = [
