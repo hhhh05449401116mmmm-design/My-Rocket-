@@ -271,6 +271,7 @@ const {
     getUserGifts,
     getGiftById,
     addGiftToUser,
+    addLootBoxGiftToUser,
     updateGiftStatus,
     getUserCollectibles,
     getActiveCollectibleUniqueIds,
@@ -3804,7 +3805,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             if (!boxRow) throw new Error('Lootbox is not registered');
 
             let userGift = null;
-            if (gift) userGift = await addGiftToUser(req.user.id, gift.id);
+            if (gift) userGift = await addLootBoxGiftToUser(req.user.id, gift.id);
 
             await run(
                 'INSERT INTO lootbox_history (user_id, lootbox_id, gift_id, status) VALUES (?, ?, ?, ?)',
@@ -3841,6 +3842,12 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
 
         res.json({ ok: true, ...result });
     } catch (error) {
+        console.error('Paid loot-box draw failed:', {
+            userId: req.user?.id,
+            boxId: req.body?.boxId,
+            error: error.message,
+            stack: error.stack
+        });
         res.status(400).json({ ok: false, error: error.message });
     }
 });
@@ -4059,7 +4066,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
             await updateUserBalance(req.user.id, LOOT_BOX_100_PRICE, 'subtract');
 
-            const userGift = await addGiftToUser(req.user.id, selectedGift.id);
+            const userGift = await addLootBoxGiftToUser(req.user.id, selectedGift.id);
             await createNotification(
                 req.user.id,
                 'GIFT_WON',
