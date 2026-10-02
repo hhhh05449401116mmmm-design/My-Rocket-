@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Gift">
+  <g fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#ff4b7d" d="M20 51h88v57H20z"/>
+    <path fill="#ff668f" d="M14 38h100v24H14z"/>
+    <path fill="#ffd84d" d="M64 38v70"/>
+    <path fill="#ffcc3d" d="M64 38c-15-1-35-10-34-22 1-10 13-14 22-8 8 5 12 15 12 30Zm0 0c15-1 35-10 34-22-1-10-13-14-22-8-8 5-12 15-12 30Z"/>
+  </g>
+</svg>
