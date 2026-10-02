@@ -5593,6 +5593,8 @@
         ========================================================= */
         let gameInterval = null;
         let gameStreamController = null;
+        let gameStreamWatchdogTimer = null;
+        let gameStreamReconnectTimer = null;
         let rocketAnimationFrame = 0;
         let rocketRenderRefs = null;
         let rocketAreaSize = { width: 0, height: 0 };
@@ -6297,6 +6299,14 @@
         ========================================================= */
         function connectToServer() {
             if (gameInterval) clearInterval(gameInterval);
+            if (gameStreamReconnectTimer) {
+                clearTimeout(gameStreamReconnectTimer);
+                gameStreamReconnectTimer = null;
+            }
+            if (gameStreamWatchdogTimer) {
+                clearTimeout(gameStreamWatchdogTimer);
+                gameStreamWatchdogTimer = null;
+            }
             if (gameStreamController) gameStreamController.abort();
             connectToGameStream();
             connectToCollectiblesStream();
@@ -6308,7 +6318,19 @@
                 setServerStatus(false);
                 return;
             }
+            if (gameStreamWatchdogTimer) {
+                clearTimeout(gameStreamWatchdogTimer);
+                gameStreamWatchdogTimer = null;
+            }
             gameStreamController = new AbortController();
+            let gameStreamTimedOut = false;
+            const armGameStreamWatchdog = () => {
+                if (gameStreamWatchdogTimer) clearTimeout(gameStreamWatchdogTimer);
+                gameStreamWatchdogTimer = setTimeout(() => {
+                    gameStreamTimedOut = true;
+                    try { gameStreamController.abort(); } catch (e) {}
+                }, 5000);
+            };
             try {
                 const response = await fetch(`${BACKEND_URL}/api/game-stream?token=${encodeURIComponent(token)}`, {
                     headers: { 'Accept': 'text/event-stream' },
@@ -6317,12 +6339,18 @@
                 });
                 if (!response.ok || !response.body) throw new Error(`SSE connection failed: ${response.status}`);
                 setServerStatus(true);
+                if (gameInterval) {
+                    clearInterval(gameInterval);
+                    gameInterval = null;
+                }
+                armGameStreamWatchdog();
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) throw new Error('SSE stream closed');
+                    armGameStreamWatchdog();
                     buffer += decoder.decode(value, { stream: true });
                     const events = buffer.split('\n\n');
                     buffer = events.pop() || '';
@@ -6333,13 +6361,22 @@
                     });
                 }
             } catch (error) {
-                if (error.name === 'AbortError') return;
+                if (gameStreamWatchdogTimer) {
+                    clearTimeout(gameStreamWatchdogTimer);
+                    gameStreamWatchdogTimer = null;
+                }
+                if (error.name === 'AbortError' && !gameStreamTimedOut) return;
                 setServerStatus(false);
                 console.error('Game stream error:', error);
                 if (!gameInterval) gameInterval = setInterval(fetchGameState, 1000);
+                if (!gameStreamReconnectTimer) {
+                    gameStreamReconnectTimer = setTimeout(() => {
+                        gameStreamReconnectTimer = null;
+                        connectToGameStream();
+                    }, 3000);
+                }
             }
         }
-
         function connectToCollectiblesStream() {
             if (collectiblesEventSource) { try { collectiblesEventSource.close(); } catch (e) {} collectiblesEventSource = null; }
             const token = authToken || localStorage.getItem('authToken');
