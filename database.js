@@ -1704,13 +1704,13 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
                    COALESCE(ug.market_value, g.value) AS gift_value
             FROM user_gifts ug
             JOIN gifts g ON ug.gift_id = g.id
-            WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ? OR g.id = ? OR g.telegram_gift_id = ?) AND ug.status = 'OWNED'
+            WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ? OR g.id = ? OR g.telegram_gift_id = ?) AND ug.status IN ('OWNED', 'WON')
             ORDER BY ug.ownership_verified DESC, ug.id DESC LIMIT 1
         `, [userId, giftId, giftId, giftId, giftId]);
         
         if (!userGift) throw new Error('Gift not owned or not available');
 
-        const isCollectible = !!userGift.unique_collectible_id;
+        const isCollectible = !!userGift.unique_collectible_id && userGift.ownership_verified === 1;
         if (isCollectible) {
             if (userGift.ownership_verified !== 1) {
                 throw new Error('Only verified Telegram collectibles can be bet');
