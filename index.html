@@ -2546,6 +2546,21 @@
         .invite-stats-card span { color:#a6a6ad; font-size:13px; }
         .invite-stats-card strong { color:#9a7cf2; font-size:17px; direction:ltr; }
 
+        .weekly-leaderboard-hero { margin:12px 0 8px; padding:18px 18px 16px; border-radius:24px; background:linear-gradient(145deg,#15162a,#10111e 65%,#17142a); border:1px solid rgba(142,111,255,.18); box-shadow:0 14px 35px rgba(0,0,0,.22); }
+        .weekly-leaderboard-title-row { display:flex; align-items:center; gap:12px; }
+        .weekly-leaderboard-title-row > div:nth-child(2) { flex:1; min-width:0; }
+        .weekly-leaderboard-icon { width:52px; height:52px; border-radius:16px; display:grid; place-items:center; font-size:27px; background:linear-gradient(145deg,#8b69e8,#6b4ec5); box-shadow:0 8px 22px rgba(126,91,226,.24); }
+        .weekly-leaderboard-hero h2 { margin:2px 0 0; color:#fff; font-size:24px; font-weight:900; }
+        .weekly-leaderboard-info { display:grid; grid-template-columns:1fr auto; gap:12px; margin-top:16px; align-items:center; }
+        .weekly-leaderboard-info > div:first-child { padding:11px 13px; border-radius:14px; background:linear-gradient(100deg,rgba(255,166,28,.22),rgba(111,65,25,.18)); border:1px solid rgba(255,169,37,.3); }
+        .weekly-label { display:block; color:#ffd75b; font-size:10px; font-weight:800; margin-bottom:3px; }
+        #leaderboard-countdown { color:#ffcf36; font-size:19px; font-weight:900; direction:ltr; }
+        .weekly-winners { text-align:right; min-width:105px; }
+        .weekly-winners span { display:block; color:#aaaab7; font-size:10px; }
+        .weekly-winners strong { display:block; margin-top:3px; color:#fff; font-size:25px; }
+        .weekly-leaderboard-hero > p { margin:13px 0 0; text-align:center; color:#a8a7b4; font-size:11px; line-height:1.6; }
+        .leaderboard-prize-image { width:40px; height:40px; object-fit:contain; display:block; }
+        .spender-prize.is-empty { opacity:.45; }
         .spender-hero { text-align:center; padding:18px 12px 10px; }
         .spender-kicker { color:#a889ff; font-size:10px; letter-spacing:2.5px; font-weight:900; }
         .spender-hero h2 { margin:5px 0 4px; font-size:24px; font-weight:900; color:#fff; }
@@ -3934,13 +3949,26 @@
            EARNINGS / WITHDRAW PAGE
         ========================================================= -->
         <div id="top-page" class="top-page">
-            <div class="top-page-header">
-                <div>
-                    <div class="top-page-kicker">CRAZY ROCKET</div>
-                    <h2>المتصدرون</h2>
-                    <p>أكثر اللاعبين صرفًا في اللعبة</p>
+            <div class="weekly-leaderboard-hero">
+                <div class="weekly-leaderboard-title-row">
+                    <div class="weekly-leaderboard-icon">🏆</div>
+                    <div>
+                        <div class="top-page-kicker">CRAZY ROCKET</div>
+                        <h2>Leaderboard</h2>
+                    </div>
+                    <button type="button" class="spender-refresh" onclick="loadSpenderLeaderboard(true)" aria-label="تحديث">↻</button>
                 </div>
-                <button type="button" class="spender-refresh" onclick="loadSpenderLeaderboard(true)" aria-label="تحديث">↻</button>
+                <div class="weekly-leaderboard-info">
+                    <div>
+                        <span class="weekly-label">Ends in</span>
+                        <strong id="leaderboard-countdown">—</strong>
+                    </div>
+                    <div class="weekly-winners">
+                        <span>Prizes &amp; Winners</span>
+                        <strong>200</strong>
+                    </div>
+                </div>
+                <p>تنافس مع اللاعبين بالنشاط داخل اللعبة واربح هدايا Telegram collectible.</p>
             </div>
             <div class="spender-head">
                 <div><span>🏆</span><strong>Top Players</strong></div>
@@ -8482,12 +8510,13 @@
             return raw.slice(0, 2) + '***' + raw.slice(-2);
         }
 
-        function spenderPrizeIcon(rank) {
-            if (rank === 1) return '🧢';
-            if (rank === 2) return '🔮';
-            if (rank === 3) return '👾';
-            if (rank <= 6) return '💎';
-            return '💋';
+        function spenderPrizeIcon(player) {
+            if (!player || !player.prize || !player.prize.image) {
+                return '<span class="spender-prize is-empty">—</span>';
+            }
+            return '<span class="spender-prize"><img class="leaderboard-prize-image" src="' +
+                escapeHtmlAttribute(player.prize.image) +
+                '" alt="' + escapeHtmlAttribute(player.prize.name || 'Prize') + '" loading="lazy"></span>';
         }
 
         function spenderAvatar(player) {
@@ -8501,9 +8530,9 @@
             row.className = 'spender-row' + (player.rank <= 3 ? ' rank-' + player.rank : '');
             row.innerHTML =
                 '<div class="spender-rank">' + player.rank + '</div>' +
-                '<div class="spender-user"><img class="spender-avatar" src="' + escapeHtmlAttribute(spenderAvatar(player)) + '" alt=""><div class="spender-name">' + escapeHtml(maskSpenderName(player)) + '</div></div>' +
-                '<div class="spender-prize">' + spenderPrizeIcon(player.rank) + '</div>' +
-                '<div class="spender-points">' + compactSpenderPoints(player.totalSpent) + '</div>';
+                '<div class="spender-user"><img class="spender-avatar" src="' + escapeHtmlAttribute(spenderAvatar(player)) + '" alt="" loading="lazy"><div class="spender-name">' + escapeHtml(maskSpenderName(player)) + '</div></div>' +
+                spenderPrizeIcon(player) +
+                '<div class="spender-points">' + compactSpenderPoints(player.points) + '</div>';
             return row;
         }
 
@@ -8568,16 +8597,41 @@
             await copyReferralLink();
         }
 
+        let leaderboardCountdownTimer = null;
+
+        function startLeaderboardCountdown(endsAt) {
+            const el = document.getElementById('leaderboard-countdown');
+            if (!el) return;
+            if (leaderboardCountdownTimer) clearInterval(leaderboardCountdownTimer);
+            const tick = function() {
+                const remaining = Math.max(0, new Date(endsAt).getTime() - Date.now());
+                const totalSeconds = Math.floor(remaining / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                el.textContent = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                if (remaining <= 0) {
+                    clearInterval(leaderboardCountdownTimer);
+                    leaderboardCountdownTimer = null;
+                    loadSpenderLeaderboard(true);
+                }
+            };
+            tick();
+            leaderboardCountdownTimer = setInterval(tick, 1000);
+        }
+
         async function loadSpenderLeaderboard(force) {
             const list = document.getElementById('spender-list');
             if (!list) return;
             if (!force && list.dataset.loaded === '1') return;
             try {
-                const response = await fetch(BACKEND_URL + '/api/spender-leaderboard', { headers: getAuthHeaders(), cache: 'no-store' });
+                const response = await fetch(BACKEND_URL + '/api/weekly-leaderboard', { headers: getAuthHeaders(), cache: 'no-store' });
                 const data = await response.json();
                 if (!response.ok || !data.ok) throw new Error(data.error || 'Failed');
                 renderSpenderLeaderboard(data);
                 list.dataset.loaded = '1';
+                if (data.cycle && data.cycle.endsAt) startLeaderboardCountdown(data.cycle.endsAt);
             } catch (error) {
                 list.innerHTML = '<div class="spender-empty">تعذر تحميل قائمة المتصدرين</div>';
             }
