@@ -7257,7 +7257,7 @@
 
             // The starfield has its own visual position, separate from the
             // rocket. During flight it follows the rocket direction at the
-            // configured fast parallax speed; after crash it decelerates
+            // configured fast reverse parallax speed; after crash it decelerates
             // smoothly and settles into a very slow drift.
             if (rocketStarLastTimestamp === 0) {
                 rocketStarLastTimestamp = timestamp;
@@ -7294,7 +7294,7 @@
                 // Move only the repeating background itself. The layers stay
                 // exactly inside the game card, so they cannot disappear when
                 // the rocket starts or when the compositor is under load.
-                const starSpeeds = [0.42, 0.92, 1.55];
+                const starSpeeds = [0.60, 1.25, 2.10];
                 const starTiles = [[220, 185], [215, 180], [205, 165]];
                 const starPaintInterval = 33;
                 if (timestamp - rocketStarLastPaint >= starPaintInterval) {
@@ -7305,7 +7305,7 @@
                         const sx = ((rocketStarOffsetX * f) % tile[0] + tile[0]) % tile[0];
                         const sy = ((rocketStarOffsetY * f) % tile[1] + tile[1]) % tile[1];
                         layer.style.backgroundPosition =
-                            (-sx).toFixed(2) + "px " + sy.toFixed(2) + "px";
+                            sx.toFixed(2) + "px " + (-sy).toFixed(2) + "px";
                     });
                 }
             }
