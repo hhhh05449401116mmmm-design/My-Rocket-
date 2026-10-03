@@ -1044,8 +1044,8 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
             ? { table: 'gift_bets', amountColumn: 'gift_value_at_bet', payoutColumn: 'payout' }
             : null;
     if (!config) throw new Error('Invalid bet type');
-    if (!Number.isFinite(multiplier) || multiplier <= 1) {
-        throw new Error('Cashout must be above 1.00x');
+    if (!Number.isFinite(multiplier) || multiplier < 1) {
+        throw new Error('Invalid cashout multiplier');
     }
 
     return await transaction(async () => {
