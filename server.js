@@ -3789,7 +3789,46 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
     }
 });
 
-// ===== 5.8 سحب TON (Cash Out) =====
+// ===== 5.8 TON queued bet status/cancel =====
+app.get('/api/bet/ton/current', authenticate, async (req, res) => {
+    try {
+        const active = await get(
+            'SELECT id, round_id, amount, auto_cashout_target FROM ton_bets WHERE user_id = ? AND round_id = ? AND status = \'ACTIVE\' AND bet_currency = \'TON\' ORDER BY id DESC LIMIT 1',
+            [req.user.id, currentGameState.roundId]
+        );
+        if (active) {
+            return res.json({
+                ok: true,
+                state: 'active',
+                betId: active.id,
+                roundId: active.round_id,
+                amount: Number(active.amount),
+                autoCashoutTarget: active.auto_cashout_target
+            });
+        }
+
+        const queued = await get(
+            'SELECT id, round_id, amount, auto_cashout_target FROM queued_ton_bets WHERE user_id = ? AND round_id = ? AND status = \'QUEUED\' ORDER BY id DESC LIMIT 1',
+            [req.user.id, currentGameState.roundId + 1]
+        );
+        if (queued) {
+            return res.json({
+                ok: true,
+                state: 'queued',
+                betId: queued.id,
+                roundId: queued.round_id,
+                amount: Number(queued.amount),
+                autoCashoutTarget: queued.auto_cashout_target
+            });
+        }
+
+        return res.json({ ok: true, state: 'none' });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.8 TON queued bet status/cancel =====
 app.post('/api/bet/ton/cancel-queued', authenticate, async (req, res) => {
     try {
         const { betId } = req.body;
