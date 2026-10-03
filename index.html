@@ -4030,6 +4030,28 @@
             object-position: center !important;
         }
 
+
+        /* FINAL BOTTOM NAV STATE
+           Inactive buttons stay white; the selected button is purple. */
+        .bottom-nav .nav-button,
+        .bottom-nav .nav-button span:last-child {
+            color: #ffffff !important;
+            border-color: transparent !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .bottom-nav .nav-button.active {
+            background: linear-gradient(145deg, rgba(126, 42, 255, .72), rgba(196, 38, 255, .62)) !important;
+            border-color: rgba(214, 117, 255, .92) !important;
+            box-shadow: 0 5px 26px rgba(171, 49, 255, .38), inset 0 1px 0 rgba(255,255,255,.18) !important;
+            color: #ffffff !important;
+        }
+        .bottom-nav .nav-button.active span:last-child,
+        .bottom-nav .nav-button.active .nav-icon svg {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+        }
+
 </style>
 </head>
 <body>
