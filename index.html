@@ -2080,6 +2080,9 @@
             transition: all 0.3s ease;
         }
         .player-row.player-active { background: rgba(79, 195, 247, 0.08); border-color: rgba(79, 195, 247, 0.2); }
+        .player-row.player-queued { background: rgba(139, 77, 255, 0.08); border-color: rgba(139, 77, 255, 0.22); }
+        .player-row.player-queued .player-status,
+        .player-row.player-queued .player-live-multiplier { color: #b58cff; }
         .player-row.player-winner { background: rgba(56, 210, 123, 0.08); border-color: rgba(56, 210, 123, 0.15); }
         .player-row.player-loser { background: rgba(255, 79, 103, 0.06); border-color: rgba(255, 79, 103, 0.1); }
         .player-left {
@@ -7657,6 +7660,8 @@
                 if (isQueuedForNextRound && currentBetId) {
                     hasBet = true;
                     isQueuedForNextRound = false;
+                    pendingNextBet = null;
+                    pendingNextBetSubmitted = false;
                     playedThisRound = true;
                 } else {
                     hasBet = false;
