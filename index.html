@@ -7324,37 +7324,43 @@
             // Draw the trail in the same shape as the reference:
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
-            // Grow the trail from the far-left start of the round.
-            // It stays horizontal first, then follows one smooth upward
-            // curve; there is no downward dip and no sharp corner.
+            // Grow the trail along one continuous cubic curve.
+            // It stays horizontal first, then bends progressively upward
+            // and finishes with a vertical tangent like the reference.
             const startX = width * 0.05;
             const startY = height * 0.72;
             const trailProgress = Math.max(0, Math.min(1, Number(progress) || 0));
-            const fullRunX = width * 0.62;
-            const fullRise = height * 0.42;
-            const bendStart = 0.58;
-            const count = 72;
+
+            const p0 = [startX, startY];
+            const p1 = [width * 0.52, startY];
+            const p2 = [width * 0.69, height * 0.64];
+            const p3 = [width * 0.69, height * 0.25];
+
+            const count = 96;
             const points = [];
 
             for (let i = 0; i <= count; i++) {
                 const t = i / count;
                 if (t > trailProgress) break;
 
-                const u = trailProgress > 0 ? t / trailProgress : 0;
-                let px;
-                let py;
+                const u = trailProgress > 0
+                    ? t / trailProgress
+                    : 0;
+                const oneMinusU = 1 - u;
 
-                if (u <= bendStart) {
-                    const h = u / bendStart;
-                    px = startX + fullRunX * h;
-                    py = startY;
-                } else {
-                    const curve = (u - bendStart) / (1 - bendStart);
-                    // Smoothstep keeps the tangent continuous at both ends.
-                    const eased = curve * curve * (3 - 2 * curve);
-                    px = startX + fullRunX + width * 0.02 * eased;
-                    py = startY - fullRise * eased;
-                }
+                // Cubic Bezier: horizontal tangent at the start,
+                // smooth continuous bend, then vertical tangent at the end.
+                const px =
+                    oneMinusU * oneMinusU * oneMinusU * p0[0] +
+                    3 * oneMinusU * oneMinusU * u * p1[0] +
+                    3 * oneMinusU * u * u * p2[0] +
+                    u * u * u * p3[0];
+
+                const py =
+                    oneMinusU * oneMinusU * oneMinusU * p0[1] +
+                    3 * oneMinusU * oneMinusU * u * p1[1] +
+                    3 * oneMinusU * u * u * p2[1] +
+                    u * u * u * p3[1];
 
                 points.push([px, py]);
             }
