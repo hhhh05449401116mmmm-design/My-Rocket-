@@ -775,12 +775,7 @@
             box-sizing: border-box;
         }
         .loot-box-media::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-            background: linear-gradient(to bottom, rgba(0,0,0,.04), transparent 38%, rgba(0,0,0,.12));
+            display: none !important;
         }
         .loot-box-header {
             display: contents;
@@ -849,8 +844,7 @@
             );
         }
         .loot-box .loot-emoji {
-            font-size: 32px;
-            margin: 4px 0;
+            display: none !important;
         }
         .loot-box.free .loot-emoji {
             animation: freePulse 2s ease-in-out infinite;
@@ -3482,7 +3476,7 @@
             background-image: none !important;
         }
         .loot-box[data-box-id="box_20"] .loot-box-media {
-            background-image: linear-gradient(rgba(0,0,0,.30), rgba(0,0,0,.46)), url('/assets/pixellab_2026-10-03T14-05-05Z.PNG') !important;
+            background-image: url('/assets/pixellab_2026-10-03T14-05-05Z.PNG') !important;
             background-size: cover !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
