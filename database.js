@@ -292,6 +292,24 @@ function initDatabase() {
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             `);
+
+            // Rocket-only queue for TON bets placed during FLIGHT.
+            // It is isolated from ton_bets so the existing bet/crash settlement schema remains unchanged.
+            db.run(`
+                CREATE TABLE IF NOT EXISTS queued_ton_bets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    round_id INTEGER NOT NULL,
+                    amount REAL NOT NULL,
+                    auto_cashout_target REAL,
+                    status TEXT DEFAULT 'QUEUED' CHECK(status = 'QUEUED'),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_queued_ton_bets_round ON queued_ton_bets(round_id, status)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_queued_ton_bets_user ON queued_ton_bets(user_id, status)`);
             // Migration: add bet_currency column for existing databases (default TON, never affects real balance).
             db.run(`ALTER TABLE ton_bets ADD COLUMN bet_currency TEXT DEFAULT 'TON' CHECK(bet_currency IN ('TON', 'TEST'))`, error => {
                 if (error && !error.message.includes('duplicate column name')) {
@@ -2225,6 +2243,120 @@ async function placeTonBet(userId, amount, roundId, autoCashoutTarget = null) {
     });
 }
 
+async function queueTonBet(userId, amount, roundId, autoCashoutTarget = null) {
+    const normalizedAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount < 0.1) {
+        throw new Error('Invalid amount');
+    }
+    const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
+
+    return await transaction(async () => {
+        const existing = await get(
+            'SELECT id FROM queued_ton_bets WHERE user_id = ? AND status = \'QUEUED\' LIMIT 1',
+            [userId]
+        );
+        if (existing) throw new Error('A queued bet already exists');
+
+        const balance = await getUserBalance(userId);
+        if (balance < normalizedAmount) throw new Error('Insufficient balance');
+
+        const balanceUpdate = await run(
+            'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+            [normalizedAmount, userId, normalizedAmount]
+        );
+        if (balanceUpdate.changes !== 1) throw new Error('Insufficient balance');
+
+        const result = await run(`
+            INSERT INTO queued_ton_bets
+            (user_id, round_id, amount, auto_cashout_target)
+            VALUES (?, ?, ?, ?)
+        `, [userId, roundId, normalizedAmount, normalizedAutoCashoutTarget]);
+
+        return {
+            betId: result.lastID,
+            amount: normalizedAmount,
+            roundId,
+            status: 'QUEUED'
+        };
+    });
+}
+
+async function cancelQueuedTonBet(betId, userId, roundId) {
+    return await transaction(async () => {
+        const queued = await get(`
+            SELECT * FROM queued_ton_bets
+            WHERE id = ? AND user_id = ? AND round_id = ? AND status = 'QUEUED'
+        `, [betId, userId, roundId]);
+
+        if (!queued) throw new Error('Queued bet not found or already locked');
+
+        const deleted = await run(
+            'DELETE FROM queued_ton_bets WHERE id = ? AND status = \'QUEUED\'',
+            [betId]
+        );
+        if (deleted.changes !== 1) throw new Error('Queued bet was settled concurrently');
+
+        await run(
+            'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [queued.amount, userId]
+        );
+
+        return {
+            betId,
+            amount: Number(queued.amount),
+            balance: await getUserBalance(userId)
+        };
+    });
+}
+
+async function promoteQueuedTonBets(roundId) {
+    return await transaction(async () => {
+        const queued = await query(`
+            SELECT * FROM queued_ton_bets
+            WHERE round_id = ? AND status = 'QUEUED'
+            ORDER BY id ASC
+        `, [roundId]);
+
+        for (const bet of queued) {
+            await run(`
+                INSERT INTO ton_bets
+                (user_id, round_id, amount, auto_cashout_target, bet_currency, status)
+                VALUES (?, ?, ?, ?, 'TON', 'ACTIVE')
+            `, [
+                bet.user_id,
+                bet.round_id,
+                bet.amount,
+                bet.auto_cashout_target
+            ]);
+
+            await run(
+                'UPDATE users SET total_turnover = total_turnover + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [bet.amount, bet.user_id]
+            );
+
+            await run(
+                'DELETE FROM queued_ton_bets WHERE id = ? AND status = \'QUEUED\'',
+                [bet.id]
+            );
+        }
+
+        return queued.length;
+    });
+}
+
+async function getQueuedTonBetsForRound(roundId) {
+    return await query(`
+        SELECT qb.id AS bet_id, qb.user_id, qb.amount AS amount, qb.status,
+               NULL AS multiplier, u.first_name, u.last_name, u.avatar_url,
+               NULL AS unique_collectible_id, NULL AS gift_image_url, NULL AS gift_name,
+               'TON' AS bet_type
+        FROM queued_ton_bets qb
+        JOIN users u ON u.id = qb.user_id
+        WHERE qb.round_id = ? AND qb.status = 'QUEUED'
+        ORDER BY qb.id ASC
+    `, [roundId]);
+}
+
 async function cashoutTonBet(betId, userId, multiplier) {
     return await transaction(async () => {
         // 1. التحقق من وجود الرهان
@@ -3394,6 +3526,10 @@ module.exports = {
     updateRoundState,
     getActiveBetsForRound,
     getRoundPlayers,
+    getQueuedTonBetsForRound,
+    queueTonBet,
+    cancelQueuedTonBet,
+    promoteQueuedTonBets,
     cashoutBet,
     crashRound,
     
