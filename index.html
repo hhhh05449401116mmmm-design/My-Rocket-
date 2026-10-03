@@ -8215,7 +8215,7 @@
                 if (isWinner) row.classList.add("player-winner");
                 else if (isLoser) row.classList.add("player-loser");
                 else row.classList.add("player-active");
-                let multiplierValue = Number(currentMultiplier) || 1;
+                let multiplierValue = Number(displayMultiplier) || Number(currentMultiplier) || 1;
                 if (status === "CASHED_OUT" && Number.isFinite(Number(player.multiplier)) && Number(player.multiplier) > 0) {
                     multiplierValue = Number(player.multiplier);
                 }
@@ -8267,10 +8267,10 @@
                 const player = livePlayers.find(function(item) {
                     return String(item.id || (item.betType || "TON") + ":" + (item.betId || item.name || "")) === playerKey;
                 });
-                if (!player || player.status === "CASHED_OUT" || player.status === "LOST") return;
+                if (!player || player.status === "CASHED_OUT") return;
 
                 const amount = Number(player.amount || 0);
-                const target = Math.max(Number(currentMultiplier) || 1, 1);
+                const target = Math.max(Number(displayMultiplier) || Number(currentMultiplier) || 1, 1);
                 let value = Number(playerDisplayMultipliers.get(playerKey));
                 if (!Number.isFinite(value)) value = target;
                 const smoothing = 1 - Math.exp(-dt / 0.14);
