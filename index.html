@@ -1616,15 +1616,15 @@
             top: 45%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 160px;
-            height: 160px;
+            width: 148px;
+            height: 148px;
             z-index: 6;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: none;
         }
         .countdown-container.show { opacity: 1; pointer-events: auto; }
         .countdown-circle {
@@ -1632,19 +1632,22 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 8px solid rgba(79, 195, 247, 0.1);
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            border: 4px solid rgba(90, 105, 145, 0.22);
+            box-shadow:
+                0 0 18px rgba(77, 225, 138, 0.08),
+                inset 0 0 18px rgba(77, 225, 138, 0.05);
         }
         .countdown-progress {
             position: absolute;
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 8px solid transparent;
-            border-top-color: #4de18a;
+            border: 4px solid transparent;
+            border-top-color: #b7ff3c;
             border-right-color: #4de18a;
             transform: rotate(-45deg);
-            transition: transform 0.5s linear;
+            transition: none;
+            filter: drop-shadow(0 0 6px rgba(77, 225, 138, 0.45));
         }
         .countdown-inner {
             position: relative;
@@ -1654,17 +1657,18 @@
             z-index: 2;
         }
         .countdown-num {
-            font-size: 60px;
+            font-size: 58px;
             font-weight: 900;
             color: #fff;
             line-height: 1;
-            text-shadow: 0 0 20px rgba(79, 195, 247, 0.8);
+            text-shadow: 0 0 18px rgba(255, 255, 255, 0.16);
         }
         .countdown-txt {
-            font-size: 12px;
-            color: #4fc3f7;
+            font-size: 10px;
+            color: #55d8ff;
             font-weight: 700;
-            margin-top: 4px;
+            margin-top: 3px;
+            letter-spacing: 0.2px;
         }
 
         /* =========================================================
@@ -4228,8 +4232,8 @@
                     <div class="rocket-area">
                         <div id="flight-line" class="flight-line" aria-hidden="true">
     <svg class="flight-path-svg" preserveAspectRatio="none" aria-hidden="true">
-        <path class="flight-path-glow"></path>
-        <path class="flight-path-core"></path>
+        <path class="flight-path-glow" pathLength="1"></path>
+        <path class="flight-path-core" pathLength="1"></path>
         <circle class="flight-path-head" cx="0" cy="0" r="4"></circle>
     </svg>
 </div>
@@ -7867,18 +7871,10 @@
 
             if (gamePhase !== "FLIGHT") return;
 
-            // Trail is visual-only and painted at ~30fps; rocket remains 60fps.
-            if (timestamp - rocketLastPathPaint < 33) return;
-            rocketLastPathPaint=timestamp;
-            // The path is deliberately smoother than the rocket artwork:
-            // no wobble, no frame-to-frame jitter, and no copying of the rocket rotation.
-            // It represents the route only.
-            // Draw the trail in the same shape as the reference:
-            // long horizontal section first, then one smooth upward bend.
-            // Only the section behind the rocket is painted, with a small gap.
-            // Draw a fixed trajectory and reveal only its leading portion.
-            // The path never gets rescaled between frames, so the visible trail
-            // remains completely stable while its tip advances.
+            // Keep one fixed SVG trajectory and reveal it with stroke-dashoffset.
+            // This avoids rebuilding the path every frame, which was causing the
+            // visible line to tremble. The trajectory extends beyond the game card
+            // so its tip naturally leaves the screen instead of stopping at the top.
             const startX = 0;
             const startY = height * 0.72;
             const trailProgress = Math.max(0, Math.min(1, Number(progress) || 0));
@@ -7886,42 +7882,46 @@
             const p0 = [startX, startY];
             const p1 = [width * 0.60, startY];
             const p2 = [width * 0.74, height * 0.52];
-            const p3 = [width * 0.74, height * 0.16];
+            const p3 = [width * 0.74, -height * 0.58];
 
-            const count = 120;
-            const points = [];
+            const d =
+                "M " + p0[0].toFixed(2) + " " + p0[1].toFixed(2) +
+                " C " + p1[0].toFixed(2) + " " + p1[1].toFixed(2) +
+                ", " + p2[0].toFixed(2) + " " + p2[1].toFixed(2) +
+                ", " + p3[0].toFixed(2) + " " + p3[1].toFixed(2);
 
-            // A fixed set of points represents the complete path.
-            // Progress only decides how many of those fixed points are visible.
-            const visibleCount = Math.floor(trailProgress * count);
+            if (refs.flightPathGlow) {
+                if (refs.flightPathGlow.getAttribute("d") !== d) {
+                    refs.flightPathGlow.setAttribute("d", d);
+                }
+                refs.flightPathGlow.style.strokeDasharray = "1";
+                refs.flightPathGlow.style.strokeDashoffset = String(1 - trailProgress);
+            }
+            if (refs.flightPathCore) {
+                if (refs.flightPathCore.getAttribute("d") !== d) {
+                    refs.flightPathCore.setAttribute("d", d);
+                }
+                refs.flightPathCore.style.strokeDasharray = "1";
+                refs.flightPathCore.style.strokeDashoffset = String(1 - trailProgress);
+            }
 
-            for (let i = 0; i <= visibleCount; i++) {
-                const u = i / count;
+            if (refs.flightPathHead) {
+                const u = trailProgress;
                 const oneMinusU = 1 - u;
-
-                const px =
+                const headX =
                     oneMinusU * oneMinusU * oneMinusU * p0[0] +
                     3 * oneMinusU * oneMinusU * u * p1[0] +
                     3 * oneMinusU * u * u * p2[0] +
                     u * u * u * p3[0];
-
-                const py =
+                const headY =
                     oneMinusU * oneMinusU * oneMinusU * p0[1] +
                     3 * oneMinusU * oneMinusU * u * p1[1] +
                     3 * oneMinusU * u * u * p2[1] +
                     u * u * u * p3[1];
 
-                points.push([px, py]);
-            }
-            const d=points.map(function(pt,i){
-                return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
-            }).join(" ");
-            if(refs.flightPathGlow) refs.flightPathGlow.setAttribute("d",d);
-            if(refs.flightPathCore) refs.flightPathCore.setAttribute("d",d);
-            if(refs.flightPathHead && points.length){
-                const head=points[points.length-1];
-                refs.flightPathHead.setAttribute("cx",head[0].toFixed(1));
-                refs.flightPathHead.setAttribute("cy",head[1].toFixed(1));
+                refs.flightPathHead.setAttribute("cx", headX.toFixed(2));
+                refs.flightPathHead.setAttribute("cy", headY.toFixed(2));
+                refs.flightPathHead.style.opacity = u >= 0.94 ? "0" : "1";
             }
         }
 
@@ -8000,7 +8000,7 @@
                 const elapsed = now - countdownStartTime;
                 if (elapsed < countdownDuration) {
                     const remainingSec = Math.ceil((countdownDuration - elapsed) / 1000);
-                    if (timestamp - rocketLastCountdownPaint >= 33) {
+                    if (timestamp - rocketLastCountdownPaint >= 16) {
                         rocketLastCountdownPaint = timestamp;
                         if (refs.countdown && refs.countdown.textContent !== String(remainingSec)) {
                             refs.countdown.textContent = remainingSec;
