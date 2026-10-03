@@ -1967,6 +1967,7 @@ async function startRound(roundNumber) {
         crashAt: fairRound.crashAt,
         players: []
     });
+    await refreshRoundPlayers();
     console.log(`🔐 Round ${roundNumber} committed: ${fairRound.serverSeedHash}`);
 }
 
