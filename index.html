@@ -7266,19 +7266,18 @@
             rocketStarLastTimestamp = timestamp;
 
             if (gamePhase === "FLIGHT") {
-                const deltaPath = Math.max(0, Math.min(1, pathProgress - rocketStarLastPathProgress));
+                // Keep the stars moving for the entire flight, independent of
+                // pathProgress, so they never stop when the rocket reaches 4x.
+                // They travel opposite the rocket: fast horizontally first,
+                // then increasingly downward as the rocket begins to climb.
                 if (dt > 0) {
-                    rocketStarVelocity = deltaPath / dt;
+                    const horizontalSpeed = 1.65;
+                    const verticalSpeed = 1.55 * Math.max(0, Math.min(1, smoothClimb));
+                    rocketStarVelocity = horizontalSpeed;
+                    rocketStarOffsetX -= width * horizontalSpeed * dt;
+                    rocketStarOffsetY += height * verticalSpeed * dt;
                 }
                 rocketStarLastPathProgress = pathProgress;
-                rocketStarOffsetX -= width * 1.28 * deltaPath;
-                const previousPathProgress = Math.max(0, pathProgress - deltaPath);
-                const previousClimbProgress = Math.max(
-                    0,
-                    Math.min(1, (previousPathProgress - 0.50) / 0.50)
-                );
-                const previousSmoothClimb = previousClimbProgress * previousClimbProgress * (3 - 2 * previousClimbProgress);
-                rocketStarOffsetY += height * 0.40 * Math.max(0, smoothClimb - previousSmoothClimb);
             } else {
                 // Crash/countdown: bleed off the previous flight speed smoothly,
                 // but never freeze the stars completely.
