@@ -756,27 +756,42 @@
         .loot-box-inner {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
             width: 100%;
             height: 100%;
-            padding: 12px;
+            padding: 0;
             box-sizing: border-box;
             position: relative;
             z-index: 1;
         }
-        .loot-box-header {
+        .loot-box-media {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            overflow: hidden;
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 8px;
             justify-content: center;
+            box-sizing: border-box;
+        }
+        .loot-box-media::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,.04), transparent 38%, rgba(0,0,0,.12));
+        }
+        .loot-box-header {
+            display: contents;
         }
         .loot-name {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 800;
             color: #c8e6ff;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .loot-box .loot-image {
             position: absolute;
@@ -784,11 +799,37 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: inherit;
+            border-radius: 0;
             display: block;
             margin: 0;
             border: 0;
             z-index: 0;
+        }
+        .loot-box-footer {
+            flex: 0 0 62px;
+            min-height: 62px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 12px;
+            box-sizing: border-box;
+            direction: ltr;
+            background: linear-gradient(180deg, rgba(46,18,5,.98), rgba(27,8,3,.99));
+            border-top: 1px solid rgba(255,181,39,.38);
+            position: relative;
+            z-index: 3;
+        }
+        .loot-box-footer .loot-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: left;
+        }
+        .loot-box-footer .loot-price-badge {
+            position: static;
+            flex: 0 0 auto;
+            margin: 0;
         }
         .loot-box:has(.loot-image) {
             background: #07111f;
@@ -3436,17 +3477,21 @@
             box-shadow: 0 10px 34px rgba(255, 143, 0, .24), inset 0 1px 0 rgba(255,223,125,.20) !important;
         }
         .loot-box:has(.loot-image) { background: #120704 !important; }
+        .loot-box:has(.loot-image)::after { display: none !important; }
         .loot-box[data-box-id="box_20"] {
+            background-image: none !important;
+        }
+        .loot-box[data-box-id="box_20"] .loot-box-media {
             background-image: linear-gradient(rgba(0,0,0,.30), rgba(0,0,0,.46)), url('/assets/pixellab_2026-10-03T14-05-05Z.PNG') !important;
             background-size: cover !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
         }
-        .loot-box[data-box-id="box_20"] .loot-name {
-            display: none !important;
-        }
-        .loot-box:has(.loot-image)::after {
-            background: linear-gradient(to bottom, rgba(255,122,0,.08), transparent 30%, transparent 70%, rgba(0,0,0,.28)) !important;
+        .loot-box-footer .loot-name { color: #ffe6a0 !important; }
+        .loot-box-footer .loot-price-badge {
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            padding: 7px 12px !important;
         }
         .loot-name { color: #ffe6a0 !important; }
 
@@ -4961,12 +5006,14 @@
                     : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>';
 
                 div.innerHTML = '<div class="loot-box-inner">' +
-                    '<div class="loot-box-header">' +
-                        '<span class="loot-name">' + escapeHtml(nameText) + '</span>' +
+                    '<div class="loot-box-media">' +
+                        visual +
                         (badgeText ? '<span class="loot-badge ' + box.badgeClass + '">' + escapeHtml(badgeText) + '</span>' : '') +
                     '</div>' +
-                    visual +
-                    '<span class="loot-price-badge">' + escapeHtml(priceDisplay) + '</span>' +
+                    '<div class="loot-box-footer">' +
+                        '<span class="loot-name">' + escapeHtml(nameText) + '</span>' +
+                        '<span class="loot-price-badge">' + escapeHtml(priceDisplay) + '</span>' +
+                    '</div>' +
                 '</div>';
                 grid.appendChild(div);
             });
