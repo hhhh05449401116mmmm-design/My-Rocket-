@@ -7271,8 +7271,12 @@
                 // They travel opposite the rocket: fast horizontally first,
                 // then increasingly downward as the rocket begins to climb.
                 if (dt > 0) {
-                    const horizontalSpeed = 1.65;
-                    const verticalSpeed = 1.55 * Math.max(0, Math.min(1, smoothClimb));
+                    // Start gently, then accelerate smoothly as the flight
+                    // develops. The three star layers keep distinct speeds.
+                    const p = Math.max(0, Math.min(1, Number(progress) || 0));
+                    const acceleration = 0.08 + 0.92 * Math.pow(p, 1.7);
+                    const horizontalSpeed = 1.00 * acceleration;
+                    const verticalSpeed = 1.10 * acceleration * Math.max(0, Math.min(1, smoothClimb));
                     rocketStarVelocity = horizontalSpeed;
                     rocketStarOffsetX -= width * horizontalSpeed * dt;
                     rocketStarOffsetY += height * verticalSpeed * dt;
@@ -7293,7 +7297,7 @@
                 // Move only the repeating background itself. The layers stay
                 // exactly inside the game card, so they cannot disappear when
                 // the rocket starts or when the compositor is under load.
-                const starSpeeds = [0.60, 1.25, 2.10];
+                const starSpeeds = [0.55, 1.00, 1.60];
                 const starTiles = [[220, 185], [215, 180], [205, 165]];
                 const starPaintInterval = 33;
                 if (timestamp - rocketStarLastPaint >= starPaintInterval) {
