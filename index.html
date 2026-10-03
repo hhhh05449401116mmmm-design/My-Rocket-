@@ -2251,6 +2251,71 @@
         /* =========================================================
            MODALS - PREMIUM
         ========================================================= */
+        .rocket-reward-card {
+            width: min(420px, calc(100% - 24px));
+            margin: 0 12px 18px;
+            padding: 28px 22px 22px;
+            border-radius: 30px;
+            background: linear-gradient(180deg, #1b1238, #0b0820);
+            border: 1px solid rgba(171, 105, 255, 0.28);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55), 0 0 45px rgba(133, 72, 255, 0.16);
+            text-align: center;
+        }
+        .rocket-reward-icon {
+            width: 76px;
+            height: 76px;
+            margin: 0 auto 14px;
+            border-radius: 24px;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.18), rgba(123,70,255,0.16));
+            border: 1px solid rgba(177, 118, 255, 0.28);
+            box-shadow: 0 0 30px rgba(137, 75, 255, 0.18);
+        }
+        .rocket-reward-icon img { width: 48px; height: 48px; }
+        .rocket-reward-title {
+            margin: 0;
+            color: #fff;
+            font-size: 25px;
+            font-weight: 900;
+        }
+        .rocket-reward-subtitle {
+            margin: 6px 0 22px;
+            color: #a998c9;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .rocket-reward-label {
+            color: #a998c9;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .rocket-reward-amount {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 34px;
+            font-weight: 950;
+            direction: ltr;
+        }
+        .rocket-reward-amount img { width: 29px; height: 29px; }
+        .rocket-reward-continue {
+            width: 100%;
+            height: 56px;
+            margin-top: 24px;
+            border: 1px solid rgba(177, 118, 255, 0.28);
+            border-radius: 18px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #8b4dff, #5f2bd6);
+            box-shadow: 0 10px 28px rgba(112, 59, 227, 0.28);
+        }
+        .rocket-reward-continue:active { transform: scale(0.98); }
+
         .modal {
             position: fixed;
             z-index: 100;
@@ -4813,6 +4878,22 @@
                 <div id="loot-box-collections" class="loot-box-collections"></div>
                 <button id="loot-box-play-button" class="loot-box-play-button" type="button" onclick="playSelectedLootBox()">🎮 Play</button>
                 <div class="loot-box-price-note" id="loot-box-price-note"></div>
+            </div>
+        </div>
+
+        <div id="rocket-reward-modal" class="modal" onclick="closeModalOutside(event,'rocket-reward-modal')">
+            <div class="rocket-reward-card">
+                <div class="rocket-reward-icon">
+                    <img src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">
+                </div>
+                <h2 class="rocket-reward-title">Rocket Reward!</h2>
+                <div class="rocket-reward-subtitle">Balance Reward</div>
+                <div class="rocket-reward-label">You received</div>
+                <div class="rocket-reward-amount">
+                    <img src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">
+                    <span id="rocket-reward-amount">0.00</span>
+                </div>
+                <button type="button" class="rocket-reward-continue" onclick="closeModal('rocket-reward-modal')">Continue</button>
             </div>
         </div>
 
@@ -8956,8 +9037,8 @@
                 if (currentBetType === "GIFT") {
                     await fetchCollectibles();
                 }
-                if (currentBetType === "GIFT" && data.collectibleConsumed && Number.isFinite(Number(data.payout))) {
-                    showToast((currentLanguage === "ar" ? "🎁 تم استهلاك الهدية وربحت " : "🎁 Gift used — you won ") + Number(data.payout).toFixed(2) + " TON");
+                if (Number.isFinite(Number(data.payout))) {
+                    showRocketReward(Number(data.payout));
                 } else {
                     showToast(t.cashOut);
                 }
@@ -10688,6 +10769,13 @@
                 check();
                 depositStatusTimer = setInterval(check, 3000);
             });
+        }
+
+        function showRocketReward(payout) {
+            const amount = document.getElementById("rocket-reward-amount");
+            if (amount) amount.textContent = Number(payout || 0).toFixed(2);
+            const modal = document.getElementById("rocket-reward-modal");
+            if (modal) modal.classList.add("show");
         }
 
         function showToast(message) {
