@@ -7676,9 +7676,15 @@
             const sampledAt = performance.now();
             const multiplierChanged = currentStateMultiplier !== previousMultiplierSample;
             if (state.phase === "FLIGHT" && (previousPhase !== "FLIGHT" || multiplierChanged)) {
+                // Start each visual interpolation from the value currently shown.
+                // This keeps the number moving forward without ever jumping backward
+                // when a new authoritative server tick arrives.
+                previousMultiplierSample = Math.min(
+                    Math.max(Number(displayMultiplier) || 1, 1),
+                    currentStateMultiplier
+                );
                 multiplierSampledAt = sampledAt;
             }
-            previousMultiplierSample = currentStateMultiplier;
             currentMultiplier = currentStateMultiplier;
             if (state.phase === "COUNTDOWN") {
                 if (gamePhase !== "COUNTDOWN") {
@@ -8081,10 +8087,21 @@
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
 
-                // The server is authoritative. Do not extrapolate the multiplier
-                // between ticks, otherwise the UI can show a value above the real
-                // crash point before the next server state arrives.
-                displayMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
+                // Smoothly interpolate only toward the latest multiplier confirmed
+                // by the server. Never extrapolate beyond that confirmed value.
+                const targetMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
+                const startMultiplier = Math.min(
+                    Math.max(Number(previousMultiplierSample) || 1, 1),
+                    targetMultiplier
+                );
+                const interpolationProgress = Math.min(
+                    Math.max((performance.now() - multiplierSampledAt) / 1000, 0),
+                    1
+                );
+                displayMultiplier = Math.min(
+                    targetMultiplier,
+                    startMultiplier + (targetMultiplier - startMultiplier) * interpolationProgress
+                );
 
                 renderFlightMultiplier(timestamp);
                 animatePlayerMultipliers(timestamp);
