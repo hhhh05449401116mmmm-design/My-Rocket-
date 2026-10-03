@@ -8098,19 +8098,9 @@
                     Math.max((performance.now() - multiplierSampledAt) / 1000, 0),
                     1
                 );
-                const interpolatedMultiplier =
-                    startMultiplier + (targetMultiplier - startMultiplier) * interpolationProgress;
-
-                // Start rising immediately from the exact FLIGHT start time,
-                // while still staying below the latest server-confirmed value.
-                const elapsedSinceFlightStart = flightStartedAt
-                    ? Math.max((Date.now() + serverTimeOffset - flightStartedAt) / 1000, 0)
-                    : 0;
-                const liveFromStart = 1 + elapsedSinceFlightStart * multiplierRate;
-
                 displayMultiplier = Math.min(
                     targetMultiplier,
-                    Math.max(interpolatedMultiplier, liveFromStart)
+                    startMultiplier + (targetMultiplier - startMultiplier) * interpolationProgress
                 );
 
                 renderFlightMultiplier(timestamp);
