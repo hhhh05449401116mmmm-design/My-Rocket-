@@ -7274,9 +7274,9 @@
                     // Start gently, then accelerate smoothly as the flight
                     // develops. The three star layers keep distinct speeds.
                     const p = Math.max(0, Math.min(1, Number(progress) || 0));
-                    const acceleration = 0.06 + 0.94 * Math.pow(p, 1.65);
-                    const horizontalSpeed = 0.82 * acceleration;
-                    const verticalSpeed = 1.35 * acceleration * Math.max(0, Math.min(1, smoothClimb));
+                    const acceleration = 0.10 + 0.90 * Math.pow(p, 1.45);
+                    const horizontalSpeed = 0.70 * acceleration;
+                    const verticalSpeed = 2.25 * acceleration * Math.max(0, Math.min(1, smoothClimb));
                     rocketStarVelocity = horizontalSpeed;
                     rocketStarOffsetX -= width * horizontalSpeed * dt;
                     rocketStarOffsetY += height * verticalSpeed * dt;
@@ -7332,9 +7332,9 @@
             const trailProgress = Math.max(0, Math.min(1, Number(progress) || 0));
 
             const p0 = [startX, startY];
-            const p1 = [width * 0.50, startY];
-            const p2 = [width * 0.69, height * 0.64];
-            const p3 = [width * 0.69, height * 0.18];
+            const p1 = [width * 0.60, startY];
+            const p2 = [width * 0.74, height * 0.52];
+            const p3 = [width * 0.74, height * 0.16];
 
             const count = 120;
             const points = [];
@@ -7481,7 +7481,7 @@
             // Match the reference motion: begin near the middle, glide mostly
             // horizontally, then transition into one smooth upward arc.
             const pathProgress = p * p * (3 - 2 * p);
-            const climbStart = 0.50;
+            const climbStart = 0.60;
             const climbProgress = Math.max(
                 0,
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
