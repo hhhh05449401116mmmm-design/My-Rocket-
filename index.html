@@ -7480,8 +7480,11 @@
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            const x = rocketAreaSize.width * 0.42 * pathProgress;
-            const y = rocketAreaSize.height * 0.40 * smoothClimb;
+            // Keep the rocket visually centered. The sense of flight comes
+            // from the reverse-moving stars and the trail, not by moving the
+            // rocket across the game viewport.
+            const x = 0;
+            const y = 0;
             const rotation = -2 - smoothClimb * 30;
             const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) translate3d(-50%, -50%, 0) rotate(${rotation.toFixed(2)}deg)`;
 
