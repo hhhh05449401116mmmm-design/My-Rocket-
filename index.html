@@ -1141,7 +1141,8 @@
         .loot-box-collectible.gold-frame { border:0; background:#2b2b2d; box-shadow:none; }
         .loot-box-collectible.gold-frame img { filter:drop-shadow(0 0 7px rgba(255,211,76,.25)) drop-shadow(0 4px 7px rgba(0,0,0,.35)); }
         .loot-box-collectible.black-backdrop img { background:linear-gradient(145deg,#454a4d 0%,#303437 52%,#25282a 100%) !important; }
-        .loot-box-collectible .black-variant-label { background:#171719; border-color:rgba(35,35,38,.95); color:#9a9aa1; box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); }
+        .loot-box-collectible .black-variant-label { background:#171719; border-color:rgba(35,35,38,.95); color:#9a9aa1; box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); gap:7px; }
+        .loot-box-collectible .black-variant-label::before { content:''; width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#050505; border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 1px 2px rgba(255,255,255,.08); }
         .loot-box-market-status { display:block; color:#8f8f96; font-size:8px; line-height:1.2; margin-top:4px; }
         @media(max-width:420px) {
             .loot-box-collections { gap:12px 8px; }
@@ -5136,7 +5137,7 @@
                         (hasTonValue ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
                     '</div>' +
                     '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
-                    '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Reward') + '</span>' +
+                    '<span class="loot-box-collectible-random' + (item.label === 'Black' ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Reward') + '</span>' +
                 '</div>';
             }).join('');
 
