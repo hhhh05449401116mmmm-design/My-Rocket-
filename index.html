@@ -7324,33 +7324,40 @@
             // Draw the trail in the same shape as the reference:
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
-            const startX = width * 0.08;
-            const startY = height * 0.70;
-            // The Telegram rocket is centered at 50%/50% before its flight
-            // transform. Keep the path locked to that same coordinate system.
+            const startX = width * 0.05;
+            const startY = height * 0.72;
+            // Keep the rocket visually centered. The trail is a growing path
+            // behind it: horizontal at first, then a smooth upward bend that
+            // follows the rocket as it climbs.
             const rocketCenterX = width * 0.50 + x;
             const rocketCenterY = height * 0.50 - y;
-            const climbAmount = Math.max(0, startY - rocketCenterY);
-            // Begin the upward bend well before the rocket so the line rises
-            // with it instead of staying horizontal and lagging behind.
-            const bendX = Math.min(rocketCenterX - 1, width * 0.55);
-            const gap = 18;
-            const directionX = 1;
-            const directionY = -Math.max(0.10, smoothClimb * 1.55);
-            const directionLength = Math.hypot(directionX, directionY) || 1;
-            const lineEndX = rocketCenterX - (directionX / directionLength) * gap;
-            const lineEndY = rocketCenterY - (directionY / directionLength) * gap;
-            const count = 36;
+            const gap = 20;
+            const lineEndX = rocketCenterX - gap;
+            const lineEndY = rocketCenterY;
+            const climbAmount = Math.max(0, startY - lineEndY);
+            const bendX = Math.min(
+                lineEndX - width * 0.10,
+                width * 0.46 + x * 0.35
+            );
+            const count = 42;
             const points = [];
             for (let i = 0; i <= count; i++) {
                 const t = i / count;
-                const px = startX + (lineEndX - startX) * t;
-                let py = startY;
-                if (climbAmount > 0 && px > bendX) {
-                    const curveT = Math.max(0, Math.min(1, (px - bendX) / Math.max(1, lineEndX - bendX)));
-                    const eased = curveT * curveT * (3 - 2 * curveT);
-                    py = startY - climbAmount * eased;
-                }
+                // Cubic curve: long horizontal run, then a smooth climb into
+                // the small gap immediately behind the rocket.
+                const c1x = bendX;
+                const c1y = startY;
+                const c2x = lineEndX - Math.max(width * 0.04, width * 0.10 * smoothClimb);
+                const c2y = lineEndY + climbAmount * 0.08;
+                const mt = 1 - t;
+                const px = mt * mt * mt * startX +
+                    3 * mt * mt * t * c1x +
+                    3 * mt * t * t * c2x +
+                    t * t * t * lineEndX;
+                const py = mt * mt * mt * startY +
+                    3 * mt * mt * t * c1y +
+                    3 * mt * t * t * c2y +
+                    t * t * t * lineEndY;
                 points.push([px, py]);
             }
             const d=points.map(function(pt,i){
