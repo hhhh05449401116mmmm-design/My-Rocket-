@@ -8081,20 +8081,10 @@
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
 
-                // UI-only interpolation between authoritative server ticks.
-                // Never extrapolate beyond one server tick: the server is authoritative
-                // and updates its multiplier once per second. This prevents the UI from
-                // visually reaching 2.00x while the actual round is about to crash at 1.70x.
-                const authoritativeMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
-                const sampleElapsedSeconds = multiplierSampledAt
-                    ? Math.max((timestamp - multiplierSampledAt) / 1000, 0)
-                    : 0;
-                const interpolatedMultiplier = authoritativeMultiplier +
-                    Math.min(sampleElapsedSeconds, 1) * multiplierRate;
-                displayMultiplier = Math.max(
-                    authoritativeMultiplier,
-                    Math.min(interpolatedMultiplier, authoritativeMultiplier + multiplierRate)
-                );
+                // The server is authoritative. Do not extrapolate the multiplier
+                // between ticks, otherwise the UI can show a value above the real
+                // crash point before the next server state arrives.
+                displayMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
 
                 renderFlightMultiplier(timestamp);
                 animatePlayerMultipliers(timestamp);
