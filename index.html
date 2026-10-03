@@ -7657,19 +7657,14 @@
             if (previousRoundId && previousRoundId !== currentRoundId) {
                 activeTelegramRocketIndex = -1;
                 resetTelegramRocketForCountdown();
-                if (isQueuedForNextRound && currentBetId) {
-                    hasBet = true;
-                    isQueuedForNextRound = false;
-                    pendingNextBet = null;
-                    pendingNextBetSubmitted = false;
-                    playedThisRound = true;
-                } else {
-                    hasBet = false;
-                    currentBetId = null;
-                    playedThisRound = false;
-                    isQueuedForNextRound = false;
-                }
+                hasBet = false;
+                currentBetId = null;
+                playedThisRound = false;
+                isQueuedForNextRound = false;
+                pendingNextBet = null;
+                pendingNextBetSubmitted = false;
                 livePlayers = [];
+                syncCurrentTonBet();
             }
             if (state.phase === "CRASH") {
                 hasBet = false;
@@ -8488,6 +8483,42 @@
                 actionInProgress = false;
                 updateMainBetButton();
                 updateAutoCashoutUI();
+            }
+        }
+
+        async function syncCurrentTonBet() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/bet/ton/current`, {
+                    headers: getAuthHeaders(),
+                    cache: "no-store"
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) return;
+
+                if (data.state === "active") {
+                    hasBet = true;
+                    isQueuedForNextRound = false;
+                    currentBetId = data.betId || null;
+                    currentBetType = "TON";
+                    userBetAmount = Number(data.amount) || userBetAmount;
+                    playedThisRound = true;
+                } else if (data.state === "queued") {
+                    hasBet = false;
+                    isQueuedForNextRound = true;
+                    currentBetId = data.betId || null;
+                    currentBetType = "TON";
+                    userBetAmount = Number(data.amount) || userBetAmount;
+                    playedThisRound = true;
+                } else {
+                    hasBet = false;
+                    isQueuedForNextRound = false;
+                    currentBetId = null;
+                }
+
+                updateMainBetButton();
+                updateAutoCashoutUI();
+            } catch (error) {
+                console.error("CURRENT TON BET SYNC ERROR:", error);
             }
         }
 
