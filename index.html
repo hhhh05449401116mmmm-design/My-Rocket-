@@ -7573,10 +7573,16 @@
             if (previousRoundId && previousRoundId !== currentRoundId) {
                 activeTelegramRocketIndex = -1;
                 resetTelegramRocketForCountdown();
-                hasBet = false;
-                currentBetId = null;
-                playedThisRound = false;
-                isQueuedForNextRound = false;
+                if (isQueuedForNextRound && currentBetId) {
+                    hasBet = true;
+                    isQueuedForNextRound = false;
+                    playedThisRound = true;
+                } else {
+                    hasBet = false;
+                    currentBetId = null;
+                    playedThisRound = false;
+                    isQueuedForNextRound = false;
+                }
                 livePlayers = [];
             }
             if (state.phase === "CRASH") {
@@ -8206,6 +8212,7 @@
             livePlayers.slice(0, 12).forEach(function(player) {
                 const row = document.createElement("div");
                 const status = player.status || "ACTIVE";
+                const isQueued = status === "QUEUED";
                 const isWinner = status === "CASHED_OUT";
                 const isLoser = status === "LOST";
                 const playerKey = String(player.id || (player.betType || "TON") + ":" + (player.betId || player.name || ""));
@@ -8214,6 +8221,7 @@
                 row.className = "player-row";
                 if (isWinner) row.classList.add("player-winner");
                 else if (isLoser) row.classList.add("player-loser");
+                else if (isQueued) row.classList.add("player-queued");
                 else row.classList.add("player-active");
                 let multiplierValue = Number(currentMultiplier) || 1;
                 if (status === "CASHED_OUT" && Number.isFinite(Number(player.multiplier)) && Number(player.multiplier) > 0) {
@@ -8228,9 +8236,9 @@
                 const avatarClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const nameClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const valueClass = isWinner ? "winner" : isLoser ? "loser" : "";
-                const statusText = isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive');
+                const statusText = isQueued ? "Waiting..." : (isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive'));
                 const displayName = player.name || getTranslation('guestPlayer');
-                const currentValue = isLoser ? 0 : amount * displayMultiplier;
+                const currentValue = isLoser || isQueued ? 0 : amount * displayMultiplier;
                 const isGiftBet = player.betType === "GIFT";
                 const giftImageUrl = typeof player.giftImageUrl === "string" && player.giftImageUrl
                     ? (player.giftImageUrl.startsWith("/") ? BACKEND_URL + player.giftImageUrl : player.giftImageUrl)
@@ -8241,7 +8249,7 @@
                     : "";
                 const tonIconHtml = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
                 row.innerHTML =
-                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">×' + displayMultiplier.toFixed(2) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2) : tonIconHtml + currentValue.toFixed(2))) + '</div>';
+                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">' + (isQueued ? "Waiting..." : "×" + displayMultiplier.toFixed(2)) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : isQueued ? "Waiting..." : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2) : tonIconHtml + currentValue.toFixed(2))) + '</div>';
                 list.appendChild(row);
             });
             playerDisplayMultipliers.forEach(function(_, key) {
@@ -8328,8 +8336,8 @@
             
             if (isQueuedForNextRound) {
                 button.classList.add("queued-main");
-                button.textContent = t.betQueuedBtn;
-                button.disabled = true;
+                button.textContent = gamePhase === "FLIGHT" ? "Cancel queued bet" : t.betQueuedBtn;
+                button.disabled = false;
                 button.dataset.updating = 'false';
                 return;
             }
@@ -8351,7 +8359,8 @@
                 return;
             }
             if (isQueuedForNextRound) {
-                showToast(getTranslation('betQueued'));
+                if (gamePhase === "FLIGHT") cancelQueuedBet();
+                else showToast(getTranslation('betQueued'));
                 return;
             }
             openBetModal();
@@ -8360,6 +8369,42 @@
         /* =========================================================
            OPEN BET MODAL
         ========================================================= */
+        async function cancelQueuedBet() {
+            if (!isQueuedForNextRound || !currentBetId || gamePhase !== "FLIGHT" || actionInProgress) return;
+            actionInProgress = true;
+            updateMainBetButton();
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/bet/ton/cancel-queued`, {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ betId: currentBetId })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || "Unable to cancel queued bet");
+                currentBetId = null;
+                currentBetType = "TON";
+                isQueuedForNextRound = false;
+                hasBet = false;
+                pendingNextBet = null;
+                pendingNextBetSubmitted = false;
+                playedThisRound = false;
+                if (typeof data.balance === "number") {
+                    tonBalance = data.balance;
+                    updateTonWalletUI();
+                } else {
+                    await fetchBalance();
+                }
+                showToast("Queued bet cancelled");
+            } catch (error) {
+                console.error("CANCEL QUEUED BET ERROR:", error);
+                showToast(error.message || "Unable to cancel queued bet");
+            } finally {
+                actionInProgress = false;
+                updateMainBetButton();
+                updateAutoCashoutUI();
+            }
+        }
+
         function openBetModal() {
             normalizeAmountInput();
             updateModalBalance();
@@ -8750,14 +8795,8 @@
             }
 
             if (gamePhase === "FLIGHT") {
-                pendingNextBet = { type: "TON", amount: amount, autoCashout: autoCashoutEnabled, autoTarget: autoCashoutTarget };
-                pendingNextBetSubmitted = false;
-                isQueuedForNextRound = true;
-                hasBet = false;
-                closeModal("bet-modal");
-                updateMainBetButton();
-                showToast(t.betQueued);
-                trySubmitQueuedBet();
+                const success = await sendBet(amount, currentRoundId + 1, autoCashoutEnabled, autoCashoutTarget);
+                if (success) closeModal("bet-modal");
                 return;
             }
             if (gamePhase !== "COUNTDOWN") { showToast(t.waitingNext); return; }
@@ -8779,28 +8818,30 @@
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.placeBet);
                 userBetAmount = amount;
-                hasBet = true;
+                hasBet = !data.queued;
                 currentBetId = data.bet?.betId || null;
                 currentBetType = "TON";
                 playedThisRound = true;
-                isQueuedForNextRound = false;
-                pendingNextBet = null;
+                isQueuedForNextRound = !!data.queued;
+                pendingNextBet = data.queued
+                    ? { type: "TON", amount: amount, autoCashout: autoCashout, autoTarget: autoTarget }
+                    : null;
                 pendingNextBetSubmitted = false;
                 updateMainBetButton();
                 updateAutoCashoutUI();
                 await fetchBalance();
-                showToast(t.placeBet);
+                showToast(data.queued ? t.betQueued : t.placeBet);
                 return true;
             } catch (error) {
                 console.error("BET ERROR:", error);
                 const message = String(error.message || "");
+                showToast(message || t.placeBet);
                 if (gamePhase === "FLIGHT") {
-                    pendingNextBet = { type: "TON", amount: amount, autoCashout: autoCashout, autoTarget: autoTarget };
+                    isQueuedForNextRound = false;
+                    pendingNextBet = null;
                     pendingNextBetSubmitted = false;
-                    isQueuedForNextRound = true;
                     hasBet = false;
                     updateMainBetButton();
-                    showToast(t.betQueued);
                 } else {
                     showToast(message || t.placeBet);
                 }
