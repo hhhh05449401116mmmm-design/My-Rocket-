@@ -2120,6 +2120,15 @@
             margin-top: 4px;
             direction: ltr;
         }
+        .player-ton-icon {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            vertical-align: -4px;
+            margin-inline-end: 4px;
+            flex: 0 0 18px;
+            object-fit: contain;
+        }
         .player-bet-amount,
         .player-live-multiplier {
             font-size: 9px;
@@ -7652,6 +7661,9 @@
             updateMainBetButton();
         }
 
+        var playerDisplayMultipliers = new Map();
+        var playerMultiplierLastFrameAt = 0;
+
         var gameUiRenderTimer = null;
         var gameUiRenderQueued = false;
         var lastGameUiRenderAt = 0;
@@ -7768,6 +7780,7 @@
                 rocketLastPathPaint=0;
                 rocketStarLastPathProgress=0;
                 rocketStarLastTimestamp=0;
+                playerMultiplierLastFrameAt=0;
                 rocketStarLastPaint=0;
                 rocketStarVelocity=0;
                 rocketStarOffsetX=0;
@@ -7990,6 +8003,7 @@
                 );
 
                 renderFlightMultiplier(timestamp);
+                animatePlayerMultipliers(timestamp);
 
                 const visualFlightDuration = 8.8;
                 const progress = Math.min(Math.max(elapsedSeconds / visualFlightDuration, 0), 1);
@@ -8184,14 +8198,19 @@
             if (count) count.textContent = String(livePlayers.length);
             if (!livePlayers.length) {
                 list.innerHTML = `<div class="empty-players">${getTranslation('noActivePlayers')}</div>`;
+                playerDisplayMultipliers.clear();
                 return;
             }
             list.innerHTML = "";
+            const activeKeys = new Set();
             livePlayers.slice(0, 12).forEach(function(player) {
                 const row = document.createElement("div");
                 const status = player.status || "ACTIVE";
                 const isWinner = status === "CASHED_OUT";
                 const isLoser = status === "LOST";
+                const playerKey = String(player.id || (player.betType || "TON") + ":" + (player.betId || player.name || ""));
+                activeKeys.add(playerKey);
+                row.dataset.playerKey = playerKey;
                 row.className = "player-row";
                 if (isWinner) row.classList.add("player-winner");
                 else if (isLoser) row.classList.add("player-loser");
@@ -8200,6 +8219,10 @@
                 if (status === "CASHED_OUT" && Number.isFinite(Number(player.multiplier)) && Number(player.multiplier) > 0) {
                     multiplierValue = Number(player.multiplier);
                 }
+                let displayMultiplier = Number(playerDisplayMultipliers.get(playerKey));
+                if (!Number.isFinite(displayMultiplier)) displayMultiplier = multiplierValue;
+                displayMultiplier = Math.min(displayMultiplier, multiplierValue);
+                playerDisplayMultipliers.set(playerKey, displayMultiplier);
                 const amount = Number(player.amount || 0);
                 const avatar = makeAvatar(player);
                 const avatarClass = isWinner ? "winner" : isLoser ? "loser" : "";
@@ -8207,8 +8230,7 @@
                 const valueClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const statusText = isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive');
                 const displayName = player.name || getTranslation('guestPlayer');
-                let currentValue = amount * multiplierValue;
-                if (isLoser) currentValue = 0;
+                const currentValue = isLoser ? 0 : amount * displayMultiplier;
                 const isGiftBet = player.betType === "GIFT";
                 const giftImageUrl = typeof player.giftImageUrl === "string" && player.giftImageUrl
                     ? (player.giftImageUrl.startsWith("/") ? BACKEND_URL + player.giftImageUrl : player.giftImageUrl)
@@ -8217,9 +8239,49 @@
                 const giftImageHtml = isGiftBet && safeGiftImageUrl
                     ? '<img class="player-gift-art" src="' + safeGiftImageUrl + '" alt="' + escapeHtmlAttribute(player.giftName || "Telegram Gift") + '" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
                     : "";
+                const tonIconHtml = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
                 row.innerHTML =
-                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : "💎 ") + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">×' + multiplierValue.toFixed(2) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : (isGiftBet ? giftImageHtml + "💎 " + currentValue.toFixed(2) : "💎 " + currentValue.toFixed(2))) + '</div>';
+                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">×' + displayMultiplier.toFixed(2) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2) : tonIconHtml + currentValue.toFixed(2))) + '</div>';
                 list.appendChild(row);
+            });
+            playerDisplayMultipliers.forEach(function(_, key) {
+                if (!activeKeys.has(key)) playerDisplayMultipliers.delete(key);
+            });
+        }
+
+        function animatePlayerMultipliers(timestamp) {
+            const list = document.getElementById("players-list");
+            if (!list || gamePhase !== "FLIGHT" || !livePlayers.length) {
+                playerMultiplierLastFrameAt = timestamp;
+                return;
+            }
+            const previous = playerMultiplierLastFrameAt || timestamp;
+            const dt = Math.max(0, Math.min((timestamp - previous) / 1000, 0.1));
+            playerMultiplierLastFrameAt = timestamp;
+            if (!dt) return;
+
+            const rows = list.querySelectorAll(".player-row");
+            rows.forEach(function(row) {
+                const playerKey = row.dataset.playerKey;
+                if (!playerKey) return;
+                const player = livePlayers.find(function(item) {
+                    return String(item.id || (item.betType || "TON") + ":" + (item.betId || item.name || "")) === playerKey;
+                });
+                if (!player || player.status === "CASHED_OUT" || player.status === "LOST") return;
+
+                const amount = Number(player.amount || 0);
+                const target = Math.max(Number(currentMultiplier) || 1, 1);
+                let value = Number(playerDisplayMultipliers.get(playerKey));
+                if (!Number.isFinite(value)) value = target;
+                const smoothing = 1 - Math.exp(-dt / 0.14);
+                value += (target - value) * smoothing;
+                if (value > target) value = target;
+                playerDisplayMultipliers.set(playerKey, value);
+
+                const multiplierEl = row.querySelector(".player-live-multiplier");
+                const valueEl = row.querySelector(".player-current-value");
+                if (multiplierEl) multiplierEl.textContent = "×" + value.toFixed(2);
+                if (valueEl) valueEl.innerHTML = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">' + (amount * value).toFixed(2);
             });
         }
 
