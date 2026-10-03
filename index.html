@@ -3662,6 +3662,185 @@
             color: #ffe1bd !important;
         }
 
+
+        /* =========================================================
+           NEON COSMIC UI THEME
+           Visual-only home/app styling. Does not touch Crash/Core logic.
+        ========================================================= */
+        html, body {
+            background:
+                radial-gradient(ellipse 90% 55% at 8% 8%, rgba(105, 52, 255, .28) 0%, rgba(30, 110, 255, .14) 32%, transparent 68%),
+                radial-gradient(ellipse 85% 60% at 92% 18%, rgba(255, 30, 220, .22) 0%, rgba(70, 35, 220, .14) 34%, transparent 72%),
+                radial-gradient(ellipse 75% 55% at 50% 72%, rgba(0, 180, 255, .10) 0%, transparent 64%),
+                linear-gradient(145deg, #030511 0%, #07051b 42%, #030818 75%, #02030c 100%) !important;
+            background-color: #030511 !important;
+        }
+        body::before {
+            background:
+                radial-gradient(circle at 12% 28%, rgba(80, 170, 255, .26) 0 1px, transparent 2px),
+                radial-gradient(circle at 78% 22%, rgba(220, 70, 255, .24) 0 1px, transparent 2px),
+                radial-gradient(circle at 36% 72%, rgba(100, 220, 255, .20) 0 1px, transparent 2px),
+                radial-gradient(circle at 88% 74%, rgba(255, 55, 210, .20) 0 1.5px, transparent 3px),
+                radial-gradient(circle at 58% 42%, rgba(90, 120, 255, .18) 0 1px, transparent 2px) !important;
+        }
+        body::after {
+            background:
+                linear-gradient(90deg, rgba(0,0,15,.48), transparent 18%, transparent 82%, rgba(0,0,15,.48)),
+                linear-gradient(180deg, rgba(0,0,20,.18), transparent 18%, transparent 78%, rgba(0,0,20,.52)) !important;
+        }
+
+        .header {
+            background: linear-gradient(180deg, rgba(5, 7, 24, .98), rgba(5, 7, 24, .42), transparent) !important;
+        }
+        .avatar {
+            background: linear-gradient(135deg, #24145f, #071a48) !important;
+            border-color: rgba(105, 90, 255, .72) !important;
+            box-shadow: 0 0 22px rgba(92, 73, 255, .28) !important;
+        }
+        .profile-name { color: #f4f1ff !important; text-shadow: 0 0 18px rgba(126, 91, 255, .28) !important; }
+        .profile-id { color: #8da9ff !important; }
+        .admin-badge { color: #ff63e6 !important; }
+
+        .wallet-balance {
+            background: linear-gradient(135deg, rgba(8, 32, 88, .96), rgba(26, 8, 84, .96)) !important;
+            border-color: rgba(53, 143, 255, .78) !important;
+            color: #e8f5ff !important;
+            box-shadow: 0 4px 24px rgba(44, 100, 255, .24), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        }
+        .wallet-balance::before { background: radial-gradient(circle, rgba(0, 194, 255, .10), transparent 70%) !important; }
+        .deposit-button {
+            background: linear-gradient(135deg, #b72dff, #5b31ff) !important;
+            border-color: rgba(255, 104, 239, .72) !important;
+            box-shadow: 0 5px 22px rgba(184, 42, 255, .28) !important;
+        }
+
+        .live-strip {
+            background: linear-gradient(145deg, rgba(9, 20, 58, .96), rgba(16, 5, 48, .96)) !important;
+            border-color: rgba(58, 112, 255, .72) !important;
+            box-shadow: 0 8px 30px rgba(30, 72, 255, .16), inset 0 1px 0 rgba(255,255,255,.06) !important;
+        }
+        .live-strip-scroll { color: #a7b9ff !important; }
+        .live-strip-scroll::after { background: linear-gradient(to right, rgba(9,20,58,.95), transparent) !important; }
+        .live-strip-title { color: #ff4d6d !important; }
+
+        .rocket-banner,
+        .pvp-banner,
+        .playhub-banner {
+            border-color: rgba(73, 150, 255, .92) !important;
+            box-shadow:
+                0 8px 34px rgba(39, 101, 255, .26),
+                0 0 20px rgba(197, 43, 255, .16),
+                inset 0 1px 0 rgba(255,255,255,.18) !important;
+        }
+        .rocket-banner {
+            background: linear-gradient(135deg, #071a54 0%, #1436a0 48%, #7b19d8 100%) !important;
+        }
+        .rocket-banner-bg { background: radial-gradient(circle at 30% 70%, rgba(45, 205, 255, .24), rgba(132, 34, 255, .14) 45%, transparent 70%) !important; }
+        .rocket-banner-title { color: #f6f2ff !important; text-shadow: 0 0 22px rgba(93, 126, 255, .62) !important; }
+        .rocket-banner-desc { color: #c4d4ff !important; }
+        .rocket-banner-rocket::before,
+        .rocket-banner-rocket::after { border-color: #72e7ff !important; background-color: #3f9cff !important; box-shadow: 0 0 15px rgba(60, 188, 255, .65) !important; }
+
+        .pvp-banner {
+            background: linear-gradient(135deg, #1c0b62 0%, #6620c7 52%, #dc20d9 100%) !important;
+        }
+        .pvp-banner-bg { background: radial-gradient(circle at 50% 50%, rgba(255, 71, 241, .18), transparent 70%) !important; }
+        .pvp-banner-wheel { border-color: rgba(119, 212, 255, .48) !important; background: conic-gradient(from 0deg, rgba(79, 115, 255, .92), rgba(255, 53, 226, .72), rgba(79, 115, 255, .92)) !important; }
+        .pvp-banner-wheel::before { background: #e85bff !important; box-shadow: 0 0 15px rgba(232, 91, 255, .75) !important; }
+        .pvp-banner-title { color: #fff !important; text-shadow: 0 0 22px rgba(255, 92, 239, .62) !important; }
+        .pvp-banner-desc { color: #e4d9ff !important; }
+
+        .playhub-banner {
+            background: linear-gradient(135deg, #061a50 0%, #082e77 48%, #5a16b7 100%) !important;
+            border-color: rgba(53, 194, 255, .74) !important;
+        }
+        .playhub-banner-bg { background: radial-gradient(circle at 50% 50%, rgba(33, 195, 255, .12), transparent 70%) !important; }
+        .playhub-banner-title { color: #f1f7ff !important; text-shadow: 0 0 20px rgba(69, 192, 255, .48) !important; }
+        .playhub-banner-desc { color: #b5c9f8 !important; }
+        .playhub-banner-count { color: #8ba8e8 !important; }
+
+        .rocket-banner::after,
+        .pvp-banner::after,
+        .playhub-banner::after {
+            background:
+                linear-gradient(90deg, rgba(0, 170, 255, .08), transparent 34%, transparent 66%, rgba(255, 40, 225, .10)),
+                linear-gradient(180deg, rgba(112, 93, 255, .06), transparent 45%, rgba(0, 24, 90, .10)) !important;
+        }
+
+        .loot-box {
+            background: linear-gradient(145deg, rgba(8, 18, 50, .97), rgba(12, 5, 35, .98)) !important;
+            border-color: rgba(54, 151, 255, .72) !important;
+            box-shadow: 0 10px 34px rgba(30, 86, 255, .16), inset 0 1px 0 rgba(255,255,255,.07) !important;
+        }
+        .loot-box:hover {
+            border-color: rgba(217, 67, 255, .82) !important;
+            box-shadow: 0 14px 38px rgba(119, 45, 255, .25), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        }
+        .loot-box:has(.loot-image) { background: #050a20 !important; }
+        .loot-box-footer {
+            background: linear-gradient(180deg, rgba(10, 18, 50, .98), rgba(12, 5, 35, .99)) !important;
+            border-top-color: rgba(70, 143, 255, .42) !important;
+        }
+        .loot-box-footer .loot-name,
+        .loot-name { color: #eef3ff !important; }
+        .loot-box-footer .loot-price-badge {
+            background: linear-gradient(135deg, #6e36ff, #c22cff) !important;
+            color: #fff !important;
+            border: 1px solid rgba(224, 146, 255, .72) !important;
+            box-shadow: 0 5px 18px rgba(137, 45, 255, .25), inset 0 1px 0 rgba(255,255,255,.20) !important;
+        }
+        .loot-box[data-box-id="box_20"] .loot-box-media {
+            box-shadow: inset 0 0 0 1px rgba(87, 151, 255, .18) !important;
+        }
+
+        .bottom-nav {
+            background: linear-gradient(145deg, rgba(5, 16, 48, .96), rgba(12, 4, 39, .98)) !important;
+            border-color: rgba(53, 133, 255, .76) !important;
+            box-shadow: 0 12px 40px rgba(0,0,0,.62), 0 0 28px rgba(64, 77, 255, .15), inset 0 1px 0 rgba(255,255,255,.10) !important;
+        }
+        .nav-button { color: rgba(181, 205, 255, .72) !important; }
+        .nav-button span:last-child { color: rgba(190, 207, 255, .82) !important; }
+        .nav-button.active {
+            background: linear-gradient(145deg, rgba(95, 45, 255, .56), rgba(201, 32, 232, .40)) !important;
+            border-color: rgba(206, 103, 255, .88) !important;
+            box-shadow: 0 5px 26px rgba(171, 49, 255, .34), inset 0 1px 0 rgba(255,255,255,.16) !important;
+        }
+        .nav-button.active .nav-icon svg { fill: #ffffff !important; filter: drop-shadow(0 0 8px rgba(76, 205, 255, .55)); }
+        .nav-button.active span:last-child { color: #fff !important; }
+
+        .game-hub { color: #fff !important; }
+        #top-page,
+        #earn-page,
+        #profile-page,
+        #gifts-page {
+            color: #f1f4ff;
+        }
+
+        .invite-page,
+        .weekly-leaderboard-hero,
+        .profile-balance-card,
+        .vip-current,
+        .collectible-deposit-panel {
+            background: linear-gradient(145deg, rgba(10, 20, 54, .94), rgba(19, 6, 50, .94)) !important;
+            border-color: rgba(72, 125, 255, .42) !important;
+            box-shadow: 0 14px 35px rgba(26, 42, 130, .18), inset 0 1px 0 rgba(255,255,255,.06) !important;
+        }
+        .weekly-leaderboard-icon {
+            background: linear-gradient(145deg, #2868ff, #a32cff) !important;
+            border-color: rgba(117, 212, 255, .72) !important;
+            box-shadow: 0 8px 24px rgba(82, 74, 255, .30) !important;
+        }
+        .weekly-leaderboard-title-row h2,
+        .invite-hero h2 { color: #f7f4ff !important; }
+        .weekly-label,
+        .invite-kicker { color: #b989ff !important; }
+        .invite-banner strong b,
+        .invite-stats-card strong { color: #62d8ff !important; }
+
+        /* Keep paid game controls outside the visual home theme; no game logic changed. */
+        .settings-button,
+        .admin-reset-button { filter: none !important; }
+
 </style>
 </head>
 <body>
