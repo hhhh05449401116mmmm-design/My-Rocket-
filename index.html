@@ -8281,7 +8281,14 @@
                 const multiplierEl = row.querySelector(".player-live-multiplier");
                 const valueEl = row.querySelector(".player-current-value");
                 if (multiplierEl) multiplierEl.textContent = "×" + value.toFixed(2);
-                if (valueEl) valueEl.innerHTML = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">' + (amount * value).toFixed(2);
+                if (valueEl) {
+                    const isGiftBet = player.betType === "GIFT";
+                    const giftImage = isGiftBet ? row.querySelector(".player-gift-art") : null;
+                    const tonIcon = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
+                    valueEl.innerHTML = isGiftBet
+                        ? (giftImage ? giftImage.outerHTML : "") + tonIcon + (amount * value).toFixed(2)
+                        : tonIcon + (amount * value).toFixed(2);
+                }
             });
         }
 
