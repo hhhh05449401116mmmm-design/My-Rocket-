@@ -1044,8 +1044,9 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
             ? { table: 'gift_bets', amountColumn: 'gift_value_at_bet', payoutColumn: 'payout' }
             : null;
     if (!config) throw new Error('Invalid bet type');
-    if (!Number.isFinite(multiplier) || multiplier < 1) {
-        throw new Error('Invalid cashout multiplier');
+    const minimumCashoutMultiplier = type === 'TON' ? 1 : 1.01;
+    if (!Number.isFinite(multiplier) || multiplier < minimumCashoutMultiplier) {
+        throw new Error(`Cashout must be at least ${minimumCashoutMultiplier.toFixed(2)}x`);
     }
 
     return await transaction(async () => {
