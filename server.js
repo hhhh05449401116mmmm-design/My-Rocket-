@@ -315,6 +315,10 @@ const {
     updateRoundState,
     getActiveBetsForRound,
     getRoundPlayers,
+    getQueuedTonBetsForRound,
+    queueTonBet,
+    cancelQueuedTonBet,
+    promoteQueuedTonBets,
     cashoutBet,
     crashRound,
     selectRewardFromInventory,
@@ -1923,12 +1927,15 @@ function buildPlayerDisplayName(firstName, lastName) {
 
 async function refreshRoundPlayers() {
     const rows = await getRoundPlayers(currentGameState.roundId);
-    currentGameState.players = rows.map(row => ({
+    const queuedRows = currentGameState.phase === 'FLIGHT'
+        ? await getQueuedTonBetsForRound(currentGameState.roundId + 1)
+        : [];
+    currentGameState.players = rows.concat(queuedRows).map(row => ({
         id: `${row.bet_type}:${row.bet_id}`,
         name: buildPlayerDisplayName(row.first_name, row.last_name),
         avatar: row.avatar_url || null,
         amount: row.amount,
-        status: row.status,
+        status: row.status === 'QUEUED' ? 'QUEUED' : row.status,
         multiplier: row.multiplier,
         betType: row.bet_type,
         giftName: row.gift_name || null,
@@ -1943,6 +1950,10 @@ async function startRound(roundNumber) {
     roundTransitionTimer = null;
     const fairRound = createFairRound(roundNumber, DEFAULT_CLIENT_SEED);
     await createRoundRecord(fairRound);
+    // Queued bets are promoted before the countdown is exposed to clients.
+    // They are already funded, so no second balance deduction occurs.
+    await promoteQueuedTonBets(roundNumber);
+
     updateGameState({
         roundId: roundNumber,
         phase: 'COUNTDOWN',
@@ -3742,12 +3753,28 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid amount' });
         }
 
-        // التحقق من أن الجولة في مرحلة COUNTDOWN
-        if (currentGameState.phase !== 'COUNTDOWN') {
-            return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN' });
+        const roundId = currentGameState.phase === 'FLIGHT'
+            ? currentGameState.roundId + 1
+            : currentGameState.roundId;
+
+        if (currentGameState.phase === 'FLIGHT') {
+            const result = await queueTonBet(req.user.id, normalizedAmount, roundId, autoCashoutTarget);
+            await refreshRoundPlayers();
+            const balance = await getUserBalance(req.user.id);
+            res.json({
+                ok: true,
+                queued: true,
+                bet: result,
+                roundId,
+                balance
+            });
+            return;
         }
 
-        const roundId = currentGameState.roundId;
+        if (currentGameState.phase !== 'COUNTDOWN') {
+            return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN or FLIGHT' });
+        }
+
         const result = await placeTonBet(req.user.id, normalizedAmount, roundId, autoCashoutTarget);
         await refreshRoundPlayers();
         
@@ -3762,6 +3789,32 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
 });
 
 // ===== 5.8 سحب TON (Cash Out) =====
+app.post('/api/bet/ton/cancel-queued', authenticate, async (req, res) => {
+    try {
+        const { betId } = req.body;
+        if (!betId) {
+            return res.status(400).json({ ok: false, error: 'betId required' });
+        }
+        if (currentGameState.phase !== 'FLIGHT') {
+            return res.status(400).json({ ok: false, error: 'Queued bet is locked' });
+        }
+
+        const result = await cancelQueuedTonBet(
+            betId,
+            req.user.id,
+            currentGameState.roundId + 1
+        );
+        await refreshRoundPlayers();
+        res.json({
+            ok: true,
+            cancelled: true,
+            ...result
+        });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
 app.post('/api/cashout/ton', authenticate, async (req, res) => {
     try {
         const { betId } = req.body;
