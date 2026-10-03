@@ -3492,6 +3492,45 @@
 
         /* Keep all new styling GPU-light: gradients/shadows only, no DOM observers or canvas. */
 
+        /* USER REQUESTED ROCKET + LEADERBOARD VISUAL OVERRIDES
+           Visual-only. No game logic, round state, probabilities, bets, API or server changes. */
+        #rocket-game .players-panel {
+            background: linear-gradient(145deg, rgba(105, 48, 8, .48), rgba(52, 17, 4, .42)) !important;
+            border-color: rgba(255, 190, 48, .34) !important;
+            box-shadow: 0 10px 28px rgba(80, 18, 3, .16), inset 0 1px 0 rgba(255, 210, 110, .08) !important;
+        }
+        #rocket-game .players-title strong { color: #fff0c2 !important; }
+        #rocket-game .players-count { color: rgba(255, 211, 92, .72) !important; }
+        #rocket-game .empty-players { color: rgba(231, 191, 105, .72) !important; }
+        #rocket-game #back-to-hub-btn {
+            background: rgba(231, 169, 31, .18) !important;
+            color: #ffd75a !important;
+            border-color: rgba(255, 211, 92, .48) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 5px 18px rgba(231, 120, 0, .12) !important;
+        }
+        #rocket-game #round-label { display: none !important; }
+
+        .weekly-leaderboard-hero {
+            background: linear-gradient(145deg, rgba(105, 30, 7, .58), rgba(55, 13, 4, .50) 58%, rgba(25, 6, 3, .62)) !important;
+            border-color: rgba(255, 128, 36, .32) !important;
+            box-shadow: 0 14px 35px rgba(80, 18, 3, .22), inset 0 1px 0 rgba(255, 190, 110, .08) !important;
+        }
+        .weekly-leaderboard-icon {
+            background: linear-gradient(145deg, rgba(255, 215, 76, .92), rgba(198, 137, 15, .88)) !important;
+            border: 1px solid rgba(255, 231, 142, .72) !important;
+            box-shadow: 0 8px 22px rgba(231, 169, 31, .22), inset 0 1px 0 rgba(255,255,255,.28) !important;
+        }
+        .weekly-leaderboard-icon svg {
+            width: 31px;
+            height: 31px;
+            display: block;
+            fill: none;
+            stroke: #fff3b0;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         /* USER REQUESTED COLOR OVERRIDES */
         .place-bet-main:not(.cashout-main) {
             background: linear-gradient(135deg, #fff0a0 0%, #ffd34d 32%, #f5a900 68%, #c66a00 100%) !important;
@@ -3695,7 +3734,7 @@
                 <button class="back-button show" type="button" onclick="closeRocketGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;" id="back-to-hub-btn">
                     ← Back
                 </button>
-                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">❄️ Rocket Ice</span>
+                
             </div>
 
             <main>
@@ -4006,7 +4045,16 @@
         <div id="top-page" class="top-page">
             <div class="weekly-leaderboard-hero">
                 <div class="weekly-leaderboard-title-row">
-                    <div class="weekly-leaderboard-icon">🏆</div>
+                    <div class="weekly-leaderboard-icon" aria-label="Trophy" role="img">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8 4h8v4.5c0 3-1.7 5.1-4 5.1s-4-2.1-4-5.1V4Z"></path>
+                            <path d="M8 6H5.8A1.8 1.8 0 0 0 4 7.8v.7A3.5 3.5 0 0 0 7.5 12H8"></path>
+                            <path d="M16 6h2.2A1.8 1.8 0 0 1 20 7.8v.7a3.5 3.5 0 0 1-3.5 3.5H16"></path>
+                            <path d="M12 13.6V17"></path>
+                            <path d="M8.5 20h7"></path>
+                            <path d="M9.5 17h5"></path>
+                        </svg>
+                    </div>
                     <div>
                         <div class="top-page-kicker">CRAZY ROCKET</div>
                         <h2>Leaderboard</h2>
