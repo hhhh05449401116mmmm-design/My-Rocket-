@@ -3763,9 +3763,20 @@
         .pvp-banner::after,
         .playhub-banner::after {
             background:
-                linear-gradient(90deg, rgba(0, 170, 255, .08), transparent 34%, transparent 66%, rgba(255, 40, 225, .10)),
-                linear-gradient(180deg, rgba(112, 93, 255, .06), transparent 45%, rgba(0, 24, 90, .10)) !important;
+                linear-gradient(90deg, rgba(0, 150, 255, .58), rgba(73, 42, 255, .34) 42%, rgba(196, 35, 255, .54)),
+                linear-gradient(180deg, rgba(52, 120, 255, .28), rgba(103, 34, 255, .22) 52%, rgba(218, 35, 255, .34)) !important;
+            mix-blend-mode: color !important;
+            opacity: .92 !important;
         }
+        .rocket-banner::before,
+        .pvp-banner::before,
+        .playhub-banner::before {
+            border-color: rgba(67, 169, 255, .82) !important;
+            box-shadow: 0 0 22px rgba(55, 112, 255, .34), 0 0 34px rgba(197, 35, 255, .16) !important;
+        }
+        .rocket-banner { box-shadow: 0 8px 34px rgba(37, 104, 255, .34), 0 0 26px rgba(67, 120, 255, .20) !important; }
+        .pvp-banner { box-shadow: 0 8px 34px rgba(132, 43, 255, .34), 0 0 26px rgba(226, 40, 232, .20) !important; }
+        .playhub-banner { box-shadow: 0 8px 34px rgba(32, 154, 255, .32), 0 0 26px rgba(112, 48, 255, .20) !important; }
 
         .loot-box {
             background: linear-gradient(145deg, rgba(8, 18, 50, .97), rgba(12, 5, 35, .98)) !important;
