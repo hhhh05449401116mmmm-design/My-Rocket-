@@ -7325,14 +7325,18 @@
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
             const startX = width * 0.08;
-            const startY = height - 74 - 40;
-            const rocketCenterX = width * 0.15 + x;
-            const rocketCenterY = height - 74 - 40 - y;
+            const startY = height * 0.70;
+            // The Telegram rocket is centered at 50%/50% before its flight
+            // transform. Keep the path locked to that same coordinate system.
+            const rocketCenterX = width * 0.50 + x;
+            const rocketCenterY = height * 0.50 - y;
             const climbAmount = Math.max(0, startY - rocketCenterY);
-            const bendX = Math.min(rocketCenterX - 1, width * 0.62);
+            // Begin the upward bend well before the rocket so the line rises
+            // with it instead of staying horizontal and lagging behind.
+            const bendX = Math.min(rocketCenterX - 1, width * 0.55);
             const gap = 18;
             const directionX = 1;
-            const directionY = -Math.max(0.08, smoothClimb * 1.55);
+            const directionY = -Math.max(0.10, smoothClimb * 1.55);
             const directionLength = Math.hypot(directionX, directionY) || 1;
             const lineEndX = rocketCenterX - (directionX / directionLength) * gap;
             const lineEndY = rocketCenterY - (directionY / directionLength) * gap;
