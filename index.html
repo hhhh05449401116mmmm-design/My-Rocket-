@@ -7324,32 +7324,29 @@
             // Draw the trail in the same shape as the reference:
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
-            // Grow the trail along one continuous cubic curve.
-            // It stays horizontal first, then bends progressively upward
-            // and finishes with a vertical tangent like the reference.
-            const startX = width * 0.05;
+            // Draw a fixed trajectory and reveal only its leading portion.
+            // The path never gets rescaled between frames, so the visible trail
+            // remains completely stable while its tip advances.
+            const startX = 0;
             const startY = height * 0.72;
             const trailProgress = Math.max(0, Math.min(1, Number(progress) || 0));
 
             const p0 = [startX, startY];
-            const p1 = [width * 0.52, startY];
+            const p1 = [width * 0.50, startY];
             const p2 = [width * 0.69, height * 0.64];
-            const p3 = [width * 0.69, height * 0.25];
+            const p3 = [width * 0.69, height * 0.18];
 
-            const count = 96;
+            const count = 120;
             const points = [];
 
-            for (let i = 0; i <= count; i++) {
-                const t = i / count;
-                if (t > trailProgress) break;
+            // A fixed set of points represents the complete path.
+            // Progress only decides how many of those fixed points are visible.
+            const visibleCount = Math.floor(trailProgress * count);
 
-                const u = trailProgress > 0
-                    ? t / trailProgress
-                    : 0;
+            for (let i = 0; i <= visibleCount; i++) {
+                const u = i / count;
                 const oneMinusU = 1 - u;
 
-                // Cubic Bezier: horizontal tangent at the start,
-                // smooth continuous bend, then vertical tangent at the end.
                 const px =
                     oneMinusU * oneMinusU * oneMinusU * p0[0] +
                     3 * oneMinusU * oneMinusU * u * p1[0] +
