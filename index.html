@@ -7324,61 +7324,39 @@
             // Draw the trail in the same shape as the reference:
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
-            // Draw only the portion of the trajectory that has been reached
-            // during this round. It grows from the far-left start, stays mostly
-            // horizontal first, then curves upward as the rocket rotates.
+            // Grow the trail from the far-left start of the round.
+            // It stays horizontal first, then follows one smooth upward
+            // curve; there is no downward dip and no sharp corner.
             const startX = width * 0.05;
             const startY = height * 0.72;
-            const rocketCenterX = width * 0.50;
-            const rocketCenterY = height * 0.50;
-            const pathEndProgress = Math.max(0, Math.min(1, Number(progress) || 0));
-            const fullEndX = width * 0.50 - 20;
-            const fullEndY = height * 0.50;
-            const bendStart = 0.52;
-            const count = 64;
+            const trailProgress = Math.max(0, Math.min(1, Number(progress) || 0));
+            const fullRunX = width * 0.62;
+            const fullRise = height * 0.42;
+            const bendStart = 0.58;
+            const count = 72;
             const points = [];
 
             for (let i = 0; i <= count; i++) {
                 const t = i / count;
-                if (t > pathEndProgress) break;
+                if (t > trailProgress) break;
 
-                const normalized = pathEndProgress > 0
-                    ? t / pathEndProgress
-                    : 0;
-                const horizontalPhase = Math.min(1, normalized / bendStart);
+                const u = trailProgress > 0 ? t / trailProgress : 0;
                 let px;
                 let py;
 
-                if (normalized <= bendStart) {
-                    const h = normalized / bendStart;
-                    px = startX + (fullEndX - startX) * h * pathEndProgress;
+                if (u <= bendStart) {
+                    const h = u / bendStart;
+                    px = startX + fullRunX * h;
                     py = startY;
                 } else {
-                    const curveT = (normalized - bendStart) / (1 - bendStart);
-                    const eased = curveT * curveT * (3 - 2 * curveT);
-                    const availableX = fullEndX - startX;
-                    px = startX + availableX * (
-                        bendStart + (1 - bendStart) * eased
-                    ) * pathEndProgress;
-                    py = startY + (fullEndY - startY) * eased * pathEndProgress;
+                    const curve = (u - bendStart) / (1 - bendStart);
+                    // Smoothstep keeps the tangent continuous at both ends.
+                    const eased = curve * curve * (3 - 2 * curve);
+                    px = startX + fullRunX + width * 0.02 * eased;
+                    py = startY - fullRise * eased;
                 }
 
                 points.push([px, py]);
-            }
-
-            // Ensure the current trail always ends at the current visual
-            // trajectory point while retaining a small gap from the rocket.
-            if (points.length && pathEndProgress > 0) {
-                const end = points[points.length - 1];
-                const gapX = rocketCenterX - end[0];
-                const gapY = rocketCenterY - end[1];
-                const distance = Math.hypot(gapX, gapY);
-                if (distance < 20 && distance > 0) {
-                    points[points.length - 1] = [
-                        end[0] - (gapX / distance) * (20 - distance),
-                        end[1] - (gapY / distance) * (20 - distance)
-                    ];
-                }
             }
             const d=points.map(function(pt,i){
                 return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
