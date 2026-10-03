@@ -3998,6 +3998,38 @@
             border-color: rgba(194, 89, 255, .18) !important;
         }
 
+
+        /* Exact uploaded banner artwork: preserve image colors and natural proportions. */
+        .image-banner.rocket-banner,
+        .image-banner.pvp-banner,
+        .image-banner.playhub-banner {
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: auto !important;
+            padding: 0 !important;
+            background: transparent !important;
+            overflow: hidden !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        .image-banner.rocket-banner::before,
+        .image-banner.rocket-banner::after,
+        .image-banner.pvp-banner::before,
+        .image-banner.pvp-banner::after,
+        .image-banner.playhub-banner::before,
+        .image-banner.playhub-banner::after {
+            display: none !important;
+            content: none !important;
+        }
+        .image-banner .banner-art {
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: auto !important;
+            object-fit: contain !important;
+            object-position: center !important;
+        }
+
 </style>
 </head>
 <body>
@@ -4051,13 +4083,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/0F25CEC1-DC44-478B-976B-0378E8780A06-artguru.png" alt="Rocket"></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><img class="banner-art" src="/assets/IMG_3425.JPG" alt="Rocket"></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/6896019A-C8B9-4954-B54C-3F3DFA6E411D-artguru.png" alt="PVP"></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><img class="banner-art" src="/assets/IMG_3426.JPG" alt="PVP"></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/C99467AA-DF1E-46DA-AFFC-4B717125774B-artguru.png" alt="Play Hub"></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><img class="banner-art" src="/assets/IMG_3427.JPG" alt="Play Hub"></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
