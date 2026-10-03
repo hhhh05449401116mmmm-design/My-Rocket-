@@ -7274,9 +7274,9 @@
                     // Start gently, then accelerate smoothly as the flight
                     // develops. The three star layers keep distinct speeds.
                     const p = Math.max(0, Math.min(1, Number(progress) || 0));
-                    const acceleration = 0.08 + 0.92 * Math.pow(p, 1.7);
-                    const horizontalSpeed = 1.00 * acceleration;
-                    const verticalSpeed = 1.10 * acceleration * Math.max(0, Math.min(1, smoothClimb));
+                    const acceleration = 0.06 + 0.94 * Math.pow(p, 1.65);
+                    const horizontalSpeed = 0.82 * acceleration;
+                    const verticalSpeed = 1.35 * acceleration * Math.max(0, Math.min(1, smoothClimb));
                     rocketStarVelocity = horizontalSpeed;
                     rocketStarOffsetX -= width * horizontalSpeed * dt;
                     rocketStarOffsetY += height * verticalSpeed * dt;
@@ -7324,35 +7324,61 @@
             // Draw the trail in the same shape as the reference:
             // long horizontal section first, then one smooth upward bend.
             // Only the section behind the rocket is painted, with a small gap.
-            // Reference-style trajectory: the rocket stays on its own flight
-            // path while the trail grows behind it. The bend is fixed, so the
-            // trail does not lag behind when the rocket accelerates upward.
+            // Draw only the portion of the trajectory that has been reached
+            // during this round. It grows from the far-left start, stays mostly
+            // horizontal first, then curves upward as the rocket rotates.
             const startX = width * 0.05;
             const startY = height * 0.72;
-            const rocketCenterX = width * 0.50 + x;
-            const rocketCenterY = height * 0.50 - y;
-            const gap = 20;
-            const lineEndX = rocketCenterX - gap;
-            const lineEndY = rocketCenterY;
-            const bendX = width * 0.58;
-            const count = 48;
+            const rocketCenterX = width * 0.50;
+            const rocketCenterY = height * 0.50;
+            const pathEndProgress = Math.max(0, Math.min(1, Number(progress) || 0));
+            const fullEndX = width * 0.50 - 20;
+            const fullEndY = height * 0.50;
+            const bendStart = 0.52;
+            const count = 64;
             const points = [];
 
             for (let i = 0; i <= count; i++) {
                 const t = i / count;
-                const px = startX + (lineEndX - startX) * t;
-                let py = startY;
+                if (t > pathEndProgress) break;
 
-                if (px > bendX && lineEndX > bendX) {
-                    const curveT = Math.max(
-                        0,
-                        Math.min(1, (px - bendX) / (lineEndX - bendX))
-                    );
+                const normalized = pathEndProgress > 0
+                    ? t / pathEndProgress
+                    : 0;
+                const horizontalPhase = Math.min(1, normalized / bendStart);
+                let px;
+                let py;
+
+                if (normalized <= bendStart) {
+                    const h = normalized / bendStart;
+                    px = startX + (fullEndX - startX) * h * pathEndProgress;
+                    py = startY;
+                } else {
+                    const curveT = (normalized - bendStart) / (1 - bendStart);
                     const eased = curveT * curveT * (3 - 2 * curveT);
-                    py = startY + (lineEndY - startY) * eased;
+                    const availableX = fullEndX - startX;
+                    px = startX + availableX * (
+                        bendStart + (1 - bendStart) * eased
+                    ) * pathEndProgress;
+                    py = startY + (fullEndY - startY) * eased * pathEndProgress;
                 }
 
                 points.push([px, py]);
+            }
+
+            // Ensure the current trail always ends at the current visual
+            // trajectory point while retaining a small gap from the rocket.
+            if (points.length && pathEndProgress > 0) {
+                const end = points[points.length - 1];
+                const gapX = rocketCenterX - end[0];
+                const gapY = rocketCenterY - end[1];
+                const distance = Math.hypot(gapX, gapY);
+                if (distance < 20 && distance > 0) {
+                    points[points.length - 1] = [
+                        end[0] - (gapX / distance) * (20 - distance),
+                        end[1] - (gapY / distance) * (20 - distance)
+                    ];
+                }
             }
             const d=points.map(function(pt,i){
                 return (i===0?"M ":"L ")+pt[0].toFixed(1)+" "+pt[1].toFixed(1);
@@ -7480,12 +7506,11 @@
                 Math.min(1, (pathProgress - climbStart) / (1 - climbStart))
             );
             const smoothClimb = climbProgress * climbProgress * (3 - 2 * climbProgress);
-            // Keep the rocket visually centered. The sense of flight comes
-            // from the reverse-moving stars and the trail, not by moving the
-            // rocket across the game viewport.
+            // Keep the rocket visually centered. The visual flight is created
+            // by its gradual rotation, the growing trail, and the reverse stars.
             const x = 0;
             const y = 0;
-            const rotation = -2 - smoothClimb * 30;
+            const rotation = -2 - smoothClimb * 88;
             const transform = `translate3d(${x.toFixed(2)}px, ${(-y).toFixed(2)}px, 0) translate3d(-50%, -50%, 0) rotate(${rotation.toFixed(2)}deg)`;
 
             const telegramVisible = telegramRocket &&
