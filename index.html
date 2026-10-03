@@ -8275,7 +8275,7 @@
                 const player = livePlayers.find(function(item) {
                     return String(item.id || (item.betType || "TON") + ":" + (item.betId || item.name || "")) === playerKey;
                 });
-                if (!player || player.status === "CASHED_OUT") return;
+                if (!player || player.status === "CASHED_OUT" || player.status === "QUEUED") return;
 
                 const amount = Number(player.amount || 0);
                 const target = Math.max(Number(displayMultiplier) || Number(currentMultiplier) || 1, 1);
