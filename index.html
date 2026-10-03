@@ -4965,6 +4965,11 @@
         function paidLootBoxItemImage(item) {
             if (!item) return '/assets/ton-icon.svg';
             if (item.rewardType === 'ton') return '/assets/ton-icon.svg';
+            // Backdrop labels such as "Black" are not model filenames. Keep the exact
+            // catalog image instead of requesting /models/<gift>/png/<backdrop>.png.
+            if (item.image && item.label && item.label !== 'Random' && item.label === 'Black') {
+                return item.image;
+            }
             if (item.label && item.label !== 'Random') {
                 return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png';
             }
