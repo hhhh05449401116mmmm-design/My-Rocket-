@@ -82,6 +82,7 @@ async function migrateUserGiftsConstraint() {
     const existingColumns = await query('PRAGMA table_info(user_gifts)');
     const existingColumnNames = new Set(existingColumns.map(col => col.name));
     const requiredColumns = [
+        ['loot_box_locked_until', 'DATETIME'],
         ['unique_collectible_id', 'TEXT'],
         ['telegram_gift_instance_id', 'TEXT'],
         ['collectible_number', 'INTEGER'],
@@ -110,6 +111,7 @@ async function migrateUserGiftsConstraint() {
                 status TEXT DEFAULT 'OWNED' CHECK(status IN ('OWNED', 'LOCKED', 'IN_BET', 'WON', 'LOST', 'SENT', 'SOLD')),
                 received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                loot_box_locked_until DATETIME,
                 unique_collectible_id TEXT,
                 telegram_gift_instance_id TEXT,
                 collectible_number INTEGER,
@@ -123,12 +125,12 @@ async function migrateUserGiftsConstraint() {
 
         await run(`
             INSERT INTO user_gifts_new (
-                id, user_id, gift_id, status, received_at, updated_at,
+                id, user_id, gift_id, status, received_at, updated_at, loot_box_locked_until,
                 unique_collectible_id, telegram_gift_instance_id, collectible_number,
                 ownership_verified, verified_metadata, telegram_thumbnail_file_id
             )
             SELECT
-                id, user_id, gift_id, status, received_at, updated_at,
+                id, user_id, gift_id, status, received_at, updated_at, loot_box_locked_until,
                 unique_collectible_id, telegram_gift_instance_id, collectible_number,
                 ownership_verified, verified_metadata, telegram_thumbnail_file_id
             FROM user_gifts
@@ -529,6 +531,7 @@ function initDatabase() {
 
             // Foundation for real unique Telegram collectibles (additive, does not touch existing data).
             const userGiftColumns = [
+                ['loot_box_locked_until', 'DATETIME'],
                 ['unique_collectible_id', 'TEXT'],
                 ['telegram_gift_instance_id', 'TEXT'],
                 ['collectible_number', 'INTEGER'],
@@ -1303,6 +1306,21 @@ async function addGiftToUser(userId, giftId) {
 
 // صندوق الهدايا يحتاج ملكية متعددة لنفس نوع الهدية: كل فوز هو قطعة جديدة.
 // هذا المسار لا يغيّر addGiftToUser() المستخدم في الملكية القديمة/الاستيراد.
+const LOOT_BOX_LOCK_DAYS = 7;
+const LOOT_BOX_LOCK_MS = LOOT_BOX_LOCK_DAYS * 24 * 60 * 60 * 1000;
+
+function getLootBoxLockedUntil() {
+    return new Date(Date.now() + LOOT_BOX_LOCK_MS).toISOString();
+}
+
+function isLootBoxGiftLocked(row) {
+    if (!row?.loot_box_locked_until) return false;
+    const raw = String(row.loot_box_locked_until);
+    const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+    const until = new Date(normalized.endsWith('Z') ? normalized : normalized + 'Z').getTime();
+    return Number.isFinite(until) && until > Date.now();
+}
+
 async function addLootBoxGiftToUser(userId, giftId, marketValue = null) {
     const gift = await getGiftById(giftId);
     if (!gift) throw new Error('Gift not found');
@@ -1316,9 +1334,9 @@ async function addLootBoxGiftToUser(userId, giftId, marketValue = null) {
         ? requestedMarketValue
         : Number(gift.value || 0);
     const result = await run(`
-        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value)
-        VALUES (?, ?, 'WON', 0, ?)
-    `, [userId, gift.id, storedMarketValue]);
+        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until)
+        VALUES (?, ?, 'WON', 0, ?, ?)
+    `, [userId, gift.id, storedMarketValue, getLootBoxLockedUntil()]);
 
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
 }
@@ -1333,6 +1351,7 @@ async function sellLootBoxGiftForBalance(userId, userGiftId, sellValue) {
             LIMIT 1
         `, [userGiftId, userId]);
         if (!reward) throw new Error('Loot-box gift not found or already used');
+        if (isLootBoxGiftLocked(reward)) throw new Error('This loot-box gift is locked for 7 days');
 
         const amount = Number(sellValue);
         if (!Number.isFinite(amount) || amount <= 0) throw new Error('Invalid gift sale value');
@@ -1362,6 +1381,12 @@ async function sellLootBoxGiftForBalance(userId, userGiftId, sellValue) {
 }
 
 
+async function markGiftAsLootBoxReward(userGiftId) {
+    const lockedUntil = getLootBoxLockedUntil();
+    await run('UPDATE user_gifts SET loot_box_locked_until = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND loot_box_locked_until IS NULL', [lockedUntil, userGiftId]);
+    return await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]);
+}
+
 async function updateGiftStatus(userGiftId, status) {
     const validStatuses = ['OWNED', 'LOCKED', 'IN_BET', 'WON', 'LOST', 'SENT', 'SOLD'];
     if (!validStatuses.includes(status)) throw new Error('Invalid status');
@@ -1378,6 +1403,7 @@ async function getUserCollectibles(userId, status = 'ACTIVE') {
         SELECT g.*, ug.id AS user_gift_id, ug.status AS ownership_status,
                ug.unique_collectible_id, ug.telegram_gift_instance_id,
                ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
+               ug.loot_box_locked_until,
                ug.market_value AS collectible_market_value,
                ug.received_at, ug.updated_at
         FROM user_gifts ug
@@ -3540,6 +3566,8 @@ module.exports = {
     addGiftToUser,
     addLootBoxGiftToUser,
     sellLootBoxGiftForBalance,
+    markGiftAsLootBoxReward,
+    isLootBoxGiftLocked,
     updateGiftStatus,
 
     // أساس ملكية Collectible Gifts الحقيقية
