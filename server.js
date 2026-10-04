@@ -4311,9 +4311,6 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 } else {
                     tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
                 }
-            } else if (boxId === 'box_2_5') {
-                // Movie (4.5 TON) is gift-only. It must never award a TON balance.
-                gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
             } else if (roll < 7000) {
                 // Existing paid-box behavior remains unchanged for every other box.
                 tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
