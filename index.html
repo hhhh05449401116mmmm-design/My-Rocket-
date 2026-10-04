@@ -10376,10 +10376,10 @@
                 const price = Number(item.value || 0).toFixed(2);
                 const sellPrice = Number(item.sellValue || 0).toFixed(2);
                 const secondaryActions = isLootBoxReward
-                    ? (isLootBoxLocked ? '' : `
-                            <button class="collectible-sell-btn" type="button" onclick="sellLootBoxReward(${Number(item.userGiftId || 0)})">${t.sellCollectible} ${sellPrice} <img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></button>
-                            <button class="collectible-hub-btn" type="button" onclick="betLootBoxReward(${Number(item.userGiftId || 0)}, ${price})">↗ Bet</button>
-                      `)
+                    ? `
+                            <button class="collectible-sell-btn" type="button" onclick="sellLootBoxReward(${Number(item.userGiftId || 0)})" ${disabledAttr}>${t.sellCollectible} ${sellPrice} <img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></button>
+                            <button class="collectible-hub-btn" type="button" onclick="betLootBoxReward(${Number(item.userGiftId || 0)}, ${price})" ${disabledAttr}>↗ Bet</button>
+                      `
                     : (isPendingReward
                         ? ''
                         : `
@@ -10387,7 +10387,10 @@
                             <button class="collectible-upgrade-btn" type="button" onclick="openUpgradeGame()" ${disabledAttr}>↗ ${t.upgradeTitle || 'Upgrade'}</button>
                             <button class="collectible-hub-btn" type="button" onclick="betCollectibleFromCard('${escapeHtmlAttribute(item.id)}')" ${disabledAttr}>↗ Bet</button>
                           `);
-                card.innerHTML = `
+                const withdrawAction = isLootBoxReward
+                    ? 'withdrawLootBoxReward(' + Number(item.userGiftId || 0) + ')'
+                    : 'withdrawCollectible(\'' + String(item.id || '') + '\')';
+                                card.innerHTML = `
                     <div class="collectible-art-wrap">
                         ${imageHtml}
                         <div class="collectible-price-badge">${price} <span class="ton-dot"><img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></span></div>
