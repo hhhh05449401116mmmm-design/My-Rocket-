@@ -3136,7 +3136,6 @@ app.post('/api/bet/gift', authenticate, async (req, res) => {
         if (rewardGift && isLootBoxGiftLocked(rewardGift)) {
             return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: rewardGift.loot_box_locked_until });
         }
-        const roundId = currentGameState.roundId;
         const result = await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
         await refreshRoundPlayers();
         
