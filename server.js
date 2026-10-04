@@ -4413,13 +4413,6 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     '💎 You won ' + Number(tonReward).toFixed(2) + ' TON from the ' + config.name + ' box!',
                     { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.70 : 0.93 }
                 );
-            } else {
-                await createNotification(
-                    req.user.id,
-                    'NOTHING_WON',
-                    '🤷 Nothing won from the ' + config.name + ' box.',
-                    { boxName: config.name, source: 'paid-loot-box', probability: 0.05 }
-                );
             }
 
             return {
