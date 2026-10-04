@@ -4242,6 +4242,157 @@
             border-color: rgba(210, 140, 255, .58) !important;
         }
 
+
+        /* FULLSCREEN LOOT BOX VIEW */
+        #loot-box-modal.loot-box-fullscreen {
+            align-items: stretch !important;
+            justify-content: stretch !important;
+            background: linear-gradient(180deg, rgba(7, 3, 16, .98), rgba(12, 6, 25, .99)) !important;
+            backdrop-filter: none !important;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-card {
+            width: 100% !important;
+            height: 100dvh !important;
+            min-height: 100vh !important;
+            max-height: none !important;
+            padding: max(18px, env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)) !important;
+            border-radius: 0 !important;
+            border: 0 !important;
+            background:
+                radial-gradient(circle at 50% 10%, rgba(139, 63, 255, .16), transparent 34%),
+                linear-gradient(180deg, #0e081b 0%, #08050f 100%) !important;
+            box-sizing: border-box;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-head {
+            display: grid;
+            grid-template-columns: 110px 1fr 110px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .loot-box-back-button {
+            justify-self: start;
+            min-width: 92px;
+            height: 44px;
+            padding: 0 15px;
+            border: 1px solid rgba(177, 76, 255, .22);
+            border-radius: 14px;
+            background: rgba(38, 19, 64, .72);
+            color: #d7b8ff;
+            font-size: 15px;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .loot-box-head-spacer { width: 100%; height: 44px; }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-title {
+            font-size: 25px;
+            letter-spacing: .2px;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-subtitle {
+            color: #a998bd;
+            font-size: 12px;
+            margin: 0 0 14px;
+        }
+        .loot-box-featured {
+            display: none;
+            width: 100%;
+            margin: 0 0 16px;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(42, 18, 70, .96), rgba(22, 10, 40, .98));
+            border: 1px solid rgba(177, 76, 255, .34);
+            box-shadow: 0 10px 28px rgba(89, 20, 150, .18);
+        }
+        .loot-box-featured.show { display: flex; align-items: center; gap: 12px; }
+        .loot-box-featured-hot {
+            flex: 0 0 auto;
+            padding: 7px 10px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #7b2cff, #b14cff);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .4px;
+            box-shadow: 0 5px 16px rgba(177, 76, 255, .24);
+        }
+        .loot-box-featured-image {
+            width: 58px;
+            height: 58px;
+            flex: 0 0 58px;
+            border-radius: 14px;
+            object-fit: contain;
+            background: #211334;
+            border: 1px solid rgba(210, 140, 255, .4);
+        }
+        .loot-box-featured-info { min-width: 0; flex: 1; }
+        .loot-box-featured-label {
+            display: block;
+            color: #9f8db2;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+        .loot-box-featured-name {
+            display: block;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 900;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .loot-box-featured-value {
+            display: block;
+            color: #d6a7ff;
+            font-size: 12px;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-strip-wrap {
+            height: 76px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(177, 76, 255, .16);
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-strip {
+            height: 76px;
+            padding: 11px 0;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-modal-strip-item {
+            flex-basis: 54px;
+            height: 54px;
+            border-color: rgba(177, 76, 255, .16);
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-topup,
+        #loot-box-modal.loot-box-fullscreen .loot-box-open-button {
+            border-radius: 15px;
+            background: linear-gradient(135deg, #7b2cff, #b14cff) !important;
+            color: #fff !important;
+            box-shadow: 0 8px 22px rgba(177, 76, 255, .2);
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-collections-title {
+            color: #fff;
+            margin-top: 2px;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-collections-title span:first-child {
+            color: #c77aff;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-collections {
+            padding-bottom: 8px;
+        }
+        #loot-box-modal.loot-box-fullscreen .loot-box-play-button {
+            background: linear-gradient(135deg, #6d2cff, #9b35ff) !important;
+        }
+        @media (max-width: 480px) {
+            #loot-box-modal.loot-box-fullscreen .loot-box-modal-head {
+                grid-template-columns: 96px 1fr 96px;
+            }
+            .loot-box-back-button { min-width: 86px; padding: 0 11px; }
+        }
+
 </style>
 </head>
 <body>
@@ -4969,14 +5120,15 @@
         <!-- =========================================================
            LOOT BOX DETAILS MODAL
         ========================================================= -->
-        <div id="loot-box-modal" class="modal" aria-hidden="true" onclick="closeModalOutside(event,'loot-box-modal')">
+        <div id="loot-box-modal" class="modal loot-box-fullscreen" aria-hidden="true" onclick="closeModalOutside(event,'loot-box-modal')">
             <div class="loot-box-modal-card">
                 <div class="loot-box-modal-head">
-                    <div style="width:46px;"></div>
+                    <button class="loot-box-back-button" type="button" onclick="closeModal('loot-box-modal')" aria-label="Back">← <span>Back</span></button>
                     <div class="loot-box-modal-title" id="loot-box-modal-title">Epic Gift</div>
-                    <button class="close-button" type="button" onclick="closeModal('loot-box-modal')">×</button>
+                    <div class="loot-box-head-spacer" aria-hidden="true"></div>
                 </div>
                 <div class="loot-box-modal-subtitle" id="loot-box-modal-subtitle"></div>
+                <div id="loot-box-featured" class="loot-box-featured" aria-live="polite"></div>
                 <div class="loot-box-modal-strip-wrap">
                     <span class="loot-box-strip-pointer" aria-hidden="true"></span>
                     <div class="loot-box-modal-strip" id="loot-box-modal-strip"></div>
@@ -5632,6 +5784,7 @@
             const strip = document.getElementById('loot-box-modal-strip');
             if (!collections || !strip) return;
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+            renderLootBoxFeatured(box, items);
 
             strip.innerHTML = items.map(function(item) {
                 return '<div class="loot-box-modal-strip-item gift">' +
@@ -6036,6 +6189,34 @@
                 });
             });
         }
+        function renderLootBoxFeatured(box, items) {
+            const featured = document.getElementById('loot-box-featured');
+            if (!featured) return;
+            if (!Array.isArray(items) || !items.length) {
+                featured.classList.remove('show');
+                featured.innerHTML = '';
+                return;
+            }
+
+            // Visual-only featured gift. It does not affect the actual reward selection.
+            const item = items[0] || {};
+            const image = box && box.id === 'box_100'
+                ? paidLootBox100GiftImage(item)
+                : paidLootBoxItemImage(item);
+            const value = String(item.marketValueTon || item.value || '').trim();
+            const label = item.label && item.label !== 'Random' ? ' • ' + item.label : '';
+
+            featured.innerHTML =
+                '<span class="loot-box-featured-hot">🔥 HOT</span>' +
+                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(image || '') + '" alt="' + escapeHtmlAttribute(item.name || 'Gift') + '" loading="eager" decoding="async">' +
+                '<div class="loot-box-featured-info">' +
+                    '<span class="loot-box-featured-label">Featured gift in this box</span>' +
+                    '<span class="loot-box-featured-name">' + escapeHtml((item.name || 'Gift') + label) + '</span>' +
+                    (value ? '<span class="loot-box-featured-value">' + escapeHtml(value) + '</span>' : '') +
+                '</div>';
+            featured.classList.add('show');
+        }
+
         function openLootBox(box) {
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
@@ -6051,6 +6232,7 @@
             const playButton = document.getElementById('loot-box-play-button');
             const resultStage = document.getElementById('loot-box-result-stage');
             const collectionsTitle = document.querySelector('.loot-box-collections-title');
+            const featured = document.getElementById('loot-box-featured');
 
             if (!modal || !title || !strip || !collections) return;
             if (resultStage) {
