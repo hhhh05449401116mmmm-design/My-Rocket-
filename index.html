@@ -113,6 +113,34 @@
             overflow: hidden;
         }
 
+        /* Game title sits below Telegram's native header and above the game header. */
+        .app-title-bar {
+            flex: 0 0 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #f3f7ff;
+            background: linear-gradient(180deg, rgba(10, 14, 26, 0.92), rgba(10, 14, 26, 0.58));
+            border-bottom: 1px solid rgba(100, 200, 255, 0.08);
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            text-shadow: 0 0 18px rgba(100, 200, 255, 0.18);
+        }
+        .app-title-icon {
+            width: 23px;
+            height: 23px;
+            flex: 0 0 23px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.82;
+        }
+
         /* Keep the game header outside the active screen scroll area. */
         .app > .header {
             flex: 0 0 auto;
@@ -4697,6 +4725,17 @@
         <!-- =========================================================
            HEADER
         ========================================================= -->
+        <div class="app-title-bar" aria-label="Crazy Rocket">
+            <svg class="app-title-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14.5 3.5c2.8-1.1 4.7-1.1 4.7-1.1s0 1.9-1.1 4.7c-1.4 3.6-4.1 6.9-7.2 8.3l-3.4-3.4c1.4-3.1 4.7-5.8 8.4-7.2Z"/>
+                <path d="m7.5 11.9-3.2.3-1.8 1.8 4.2 1.2"/>
+                <path d="m12.1 16.5-.3 3.2-1.8 1.8-1.2-4.2"/>
+                <path d="M15.7 8.3h.1"/>
+                <path d="m8.8 15.2-2.4 2.4"/>
+            </svg>
+            <span>Crazy Rocket</span>
+        </div>
+
         <header class="header">
             <div class="profile-box">
                 <img id="user-avatar" class="avatar" src="" alt="">
