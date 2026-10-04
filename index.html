@@ -948,12 +948,12 @@
     justify-content:center;
 }
 .loot-box-result-stage .loot-box-result-icon {
-    width:190px;
-    height:190px;
+    width:132px;
+    height:132px;
 }
 .loot-box-result-stage .loot-box-result-ton {
-    width:170px !important;
-    height:170px !important;
+    width:132px !important;
+    height:132px !important;
     max-width:170px;
     max-height:170px;
     border-radius:50%;
@@ -1127,9 +1127,16 @@
 }
 #loot-box-modal .loot-box-result-stage .loot-box-result-icon,
 #loot-box-modal .loot-box-result-stage .loot-box-result-ton {
-    width: min(190px, 30vh);
-    height: min(190px, 30vh);
+    width: min(132px, 20vh);
+    height: min(132px, 20vh);
     flex: 0 0 auto;
+}
+#loot-box-modal .loot-box-modal-card {
+    background:
+        radial-gradient(circle at 50% 8%, rgba(167, 72, 255, .20), transparent 42%),
+        linear-gradient(180deg, #24103f 0%, #130923 52%, #0b0614 100%);
+    border: 1px solid rgba(174, 88, 255, .32);
+    box-shadow: 0 18px 60px rgba(107, 37, 173, .30), inset 0 0 36px rgba(158, 66, 255, .08);
 }
 #loot-box-modal .loot-box-result-stage .loot-box-result-actions {
     flex: 0 0 auto;
@@ -7197,6 +7204,8 @@
             }
 
             stage.classList.add('show');
+            // Convert newly-rendered gift/TON emojis to the game's transparent icons.
+            replaceGameUiIcons(stage);
             // The result is part of the same loot-box view. After the opening
             // finishes, restore the paid Open button so the player can open
             // the same box again without leaving the box screen.
