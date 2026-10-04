@@ -1111,7 +1111,16 @@
         .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:transform 4.2s cubic-bezier(.12,.75,.18,1); overflow:visible; user-select:none; pointer-events:auto; touch-action:pan-y; }
         .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); overflow:hidden; }
         .loot-box-modal-strip-item.ton img { width:34px; height:34px; }
-        .loot-box-modal-strip-item.gift { background:linear-gradient(145deg,#6b5210 0%,#c99b18 45%,#6f5110 100%); box-shadow:inset 0 0 12px rgba(255,221,100,.25); }
+        .loot-box-modal-strip-item.gift {
+            background:
+                radial-gradient(circle at 18% 22%, rgba(239,214,255,.58) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 30%, rgba(209,156,255,.45) 0 .9px, transparent 1.5px),
+                radial-gradient(circle at 62% 76%, rgba(240,220,255,.38) 0 .8px, transparent 1.5px),
+                radial-gradient(circle at 30% 84%, rgba(187,112,255,.42) 0 1px, transparent 1.6px),
+                linear-gradient(145deg,#35145a 0%,#24103f 50%,#10081f 100%);
+            box-shadow: inset 0 0 12px rgba(177,76,255,.22), 0 0 8px rgba(177,76,255,.10);
+            border-color: rgba(168,77,255,.42);
+        }
         .loot-box-modal-strip-item.ton { background:linear-gradient(145deg,#075b88 0%,#08a9ef 50%,#075b88 100%); box-shadow:inset 0 0 14px rgba(90,210,255,.28); }
         .paid-loot-gift-sprite { display:block; width:100%; height:100%; background-image:url('/assets/gift-0-1-sprite.webp?v=1'); background-repeat:no-repeat; background-size:800% 800%; background-position:var(--paid-gift-x) var(--paid-gift-y); background-color:transparent; }
         .loot-box-modal-strip-item .paid-loot-gift-sprite { width:44px; height:44px; flex:0 0 44px; }
