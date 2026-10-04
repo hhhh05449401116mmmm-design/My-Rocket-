@@ -6876,10 +6876,23 @@
                 const collections = document.getElementById('loot-box-collections');
                 const title = document.getElementById('loot-box-modal-title');
                 const subtitle = document.getElementById('loot-box-modal-subtitle');
+                const resultStage = document.getElementById('loot-box-result-stage');
+                const collectionsTitle = document.querySelector('.loot-box-collections-title');
+
                 if (playButton) {
                     playButton.disabled = true;
-                    playButton.textContent = currentLanguage === 'ar' ? '🎁 جاري الفتح…' : '🎁 Opening…';
+                    playButton.innerHTML = '<span class="loot-box-loading-spinner" aria-hidden="true"></span><span>' +
+                        (currentLanguage === 'ar' ? 'جاري الدوران…' : 'Spinning…') + '</span>';
                 }
+                if (title) title.textContent = box.name || 'Free';
+                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'جاري الدوران…' : 'Spinning…';
+                if (resultStage) {
+                    resultStage.classList.remove('show');
+                    resultStage.innerHTML = '';
+                }
+                if (collections) collections.style.display = '';
+                if (collectionsTitle) collectionsTitle.style.display = '';
+
                 try {
                     const response = await fetch(BACKEND_URL + '/api/loot-box/free/claim', {
                         method: 'POST',
@@ -6887,33 +6900,58 @@
                         cache: 'no-store',
                         body: JSON.stringify({ boxId: box.id })
                     });
-                    const data = await response.json();
-                    if (!response.ok || !data.ok) throw new Error(data.error || 'Claim failed');
-
-                    if (title) title.textContent = currentLanguage === 'ar' ? '🎉 تمت الاستلام' : '🎉 Gift Claimed';
-                    if (subtitle) subtitle.textContent = box.id === 'free24' ? 'Daily Free Box' : 'Free Box';
-                    if (collections) {
-                        const gift = data.gift || {};
-                        collections.innerHTML =
-                            '<div class="loot-box-winner">' +
-                                '<div class="loot-box-winner-label">🎁 ' + escapeHtml(box.id === 'free24' ? 'FREE24' : 'FREE') + '</div>' +
-                                '<img src="' + escapeHtmlAttribute(gift.image_url || gift.image || '') + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '" loading="eager" decoding="async">' +
-                                '<div class="loot-box-winner-name">' + escapeHtml(gift.name || 'Telegram Gift') + '</div>' +
-                                '<div class="loot-box-winner-value">' + escapeHtml(Number(gift.value || 0).toFixed(2) + ' TON') + '</div>' +
-                            '</div>';
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.ok) {
+                        const error = new Error(data.error || 'Claim failed');
+                        error.nextAvailableAt = data.nextAvailableAt || null;
+                        throw error;
                     }
+
+                    const gift = data.gift || {};
+                    const previewItems = Array.isArray(box.collectibles) ? box.collectibles.filter(Boolean) : [];
+                    const spinItems = previewItems.map(function(item) {
+                        return {
+                            name: item.name,
+                            image: item.image,
+                            rewardType: item.rewardType === 'ton' ? 'ton' : 'gift',
+                            value: item.value,
+                            marketValue: item.marketValue
+                        };
+                    });
+
+                    // Use the exact server-selected gift as the reel winner.
+                    const reelData = {
+                        winnerType: 'gift',
+                        gift: {
+                            name: gift.name || 'Telegram Gift',
+                            image_url: gift.image_url || gift.image || '',
+                            value: Number(gift.value || 0),
+                            marketValue: Number(gift.marketValue || gift.value || 0),
+                            sellValue: Number(gift.sellValue || gift.value || 0),
+                            userGiftId: Number(gift.userGiftId || 0)
+                        },
+                        balance: data.balance
+                    };
+
+                    await animatePaidLootBoxStrip(box, reelData, spinItems);
+                    renderPaidLootBoxResult(box, reelData);
+
+                    // Keep the 24-hour cooldown active after the successful open.
                     if (playButton) {
-                        playButton.disabled = false;
-                        playButton.textContent = currentLanguage === 'ar' ? 'إغلاق' : 'Close';
-                        playButton.onclick = function() { closeModal('loot-box-modal'); };
+                        playButton.disabled = true;
                     }
                 } catch (error) {
                     console.error('Free loot-box claim failed:', error);
                     if (playButton) {
-                        playButton.disabled = false;
-                        playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                        if (error.nextAvailableAt) {
+                            await refreshFreeBoxCooldown(playButton);
+                        } else {
+                            playButton.disabled = false;
+                            playButton.textContent = currentLanguage === 'ar' ? 'إعادة المحاولة' : 'Retry';
+                            playButton.onclick = playSelectedLootBox;
+                        }
                     }
-                    showToast(currentLanguage === 'ar' ? 'تعذر استلام الهدية، حاول مرة أخرى' : 'Unable to claim the gift, please try again');
+                    showToast(error.message || (currentLanguage === 'ar' ? 'تعذر فتح الصندوق، حاول مرة أخرى' : 'Unable to open the box, please try again'));
                 }
                 return;
             }
