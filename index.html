@@ -2702,7 +2702,33 @@
             align-items: center;
             justify-content: center;
         }
-        .collectible-card .collectible-details {
+                .collectible-card.loot-box-reward-card .collectible-art-wrap {
+            aspect-ratio: 1 / 0.88;
+            padding: 10px;
+            box-sizing: border-box;
+            background: linear-gradient(145deg, #35204f, #171025) !important;
+        }
+        .collectible-card.loot-box-reward-card .collectible-art-wrap > img {
+            width: 88%;
+            height: 88%;
+            margin: 6% auto 0;
+            object-fit: contain;
+            object-position: center;
+            border-radius: 18px;
+        }
+        .collectible-card.loot-box-reward-card .actions {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        .collectible-card.loot-box-reward-card .collectible-type-label {
+            display: block;
+            margin: 0 0 6px;
+            color: #d6a7ff;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+.collectible-card .collectible-details {
             padding: 11px 9px 0;
         }
         .collectible-card .number {
@@ -10355,7 +10381,8 @@
             empty.style.display = "none";
             verifiedCollectibles.forEach(function(item) {
                 const card = document.createElement("div");
-                card.className = "collectible-card";
+                const isLootBoxCard = item.lootBoxReward === true;
+                card.className = "collectible-card" + (isLootBoxCard ? " loot-box-reward-card" : "");
                 // Backend is the source of truth. Accept absolute or same-origin media URLs.
                 const imageUrl = typeof item.imageUrl === "string" && item.imageUrl
                     ? (item.imageUrl.startsWith("/") ? `${BACKEND_URL}${item.imageUrl}` : item.imageUrl)
@@ -10363,11 +10390,11 @@
                 const hasRealImage = /^https?:\/\//i.test(imageUrl);
                 const safeImageUrl = hasRealImage ? escapeHtmlAttribute(imageUrl) : "";
                 const imageHtml = hasRealImage
-                    ? `<img src="${safeImageUrl}" alt="${escapeHtmlAttribute(item.name || 'Telegram Collectible')}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
+                    ? `<img src="${safeImageUrl}" alt="${escapeHtmlAttribute(item.name || 'Telegram Collectible')}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.outerHTML='<span class=&quot;emoji&quot; style=&quot;font-size:36px;display:block;margin-bottom:4px;&quot;>🎁</span>'">`
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
                 const isInBet = item.status === "IN_BET";
                 const isPendingReward = item.pendingWithdrawal === true;
-                const isLootBoxReward = item.lootBoxReward === true || (isPendingReward && !!item.lootBoxLockedUntil);
+                const isLootBoxReward = item.lootBoxReward === true;
                 const isLootBoxLocked = item.lootBoxLocked === true;
                 const disabledAttr = isInBet || isLootBoxLocked ? "disabled" : "";
                 const lootBoxLockLabel = isLootBoxLocked
@@ -10396,11 +10423,12 @@
                         <div class="collectible-price-badge">${price} <span class="ton-dot"><img class="ton-icon ton-icon-sm" src="${TON_ICON_URL}" alt="TON"></span></div>
                     </div>
                     <div class="collectible-details">
-                        ${item.collectibleNumber ? `<span class="number">#${item.collectibleNumber}</span>` : ''}
+                        ${isLootBoxReward ? '' : (item.collectibleNumber ? `<span class="number">#${item.collectibleNumber}</span>` : '')}
                         <span class="name">${escapeHtml(item.name || '')}</span>
                         <div class="actions">
-                            <button class="collectible-withdraw-btn" type="button" onclick="withdrawCollectible('${item.id}')" ${isInBet || isLootBoxLocked ? "disabled" : ""}>↗ ${t.withdrawCollectible}</button>
+                            <button class="collectible-withdraw-btn" type="button" onclick="${withdrawAction}" ${isInBet || isLootBoxLocked ? "disabled" : ""}>↗ ${t.withdrawCollectible}</button>
                             ${lootBoxLockLabel}
+                            ${isLootBoxReward ? '<span class="collectible-type-label">🎁 Loot Box Gift</span>' : ''}
                             ${secondaryActions}
                         </div>
                     </div>
