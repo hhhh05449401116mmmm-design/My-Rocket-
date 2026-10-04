@@ -4206,7 +4206,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
         };
 
         const workerCount = Math.min(6, uniqueVariants.length);
-        await Promise.all(Array.from({ length: workerCount }, worker);
+        await Promise.all(Array.from({ length: workerCount }, worker));
 
         const items = limitedVariants
             .filter(variant => String(variant?.name || '').trim())
