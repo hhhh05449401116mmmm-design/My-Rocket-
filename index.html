@@ -6806,7 +6806,9 @@
                     ? 'loot-box-open-button'
                     : 'loot-box-play-button';
                 playButton.disabled = false;
-                playButton.onclick = null;
+                playButton.onclick = (box.id === 'free' || box.id === 'free24')
+                    ? playSelectedLootBox
+                    : playSelectedLootBox;
                 playButton.textContent = (box.id === 'free' || box.id === 'free24')
                     ? (currentLanguage === 'ar' ? '🎁 فتح الصندوق' : '🎁 Open Free Box')
                     : (currentLanguage === 'ar' ? '🎮 فتح الصندوق' : '🎮 Open Box');
