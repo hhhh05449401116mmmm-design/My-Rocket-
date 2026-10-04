@@ -1042,19 +1042,23 @@ async function getActiveBetsForRound(roundNumber) {
 async function getRoundPlayers(roundNumber) {
     return await query(`
         SELECT tb.id AS bet_id, tb.user_id, tb.amount AS amount, tb.status,
-               tb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url,
+               CASE WHEN tb.status = 'LOST' THEN r.crash_at ELSE tb.cashout_multiplier END AS multiplier,
+               u.first_name, u.last_name, u.avatar_url,
                NULL AS unique_collectible_id, NULL AS gift_image_url, NULL AS gift_name,
                'TON' AS bet_type
         FROM ton_bets tb
         JOIN users u ON u.id = tb.user_id
+        JOIN rounds r ON r.round_number = tb.round_id
         WHERE tb.round_id = ?
         UNION ALL
         SELECT gb.id AS bet_id, gb.user_id, gb.gift_value_at_bet AS amount, gb.status,
-               gb.cashout_multiplier AS multiplier, u.first_name, u.last_name, u.avatar_url,
+               CASE WHEN gb.status = 'LOST' THEN r.crash_at ELSE gb.cashout_multiplier END AS multiplier,
+               u.first_name, u.last_name, u.avatar_url,
                ug.unique_collectible_id, g.image_url AS gift_image_url, g.name AS gift_name,
                'GIFT' AS bet_type
         FROM gift_bets gb
         JOIN users u ON u.id = gb.user_id
+        JOIN rounds r ON r.round_number = gb.round_id
         JOIN user_gifts ug ON ug.id = gb.user_gift_id
         JOIN gifts g ON g.id = ug.gift_id
         WHERE gb.round_id = ?

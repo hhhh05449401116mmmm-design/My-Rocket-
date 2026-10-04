@@ -9300,21 +9300,25 @@
                 else if (isQueued) row.classList.add("player-queued");
                 else row.classList.add("player-active");
                 let multiplierValue = Number(currentMultiplier) || 1;
-                if (status === "CASHED_OUT" && Number.isFinite(Number(player.multiplier)) && Number(player.multiplier) > 0) {
-                    multiplierValue = Number(player.multiplier);
-                }
+                const settledMultiplier = Number(player.multiplier);
+                const hasSettledMultiplier = Number.isFinite(settledMultiplier) && settledMultiplier > 0;
+                if ((status === "CASHED_OUT" || status === "LOST") && hasSettledMultiplier) multiplierValue = settledMultiplier;
                 let displayMultiplier = Number(playerDisplayMultipliers.get(playerKey));
-                if (!Number.isFinite(displayMultiplier)) displayMultiplier = multiplierValue;
-                displayMultiplier = Math.min(displayMultiplier, multiplierValue);
+                if (status === "CASHED_OUT" || status === "LOST") displayMultiplier = multiplierValue;
+                else {
+                    if (!Number.isFinite(displayMultiplier)) displayMultiplier = multiplierValue;
+                    displayMultiplier = Math.min(displayMultiplier, multiplierValue);
+                }
                 playerDisplayMultipliers.set(playerKey, displayMultiplier);
                 const amount = Number(player.amount || 0);
+                const settledPayout = status === "CASHED_OUT" && hasSettledMultiplier ? amount * settledMultiplier : null;
                 const avatar = makeAvatar(player);
                 const avatarClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const nameClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const valueClass = isWinner ? "winner" : isLoser ? "loser" : "";
                 const statusText = isQueued ? "Waiting..." : (isWinner ? getTranslation('playerWon') : isLoser ? getTranslation('playerLost') : getTranslation('playerActive'));
                 const displayName = player.name || getTranslation('guestPlayer');
-                const currentValue = isLoser || isQueued ? 0 : amount * displayMultiplier;
+                const currentValue = isQueued || isLoser ? 0 : (settledPayout !== null ? settledPayout : amount * displayMultiplier);
                 const isGiftBet = player.betType === "GIFT";
                 const giftImageUrl = typeof player.giftImageUrl === "string" && player.giftImageUrl
                     ? (player.giftImageUrl.startsWith("/") ? BACKEND_URL + player.giftImageUrl : player.giftImageUrl)

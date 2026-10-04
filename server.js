@@ -2046,6 +2046,7 @@ async function launchRound() {
         multiplier: 1.00,
         flightStartedAt: Date.now()
     });
+    await refreshRoundPlayers();
     console.log(`🚀 Round ${currentGameState.roundId} launched!`);
     if (currentGameState.crashAt <= 1.00) await crashCurrentRound();
 }
