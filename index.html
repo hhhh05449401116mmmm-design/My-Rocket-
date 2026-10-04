@@ -6232,8 +6232,6 @@
             const playButton = document.getElementById('loot-box-play-button');
             const resultStage = document.getElementById('loot-box-result-stage');
             const collectionsTitle = document.querySelector('.loot-box-collections-title');
-            const featured = document.getElementById('loot-box-featured');
-
             if (!modal || !title || !strip || !collections) return;
             if (resultStage) {
                 resultStage.classList.remove('show');
@@ -6250,6 +6248,7 @@
                 : (box.id === 'free24' ? 'Telegram Collectibles • Daily Free Box' : (box.id === 'free' ? 'Telegram Collectibles • Free Box' : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق')));
 
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+            renderLootBoxFeatured(box, items);
             if (box.id === 'box_100') {
                 render100TonCollectibles(box);
                 load100TonMarketValues(box);
