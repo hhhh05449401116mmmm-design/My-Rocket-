@@ -4303,21 +4303,21 @@
             padding: 12px 14px;
             box-sizing: border-box;
             border-radius: 18px;
-            background: linear-gradient(145deg, rgba(42, 18, 70, .96), rgba(22, 10, 40, .98));
-            border: 1px solid rgba(177, 76, 255, .34);
-            box-shadow: 0 10px 28px rgba(89, 20, 150, .18);
+            background: linear-gradient(145deg, #2f211b, #241813);
+            border: 1px solid rgba(173, 91, 36, .72);
+            box-shadow: 0 8px 24px rgba(89, 42, 15, .18);
         }
         .loot-box-featured.show { display: flex; align-items: center; gap: 12px; }
         .loot-box-featured-hot {
             flex: 0 0 auto;
             padding: 7px 10px;
             border-radius: 10px;
-            background: linear-gradient(135deg, #7b2cff, #b14cff);
+            background: linear-gradient(135deg, #ff4b4b, #ff8a1f);
             color: #fff;
             font-size: 12px;
             font-weight: 900;
             letter-spacing: .4px;
-            box-shadow: 0 5px 16px rgba(177, 76, 255, .24);
+            box-shadow: 0 5px 16px rgba(255, 86, 39, .22);
         }
         .loot-box-featured-image {
             width: 58px;
@@ -4325,13 +4325,13 @@
             flex: 0 0 58px;
             border-radius: 14px;
             object-fit: contain;
-            background: #211334;
-            border: 1px solid rgba(210, 140, 255, .4);
+            background: #3b2920;
+            border: 1px solid rgba(220, 130, 70, .45);
         }
         .loot-box-featured-info { min-width: 0; flex: 1; }
         .loot-box-featured-label {
             display: block;
-            color: #9f8db2;
+            color: #aaa0a0;
             font-size: 10px;
             margin-bottom: 2px;
         }
@@ -4345,11 +4345,25 @@
             white-space: nowrap;
         }
         .loot-box-featured-value {
-            display: block;
-            color: #d6a7ff;
-            font-size: 12px;
-            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #f4c47b;
+            font-size: 14px;
+            font-weight: 900;
             margin-top: 2px;
+        }
+        .loot-box-featured-value img {
+            width: 17px;
+            height: 17px;
+            display: block;
+            object-fit: contain;
+        }
+        .loot-box-featured-time {
+            display: block;
+            color: #9d9393;
+            font-size: 10px;
+            margin-top: 1px;
         }
         #loot-box-modal.loot-box-fullscreen .loot-box-modal-strip-wrap {
             height: 76px;
@@ -6232,33 +6246,108 @@
                 });
             });
         }
+        let lootBoxFeaturedWins = [];
+        let lootBoxFeaturedIndex = 0;
+        let lootBoxFeaturedTimer = null;
+        let lootBoxFeaturedRefreshTimer = null;
+
+        function lootBoxFeaturedBoxName(box) {
+            return String(box?.name || '').trim();
+        }
+
+        function formatLootBoxWinAge(createdAt) {
+            const timestamp = new Date(String(createdAt || '').replace(' ', 'T') + (String(createdAt || '').includes('Z') ? '' : 'Z')).getTime();
+            if (!Number.isFinite(timestamp)) return '';
+            const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+            if (seconds < 60) return seconds + 's ago';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm ago';
+            const hours = Math.floor(minutes / 60);
+            return hours + 'h ' + (minutes % 60) + 'm ago';
+        }
+
+        function renderLootBoxFeaturedWin(win) {
+            const featured = document.getElementById('loot-box-featured');
+            if (!featured || !win) return;
+
+            const isTon = win.type === 'ton';
+            const image = win.image || (isTon ? '/assets/ton-icon.svg' : '/assets/ton-icon.svg');
+            const value = Number(win.value || 0);
+            const valueText = Number.isFinite(value) && value > 0 ? value.toFixed(2) : '';
+            const name = win.name || (isTon ? 'TON' : 'Gift');
+
+            featured.innerHTML =
+                '<span class="loot-box-featured-hot">● HOT</span>' +
+                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(name) + '" loading="eager" decoding="async">' +
+                '<div class="loot-box-featured-info">' +
+                    '<span class="loot-box-featured-label">Latest TOP drop</span>' +
+                    '<span class="loot-box-featured-name">' + escapeHtml(name) + '</span>' +
+                    (valueText ? '<span class="loot-box-featured-value">' + escapeHtml(valueText) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
+                    '<span class="loot-box-featured-time">' + escapeHtml(formatLootBoxWinAge(win.createdAt)) + '</span>' +
+                '</div>';
+            featured.classList.add('show');
+        }
+
+        function stopLootBoxFeaturedLive() {
+            if (lootBoxFeaturedTimer) {
+                clearInterval(lootBoxFeaturedTimer);
+                lootBoxFeaturedTimer = null;
+            }
+            if (lootBoxFeaturedRefreshTimer) {
+                clearTimeout(lootBoxFeaturedRefreshTimer);
+                lootBoxFeaturedRefreshTimer = null;
+            }
+        }
+
+        function startLootBoxFeaturedLive(box) {
+            stopLootBoxFeaturedLive();
+            const featured = document.getElementById('loot-box-featured');
+            if (!featured) return;
+
+            const boxName = lootBoxFeaturedBoxName(box);
+            const refresh = function() {
+                const url = BACKEND_URL + '/api/loot-box/recent-wins?boxName=' + encodeURIComponent(boxName);
+                fetch(url, { method: 'GET', cache: 'no-store', headers: getAuthHeaders() })
+                    .then(function(response) { return response.json().catch(function() { return { ok: false }; }); })
+                    .then(function(payload) {
+                        if (!payload || !payload.ok || !Array.isArray(payload.wins) || !payload.wins.length) return;
+                        lootBoxFeaturedWins = payload.wins;
+                        lootBoxFeaturedIndex = 0;
+                        renderLootBoxFeaturedWin(lootBoxFeaturedWins[0]);
+                    })
+                    .catch(function() {})
+                    .finally(function() {
+                        lootBoxFeaturedRefreshTimer = window.setTimeout(refresh, 15000);
+                    });
+            };
+
+            refresh();
+            lootBoxFeaturedTimer = window.setInterval(function() {
+                if (!lootBoxFeaturedWins.length) return;
+                renderLootBoxFeaturedWin(lootBoxFeaturedWins[lootBoxFeaturedIndex % lootBoxFeaturedWins.length]);
+                lootBoxFeaturedIndex = (lootBoxFeaturedIndex + 1) % lootBoxFeaturedWins.length;
+            }, 5000);
+        }
+
         function renderLootBoxFeatured(box, items) {
             const featured = document.getElementById('loot-box-featured');
             if (!featured) return;
+            stopLootBoxFeaturedLive();
+            lootBoxFeaturedWins = [];
+            lootBoxFeaturedIndex = 0;
             if (!Array.isArray(items) || !items.length) {
                 featured.classList.remove('show');
                 featured.innerHTML = '';
                 return;
             }
-
-            // Visual-only featured gift. It does not affect the actual reward selection.
-            const item = items[0] || {};
-            const image = box && box.id === 'box_100'
-                ? paidLootBox100GiftImage(item)
-                : paidLootBoxItemImage(item);
-            const value = String(item.marketValueTon || item.value || '').trim();
-            const label = item.label && item.label !== 'Random' ? ' • ' + item.label : '';
-
-            featured.innerHTML =
-                '<span class="loot-box-featured-hot">🔥 HOT</span>' +
-                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(image || '') + '" alt="' + escapeHtmlAttribute(item.name || 'Gift') + '" loading="eager" decoding="async">' +
-                '<div class="loot-box-featured-info">' +
-                    '<span class="loot-box-featured-label">Featured gift in this box</span>' +
-                    '<span class="loot-box-featured-name">' + escapeHtml((item.name || 'Gift') + label) + '</span>' +
-                    (value ? '<span class="loot-box-featured-value">' + escapeHtml(value) + '</span>' : '') +
-                '</div>';
             featured.classList.add('show');
+            featured.innerHTML =
+                '<span class="loot-box-featured-hot">● HOT</span>' +
+                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(lootBoxVisualImage(box, items[0]) || '') + '" alt="' + escapeHtmlAttribute(items[0].name || 'Gift') + '">' +
+                '<div class="loot-box-featured-info"><span class="loot-box-featured-label">Latest TOP drop</span><span class="loot-box-featured-name">' + escapeHtml(items[0].name || 'Gift') + '</span></div>';
+            startLootBoxFeaturedLive(box);
         }
+
 
         function openLootBox(box) {
             if (lootBoxMarketRefreshTimer) {
@@ -9009,9 +9098,12 @@
         function closeModal(id) {
             const modal = document.getElementById(id);
             if (modal) modal.classList.remove("show");
-            if (id === 'loot-box-modal' && lootBoxMarketRefreshTimer) {
-                clearTimeout(lootBoxMarketRefreshTimer);
-                lootBoxMarketRefreshTimer = null;
+            if (id === 'loot-box-modal') {
+                stopLootBoxFeaturedLive();
+                if (lootBoxMarketRefreshTimer) {
+                    clearTimeout(lootBoxMarketRefreshTimer);
+                    lootBoxMarketRefreshTimer = null;
+                }
             }
             // If the player closes the winning-result modal with X/outside click,
             // keep the won gift automatically. Sell/Bet/Withdraw/Keep clear this id first.
