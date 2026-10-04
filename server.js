@@ -4298,6 +4298,9 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             const lowValueGifts = enrichedGiftPool.filter(item => item.marketValue <= 7);
 
             const roll = crypto.randomInt(0, 10000);
+            const allowedTonRewards = Array.isArray(config.tonRewards)
+                ? [...new Set(config.tonRewards.map(Number).filter(value => Number.isFinite(value) && value > 0))]
+                : [];
             let gift = null;
             let tonReward = null;
             let nothing = false;
@@ -4310,8 +4313,11 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
                 }
             } else if (roll < 7000) {
-                // Existing paid-box behavior remains unchanged for every other box.
-                tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
+                // TON can only come from the rewards explicitly configured for this box.
+                if (!allowedTonRewards.length) {
+                    throw new Error('No configured TON rewards for this box');
+                }
+                tonReward = allowedTonRewards[crypto.randomInt(0, allowedTonRewards.length)];
             } else if (roll < 9300) {
                 const pool = lowValueGifts.length ? lowValueGifts : enrichedGiftPool;
                 gift = pool[crypto.randomInt(0, pool.length)];
@@ -4343,7 +4349,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
 
             const spinItems = boxId === 'box_0_1'
                 ? [...reelGiftItems, reelNothingItem]
-                : [...reelGiftItems, ...config.tonRewards.map(value => ({
+                : [...reelGiftItems, ...allowedTonRewards.map(value => ({
                     name: Number(value).toFixed(2) + ' TON Balance',
                     image: '/assets/ton-icon.svg',
                     value: Number(value),
@@ -4363,11 +4369,18 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     marketValue: gift.marketValue
                 };
             }
-            if (tonReward !== null && !spinItems.some(item =>
-                item.rewardType === 'ton' && Math.abs(Number(item.value) - Number(tonReward)) < 0.000001
-            )) {
-                // Every configured TON reward is already represented in the reel.
-                throw new Error('Selected TON reward is not present in this box reel');
+            if (tonReward !== null) {
+                const isConfiguredTonReward = allowedTonRewards.some(value =>
+                    Math.abs(Number(value) - Number(tonReward)) < 0.000001
+                );
+                if (!isConfiguredTonReward) {
+                    throw new Error('Selected TON reward is not configured for this box');
+                }
+                if (!spinItems.some(item =>
+                    item.rewardType === 'ton' && Math.abs(Number(item.value) - Number(tonReward)) < 0.000001
+                )) {
+                    throw new Error('Selected TON reward is not present in this box reel');
+                }
             }
             // The box price was already debited atomically above.
 
