@@ -5784,7 +5784,6 @@
             const strip = document.getElementById('loot-box-modal-strip');
             if (!collections || !strip) return;
             const items = Array.isArray(box.collectibles) ? box.collectibles : [];
-            renderLootBoxFeatured(box, items);
 
             strip.innerHTML = items.map(function(item) {
                 return '<div class="loot-box-modal-strip-item gift">' +
