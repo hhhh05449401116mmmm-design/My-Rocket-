@@ -6127,7 +6127,9 @@
                 const isTonReward = item.rewardType === 'ton';
                 const image = isTonReward ? '/assets/ton-icon.svg' : paidLootBox100GiftImage(item);
                 return '<div class="loot-box-modal-strip-item ' + (isTonReward ? 'ton' : 'gift') + '">' +
-                    '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="eager" decoding="async">' +
+                    (isTonReward
+                        ? '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="eager" decoding="async">'
+                        : paidLootBoxItemMarkup(item, item.name, 'eager', false)) +
                 '</div>';
             }).join('');
 
