@@ -5545,13 +5545,33 @@
 
         const LOOT_BOXES = [
             { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/free-gift-box.svg', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
-            { id: 'box_heart', name: 'Heart', priceLabel: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '', collectibles: [
-                { name: "Heart Locket", image: 'https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png', value: '— TON', label: 'Random' },
-                { name: "Cupid Charm", image: 'https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png', value: '— TON', label: 'Random' },
-                { name: "Love Candle", image: 'https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png', value: '— TON', label: 'Random' },
-                { name: "Eternal Rose", image: 'https://cdn.changes.tg/gifts/models/Eternal%20Rose/png/Original.png', value: '— TON', label: 'Random' },
-                { name: "Trapped Heart", image: 'https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png', value: '— TON', label: 'Random' },
-                { name: "Diamond Ring", image: 'https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png', value: '— TON', label: 'Random' }
+            {             { id: 'box_heart', name: 'Heart', priceLabel: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '', collectibles: [
+                { name: "Heart Locket", image: 'https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Nail Bracelet", image: 'https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Toy Bear", image: 'https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png', value: "32.53 TON", label: 'Random' },
+                { name: "Diamond Ring", image: 'https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png', value: "29.32 TON", label: 'Random' },
+                { name: "Eternal Rose", image: 'https://cdn.changes.tg/gifts/models/Eternal%20Rose/png/Original.png', value: "23.51 TON", label: 'Random' },
+                { name: "Cupid Charm", image: 'https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png', value: "19.81 TON", label: 'Random' },
+                { name: "Trapped Heart", image: 'https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Love Potion", image: 'https://cdn.changes.tg/gifts/models/Love%20Potion/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Valentine Box", image: 'https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png', value: "11.09 TON", label: 'Random' },
+                { name: "Love Candle", image: 'https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png', value: "10.80 TON", label: 'Random' },
+                { name: "Sakura Flower", image: 'https://cdn.changes.tg/gifts/models/Sakura%20Flower/png/Original.png', value: "10.29 TON", label: 'Random' },
+                { name: "Berry Box", image: 'https://cdn.changes.tg/gifts/models/Berry%20Box/png/Original.png', value: "8.42 TON", label: 'Random' },
+                { name: "Bunny Muffin", image: 'https://cdn.changes.tg/gifts/models/Bunny%20Muffin/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Joyful Bundle", image: 'https://cdn.changes.tg/gifts/models/Joyful%20Bundle/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Lush Bouquet", image: 'https://cdn.changes.tg/gifts/models/Lush%20Bouquet/png/Original.png', value: "6.62 TON", label: 'Random' },
+                { name: "Input Key", image: 'https://cdn.changes.tg/gifts/models/Input%20Key/png/Original.png', value: "6.36 TON", label: 'Random' },
+                { name: "Spring Basket", image: 'https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Original.png', value: "6.00 TON", label: 'Random' },
+                { name: "Restless Jar", image: 'https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Original.png', value: "5.95 TON", label: 'Random' },
+                { name: "Homemade Cake", image: 'https://cdn.changes.tg/gifts/models/Homemade%20Cake/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Pretty Posy", image: 'https://cdn.changes.tg/gifts/models/Pretty%20Posy/png/Original.png', value: "— TON", label: 'Random' },
+                { name: "Mousse Cake", image: 'https://cdn.changes.tg/gifts/models/Mousse%20Cake/png/Original.png', value: "5.22 TON", label: 'Random' },
+                { name: "Cookie Heart", image: 'https://cdn.changes.tg/gifts/models/Cookie%20Heart/png/Original.png', value: "4.97 TON", label: 'Random' },
+                { name: "Spiced Wine", image: 'https://cdn.changes.tg/gifts/models/Spiced%20Wine/png/Original.png', value: "4.72 TON", label: 'Random' },
+                { name: "Whip Cupcake", image: 'https://cdn.changes.tg/gifts/models/Whip%20Cupcake/png/Original.png', value: "4.05 TON", label: 'Random' },
+                { name: '0.20 TON Balance', image: '/assets/ton-icon.svg', value: '0.20 TON', rewardType: 'ton', label: 'Balance' },
+                { name: '0.10 TON Balance', image: '/assets/ton-icon.svg', value: '0.10 TON', rewardType: 'ton', label: 'Balance' }
             ] },
             { id: 'box_0_1', name: 'Farm', priceLabel: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
                         { id: 'box_2',
@@ -6688,7 +6708,8 @@
             box_20: [1.00, 1.50, 2.00, 3.00],
             box_25: [1.25, 2.00, 3.00, 4.00],
             box_50: [2.50, 4.00, 6.00, 8.00],
-            box_100: [5.00, 8.00, 10.00, 15.00]
+            box_100: [5.00, 8.00, 10.00, 15.00],
+            box_heart: [0.20, 0.10]
         };
 
         function paidLootBoxDisplayItems(box) {
