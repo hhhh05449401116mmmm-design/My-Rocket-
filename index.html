@@ -6136,7 +6136,7 @@
                 const modelImage = paidLootBoxItemImage(item);
                 const valueText = String(item.value || '— TON');
                 const hasTonValue = /TON/i.test(valueText);
-                return '<div class="loot-box-collectible' + (isTonReward ? ' gold-frame' : '') + '">' +
+                return '<div class="loot-box-collectible' + (isTonReward ? ' ton-reward' : '') + '">' +
                     '<div class="loot-box-collectible-image-wrap">' +
                         paidLootBoxItemMarkup(item, item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : ''), 'lazy', box.id === 'box_0_1') +
                         (hasTonValue ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
@@ -6441,7 +6441,7 @@
                             : item.image;
                         const valueText = String(item.value || '— TON');
                         const hasTonValue = /TON/i.test(valueText);
-                        return '<div class="loot-box-collectible' + (isTonReward ? ' gold-frame' : '') + '">' +
+                        return '<div class="loot-box-collectible' + (isTonReward ? ' ton-reward' : '') + '">' +
                             '<div class="loot-box-collectible-image-wrap">' +
                                 '<img src="' + escapeHtmlAttribute(modelImage) + '" alt="' + escapeHtmlAttribute(item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : '')) + '" loading="lazy" decoding="async">' +
                                 (hasTonValue ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
