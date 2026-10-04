@@ -4164,32 +4164,72 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
         } catch {}
         if (!Array.isArray(variants)) variants = [];
 
-        const items = [];
-        for (const variant of variants.slice(0, 250)) {
+        const limitedVariants = variants.slice(0, 250);
+        const uniqueVariants = [];
+        const uniqueKeys = new Set();
+
+        for (const variant of limitedVariants) {
             const name = String(variant?.name || '').trim();
             if (!name) continue;
-            const market = await getModelMarketPrice({
+            const identity = [
                 name,
-                label: variant?.label || null,
-                model_name: variant?.model_name || null,
-                backdrop: variant?.backdrop || null,
-                baseName: name
-            }) || await getCollectibleVariantMarketValue({
-                name,
-                label: variant?.label || null,
-                model_name: variant?.model_name || null,
-                backdrop: variant?.backdrop || null
-            });
-            items.push({
-                key: String(variant?.key || ''),
-                name,
-                label: variant?.label || null,
-                backdrop: variant?.backdrop || null,
-                marketValueTon: Number(market?.floorPriceTon || 0),
-                source: market?.source || null,
-                lastUpdated: market?.lastUpdated || null
-            });
+                variant?.label || '',
+                variant?.backdrop || '',
+                variant?.model_name || ''
+            ].join('|').toLowerCase();
+            if (uniqueKeys.has(identity)) continue;
+            uniqueKeys.add(identity);
+            uniqueVariants.push({ variant, identity, name });
         }
+
+        const resolved = new Map();
+        let cursor = 0;
+        const worker = async () => {
+            while (cursor < uniqueVariants.length) {
+                const index = cursor++;
+                const entry = uniqueVariants[index];
+                const variant = entry.variant;
+                const market = await getModelMarketPrice({
+                    name: entry.name,
+                    label: variant?.label || null,
+                    model_name: variant?.model_name || null,
+                    backdrop: variant?.backdrop || null,
+                    baseName: entry.name
+                }) || await getCollectibleVariantMarketValue({
+                    name: entry.name,
+                    label: variant?.label || null,
+                    model_name: variant?.model_name || null,
+                    backdrop: variant?.backdrop || null
+                });
+                resolved.set(entry.identity, market || null);
+            }
+        };
+
+        const workerCount = Math.min(6, uniqueVariants.length);
+        await Promise.all(Array.from({ length: workerCount }, worker);
+
+        const items = limitedVariants
+            .filter(variant => String(variant?.name || '').trim())
+            .map(variant => {
+                const name = String(variant?.name || '').trim();
+                const identity = [
+                    name,
+                    variant?.label || '',
+                    variant?.backdrop || '',
+                    variant?.model_name || ''
+                ].join('|').toLowerCase();
+                const market = resolved.get(identity);
+                return {
+                    key: String(variant?.key || ''),
+                    name,
+                    label: variant?.label || null,
+                    backdrop: variant?.backdrop || null,
+                    marketValueTon: Number(market?.floorPriceTon || 0),
+                    source: market?.source || null,
+                    lastUpdated: market?.lastUpdated || null
+                };
+            });
+
         res.json({ ok: true, items, available: items.some(item => item.marketValueTon > 0) });
     } catch (error) {
         res.status(200).json({ ok: true, items: [], available: false });
