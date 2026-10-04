@@ -12043,6 +12043,7 @@
         // This prevents an earlier UI/Wallet initialization error from blocking
         // Telegram signed initData authentication and the game connection.
         async function bootstrapRocketApp() {
+            try { initTelegramChrome(); } catch (e) { console.error('Telegram chrome init error:', e); }
             try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
             const authenticated = await authenticateUser();
             if (!authenticated) {
