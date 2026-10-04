@@ -5946,7 +5946,7 @@
             const collections = document.getElementById('loot-box-collections');
             const strip = document.getElementById('loot-box-modal-strip');
             if (!collections || !strip) return;
-            const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+            const items = paidLootBoxDisplayItems(box);
 
             strip.innerHTML = items.map(function(item) {
                 return '<div class="loot-box-modal-strip-item gift">' +
@@ -6361,14 +6361,6 @@
             // mismatch caused by strip padding, flex gap, or mobile viewport width.
             const targetCell = strip.querySelector('.loot-box-reel-target');
             if (!targetCell) return Promise.resolve();
-                const isTon = item.rewardType === 'ton';
-                const isNothing = item.rewardType === 'nothing';
-                return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : (isNothing ? 'nothing' : 'gift')) + '">' +
-                    (isNothing
-                        ? '<span class="loot-box-nothing-reel">—</span>'
-                        : paidLootBoxItemMarkup(item, item.name || 'Reward', 'eager', box && box.id === 'box_0_1')) +
-                '</div>';
-            }).join('');
 
             // Decode the actual reward images before starting the movement. This prevents
             // late image layout/paint work from making the reel stutter or jump on mobile.
