@@ -6668,6 +6668,8 @@
             if (title) title.textContent = box.name || 'Loot Box';
             if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'تم اختيار الجائزة' : 'Prize selected';
 
+            // Keep the loot-box screen open after every result.
+            // The player leaves only through the explicit Back/Close action.
             if (data.winnerType === 'nothing') {
                 stage.innerHTML =
                     '<div class="loot-box-result loot-box-result-nothing">' +
@@ -6725,6 +6727,8 @@
             }
 
             stage.classList.add('show');
+            // Do not close the loot-box modal here: the result is part of the
+            // same full-screen box view and the player decides when to leave.
             if (collections) collections.style.display = 'none';
             if (collectionsTitle) collectionsTitle.style.display = 'none';
             if (topupButton) topupButton.style.display = 'none';
