@@ -7141,9 +7141,19 @@
                 const userGiftId = Number(gift.userGiftId || 0);
                 if (userGiftId) pendingLootBoxRewardId = userGiftId;
 
+                const previewGift = box.id === 'box_100'
+                    ? null
+                    : (Array.isArray(box.collectibles)
+                        ? box.collectibles.find(function(item) {
+                            if (!item || String(item.name || '').trim() !== String(gift.name || '').trim()) return false;
+                            const giftLabel = gift.label || gift.backdrop || null;
+                            const itemLabel = item.label || item.backdrop || null;
+                            return !giftLabel || !itemLabel || String(giftLabel) === String(itemLabel);
+                        })
+                        : null);
                 const image = box.id === 'box_100'
                     ? paidLootBox100GiftImage(gift)
-                    : (gift.image_url || paidLootBoxItemImage(gift));
+                    : (previewGift ? lootBoxVisualImage(box, previewGift) : paidLootBoxItemImage(gift));
                 const valueText = marketValue > 0 ? marketValue.toFixed(2) : (sellValue > 0 ? sellValue.toFixed(2) : '—');
 
                 stage.innerHTML =
