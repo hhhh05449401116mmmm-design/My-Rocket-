@@ -2014,10 +2014,8 @@ async function startRound(roundNumber) {
     roundTransitionTimer = null;
     const fairRound = createFairRound(roundNumber, DEFAULT_CLIENT_SEED);
     await createRoundRecord(fairRound);
-    // Queued bets are locked when the 5-second countdown starts.
-    // They are already funded/reserved, so no second deduction occurs.
-    await promoteQueuedTonBets(roundNumber);
-    await promoteQueuedGiftBets(roundNumber);
+    // Queued bets remain cancellable during FLIGHT and are promoted only
+    // when the 5-second countdown finishes and FLIGHT is about to start.
 
     updateGameState({
         roundId: roundNumber,
@@ -2038,6 +2036,8 @@ async function startRound(roundNumber) {
 
 async function launchRound() {
     if (currentGameState.phase !== 'COUNTDOWN') return;
+    await promoteQueuedTonBets(currentGameState.roundId);
+    await promoteQueuedGiftBets(currentGameState.roundId);
     await updateRoundState(currentGameState.roundId, 'FLIGHT', 1.00);
     updateGameState({
         phase: 'FLIGHT',
@@ -3861,7 +3861,10 @@ app.get('/api/bet/gift/current', authenticate, async (req, res) => {
     try {
         const active = await get('SELECT id, round_id, gift_value_at_bet, auto_cashout_target FROM gift_bets WHERE user_id = ? AND round_id = ? AND status = \'ACTIVE\' ORDER BY id DESC LIMIT 1', [req.user.id, currentGameState.roundId]);
         if (active) return res.json({ ok: true, state: 'active', betId: active.id, roundId: active.round_id, amount: Number(active.gift_value_at_bet), autoCashoutTarget: active.auto_cashout_target });
-        const queued = await get('SELECT id, round_id, user_gift_id, gift_value_at_bet, auto_cashout_target FROM queued_gift_bets WHERE user_id = ? AND round_id = ? AND status = \'QUEUED\' ORDER BY id DESC LIMIT 1', [req.user.id, currentGameState.roundId + 1]);
+        const queuedRoundId = currentGameState.phase === 'FLIGHT'
+            ? currentGameState.roundId + 1
+            : currentGameState.roundId;
+        const queued = await get('SELECT id, round_id, user_gift_id, gift_value_at_bet, auto_cashout_target FROM queued_gift_bets WHERE user_id = ? AND round_id = ? AND status = \'QUEUED\' ORDER BY id DESC LIMIT 1', [req.user.id, queuedRoundId]);
         if (queued) return res.json({ ok: true, state: 'queued', betId: queued.id, userGiftId: queued.user_gift_id, roundId: queued.round_id, amount: Number(queued.gift_value_at_bet), autoCashoutTarget: queued.auto_cashout_target });
         return res.json({ ok: true, state: 'none' });
     } catch (error) {
@@ -3900,9 +3903,12 @@ app.get('/api/bet/ton/current', authenticate, async (req, res) => {
             });
         }
 
+        const queuedRoundId = currentGameState.phase === 'FLIGHT'
+            ? currentGameState.roundId + 1
+            : currentGameState.roundId;
         const queued = await get(
             'SELECT id, round_id, amount, auto_cashout_target FROM queued_ton_bets WHERE user_id = ? AND round_id = ? AND status = \'QUEUED\' ORDER BY id DESC LIMIT 1',
-            [req.user.id, currentGameState.roundId + 1]
+            [req.user.id, queuedRoundId]
         );
         if (queued) {
             return res.json({
