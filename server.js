@@ -4164,72 +4164,32 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
         } catch {}
         if (!Array.isArray(variants)) variants = [];
 
-        const limitedVariants = variants.slice(0, 250);
-        const uniqueVariants = [];
-        const uniqueKeys = new Set();
-
-        for (const variant of limitedVariants) {
+        const items = [];
+        for (const variant of variants.slice(0, 250)) {
             const name = String(variant?.name || '').trim();
             if (!name) continue;
-            const identity = [
+            const market = await getModelMarketPrice({
                 name,
-                variant?.label || '',
-                variant?.backdrop || '',
-                variant?.model_name || ''
-            ].join('|').toLowerCase();
-            if (uniqueKeys.has(identity)) continue;
-            uniqueKeys.add(identity);
-            uniqueVariants.push({ variant, identity, name });
-        }
-
-        const resolved = new Map();
-        let cursor = 0;
-        const worker = async () => {
-            while (cursor < uniqueVariants.length) {
-                const index = cursor++;
-                const entry = uniqueVariants[index];
-                const variant = entry.variant;
-                const market = await getModelMarketPrice({
-                    name: entry.name,
-                    label: variant?.label || null,
-                    model_name: variant?.model_name || null,
-                    backdrop: variant?.backdrop || null,
-                    baseName: entry.name
-                }) || await getCollectibleVariantMarketValue({
-                    name: entry.name,
-                    label: variant?.label || null,
-                    model_name: variant?.model_name || null,
-                    backdrop: variant?.backdrop || null
-                });
-                resolved.set(entry.identity, market || null);
-            }
-        };
-
-        const workerCount = Math.min(6, uniqueVariants.length);
-        await Promise.all(Array.from({ length: workerCount }, worker));
-
-        const items = limitedVariants
-            .filter(variant => String(variant?.name || '').trim())
-            .map(variant => {
-                const name = String(variant?.name || '').trim();
-                const identity = [
-                    name,
-                    variant?.label || '',
-                    variant?.backdrop || '',
-                    variant?.model_name || ''
-                ].join('|').toLowerCase();
-                const market = resolved.get(identity);
-                return {
-                    key: String(variant?.key || ''),
-                    name,
-                    label: variant?.label || null,
-                    backdrop: variant?.backdrop || null,
-                    marketValueTon: Number(market?.floorPriceTon || 0),
-                    source: market?.source || null,
-                    lastUpdated: market?.lastUpdated || null
-                };
+                label: variant?.label || null,
+                model_name: variant?.model_name || null,
+                backdrop: variant?.backdrop || null,
+                baseName: name
+            }) || await getCollectibleVariantMarketValue({
+                name,
+                label: variant?.label || null,
+                model_name: variant?.model_name || null,
+                backdrop: variant?.backdrop || null
             });
-
+            items.push({
+                key: String(variant?.key || ''),
+                name,
+                label: variant?.label || null,
+                backdrop: variant?.backdrop || null,
+                marketValueTon: Number(market?.floorPriceTon || 0),
+                source: market?.source || null,
+                lastUpdated: market?.lastUpdated || null
+            });
+        }
         res.json({ ok: true, items, available: items.some(item => item.marketValueTon > 0) });
     } catch (error) {
         res.status(200).json({ ok: true, items: [], available: false });
@@ -4255,7 +4215,7 @@ const PAID_BOX_GIFT_NAMES = {
     box_0_1: ["Plush Pepe","Heart Locket","Durov's Cap","Precious Peach","Scared Cat","Heroic Helmet","Loot Bag","Mighty Arm","Astral Shard","Nail Bracelet","Westside Sign","Durov's Glasses","Perfume Bottle","Ion Gem","Mini Oscar","Artisan Brick","Gem Signet","Low Rider","Swiss Watch","Magic Potion","Sharp Tongue","Kissed Frog","Bonded Ring","Vintage Cigar","Voodoo Doll","Neko Helmet","Toy Bear","Genie Lamp","Signet Ring","Diamond Ring","Rare Bird","Bling Binky","Electric Skull","Khabib's Papakha","Eternal Rose","Cupid Charm","Sky Stilettos","Trapped Heart","Ionic Dryer","UFC Strike","Snoop Cigar","Love Potion","Mad Pumpkin","Crystal Ball","Flying Broom","Record Player","Skull Flower","Valentine Box","Sakura Flower","Top Hat","Love Candle","Jingle Bells","Hanging Star","Fine Pen","Chill Flame","Instant Ramen","Pool Float","Vice Cream","Candy Cane","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Bunny Muffin","Party Sparkler","Spring Basket","Star Notepad","Bow Tie","Homemade Cake","Snow Mittens","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
     box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
-    box_2: ["Sleigh Bell","Light Sword","Toy Bear","Rare Bird","Bow Tie","Liberty Figure","Valentine Box","Timeless Book","Jolly Chimp","Joyful Bundle","Cupid Charm","Flying Broom","Stellar Rocket","Tama Gadget","Hanging Star","Chill Flame","Snow Globe","Snake Box","Big Year","Happy Brownie","Lunar Snake","Candy Cane","Whip Cupcake","Mighty Arm","Loot Bag","Durov's Glasses","Signet Ring","Scared Cat","Kissed Frog","Mini Oscar","Low Rider","Electric Skull","Astral Shard","Bling Binky","Gem Signet","Artisan Brick","Swiss Watch","Desk Calendar","Crystal Ball","Spy Agaric","Ionic Dryer","Jingle Bells"],
+    box_2: ["Sleigh Bell","Light Sword","Toy Bear","Rare Bird","Bow Tie","Liberty Figure","Valentine Box","Timeless Book","Jolly Chimp","Joyful Bundle","Cupid Charm","Flying Broom","Stellar Rocket","Tama Gadget","Hanging Star","Chill Flame","Snow Globe","Snake Box","Big Year","Happy Brownie","Lunar Snake","Candy Cane","Whip Cupcake"],
     box_2_5: ["Mighty Arm","Loot Bag","Durov's Glasses","Signet Ring","Scared Cat","Kissed Frog","Low Rider","Mini Oscar","Electric Skull","Astral Shard","Light Sword","Bling Binky","Toy Bear","Gem Signet","Artisan Brick","Swiss Watch","Desk Calendar"],
     box_12: ["Plush Pepe","Kissed Frog","Loot Bag","Spring Basket","Durov's Glasses","Nail Bracelet","Neko Helmet","Heroic Helmet","Scared Cat","Surge Board","Cupid Charm","Ice Cream","Sharp Tongue","Mood Pack","Bunny Muffin","Toy Bear","Star Notepad","Snow Globe","Tama Gadget","Restless Jar","Pool Float","Timeless Book","Winter Wreath","Jester Hat","Desk Calendar","Joyful Bundle","Spy Agaric","Jack-in-the-Box","Ginger Cookie","Valentine Box","B-Day Candle","Fresh Socks","Easter Egg","Hypno Lollipop","Party Sparkler","Stellar Rocket","Pet Snake"],
     box_15: ["Heroic Helmet","Nail Bracelet","Gem Signet","Swiss Watch","Bonded Ring","Voodoo Doll","Toy Bear","Signet Ring","Diamond Ring","Eternal Rose","Cupid Charm","Mad Pumpkin","Skull Flower","Valentine Box","Sakura Flower","Hanging Star","Restless Jar","Bow Tie","Victory Medal","Ice Cream"],
