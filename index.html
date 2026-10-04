@@ -6976,7 +6976,8 @@
         }
 
         function closeLootBoxResult() {
-            closeModal('loot-box-modal');
+            // Result actions return to the current loot-box view.
+            // The loot-box modal itself is closed only by its explicit Close/Back control.
             const resultStage = document.getElementById('loot-box-result-stage');
             const collections = document.getElementById('loot-box-collections');
             const collectionsTitle = document.querySelector('.loot-box-collections-title');
@@ -7048,7 +7049,8 @@
             if (!userGiftId) return;
             pendingLootBoxRewardId = null;
             try {
-                closeModal('loot-box-modal');
+                // Betting from a loot-box result must not navigate away from the box.
+                // Keep the loot-box modal visible while the gift is submitted/queued.
                 selectedGiftId = Number(userGiftId);
                 selectedGiftForBet = {
                     id: Number(userGiftId),
