@@ -11888,6 +11888,31 @@
             if (Number.isFinite(value) && value > 100000) this.value = "100000";
         });
 
+        function initTelegramChrome() {
+            const webApp = window.Telegram?.WebApp;
+            if (!webApp) return;
+
+            try { webApp.ready(); } catch (e) {}
+            try { webApp.expand(); } catch (e) {}
+            try {
+                if (typeof webApp.setHeaderColor === 'function') {
+                    webApp.setHeaderColor('#050203');
+                }
+            } catch (e) {}
+            try {
+                if (typeof webApp.setBackgroundColor === 'function') {
+                    webApp.setBackgroundColor('#050203');
+                }
+            } catch (e) {}
+            try {
+                if (typeof webApp.requestFullscreen === 'function' && !webApp.isFullscreen) {
+                    webApp.requestFullscreen();
+                }
+            } catch (e) {
+                // Older Telegram clients simply keep the normal Mini App header.
+            }
+        }
+
         async function authenticateUser() {
             // Telegram Mini App auth must use signed initData. Read the WebApp object
             // dynamically because Telegram can finish initializing it after page load.
