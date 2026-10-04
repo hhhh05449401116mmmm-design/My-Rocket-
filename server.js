@@ -4844,6 +4844,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                 value: reward.rewardType === 'ton' ? reward.value : Number(gift.value || 0),
                 image: reward.rewardType === 'ton' ? reward.image : (gift.image_url || reward.image),
                 userGiftId: userGift?.id || null,
+                lootBoxLockedUntil: userGift?.loot_box_locked_until || null,
                 balance: Number(await getUserBalance(req.user.id) || 0)
             };
         });
