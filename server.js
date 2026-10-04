@@ -2580,7 +2580,7 @@ function buildCollectibleApiRow(row, req) {
         imageUrl,
         rarity: row.rarity || model.rarity || 'common',
         value: Number(row.collectible_market_value ?? row.market_value ?? row.value ?? 0),
-        sellValue: isPendingGiftReward ? 0 : Number((Number(row.collectible_market_value ?? row.value ?? 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
+        sellValue: Number((Number(row.collectible_market_value ?? row.market_value ?? row.value ?? 0) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
         status: row.ownership_status,
         verifiedMetadata: isPendingGiftReward ? null : row.verified_metadata,
         receivedAt: row.received_at
