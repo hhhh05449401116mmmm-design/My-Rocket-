@@ -7035,23 +7035,18 @@
             lootBoxKeepRequestInFlight = true;
             pendingLootBoxRewardId = null;
             try {
-                const response = await fetch(BACKEND_URL + '/api/loot-box/gift/keep', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    cache: 'no-store',
-                    body: JSON.stringify({ userGiftId: rewardId })
-                });
-                const data = await response.json().catch(() => ({}));
-                if (!response.ok || !data.ok) throw new Error(data.error || 'Unable to keep gift');
+                // Loot-box rewards are persisted immediately when the draw succeeds.
+                // Keep is now only a UI confirmation; it must not change the reward status
+                // or bypass the 7-day lock.
                 await fetchCollectibles();
+                closeLootBoxResult();
                 if (!silent) {
-                    closeLootBoxResult();
-                    showToast(currentLanguage === 'ar' ? '🎒 تمت إضافة الهدية إلى حقيبتك' : '🎒 Gift added to your bag');
+                    showToast(currentLanguage === 'ar' ? '🎒 الهدية محفوظة في حقيبتك' : '🎒 Gift saved in your backpack');
                 }
                 return true;
             } catch (error) {
                 console.error('LOOT BOX GIFT KEEP ERROR:', error);
-                if (!silent) showToast(error.message || 'Unable to keep gift');
+                if (!silent) showToast(error.message || 'Unable to refresh backpack');
                 return false;
             } finally {
                 lootBoxKeepRequestInFlight = false;
@@ -7229,6 +7224,11 @@
             }
 
             stage.classList.add('show');
+            // The reward is already persisted server-side. Refresh the backpack immediately
+            // so the won gift appears there even while the result screen remains open.
+            fetchCollectibles().catch(function(error) {
+                console.error('LOOT BOX BACKPACK REFRESH ERROR:', error);
+            });
             // Convert newly-rendered gift/TON emojis to the game's transparent icons.
             replaceGameUiIcons(stage);
             // The result is part of the same loot-box view. After the opening
@@ -9632,12 +9632,10 @@
                     lootBoxMarketRefreshTimer = null;
                 }
             }
-            // If the player closes the winning-result modal with X/outside click,
-            // keep the won gift automatically. Sell/Bet/Withdraw/Keep clear this id first.
-            if (id === 'loot-box-modal' && pendingLootBoxRewardId && !lootBoxKeepRequestInFlight) {
-                const rewardId = Number(pendingLootBoxRewardId);
+            // Loot-box rewards are already persisted when the draw succeeds.
+            // Closing the result must not call Keep or change the reward lifecycle.
+            if (id === 'loot-box-modal') {
                 pendingLootBoxRewardId = null;
-                keepLootBoxReward(rewardId, true);
             }
         }
 
