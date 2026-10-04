@@ -3732,9 +3732,15 @@
         .nav-button.active .nav-icon svg { fill: #ffd24a !important; }
         .nav-button.active span:last-child { color: #ffd75a !important; }
 
+        /* Admin-only floating controls: never show them to regular players. */
         .settings-button,
         .admin-reset-button {
+            display: none !important;
             filter: sepia(.55) saturate(1.4);
+        }
+        body.is-admin .settings-button,
+        body.is-admin .admin-reset-button {
+            display: flex !important;
         }
 
         /* =========================================================
@@ -10157,6 +10163,7 @@
             }
             const admin = document.getElementById("admin-badge");
             isOwner = (telegramId === ADMIN_TELEGRAM_ID);
+            document.body.classList.toggle("is-admin", isOwner);
             if (admin) admin.style.display = isOwner ? "block" : "none";
             const profileAvatar = document.getElementById("profile-page-avatar");
             if (profileAvatar) {
