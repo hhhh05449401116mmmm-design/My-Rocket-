@@ -2551,6 +2551,8 @@ function buildCollectibleApiRow(row, req) {
         id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
         pendingWithdrawal: isPendingGiftReward,
+        lootBoxLocked: isLootBoxGiftLocked(row),
+        lootBoxLockedUntil: row.loot_box_locked_until || null,
         name: row.name || metadata.uniqueName || metadata.baseName || 'Telegram Gift',
         baseName: isPendingGiftReward ? (row.name || null) : (metadata.baseName || row.name || null),
         uniqueName: isPendingGiftReward ? null : (metadata.uniqueName || row.name || null),
@@ -4638,6 +4640,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     image_url: paidBoxGiftImage(gift.name),
                     userGiftId: userGift?.id || null,
                     pending: true,
+                    lootBoxLockedUntil: userGift?.loot_box_locked_until || null,
                     marketValue: giftMarketValue,
                     sellValue: Number((giftMarketValue * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2))
                 } : null,
@@ -4961,6 +4964,7 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
                 gift: {
                     ...selectedGift,
                     userGiftId: userGift.id,
+                    lootBoxLockedUntil: userGift.loot_box_locked_until || null,
                     image_url: selectedCatalogItem.image || selectedGift.image_url,
                     backdrop: selectedCatalogItem.backdrop || null,
                     marketValue: marketValueTon,
