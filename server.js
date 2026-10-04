@@ -274,6 +274,7 @@ const {
     addGiftToUser,
     addLootBoxGiftToUser,
     sellLootBoxGiftForBalance,
+    markGiftAsLootBoxReward,
     isLootBoxGiftLocked,
     updateGiftStatus,
     getUserCollectibles,
@@ -3394,13 +3395,11 @@ app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
         if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
 
-        const result = await run(
-            `UPDATE user_gifts
-             SET status = 'OWNED', updated_at = CURRENT_TIMESTAMP
-             WHERE id = ? AND user_id = ? AND status = 'WON'`,
+        const reward = await get(
+            `SELECT * FROM user_gifts WHERE id = ? AND user_id = ? AND status = 'WON' LIMIT 1`,
             [userGiftId, req.user.id]
         );
-        if (result.changes !== 1) {
+        if (!reward) {
             return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
         }
 
@@ -4818,6 +4817,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                 }
 
                 userGift = await addGiftToUser(req.user.id, gift.id);
+                await markGiftAsLootBoxReward(userGift.id);
             }
 
             const lootbox = await get('SELECT id FROM lootboxes WHERE name = ? LIMIT 1', [boxId === 'free24' ? 'FREE24' : 'FREE']);
@@ -4988,6 +4988,7 @@ app.post('/api/lootbox/open', authenticate, async (req, res) => {
         }
 
         const result = await openLootbox(req.user.id, boxId);
+        if (result?.userGiftId) await markGiftAsLootBoxReward(result.userGiftId);
         
         // إنشاء إشعار
         await createNotification(
