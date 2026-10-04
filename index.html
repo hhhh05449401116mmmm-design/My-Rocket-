@@ -11947,6 +11947,8 @@
 
             syncTelegramContentSafeArea();
             try { webApp.onEvent('contentSafeAreaChanged', syncTelegramContentSafeArea); } catch (e) {}
+            try { webApp.onEvent('safeAreaChanged', syncTelegramContentSafeArea); } catch (e) {}
+            try { webApp.onEvent('fullscreenChanged', syncTelegramContentSafeArea); } catch (e) {}
 
             try {
                 if (typeof webApp.requestFullscreen === 'function' && !webApp.isFullscreen) {
