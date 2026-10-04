@@ -1991,9 +1991,11 @@ function buildPlayerDisplayName(firstName, lastName) {
 
 async function refreshRoundPlayers() {
     const rows = await getRoundPlayers(currentGameState.roundId);
-    const queuedRows = currentGameState.phase === 'FLIGHT'
-        ? (await getQueuedTonBetsForRound(currentGameState.roundId + 1)).concat(await getQueuedGiftBetsForRound(currentGameState.roundId + 1))
-        : [];
+    const queuedRoundId = currentGameState.phase === 'FLIGHT'
+        ? currentGameState.roundId + 1
+        : currentGameState.roundId;
+    const queuedRows = (await getQueuedTonBetsForRound(queuedRoundId))
+        .concat(await getQueuedGiftBetsForRound(queuedRoundId));
     currentGameState.players = rows.concat(queuedRows).map(row => ({
         id: `${row.bet_type}:${row.bet_id}`,
         name: buildPlayerDisplayName(row.first_name, row.last_name),

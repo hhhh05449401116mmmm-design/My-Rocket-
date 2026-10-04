@@ -8702,6 +8702,14 @@
                 // renderer can show it immediately on the first flight frame.
                 gamePhase = "FLIGHT";
                 prepareTelegramRocketForRound(currentRoundId);
+
+                // Queued bets are promoted by the server before FLIGHT is exposed.
+                // Re-sync immediately on this phase transition so a queued bet becomes
+                // ACTIVE/Cash Out instead of remaining visually stuck on Cancel Bet.
+                if (previousPhase !== "FLIGHT" && (isQueuedForNextRound || currentBetType === "TON")) {
+                    syncCurrentTonBet();
+                    syncCurrentGiftBet();
+                }
             }
             if (state.phase === "CRASH") {
                 gamePhase = "CRASH";
