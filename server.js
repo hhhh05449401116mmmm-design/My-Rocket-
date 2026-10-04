@@ -3392,16 +3392,15 @@ app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
         }
 
-        const reward = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ? AND status = \'WON\' LIMIT 1', [userGiftId, req.user.id]);
-        if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
-        if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
-
         const reward = await get(
             `SELECT * FROM user_gifts WHERE id = ? AND user_id = ? AND status = 'WON' LIMIT 1`,
             [userGiftId, req.user.id]
         );
         if (!reward) {
             return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
+        }
+        if (isLootBoxGiftLocked(reward)) {
+            return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
         }
 
         const gift = await get(
