@@ -10367,7 +10367,7 @@
                     : `<span class="emoji" style="font-size:36px;display:block;margin-bottom:4px;">🎁</span>`;
                 const isInBet = item.status === "IN_BET";
                 const isPendingReward = item.pendingWithdrawal === true;
-                const isLootBoxReward = isPendingReward && !!item.lootBoxLockedUntil;
+                const isLootBoxReward = item.lootBoxReward === true || (isPendingReward && !!item.lootBoxLockedUntil);
                 const isLootBoxLocked = item.lootBoxLocked === true;
                 const disabledAttr = isInBet || isLootBoxLocked ? "disabled" : "";
                 const lootBoxLockLabel = isLootBoxLocked
