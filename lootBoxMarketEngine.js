@@ -18,6 +18,7 @@ let marketCache = null;
 let marketCacheAt = 0;
 let refreshInFlight = null;
 const modelMarketCache = new Map();
+const modelMarketInFlight = new Map();
 
 function normalize(value) {
     return String(value || '')
@@ -171,32 +172,42 @@ async function getModelMarketPrice(item) {
     const cached = modelMarketCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-    try {
-        const payload = await fetchJson(
-            UNIQUE_PRICE_URL + '?collection_name=' + encodeURIComponent(collectionName)
-        );
-        const models = payload?.models_prices?.[collectionName]?.models || {};
-        const entry = Object.entries(models).find(([name]) => normalize(name) === normalize(modelName));
-        if (!entry) return null;
+    const inFlight = modelMarketInFlight.get(cacheKey);
+    if (inFlight) return inFlight;
 
-        const prices = entry[1] || {};
-        const candidates = ['telegram', 'getgems', 'mrkt', 'portals', 'tonnel']
-            .map(provider => Number(prices[provider]))
-            .filter(value => Number.isFinite(value) && value > 0);
-        if (!candidates.length) return null;
+    const request = (async () => {
+        try {
+            const payload = await fetchJson(
+                UNIQUE_PRICE_URL + '?collection_name=' + encodeURIComponent(collectionName)
+            );
+            const models = payload?.models_prices?.[collectionName]?.models || {};
+            const entry = Object.entries(models).find(([name]) => normalize(name) === normalize(modelName));
+            if (!entry) return null;
 
-        const value = {
-            floorPriceTon: Math.min(...candidates),
-            model: entry[0],
-            providers: prices,
-            source: 'giftasset-model-market',
-            fetchedAt: Date.now()
-        };
-        modelMarketCache.set(cacheKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
-        return value;
-    } catch (error) {
-        return null;
-    }
+            const prices = entry[1] || {};
+            const candidates = ['telegram', 'getgems', 'mrkt', 'portals', 'tonnel']
+                .map(provider => Number(prices[provider]))
+                .filter(value => Number.isFinite(value) && value > 0);
+            if (!candidates.length) return null;
+
+            const value = {
+                floorPriceTon: Math.min(...candidates),
+                model: entry[0],
+                providers: prices,
+                source: 'giftasset-model-market',
+                fetchedAt: Date.now()
+            };
+            modelMarketCache.set(cacheKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+            return value;
+        } catch (error) {
+            return null;
+        } finally {
+            modelMarketInFlight.delete(cacheKey);
+        }
+    })();
+
+    modelMarketInFlight.set(cacheKey, request);
+    return request;
 }
 
 async function getGeneralMarketPrice(item) {
