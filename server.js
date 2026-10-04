@@ -2543,7 +2543,7 @@ function buildCollectibleApiRow(row, req) {
         ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(row.name)) + '/png/Original.png'
         : null;
     const imageUrl = isPendingGiftReward
-        ? (genericGiftImage || row.image_url || null)
+        ? (row.image_url || genericGiftImage || null)
         : (row.unique_collectible_id && hasMedia
             ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
             : null);
@@ -2551,6 +2551,7 @@ function buildCollectibleApiRow(row, req) {
         id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
         pendingWithdrawal: isPendingGiftReward,
+        lootBoxReward: isPendingGiftReward && !!row.loot_box_locked_until,
         lootBoxLocked: isLootBoxGiftLocked(row),
         lootBoxLockedUntil: row.loot_box_locked_until || null,
         name: row.name || metadata.uniqueName || metadata.baseName || 'Telegram Gift',
