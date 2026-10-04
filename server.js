@@ -4200,7 +4200,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
 const PAID_LOOT_BOX_CONFIG = {
     box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [], nothingChance: 9999, giftChance: 1 },
     box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.05] },
-    box_heart: { name: 'Heart', price: 2, rarity: 'rare', tonRewards: [0.20, 0.10] },
+    box_heart: { name: 'Heart', price: 2, rarity: 'rare', tonRewards: [0.05] },
     box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.50, 0.40, 1.00, 0.20] },
     box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
     box_8:   { name: 'space',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
@@ -4213,7 +4213,7 @@ const PAID_LOOT_BOX_CONFIG = {
 };
 
 const PAID_BOX_GIFT_NAMES = {
-    box_heart: ["Heart Locket","Nail Bracelet","Toy Bear","Diamond Ring","Eternal Rose","Cupid Charm","Trapped Heart","Love Potion","Valentine Box","Love Candle","Sakura Flower","Berry Box","Bunny Muffin","Joyful Bundle","Lush Bouquet","Input Key","Spring Basket","Restless Jar","Homemade Cake","Pretty Posy","Mousse Cake","Cookie Heart","Spiced Wine","Whip Cupcake"],
+    box_heart: ["Heart Locket","Cupid Charm","Love Candle","Eternal Rose","Trapped Heart","Diamond Ring"],
     box_0_1: ["Plush Pepe","Heart Locket","Durov's Cap","Precious Peach","Scared Cat","Heroic Helmet","Loot Bag","Mighty Arm","Astral Shard","Nail Bracelet","Westside Sign","Durov's Glasses","Perfume Bottle","Ion Gem","Mini Oscar","Artisan Brick","Gem Signet","Low Rider","Swiss Watch","Magic Potion","Sharp Tongue","Kissed Frog","Bonded Ring","Vintage Cigar","Voodoo Doll","Neko Helmet","Toy Bear","Genie Lamp","Signet Ring","Diamond Ring","Rare Bird","Bling Binky","Electric Skull","Khabib's Papakha","Eternal Rose","Cupid Charm","Sky Stilettos","Trapped Heart","Ionic Dryer","UFC Strike","Snoop Cigar","Love Potion","Mad Pumpkin","Crystal Ball","Flying Broom","Record Player","Skull Flower","Valentine Box","Sakura Flower","Top Hat","Love Candle","Jingle Bells","Hanging Star","Fine Pen","Chill Flame","Instant Ramen","Pool Float","Vice Cream","Candy Cane","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Bunny Muffin","Party Sparkler","Spring Basket","Star Notepad","Bow Tie","Homemade Cake","Snow Mittens","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
     box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
