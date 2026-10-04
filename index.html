@@ -6801,7 +6801,10 @@
             }
             if (priceNote) priceNote.textContent = box.price > 0 ? box.price + ' TON' : (box.id === 'free24' ? 'FREE • 24H' : 'FREE');
             if (playButton) {
-                playButton.style.display = box.price > 0 ? 'none' : (box.id === 'free' || box.id === 'free24' ? '' : 'none');
+                playButton.style.display = box.price > 0 ? 'none' : (box.id === 'free' || box.id === 'free24' ? 'flex' : 'none');
+                playButton.className = (box.id === 'free' || box.id === 'free24')
+                    ? 'loot-box-open-button'
+                    : 'loot-box-play-button';
                 playButton.disabled = false;
                 playButton.onclick = null;
                 playButton.textContent = (box.id === 'free' || box.id === 'free24')
