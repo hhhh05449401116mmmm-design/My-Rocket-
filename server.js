@@ -4200,7 +4200,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
 const PAID_LOOT_BOX_CONFIG = {
     box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05], nothingChance: 500, giftChance: 2500 },
     box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
-    box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [] },
+    box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.50, 0.40, 1.00, 0.20] },
     box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
     box_8:   { name: 'space',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
     box_12:  { name: 'Pepe',  price: 12,  rarity: 'epic',   tonRewards: [0.60, 0.90, 1.20, 1.80] },
