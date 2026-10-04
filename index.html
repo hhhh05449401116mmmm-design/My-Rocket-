@@ -6215,6 +6215,17 @@
             }
         }
 
+        function paidLootBoxOriginalImage(item) {
+            const name = String(item && item.name || '').trim();
+            if (!name || (item && item.rewardType === 'ton')) return '/assets/ton-icon.svg';
+            return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(name) + '/png/Original.png';
+        }
+
+        function paidLootBoxImageErrorAttr(item) {
+            const fallback = escapeHtmlAttribute(paidLootBoxOriginalImage(item));
+            return ' onerror="this.onerror=null;this.src=\'' + fallback + '\';"';
+        }
+
         function paidLootBoxItemImage(item) {
             if (!item) return '/assets/ton-icon.svg';
             if (item.rewardType === 'ton') return '/assets/ton-icon.svg';
@@ -6283,7 +6294,7 @@
             // Broken CDN model URLs are replaced by the server media endpoint instead of
             // rendering the browser's broken-image "?" placeholder.
             const src = useSprite ? paidLootBoxItemImage(item) : paidLootBoxItemImage(item);
-            return '<img src="' + escapeHtmlAttribute(src) + '" alt="' + alt + '" loading="' + (loadingMode || 'lazy') + '" decoding="async">';
+            return '<img src="' + escapeHtmlAttribute(src) + '" alt="' + alt + '" loading="' + (loadingMode || 'lazy') + '" decoding="async"' + paidLootBoxImageErrorAttr(item) + '>';
         }
 
         async function refreshPaidLootBoxVariantMarketValues(box, items, collections) {
@@ -6679,7 +6690,7 @@
             featured.classList.add('show');
             featured.innerHTML =
                 '<span class="loot-box-featured-hot">● HOT</span>' +
-                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(lootBoxVisualImage(box, items[0]) || '') + '" alt="' + escapeHtmlAttribute(items[0].name || 'Gift') + '">' +
+                '<img class="loot-box-featured-image" src="' + escapeHtmlAttribute(lootBoxVisualImage(box, items[0]) || '') + '" alt="' + escapeHtmlAttribute(items[0].name || 'Gift') + '"' + paidLootBoxImageErrorAttr(items[0]) + '>' +
                 '<div class="loot-box-featured-info"><span class="loot-box-featured-label">Latest TOP drop</span><span class="loot-box-featured-name">' + escapeHtml(items[0].name || 'Gift') + '</span></div>';
             startLootBoxFeaturedLive(box);
         }
@@ -7159,7 +7170,7 @@
                 stage.innerHTML =
                     '<div class="loot-box-result">' +
                         '<div class="loot-box-result-image-wrap">' +
-                            '<img class="loot-box-result-icon" src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '" loading="eager" decoding="async">' +
+                            '<img class="loot-box-result-icon" src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(gift.name || 'Gift') + '" loading="eager" decoding="async"' + paidLootBoxImageErrorAttr(previewGift || gift) + '>' +
                             '<span class="loot-box-result-value-badge">' + escapeHtml(valueText) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' +
                         '</div>' +
                         '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'مبروك! 🎁' : 'Congratulations! 🎁') + '</div>' +
