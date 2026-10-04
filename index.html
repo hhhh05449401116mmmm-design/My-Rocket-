@@ -6791,12 +6791,10 @@
             if (data.winnerType === 'nothing') {
                 stage.innerHTML =
                     '<div class="loot-box-result loot-box-result-nothing">' +
-                        '<div class="loot-box-result-nothing-icon">—</div>' +
-                        '<div class="loot-box-result-title">' + (currentLanguage === 'ar' ? 'لم تفز بشيء' : 'Nothing') + '</div>' +
-                        '<div class="loot-box-result-value">' + (currentLanguage === 'ar' ? 'حظ أوفر في المرة القادمة' : 'Better luck next time') + '</div>' +
+                        '<div class="loot-box-result-nothing-icon">🤷‍♂️</div>' +
+                        '<div class="loot-box-result-title">Nothing</div>' +
                         '<div class="loot-box-result-actions">' +
-                            '<button class="loot-box-result-try-again" type="button" onclick="retryLootBox()">' + (currentLanguage === 'ar' ? 'حاول مرة أخرى' : 'Try Again') + '</button>' +
-                            '<button class="loot-box-result-continue" type="button" onclick="closeLootBoxResult()">' + (currentLanguage === 'ar' ? 'إغلاق' : 'Close') + '</button>' +
+                            '<button class="loot-box-result-continue" type="button" onclick="closeLootBoxResult()">Close</button>' +
                         '</div>' +
                     '</div>';
             } else if (data.winnerType === 'ton') {
