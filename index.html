@@ -6288,6 +6288,22 @@
                     };
                 }
 
+                // The winning gift must use the exact server-selected image/value.
+                // Do not replace it with a same-name frontend preview item: some boxes
+                // contain multiple variants with the same gift name.
+                const isWinningGift = winner &&
+                    winner.winnerType === 'gift' &&
+                    winner.gift &&
+                    String(winner.gift.name || '').trim() === String(item.name || '').trim();
+                if (isWinningGift) {
+                    return {
+                        name: winner.gift.name,
+                        image: winner.gift.image_url || item.image || paidLootBoxItemImage(item),
+                        rewardType: 'gift',
+                        marketValue: Number(winner.gift.marketValue || item.marketValue || 0)
+                    };
+                }
+
                 const match = previewItems.find(function(preview) {
                     return String(preview.name || '') === String(item.name || '');
                 });
@@ -6303,8 +6319,9 @@
 
                 return {
                     name: item.name || 'Gift',
-                    image: paidLootBoxItemImage(item),
-                    rewardType: 'gift'
+                    image: item.image || paidLootBoxItemImage(item),
+                    rewardType: 'gift',
+                    marketValue: Number(item.marketValue || 0)
                 };
             };
 
