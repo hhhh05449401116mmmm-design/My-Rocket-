@@ -101,12 +101,37 @@
         .app {
             width: 100%;
             max-width: 520px;
-            min-height: 100vh;
+            height: 100dvh;
+            min-height: 0;
             margin: 0 auto;
             padding-top: var(--tg-content-safe-area-inset-top, 0px);
             padding-bottom: 100px;
             position: relative;
             z-index: 2;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Keep the game header outside the active screen scroll area. */
+        .app > .header {
+            flex: 0 0 auto;
+        }
+
+        /* Only the active page/game is allowed to own vertical scrolling. */
+        .app > .game-hub,
+        .app > .playhub-screen,
+        .app > .rocket-game-container,
+        .app > .gifts-page,
+        .app > .top-page,
+        .app > .earn-page,
+        .app > .profile-page {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
         }
 
         /* =========================================================
