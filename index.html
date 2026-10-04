@@ -9,9 +9,8 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <!-- Lottie Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
-    <!-- Eruda -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+    <!-- Eruda is loaded dynamically for the admin only. -->
+
     <style>
         /* =========================================================
            BASE STYLES - PREMIUM ICE THEME
@@ -10165,6 +10164,17 @@
             isOwner = (telegramId === ADMIN_TELEGRAM_ID);
             document.body.classList.toggle("is-admin", isOwner);
             if (admin) admin.style.display = isOwner ? "block" : "none";
+
+            // Eruda is a developer/debug console. Never expose its floating button to players.
+            // Load it only after the authenticated Telegram user is confirmed as the admin.
+            if (isOwner && !window.eruda) {
+                const erudaScript = document.createElement("script");
+                erudaScript.src = "https://cdn.jsdelivr.net/npm/eruda";
+                erudaScript.onload = function() {
+                    if (window.eruda) window.eruda.init();
+                };
+                document.head.appendChild(erudaScript);
+            }
             const profileAvatar = document.getElementById("profile-page-avatar");
             if (profileAvatar) {
                 if (userPhoto) profileAvatar.src = userPhoto;
