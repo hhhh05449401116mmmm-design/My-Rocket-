@@ -4154,10 +4154,160 @@ app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
     }
 });
 
-// ===== Read-only exact variant market values for paid loot boxes =====
+// ===== Read-only exact Telegram resale prices for paid loot boxes =====
+// Prices are fetched from Telegram's own resale marketplace using the exact
+// gift type + model/backdrop/pattern attributes. Third-party market floors are
+// only used as a fallback when Telegram has no matching TON listing.
+const TELEGRAM_VARIANT_PRICE_TTL_MS = 60 * 1000;
+const telegramVariantPriceCache = new Map();
+let telegramGiftCatalogCache = null;
+let telegramGiftCatalogExpiresAt = 0;
+const telegramGiftAttributesCache = new Map();
+
+function telegramAttributeClass(attribute) {
+    return String(
+        attribute?.className ||
+        attribute?.constructor?.className ||
+        attribute?.constructor?.name ||
+        attribute?._ ||
+        ''
+    ).toLowerCase();
+}
+
+function telegramAttributeDocumentId(attribute) {
+    const document = attribute?.document;
+    return document?.id != null ? String(document.id) : null;
+}
+
+function telegramAttributeId(attribute) {
+    const cls = telegramAttributeClass(attribute);
+    if (cls.includes('model')) {
+        const documentId = telegramAttributeDocumentId(attribute);
+        return documentId ? { className: 'StarGiftAttributeIdModel', documentId: BigInt(documentId) } : null;
+    }
+    if (cls.includes('pattern')) {
+        const documentId = telegramAttributeDocumentId(attribute);
+        return documentId ? { className: 'StarGiftAttributeIdPattern', documentId: BigInt(documentId) } : null;
+    }
+    if (cls.includes('backdrop')) {
+        const backdropId = Number(attribute?.backdropId ?? attribute?.backdrop_id);
+        return Number.isInteger(backdropId) && backdropId > 0
+            ? { className: 'StarGiftAttributeIdBackdrop', backdropId }
+            : null;
+    }
+    return null;
+}
+
+function findTelegramAttribute(attributes, kind, name) {
+    const wanted = String(name || '').trim().toLowerCase();
+    if (!wanted) return null;
+    return (Array.isArray(attributes) ? attributes : []).find(attribute => {
+        const cls = telegramAttributeClass(attribute);
+        if (!cls.includes(kind)) return false;
+        return String(attribute?.name || '').trim().toLowerCase() === wanted;
+    }) || null;
+}
+
+async function getTelegramGiftCatalog() {
+    if (telegramGiftCatalogCache && telegramGiftCatalogExpiresAt > Date.now()) {
+        return telegramGiftCatalogCache;
+    }
+    const client = await ensureTelegramMtprotoClient();
+    const result = await client.api.payments.getStarGifts({ hash: 0 });
+    const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
+    telegramGiftCatalogCache = gifts;
+    telegramGiftCatalogExpiresAt = Date.now() + 30 * 60 * 1000;
+    return gifts;
+}
+
+async function getTelegramGiftAttributes(giftId) {
+    const key = String(giftId);
+    const cached = telegramGiftAttributesCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.attributes;
+    const client = await ensureTelegramMtprotoClient();
+    const result = await client.api.payments.getStarGiftUpgradeAttributes({
+        giftId: BigInt(key)
+    });
+    const attributes = Array.isArray(result?.attributes) ? result.attributes : [];
+    telegramGiftAttributesCache.set(key, {
+        attributes,
+        expiresAt: Date.now() + 30 * 60 * 1000
+    });
+    return attributes;
+}
+
+async function getExactTelegramVariantPrice({ name, modelName, backdropName, patternName }) {
+    const cacheKey = [
+        String(name || '').trim().toLowerCase(),
+        String(modelName || '').trim().toLowerCase(),
+        String(backdropName || '').trim().toLowerCase(),
+        String(patternName || '').trim().toLowerCase()
+    ].join('|');
+    const cached = telegramVariantPriceCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    const client = await ensureTelegramMtprotoClient();
+    const gifts = await getTelegramGiftCatalog();
+    const wantedName = String(name || '').trim().toLowerCase();
+    const baseGift = gifts.find(gift => String(gift?.title || '').trim().toLowerCase() === wantedName)
+        || gifts.find(gift => String(gift?.title || '').trim().toLowerCase().includes(wantedName));
+    if (!baseGift?.id) return null;
+
+    const attributes = await getTelegramGiftAttributes(baseGift.id);
+    const attributeIds = [];
+
+    if (modelName && String(modelName).trim().toLowerCase() !== 'random') {
+        const model = findTelegramAttribute(attributes, 'model', modelName);
+        const modelId = telegramAttributeId(model);
+        if (!modelId) return null;
+        attributeIds.push(modelId);
+    }
+
+    if (patternName) {
+        const pattern = findTelegramAttribute(attributes, 'pattern', patternName);
+        const patternId = telegramAttributeId(pattern);
+        if (!patternId) return null;
+        attributeIds.push(patternId);
+    }
+
+    if (backdropName) {
+        const backdrop = findTelegramAttribute(attributes, 'backdrop', backdropName);
+        const backdropId = telegramAttributeId(backdrop);
+        if (!backdropId) return null;
+        attributeIds.push(backdropId);
+    }
+
+    const result = await client.api.payments.getResaleStarGifts({
+        giftId: BigInt(String(baseGift.id)),
+        sortByPrice: true,
+        starsOnly: false,
+        ...(attributeIds.length ? { attributes: attributeIds } : {}),
+        offset: '',
+        limit: 100
+    });
+
+    const resaleGifts = Array.isArray(result?.gifts) ? result.gifts : [];
+    const tonPrices = resaleGifts
+        .map(gift => findTonAmount(gift?.resellAmount || gift?.resell_amount))
+        .filter(price => Number.isFinite(price) && price > 0);
+
+    if (!tonPrices.length) return null;
+
+    const value = {
+        value: Number(Math.min(...tonPrices).toFixed(9)),
+        currency: 'TON',
+        source: 'telegram-live-exact-variant-floor',
+        fetchedAt: Date.now()
+    };
+    telegramVariantPriceCache.set(cacheKey, {
+        value,
+        expiresAt: Date.now() + TELEGRAM_VARIANT_PRICE_TTL_MS
+    });
+    return value;
+}
+
 app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
     try {
-        await ensureGiftMarketCache();
         let variants = [];
         try {
             variants = JSON.parse(String(req.query?.variants || '[]'));
@@ -4168,30 +4318,54 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
         for (const variant of variants.slice(0, 250)) {
             const name = String(variant?.name || '').trim();
             if (!name) continue;
-            const market = await getModelMarketPrice({
-                name,
-                label: variant?.label || null,
-                model_name: variant?.model_name || null,
-                backdrop: variant?.backdrop || null,
-                baseName: name
-            }) || await getCollectibleVariantMarketValue({
-                name,
-                label: variant?.label || null,
-                model_name: variant?.model_name || null,
-                backdrop: variant?.backdrop || null
-            });
+
+            let market = null;
+            try {
+                market = await getExactTelegramVariantPrice({
+                    name,
+                    modelName: variant?.model_name || variant?.label || null,
+                    backdropName: variant?.backdrop || null,
+                    patternName: variant?.pattern || variant?.pattern_name || null
+                });
+            } catch (error) {
+                console.warn('Telegram exact variant price lookup failed:', name, error.message);
+            }
+
+            if (!market) {
+                market = await getModelMarketPrice({
+                    name,
+                    label: variant?.label || null,
+                    model_name: variant?.model_name || null,
+                    backdrop: variant?.backdrop || null,
+                    baseName: name
+                }) || await getCollectibleVariantMarketValue({
+                    name,
+                    label: variant?.label || null,
+                    model_name: variant?.model_name || null,
+                    backdrop: variant?.backdrop || null
+                });
+            }
+
             items.push({
                 key: String(variant?.key || ''),
                 name,
                 label: variant?.label || null,
                 backdrop: variant?.backdrop || null,
-                marketValueTon: Number(market?.floorPriceTon || 0),
+                pattern: variant?.pattern || variant?.pattern_name || null,
+                marketValueTon: Number(market?.value ?? market?.floorPriceTon ?? 0),
                 source: market?.source || null,
-                lastUpdated: market?.lastUpdated || null
+                lastUpdated: market?.fetchedAt || market?.lastUpdated || null
             });
         }
-        res.json({ ok: true, items, available: items.some(item => item.marketValueTon > 0) });
+
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({
+            ok: true,
+            items,
+            available: items.some(item => item.marketValueTon > 0)
+        });
     } catch (error) {
+        console.error('Telegram exact loot-box market pricing failed:', error.message);
         res.status(200).json({ ok: true, items: [], available: false });
     }
 });
