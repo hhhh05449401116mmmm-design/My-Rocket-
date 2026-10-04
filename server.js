@@ -1496,6 +1496,62 @@ async function getTelegramRocketMedia(documentId) {
     return entry;
 }
 
+// Public, privacy-safe recent loot-box wins for the live HOT card.
+// Only reward data is exposed; user identity is never returned.
+app.get('/api/loot-box/recent-wins', async (req, res) => {
+    try {
+        const requestedBox = String(req.query?.boxName || '').trim();
+        const rows = await query(`
+            SELECT n.type, n.message, n.data, n.created_at,
+                   g.name AS gift_name, g.image_url AS gift_image, g.value AS gift_value
+            FROM notifications n
+            LEFT JOIN gifts g
+              ON g.id = CASE
+                    WHEN n.type = 'GIFT_WON'
+                    THEN CAST(json_extract(n.data, '$.giftId') AS INTEGER)
+                    ELSE NULL
+                 END
+            WHERE n.type IN ('GIFT_WON', 'BALANCE_WON')
+            ORDER BY n.created_at DESC
+            LIMIT 100
+        `);
+
+        const wins = [];
+        for (const row of rows) {
+            let data = {};
+            try { data = row.data ? JSON.parse(row.data) : {}; } catch {}
+
+            const source = String(data.source || '');
+            if (source !== 'paid-loot-box' && source !== 'free-box') continue;
+
+            const boxName = String(data.boxName || '').trim();
+            if (requestedBox && boxName !== requestedBox) continue;
+
+            const isTon = row.type === 'BALANCE_WON' || Number(data.tonReward) > 0;
+            const value = isTon
+                ? Number(data.tonReward || 0)
+                : Number(row.gift_value || 0);
+
+            wins.push({
+                type: isTon ? 'ton' : 'gift',
+                name: isTon ? 'TON' : (row.gift_name || 'Gift'),
+                image: isTon ? '/assets/ton-icon.svg' : (row.gift_image || null),
+                value: Number.isFinite(value) ? value : 0,
+                boxName,
+                createdAt: row.created_at
+            });
+
+            if (wins.length >= 12) break;
+        }
+
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ ok: true, wins });
+    } catch (error) {
+        console.error('Recent loot-box wins failed:', error.message);
+        res.status(200).json({ ok: true, wins: [] });
+    }
+});
+
 app.get('/api/rocket-gifts', async (req, res) => {
     try {
         const catalog = await refreshTelegramRocketCatalog();
