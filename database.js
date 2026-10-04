@@ -1412,7 +1412,7 @@ async function getUserCollectibles(userId, status = 'ACTIVE') {
     `;
     const params = [userId];
     if (status === 'ACTIVE') {
-        sql += " AND ug.status IN ('OWNED', 'IN_BET', 'LOCKED')";
+        sql += " AND (ug.status IN ('OWNED', 'IN_BET', 'LOCKED') OR (ug.status = 'WON' AND ug.loot_box_locked_until IS NOT NULL))";
     } else if (status) {
         sql += ' AND ug.status = ?';
         params.push(status);
@@ -1846,12 +1846,14 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
         }
 
         const giftValue = userGift.gift_value || 0;
+        const lootBoxLocked = isLootBoxGiftLocked(userGift);
+        if (lootBoxLocked) throw new Error('This loot-box gift is locked for 7 days');
         
         // 3. قفل الهدية
         const update = await run(`
             UPDATE user_gifts 
             SET status = 'IN_BET', market_value_snapshot = ?, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ? AND status = 'OWNED'
+            WHERE id = ? AND status IN ('OWNED', 'WON')
         `, [giftValue, userGift.id]);
 
         if (update.changes !== 1) throw new Error('Collectible was reserved concurrently');
