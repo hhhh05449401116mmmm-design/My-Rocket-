@@ -5949,25 +5949,29 @@
             const items = paidLootBoxDisplayItems(box);
 
             strip.innerHTML = items.map(function(item) {
-                return '<div class="loot-box-modal-strip-item gift">' +
-                    '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="eager" decoding="async">' +
+                const isTonReward = item.rewardType === 'ton';
+                const image = isTonReward ? '/assets/ton-icon.svg' : paidLootBox100GiftImage(item);
+                return '<div class="loot-box-modal-strip-item ' + (isTonReward ? 'ton' : 'gift') + '">' +
+                    '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="eager" decoding="async">' +
                 '</div>';
             }).join('');
 
             collections.innerHTML = items.length
                 ? items.map(function(item, index) {
+                    const isTonReward = item.rewardType === 'ton';
                     const value = Number(item.marketValueTon);
                     const hasMarket = Number.isFinite(value) && value > 0;
-                    const valueText = hasMarket ? value.toFixed(2) : '—';
-                    return '<div class="loot-box-collectible' + (item.backdrop ? ' black-backdrop' : '') + '" data-box-100-index="' + index + '">' +
+                    const valueText = hasMarket ? value.toFixed(2) : (isTonReward ? Number(item.value).toFixed(2) : '—');
+                    const image = isTonReward ? '/assets/ton-icon.svg' : paidLootBox100GiftImage(item);
+                    return '<div class="loot-box-collectible' + (item.backdrop ? ' black-backdrop' : '') + (isTonReward ? ' ton-reward' : '') + '" data-box-100-index="' + index + '">' +
                         '<div class="loot-box-collectible-image-wrap">' +
-                            '<img src="' + escapeHtmlAttribute(paidLootBox100GiftImage(item)) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
+                            '<img src="' + escapeHtmlAttribute(image) + '" alt="' + escapeHtmlAttribute(item.name) + '" loading="lazy" decoding="async">' +
                             '<span class="loot-box-collectible-value-badge loot-box-100-market-value">' +
                                 escapeHtml(valueText) + ' <img src="/assets/ton-icon.svg" alt="TON">' +
                             '</span>' +
                         '</div>' +
                         '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
-                        (item.backdrop ? '<span class="loot-box-collectible-random black-variant-label">' + escapeHtml(item.backdrop) + '</span>' : '<span class="loot-box-collectible-random">Random</span>') +
+                        '<span class="loot-box-collectible-random' + (isTonReward ? ' black-variant-label' : '') + '">' + escapeHtml(isTonReward ? 'Reward' : (item.backdrop || 'Random')) + '</span>' +
                     '</div>';
                 }).join('')
                 : '<div style="grid-column:1/-1;text-align:center;color:#8f8f96;padding:24px 10px;">سيتم عرض مقتنيات هذا الصندوق هنا</div>';
