@@ -274,6 +274,7 @@ const {
     addGiftToUser,
     addLootBoxGiftToUser,
     sellLootBoxGiftForBalance,
+    isLootBoxGiftLocked,
     updateGiftStatus,
     getUserCollectibles,
     getActiveCollectibleUniqueIds,
@@ -3128,6 +3129,11 @@ app.post('/api/bet/gift', authenticate, async (req, res) => {
         }
 
         const roundId = currentGameState.roundId;
+        const rewardGift = await get('SELECT ug.* FROM user_gifts ug WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ?) AND ug.status IN (\'OWNED\', \'WON\') ORDER BY ug.id DESC LIMIT 1', [req.user.id, giftId, giftId]);
+        if (rewardGift && isLootBoxGiftLocked(rewardGift)) {
+            return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: rewardGift.loot_box_locked_until });
+        }
+        const roundId = currentGameState.roundId;
         const result = await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
         await refreshRoundPlayers();
         
@@ -3384,6 +3390,10 @@ app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
         }
 
+        const reward = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ? AND status = \'WON\' LIMIT 1', [userGiftId, req.user.id]);
+        if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
+        if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
+
         const result = await run(
             `UPDATE user_gifts
              SET status = 'OWNED', updated_at = CURRENT_TIMESTAMP
@@ -3424,6 +3434,7 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
 
         const reward = await get("SELECT ug.*, g.name, COALESCE(ug.market_value, g.value) AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
+        if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
 
         const baseValue = Number(reward.value || 0);
         const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
@@ -3463,6 +3474,10 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
             if (!Number.isSafeInteger(userGiftId) || userGiftId <= 0) {
                 return res.status(400).json({ ok: false, error: 'Invalid pending gift reward' });
             }
+
+            const pendingReward = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ? LIMIT 1', [userGiftId, req.user.id]);
+            if (!pendingReward) return res.status(404).json({ ok: false, error: 'Gift reward not found' });
+            if (isLootBoxGiftLocked(pendingReward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: pendingReward.loot_box_locked_until });
 
             const reserved = await reservePendingGiftForWithdrawal(req.user.id, userGiftId);
             let selectedUniqueId = null;
