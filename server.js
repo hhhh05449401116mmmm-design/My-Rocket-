@@ -4198,7 +4198,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
 
 // ===== Server-authoritative paid loot-box roulette =====
 const PAID_LOOT_BOX_CONFIG = {
-    box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [0.01, 0.02, 0.03, 0.05], nothingChance: 500, giftChance: 2500 },
+    box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [], nothingChance: 9999, giftChance: 1 },
     box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.10, 0.15, 0.20, 0.25, 0.30] },
     box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.50, 0.40, 1.00, 0.20] },
     box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
@@ -4303,13 +4303,11 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let nothing = false;
 
             if (boxId === 'box_0_1') {
-                // Isolated 0.1 TON rule: 5% Nothing, 25% gift, 70% TON.
+                // Farm is gift-or-Nothing only: 0.01% gift, 99.99% Nothing.
                 if (roll < Number(config.nothingChance || 0)) {
                     nothing = true;
                 } else if (roll < Number(config.nothingChance || 0) + Number(config.giftChance || 0)) {
                     gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
-                } else {
-                    tonReward = config.tonRewards[crypto.randomInt(0, config.tonRewards.length)];
                 }
             } else if (roll < 7000) {
                 // Existing paid-box behavior remains unchanged for every other box.
@@ -4337,14 +4335,20 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 marketValue: item.marketValue
             }));
 
-            const reelTonItems = config.tonRewards.map(value => ({
-                name: Number(value).toFixed(2) + ' TON Balance',
-                image: '/assets/ton-icon.svg',
-                value: Number(value),
-                rewardType: 'ton'
-            }));
+            const reelNothingItem = {
+                name: 'Nothing',
+                image: null,
+                rewardType: 'nothing'
+            };
 
-            const spinItems = [...reelGiftItems, ...reelTonItems];
+            const spinItems = boxId === 'box_0_1'
+                ? [...reelGiftItems, reelNothingItem]
+                : [...reelGiftItems, ...config.tonRewards.map(value => ({
+                    name: Number(value).toFixed(2) + ' TON Balance',
+                    image: '/assets/ton-icon.svg',
+                    value: Number(value),
+                    rewardType: 'ton'
+                }))];
             if (nothing) {
                 spinItems[0] = {
                     name: 'Nothing',
