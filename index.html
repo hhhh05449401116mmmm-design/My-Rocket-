@@ -1130,6 +1130,8 @@
     height: auto;
     overflow: hidden;
     padding: 10px 8px 4px;
+    background: rgba(0, 0, 0, .58);
+    box-sizing: border-box;
 }
 #loot-box-modal .loot-box-result-stage .loot-box-result {
     max-height: 100%;
@@ -7250,6 +7252,7 @@
             }
 
             stage.classList.add('show');
+            if (topupButton) topupButton.style.display = 'none';
             // The reward is already persisted server-side. Refresh the backpack immediately
             // so the won gift appears there even while the result screen remains open.
             fetchCollectibles().catch(function(error) {
@@ -7257,21 +7260,10 @@
             });
             // Convert newly-rendered gift/TON emojis to the game's transparent icons.
             replaceGameUiIcons(stage);
-            // The result is part of the same loot-box view. After the opening
-            // finishes, restore the paid Open button so the player can open
-            // the same box again without leaving the box screen.
+            // Keep the result screen clean. The normal Open button is restored
+            // by closeLootBoxResult(), so it never remains stuck on Opening/hidden.
             if (collections) collections.style.display = 'none';
             if (collectionsTitle) collectionsTitle.style.display = 'none';
-            if (topupButton) {
-                topupButton.style.display = 'flex';
-                topupButton.disabled = false;
-                topupButton.className = 'loot-box-open-button';
-                topupButton.innerHTML = '<span>' +
-                    (currentLanguage === 'ar' ? 'فتح مقابل ' : 'Open for ') +
-                    Number(box.price || 0).toFixed(2) +
-                    ' TON</span><img src="/assets/ton-icon.svg" alt="TON" width="20" height="20">';
-                topupButton.onclick = playSelectedLootBox;
-            }
             if (playButton) playButton.style.display = 'none';
             if (priceNote) priceNote.textContent = '';
         }
