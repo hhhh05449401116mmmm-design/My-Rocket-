@@ -6348,7 +6348,19 @@
 
             strip.style.transition = 'none';
             strip.style.transform = 'translate3d(0,0,0)';
-            strip.innerHTML = sequence.map(function(item) {
+            strip.innerHTML = sequence.map(function(item, index) {
+                const targetClass = index === targetIndex ? ' loot-box-reel-target' : '';
+                return '<div class="loot-box-modal-strip-item ' + (item.rewardType === 'ton' ? 'ton' : (item.rewardType === 'nothing' ? 'nothing' : 'gift')) + targetClass + '">' +
+                    (item.rewardType === 'nothing'
+                        ? '<span class="loot-box-nothing-reel">—</span>'
+                        : paidLootBoxItemMarkup(item, item.name || 'Reward', 'eager', box && box.id === 'box_0_1')) +
+                '</div>';
+            }).join('');
+
+            // The target is aligned from its real rendered center. This avoids any
+            // mismatch caused by strip padding, flex gap, or mobile viewport width.
+            const targetCell = strip.querySelector('.loot-box-reel-target');
+            if (!targetCell) return Promise.resolve();
                 const isTon = item.rewardType === 'ton';
                 const isNothing = item.rewardType === 'nothing';
                 return '<div class="loot-box-modal-strip-item ' + (isTon ? 'ton' : (isNothing ? 'nothing' : 'gift')) + '">' +
@@ -6372,14 +6384,15 @@
                 });
             }));
 
-            // Every reel cell has a fixed 52px width, so the destination does not
-            // depend on image loading or changing DOM measurements.
-            const itemWidth = 52;
-            const gap = 6;
-            const step = itemWidth + gap;
+            // Align the exact winning cell to the center of the visible reel.
+            // Measure the real rendered geometry so the result cannot drift from the
+            // selected gift/TON on different mobile widths.
             const wrap = strip.parentElement;
-            const centerOffset = Math.max(0, ((wrap ? wrap.clientWidth : 320) / 2) - (itemWidth / 2));
-            const destination = centerOffset - (targetIndex * step);
+            const wrapRect = wrap ? wrap.getBoundingClientRect() : null;
+            const targetRect = targetCell.getBoundingClientRect();
+            const wrapCenter = wrapRect ? (wrapRect.left + wrapRect.width / 2) : 160;
+            const targetCenter = targetRect.left + targetRect.width / 2;
+            const destination = wrapCenter - targetCenter;
 
             return new Promise(function(resolve) {
                 requestAnimationFrame(function() {
@@ -6494,6 +6507,38 @@
         }
 
 
+        const PAID_LOOT_BOX_TON_REWARDS = {
+            box_2: [0.10, 0.15, 0.20, 0.25, 0.30],
+            box_2_5: [0.50, 0.40, 1.00, 0.20],
+            box_5: [0.25, 0.40, 0.60, 0.80],
+            box_8: [0.40, 0.60, 0.80, 1.20],
+            box_12: [0.60, 0.90, 1.20, 1.80],
+            box_15: [0.75, 1.10, 1.50, 2.20],
+            box_20: [1.00, 1.50, 2.00, 3.00],
+            box_25: [1.25, 2.00, 3.00, 4.00],
+            box_50: [2.50, 4.00, 6.00, 8.00],
+            box_100: [5.00, 8.00, 10.00, 15.00]
+        };
+
+        function paidLootBoxDisplayItems(box) {
+            const base = Array.isArray(box && box.collectibles) ? box.collectibles.slice() : [];
+            const tonValues = PAID_LOOT_BOX_TON_REWARDS[box && box.id] || [];
+            const existing = new Set(base.filter(Boolean).map(function(item) {
+                return item && item.rewardType === 'ton' ? Number(item.value) : null;
+            }));
+            tonValues.forEach(function(value) {
+                if (existing.has(Number(value))) return;
+                base.push({
+                    name: Number(value).toFixed(2) + ' TON Balance',
+                    image: '/assets/ton-icon.svg',
+                    value: Number(value).toFixed(2) + ' TON',
+                    rewardType: 'ton',
+                    label: 'Reward'
+                });
+            });
+            return base;
+        }
+
         function openLootBox(box) {
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
@@ -6524,13 +6569,13 @@
                 ? 'Telegram Collectibles • TON Market Value'
                 : (box.id === 'free24' ? 'Telegram Collectibles • Daily Free Box' : (box.id === 'free' ? 'Telegram Collectibles • Free Box' : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق')));
 
-            const items = Array.isArray(box.collectibles) ? box.collectibles : [];
+            const items = box.price > 0 ? paidLootBoxDisplayItems(box) : (Array.isArray(box.collectibles) ? box.collectibles : []);
             renderLootBoxFeatured(box, items);
             if (box.id === 'box_100') {
                 render100TonCollectibles(box);
                 load100TonMarketValues(box);
             } else if (box.price > 0) {
-                renderPaidLootBoxPreview(box, items, strip, collections);
+                renderPaidLootBoxPreview({ ...box, collectibles: items }, items, strip, collections);
             } else {
                 strip.innerHTML = items.map(function(item) {
                     const modelImage = item.label && item.label !== 'Random'
