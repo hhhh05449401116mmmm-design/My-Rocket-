@@ -6175,17 +6175,23 @@
             if (!strip || !collections) return;
 
             const baseItems = Array.isArray(items) ? items.slice() : [];
-            const previewItems = baseItems.concat([
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
-                { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
-            ]);
-            const reelPreviewItems = previewItems.filter(function(item) {
-                return item && item.rewardType !== 'nothing';
-            });
+            const previewItems = box.id === 'box_0_1'
+                ? baseItems.slice()
+                : baseItems.concat([
+                    { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                    { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' },
+                    { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
+                ]);
+            const reelPreviewItems = box.id === 'box_0_1'
+                ? previewItems.filter(function(item) { return item && item.rewardType !== 'nothing'; }).concat([
+                    { name: 'Nothing', image: null, rewardType: 'nothing' }
+                ])
+                : previewItems.filter(function(item) {
+                    return item && item.rewardType !== 'nothing';
+                });
 
             // The strip is intentionally fixed and repeated. It cannot be dragged.
-            // "Nothing" is shown only in Collections; it is not a fake reel slot.
+            // Farm has gifts and Nothing only; Nothing is a neutral reel outcome.
             const repeated = reelPreviewItems.length ? reelPreviewItems.concat(reelPreviewItems, reelPreviewItems) : [
                 { name: 'TON', image: '/assets/ton-icon.svg', rewardType: 'ton' }
             ];
