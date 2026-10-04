@@ -1528,14 +1528,16 @@ app.get('/api/loot-box/recent-wins', async (req, res) => {
             if (requestedBox && boxName !== requestedBox) continue;
 
             const isTon = row.type === 'BALANCE_WON' || Number(data.tonReward) > 0;
-            const value = isTon
-                ? Number(data.tonReward || 0)
-                : Number(row.gift_value || 0);
 
+            // HOT is reserved for collectible gift wins only.
+            // TON wins remain in the normal reward system but never appear in this feed.
+            if (isTon || !row.gift_name || !row.gift_image) continue;
+
+            const value = Number(row.gift_value || 0);
             wins.push({
-                type: isTon ? 'ton' : 'gift',
-                name: isTon ? 'TON' : (row.gift_name || 'Gift'),
-                image: isTon ? '/assets/ton-icon.svg' : (row.gift_image || null),
+                type: 'gift',
+                name: row.gift_name,
+                image: row.gift_image,
                 value: Number.isFinite(value) ? value : 0,
                 boxName,
                 createdAt: row.created_at
