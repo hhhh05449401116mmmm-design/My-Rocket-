@@ -4204,7 +4204,7 @@ const PAID_LOOT_BOX_CONFIG = {
     box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
     box_8:   { name: 'space',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
     box_12:  { name: 'Pepe',  price: 12,  rarity: 'epic',   tonRewards: [0.60, 0.90, 1.20, 1.80] },
-    box_15:  { name: 'Ring',  price: 15, rarity: 'epic',   tonRewards: [0.75, 1.10, 1.50, 2.20] },
+    box_15:  { name: 'Ring',  price: 15, rarity: 'epic',   tonRewards: [] },
     box_20:  { name: 'Black',  price: 20, rarity: 'epic',   tonRewards: [1.00, 1.50, 2.00, 3.00] },
     box_25:  { name: 'Cap',  price: 25, rarity: 'epic',   tonRewards: [1.25, 2.00, 3.00, 4.00] },
     box_50:  { name: 'Crazy',  price: 50, rarity: 'legendary', tonRewards: [2.50, 4.00, 6.00, 8.00] },
@@ -4216,6 +4216,7 @@ const PAID_BOX_GIFT_NAMES = {
     box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
     box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_2_5: ["Mighty Arm","Loot Bag","Durov's Glasses","Signet Ring","Scared Cat","Kissed Frog","Low Rider","Mini Oscar","Electric Skull","Astral Shard","Light Sword","Bling Binky","Toy Bear","Gem Signet","Artisan Brick","Swiss Watch","Desk Calendar"],
+    box_15: ["Heroic Helmet","Nail Bracelet","Gem Signet","Swiss Watch","Bonded Ring","Voodoo Doll","Toy Bear","Signet Ring","Diamond Ring","Eternal Rose","Cupid Charm","Mad Pumpkin","Skull Flower","Valentine Box","Sakura Flower","Hanging Star","Restless Jar","Bow Tie","Victory Medal","Ice Cream"],
     box_20: ["Scared Cat","Durov's Cap","Mighty Arm","Nail Bracelet","Ion Gem","Genie Lamp","Swiss Watch","Bonded Ring","Perfume Bottle","Magic Potion","Mini Oscar","Artisan Brick","Low Rider","Kissed Frog","Bling Binky","Neko Helmet","Khabib's Papakha","Cupid Charm","Snoop Cigar","UFC Strike","Hanging Star","Sakura Flower","Sky Stilettos","Crystal Ball","Record Player","Mad Pumpkin","Love Potion","Flying Broom","Evil Eye","Valentine Box","Sleigh Bell","Berry Box","Lunar Snake","Instant Ramen","B-Day Candle","Precious Peach","Astral Shard","Heroic Helmet","Heart Locket","Gem Signet","Westside Sign","Sharp Tongue","Loot Bag","Voodoo Doll","Vintage Cigar","Signet Ring","Electric Skull","Rare Bird","Toy Bear","Eternal Rose","Diamond Ring","Top Hat","Ionic Dryer","Trapped Heart","Skull Flower","Jingle Bells","Jolly Chimp","Snake Box","Xmas Stocking"],
     box_25: ["Heart Locket","Durov's Cap","Precious Peach","Scared Cat","Mighty Arm","Heroic Helmet","Loot Bag","Astral Shard","Perfume Bottle","Ion Gem","Artisan Brick","Magic Potion","Swiss Watch","Sharp Tongue","Kissed Frog","Vintage Cigar","Signet Ring","Genie Lamp","Rare Bird","Electric Skull","Snoop Cigar","UFC Strike","Crystal Ball","Record Player","Skull Flower","Top Hat","Jolly Chimp","Light Sword"],
     box_50: ["Plush Pepe","Heart Locket","Durov's Cap","Precious Peach","Mighty Arm","Heroic Helmet","Loot Bag","Astral Shard","Nail Bracelet","Mini Oscar","Perfume Bottle","Ion Gem","Artisan Brick","Gem Signet","Bonded Ring","Vintage Cigar","Neko Helmet","Toy Bear","Signet Ring","Rare Bird","Bling Binky","Khabib's Papakha","Cupid Charm","UFC Strike","Love Potion","Top Hat"],
@@ -4316,6 +4317,9 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 } else if (roll < Number(config.nothingChance || 0) + Number(config.giftChance || 0)) {
                     gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
                 }
+            } else if (boxId === 'box_15') {
+                // Ring is gift-only: no TON balance reward is allowed for this box.
+                gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
             } else if (roll < 7000) {
                 // TON can only come from the rewards explicitly configured for this box.
                 if (!allowedTonRewards.length) {
