@@ -438,14 +438,14 @@
           .pvp-banner {
               width: 100%;
               aspect-ratio: 1228 / 314;
-              background: linear-gradient(135deg, #b79000 0%, #ffd700 100%);
+              background: linear-gradient(135deg, #6f2cff 0%, #b14cff 100%);
               border-radius: 28px;
               margin-bottom: 0;
               cursor: pointer;
               position: relative;
               overflow: hidden;
-              border: 2px solid rgba(255, 215, 0, 0.5);
-              box-shadow: 0 12px 40px rgba(255, 215, 0, 0.3);
+              border: 2px solid rgba(177, 76, 255, 0.5);
+              box-shadow: 0 12px 40px rgba(143, 79, 240, 0.3);
               transition: all 0.3s ease;
               display: flex;
               align-items: center;
@@ -454,14 +454,14 @@
               box-sizing: border-box;
           }
           .pvp-banner:hover {
-              border-color: rgba(255, 215, 0, 0.7);
-              box-shadow: 0 16px 50px rgba(255, 215, 0, 0.4);
+              border-color: rgba(210, 140, 255, 0.7);
+              box-shadow: 0 16px 50px rgba(143, 79, 240, 0.4);
               transform: translateY(-2px);
           }
           .pvp-banner-bg {
               position: absolute;
               inset: 0;
-              background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.15), transparent 70%);
+              background: radial-gradient(circle at 50% 50%, rgba(210, 140, 255, 0.15), transparent 70%);
           }
           .pvp-banner-wheel {
               position: absolute;
@@ -471,8 +471,8 @@
               width: 72px;
               height: 72px;
               border-radius: 50%;
-              border: 4px solid rgba(255, 215, 0, 0.3);
-              background: conic-gradient(from 0deg, rgba(255,215,0,0.8), rgba(255,215,0,0.4), rgba(255,215,0,0.8));
+              border: 4px solid rgba(210,140,255,0.3);
+              background: conic-gradient(from 0deg, rgba(210,140,255,0.8), rgba(143,79,240,0.4), rgba(255,215,0,0.8));
               z-index: 1;
           }
           .pvp-banner-wheel::before {
@@ -483,9 +483,9 @@
               transform: translate(-50%, -50%);
               width: 12px;
               height: 12px;
-              background: rgba(255, 215, 0, 0.9);
+              background: rgba(235, 210, 255, 0.95);
               border-radius: 50%;
-              box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+              box-shadow: 0 0 15px rgba(177, 76, 255, 0.6);
           }
           .pvp-banner-content {
               position: relative;
@@ -499,14 +499,14 @@
           .pvp-banner-title {
               font-size: 30px;
               font-weight: 900;
-              color: #5a2a00;
+              color: #ffffff;
               letter-spacing: 2px;
-              text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+              text-shadow: 0 0 20px rgba(210, 140, 255, 0.5);
               margin: 0;
           }
           .pvp-banner-desc {
               font-size: 13px;
-              color: #5a2a00;
+              color: #f0ddff;
               margin: 4px 0;
           }
 
@@ -646,10 +646,10 @@
 
         /* Game Cards */
         .game-card-hub {
-            background: linear-gradient(145deg, #0f2847, #0a1a30);
+            background: linear-gradient(145deg, #17102f, #0c0820);
             border-radius: 24px;
             padding: 20px;
-            border: 1px solid rgba(100, 200, 255, 0.12);
+            border: 1px solid rgba(143, 79, 240, 0.18);
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 0;
@@ -667,25 +667,25 @@
             right: -50%;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at 70% 30%, rgba(100, 200, 255, 0.05), transparent 70%);
+            background: radial-gradient(circle at 70% 30%, rgba(177, 76, 255, 0.08), transparent 70%);
             pointer-events: none;
         }
         .game-card-hub:active { transform: scale(0.97); }
         .game-card-hub:hover {
-            border-color: rgba(100, 200, 255, 0.25);
-            box-shadow: 0 8px 35px rgba(50, 150, 255, 0.15);
+            border-color: rgba(177, 76, 255, 0.32);
+            box-shadow: 0 8px 35px rgba(143, 79, 240, 0.18);
         }
         .game-card-hub-icon {
             font-size: 42px;
             width: 60px;
             height: 60px;
             border-radius: 16px;
-            background: linear-gradient(135deg, #0f2847, #1a3a6c);
+            background: linear-gradient(135deg, #25134a, #4b237a);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            border: 1px solid rgba(100, 200, 255, 0.1);
+            border: 1px solid rgba(177, 76, 255, 0.16);
         }
         .game-card-hub-info { flex: 1; }
         .game-card-hub-info h3 {
@@ -696,17 +696,17 @@
         }
         .game-card-hub-info p {
             margin: 0;
-            color: #7a9bcb;
+            color: #b7a6d6;
             font-size: 12px;
         }
         .game-card-hub-badge {
-            background: linear-gradient(135deg, rgba(100, 200, 255, 0.15), rgba(50, 150, 255, 0.05));
-            color: #4fc3f7;
+            background: linear-gradient(135deg, rgba(177, 76, 255, 0.18), rgba(143, 79, 240, 0.07));
+            color: #d9b7ff;
             padding: 4px 14px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
-            border: 1px solid rgba(100, 200, 255, 0.1);
+            border: 1px solid rgba(177, 76, 255, 0.16);
         }
 
         /* =========================================================
@@ -2672,33 +2672,33 @@
         .top-page-header .spender-refresh { width:40px; height:40px; border-radius:12px; background:rgba(128,105,223,.12); border:1px solid rgba(154,124,242,.35); }
         .invite-page { padding-top:10px; }
         .invite-hero { text-align:center; padding:18px 12px 12px; }
-        .invite-kicker { color:#d59a6d; font-size:10px; letter-spacing:2.5px; font-weight:900; }
+        .invite-kicker { color:#caa7ff; font-size:10px; letter-spacing:2.5px; font-weight:900; }
         .invite-hero h2 { margin:5px 0 4px; font-size:25px; font-weight:900; color:#fff; }
-        .invite-hero p { margin:0; color:#a6a6ad; font-size:12px; }
+        .invite-hero p { margin:0; color:#b6a9c9; font-size:12px; }
         .invite-banner,.invite-actions-card,.invite-stats-card {
             margin:12px 0;
             padding:18px;
             border-radius:20px;
-            background:#35150b;
-            border:1px solid rgba(210,120,45,.30);
-            box-shadow:inset 0 0 0 1px rgba(255,155,70,.035);
+            background:#24133d;
+            border:1px solid rgba(177,76,255,.30);
+            box-shadow:inset 0 0 0 1px rgba(210,140,255,.035);
         }
         .invite-banner { display:flex; align-items:center; gap:14px; position:relative; }
         .invite-banner-icon {
             width:60px; height:60px; border-radius:17px; display:grid; place-items:center;
-            background:#e7a91f;
-            border:1px solid rgba(255,214,102,.65);
-            box-shadow:0 0 14px rgba(231,169,31,.16);
+            background:linear-gradient(135deg,#7b2cff,#b14cff);
+            border:1px solid rgba(220,170,255,.65);
+            box-shadow:0 0 14px rgba(177,76,255,.22);
             font-size:29px;
         }
         .invite-banner strong { display:block; font-size:22px; color:#fff; }
-        .invite-banner strong b { color:#e7a91f; }
-        .invite-banner span { display:block; color:#d59a6d; font-size:11px; line-height:1.6; margin-top:3px; padding-right:22px; }
+        .invite-banner strong b { color:#d6a7ff; }
+        .invite-banner span { display:block; color:#caa7e8; font-size:11px; line-height:1.6; margin-top:3px; padding-right:22px; }
         .invite-help {
             position:absolute; right:10px; top:10px; width:38px; height:38px; border-radius:11px;
-            border:1px solid rgba(231,169,31,.62);
-            background:rgba(231,169,31,.12);
-            color:#e7a91f;
+            border:1px solid rgba(210,140,255,.62);
+            background:rgba(177,76,255,.12);
+            color:#d6a7ff;
             font-weight:900;
         }
         .invite-actions-card { display:flex; flex-direction:column; gap:10px; }
@@ -2707,23 +2707,23 @@
             display:flex; align-items:center; justify-content:center; gap:10px;
         }
         .invite-main-btn {
-            background:#e7a91f;
-            color:#241407;
-            border:1px solid rgba(255,214,102,.72);
-            box-shadow:0 0 16px rgba(231,169,31,.14);
+            background:linear-gradient(135deg,#7b2cff,#b14cff);
+            color:#ffffff;
+            border:1px solid rgba(220,170,255,.72);
+            box-shadow:0 0 16px rgba(177,76,255,.18);
         }
-        .invite-main-btn span,.invite-main-btn strong { color:#241407; }
+        .invite-main-btn span,.invite-main-btn strong { color:#fff; }
         .invite-copy-btn {
-            background:#35150b;
-            color:#f0b37d;
-            border:1px solid rgba(210,120,45,.42);
+            background:#24133d;
+            color:#d6b8f5;
+            border:1px solid rgba(177,76,255,.42);
         }
-        .invite-copy-btn span,.invite-copy-btn strong { color:#f0b37d; }
-        .referral-link-preview { color:#85818d; font-size:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:ltr; text-align:center; }
+        .invite-copy-btn span,.invite-copy-btn strong { color:#d6b8f5; }
+        .referral-link-preview { color:#9587a6; font-size:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:ltr; text-align:center; }
         .invite-stats-card > div { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.07); }
         .invite-stats-card > div:last-child { border-bottom:0; }
-        .invite-stats-card span { color:#a6a6ad; font-size:13px; }
-        .invite-stats-card strong { color:#e7a91f; font-size:17px; direction:ltr; }
+        .invite-stats-card span { color:#b6a9c9; font-size:13px; }
+        .invite-stats-card strong { color:#d6a7ff; font-size:17px; direction:ltr; }
 
         .weekly-leaderboard-hero { margin:12px 0 8px; padding:18px 18px 16px; border-radius:24px; background:linear-gradient(145deg,#15162a,#10111e 65%,#17142a); border:1px solid rgba(142,111,255,.18); box-shadow:0 14px 35px rgba(0,0,0,.22); }
         .weekly-leaderboard-title-row { display:flex; align-items:center; gap:12px; }
