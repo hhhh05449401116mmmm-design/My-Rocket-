@@ -6704,6 +6704,7 @@
         }
 
         function openLootBox(box) {
+            const t = translations[currentLanguage] || translations.ar;
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
                 lootBoxMarketRefreshTimer = null;
