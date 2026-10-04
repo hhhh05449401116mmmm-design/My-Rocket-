@@ -4513,10 +4513,53 @@ function freeBoxRewardKey(name) {
     return 'free-box-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+app.get('/api/loot-box/free/status', authenticate, async (req, res) => {
+    try {
+        const row = await get(
+            `SELECT lh.created_at
+             FROM lootbox_history lh
+             JOIN lootboxes lb ON lb.id = lh.lootbox_id
+             WHERE lh.user_id = ? AND lh.status = 'OPENED' AND lb.name = 'FREE'
+             ORDER BY lh.id DESC LIMIT 1`,
+            [req.user.id]
+        );
+        if (!row) return res.json({ ok: true, available: true, nextAvailableAt: null });
+
+        const openedAt = new Date(String(row.created_at).replace(' ', 'T') + 'Z').getTime();
+        const nextAvailableAt = openedAt + 24 * 60 * 60 * 1000;
+        if (!Number.isFinite(openedAt) || Date.now() >= nextAvailableAt) {
+            return res.json({ ok: true, available: true, nextAvailableAt: null });
+        }
+        return res.json({ ok: true, available: false, nextAvailableAt: new Date(nextAvailableAt).toISOString() });
+    } catch (error) {
+        console.error('Free loot-box status failed:', error.message);
+        res.status(500).json({ ok: false, error: 'Unable to check free box status' });
+    }
+});
+
 app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
     try {
         const boxId = req.body?.boxId === 'free24' ? 'free24' : 'free';
         const result = await transaction(async () => {
+            const latestOpen = await get(
+                `SELECT lh.created_at
+                 FROM lootbox_history lh
+                 JOIN lootboxes lb ON lb.id = lh.lootbox_id
+                 WHERE lh.user_id = ? AND lh.status = 'OPENED' AND lb.name = 'FREE'
+                 ORDER BY lh.id DESC LIMIT 1`,
+                [req.user.id]
+            );
+            if (latestOpen) {
+                const openedAt = new Date(String(latestOpen.created_at).replace(' ', 'T') + 'Z').getTime();
+                const nextAvailableAt = openedAt + 24 * 60 * 60 * 1000;
+                if (Number.isFinite(openedAt) && Date.now() < nextAvailableAt) {
+                    const cooldownError = new Error('Free box is available once every 24 hours');
+                    cooldownError.statusCode = 429;
+                    cooldownError.nextAvailableAt = new Date(nextAvailableAt).toISOString();
+                    throw cooldownError;
+                }
+            }
+
             // Provision the isolated FREE catalog lazily on first claim so the 28
             // collectible rewards are all real inventory records without touching global seeds.
             for (const catalogReward of FREE_BOX_REWARDS) {
@@ -4623,7 +4666,11 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
         res.json({ ok: true, boxId, gift: result });
     } catch (error) {
         console.error('Free loot-box claim failed:', error.message);
-        res.status(400).json({ ok: false, error: error.message });
+        res.status(Number(error.statusCode) || 400).json({
+            ok: false,
+            error: error.message,
+            nextAvailableAt: error.nextAvailableAt || null
+        });
     }
 });
 
