@@ -118,6 +118,7 @@ async function migrateUserGiftsConstraint() {
                 ownership_verified INTEGER DEFAULT 0,
                 verified_metadata TEXT,
                 telegram_thumbnail_file_id TEXT,
+                loot_box_reward INTEGER DEFAULT 0,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE
             )
@@ -127,12 +128,12 @@ async function migrateUserGiftsConstraint() {
             INSERT INTO user_gifts_new (
                 id, user_id, gift_id, status, received_at, updated_at, loot_box_locked_until,
                 unique_collectible_id, telegram_gift_instance_id, collectible_number,
-                ownership_verified, verified_metadata, telegram_thumbnail_file_id
+                ownership_verified, verified_metadata, telegram_thumbnail_file_id, loot_box_reward
             )
             SELECT
                 id, user_id, gift_id, status, received_at, updated_at, loot_box_locked_until,
                 unique_collectible_id, telegram_gift_instance_id, collectible_number,
-                ownership_verified, verified_metadata, telegram_thumbnail_file_id
+                ownership_verified, verified_metadata, telegram_thumbnail_file_id, loot_box_reward
             FROM user_gifts
         `);
 
@@ -538,6 +539,7 @@ function initDatabase() {
                 ['ownership_verified', 'INTEGER DEFAULT 0'],
                 ['verified_metadata', 'TEXT'],
                 ['telegram_thumbnail_file_id', 'TEXT'],
+                ['loot_box_reward', 'INTEGER DEFAULT 0'],
                 ['market_value_snapshot', 'REAL'],
                 ['market_value', 'REAL']
             ];
@@ -1334,8 +1336,8 @@ async function addLootBoxGiftToUser(userId, giftId, marketValue = null) {
         ? requestedMarketValue
         : Number(gift.value || 0);
     const result = await run(`
-        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until)
-        VALUES (?, ?, 'WON', 0, ?, ?)
+        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until, loot_box_reward)
+        VALUES (?, ?, 'WON', 0, ?, ?, 1)
     `, [userId, gift.id, storedMarketValue, getLootBoxLockedUntil()]);
 
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
@@ -1383,7 +1385,7 @@ async function sellLootBoxGiftForBalance(userId, userGiftId, sellValue) {
 
 async function markGiftAsLootBoxReward(userGiftId) {
     const lockedUntil = getLootBoxLockedUntil();
-    await run('UPDATE user_gifts SET loot_box_locked_until = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND loot_box_locked_until IS NULL', [lockedUntil, userGiftId]);
+    await run('UPDATE user_gifts SET loot_box_locked_until = ?, loot_box_reward = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND loot_box_locked_until IS NULL', [lockedUntil, userGiftId]);
     return await get('SELECT * FROM user_gifts WHERE id = ?', [userGiftId]);
 }
 
@@ -1404,6 +1406,7 @@ async function getUserCollectibles(userId, status = 'ACTIVE') {
                ug.unique_collectible_id, ug.telegram_gift_instance_id,
                ug.collectible_number, ug.ownership_verified, ug.verified_metadata,
                ug.loot_box_locked_until,
+               ug.loot_box_reward,
                ug.market_value AS collectible_market_value,
                ug.received_at, ug.updated_at
         FROM user_gifts ug
