@@ -7190,11 +7190,21 @@
             }
 
             stage.classList.add('show');
-            // Do not close the loot-box modal here: the result is part of the
-            // same full-screen box view and the player decides when to leave.
+            // The result is part of the same loot-box view. After the opening
+            // finishes, restore the paid Open button so the player can open
+            // the same box again without leaving the box screen.
             if (collections) collections.style.display = 'none';
             if (collectionsTitle) collectionsTitle.style.display = 'none';
-            if (topupButton) topupButton.style.display = 'none';
+            if (topupButton) {
+                topupButton.style.display = 'flex';
+                topupButton.disabled = false;
+                topupButton.className = 'loot-box-open-button';
+                topupButton.innerHTML = '<span>' +
+                    (currentLanguage === 'ar' ? 'فتح مقابل ' : 'Open for ') +
+                    Number(box.price || 0).toFixed(2) +
+                    ' TON</span><img src="/assets/ton-icon.svg" alt="TON" width="20" height="20">';
+                topupButton.onclick = playSelectedLootBox;
+            }
             if (playButton) playButton.style.display = 'none';
             if (priceNote) priceNote.textContent = '';
         }
