@@ -2604,7 +2604,7 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
         const collectibles = rows
             .filter(row =>
                 (row.ownership_verified === 1 && row.unique_collectible_id) ||
-                ((row.status === 'WON' || row.status === 'OWNED') && !row.unique_collectible_id)
+                ((row.ownership_status === 'WON' || row.ownership_status === 'OWNED') && !row.unique_collectible_id)
             )
             .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
