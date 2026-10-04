@@ -103,6 +103,7 @@
             max-width: 520px;
             min-height: 100vh;
             margin: 0 auto;
+            padding-top: var(--tg-content-safe-area-inset-top, 0px);
             padding-bottom: 100px;
             position: relative;
             z-index: 2;
@@ -11892,6 +11893,20 @@
             const webApp = window.Telegram?.WebApp;
             if (!webApp) return;
 
+            const syncTelegramContentSafeArea = () => {
+                try {
+                    const inset = webApp.contentSafeAreaInset || {};
+                    const top = Number.isFinite(Number(inset.top)) ? Math.max(0, Number(inset.top)) : 0;
+                    const bottom = Number.isFinite(Number(inset.bottom)) ? Math.max(0, Number(inset.bottom)) : 0;
+                    const left = Number.isFinite(Number(inset.left)) ? Math.max(0, Number(inset.left)) : 0;
+                    const right = Number.isFinite(Number(inset.right)) ? Math.max(0, Number(inset.right)) : 0;
+                    document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', top + 'px');
+                    document.documentElement.style.setProperty('--tg-content-safe-area-inset-bottom', bottom + 'px');
+                    document.documentElement.style.setProperty('--tg-content-safe-area-inset-left', left + 'px');
+                    document.documentElement.style.setProperty('--tg-content-safe-area-inset-right', right + 'px');
+                } catch (e) {}
+            };
+
             try { webApp.ready(); } catch (e) {}
             try { webApp.expand(); } catch (e) {}
             try {
@@ -11904,6 +11919,10 @@
                     webApp.setBackgroundColor('#050203');
                 }
             } catch (e) {}
+
+            syncTelegramContentSafeArea();
+            try { webApp.onEvent('contentSafeAreaChanged', syncTelegramContentSafeArea); } catch (e) {}
+
             try {
                 if (typeof webApp.requestFullscreen === 'function' && !webApp.isFullscreen) {
                     webApp.requestFullscreen();
