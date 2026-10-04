@@ -4393,6 +4393,50 @@
             .loot-box-back-button { min-width: 86px; padding: 0 11px; }
         }
 
+
+        /* GIFT PURPLE STARFIELD + TON GOLD CARD THEME */
+        /* Regular gifts: deep purple space background with tiny, subtle stars. */
+        .loot-box-collectible:not(.gold-frame) .loot-box-collectible-image-wrap > img:first-child {
+            background:
+                radial-gradient(circle at 14% 18%, rgba(238, 207, 255, .55) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 82% 24%, rgba(211, 157, 255, .48) 0 1px, transparent 1.7px),
+                radial-gradient(circle at 66% 72%, rgba(239, 219, 255, .42) 0 .9px, transparent 1.6px),
+                radial-gradient(circle at 28% 84%, rgba(188, 117, 255, .42) 0 1px, transparent 1.7px),
+                radial-gradient(circle at 91% 86%, rgba(231, 202, 255, .36) 0 .8px, transparent 1.5px),
+                radial-gradient(circle at 46% 43%, rgba(180, 104, 255, .20) 0 1px, transparent 2px),
+                linear-gradient(145deg, #35145a 0%, #24103f 48%, #10081f 100%) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100% !important;
+            border: 2px solid #a84dff !important;
+            box-shadow:
+                inset 0 0 22px rgba(177, 76, 255, .13),
+                inset 0 -12px 22px rgba(0, 0, 0, .22),
+                0 0 12px rgba(177, 76, 255, .12) !important;
+        }
+
+        /* TON rewards: match the dark-card + gold-frame look from the reference. */
+        .loot-box-collectible.gold-frame {
+            background: #2b2b2d !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        .loot-box-collectible.gold-frame .loot-box-collectible-image-wrap > img:first-child {
+            background: linear-gradient(145deg, #454a4d 0%, #303437 52%, #25282a 100%) !important;
+            border: 2px solid #c99b18 !important;
+            box-shadow:
+                inset 0 0 18px rgba(255, 255, 255, .035),
+                inset 0 -10px 18px rgba(0, 0, 0, .18),
+                0 0 7px rgba(255, 211, 76, .18) !important;
+            filter: drop-shadow(0 4px 7px rgba(0, 0, 0, .35)) !important;
+        }
+        .loot-box-collectible.gold-frame .loot-box-collectible-name {
+            color: #f3f3f5 !important;
+        }
+        .loot-box-collectible.gold-frame .loot-box-collectible-random {
+            color: #9b7cff !important;
+            background: #3a3549 !important;
+            border-color: rgba(143, 104, 255, .65) !important;
+        }
+
 </style>
 </head>
 <body>
