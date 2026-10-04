@@ -4818,8 +4818,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                     }
                 }
 
-                userGift = await addGiftToUser(req.user.id, gift.id);
-                await markGiftAsLootBoxReward(userGift.id);
+                userGift = await addLootBoxGiftToUser(req.user.id, gift.id, Number(gift.value || 0));
             }
 
             const lootbox = await get('SELECT id FROM lootboxes WHERE name = ? LIMIT 1', [boxId === 'free24' ? 'FREE24' : 'FREE']);
