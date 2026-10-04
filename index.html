@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <title>🚀 Rocket Ice - Premium</title>
+    <title>Crazy Rocket</title>
     <meta name="theme-color" content="#0a1628">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -11913,6 +11913,8 @@
             const value = normalizeTonAmount(this.value);
             if (Number.isFinite(value) && value > 100000) this.value = "100000";
         });
+
+        document.title = "Crazy Rocket";
 
         function initTelegramChrome() {
             const webApp = window.Telegram?.WebApp;
