@@ -321,6 +321,10 @@ const {
     queueTonBet,
     cancelQueuedTonBet,
     promoteQueuedTonBets,
+    queueGiftBet,
+    cancelQueuedGiftBet,
+    promoteQueuedGiftBets,
+    getQueuedGiftBetsForRound,
     cashoutBet,
     crashRound,
     selectRewardFromInventory,
@@ -1988,7 +1992,7 @@ function buildPlayerDisplayName(firstName, lastName) {
 async function refreshRoundPlayers() {
     const rows = await getRoundPlayers(currentGameState.roundId);
     const queuedRows = currentGameState.phase === 'FLIGHT'
-        ? await getQueuedTonBetsForRound(currentGameState.roundId + 1)
+        ? (await getQueuedTonBetsForRound(currentGameState.roundId + 1)).concat(await getQueuedGiftBetsForRound(currentGameState.roundId + 1))
         : [];
     currentGameState.players = rows.concat(queuedRows).map(row => ({
         id: `${row.bet_type}:${row.bet_id}`,
@@ -2010,9 +2014,10 @@ async function startRound(roundNumber) {
     roundTransitionTimer = null;
     const fairRound = createFairRound(roundNumber, DEFAULT_CLIENT_SEED);
     await createRoundRecord(fairRound);
-    // Queued bets are promoted before the countdown is exposed to clients.
-    // They are already funded, so no second balance deduction occurs.
+    // Queued bets are locked when the 5-second countdown starts.
+    // They are already funded/reserved, so no second deduction occurs.
     await promoteQueuedTonBets(roundNumber);
+    await promoteQueuedGiftBets(roundNumber);
 
     updateGameState({
         roundId: roundNumber,
@@ -3123,29 +3128,17 @@ app.get('/api/test/balance', authenticate, async (req, res) => {
 app.post('/api/bet/gift', authenticate, async (req, res) => {
     try {
         const { giftId, autoCashoutTarget } = req.body;
-        
-        if (!giftId) {
-            return res.status(400).json({ ok: false, error: 'giftId required' });
+        if (!giftId) return res.status(400).json({ ok: false, error: 'giftId required' });
+        const roundId = currentGameState.phase === 'FLIGHT' ? currentGameState.roundId + 1 : currentGameState.roundId;
+        if (currentGameState.phase !== 'COUNTDOWN' && currentGameState.phase !== 'FLIGHT') {
+            return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN or FLIGHT' });
         }
-
-        // التحقق من أن الجولة في مرحلة COUNTDOWN
-        if (currentGameState.phase !== 'COUNTDOWN') {
-            return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN' });
-        }
-
-        const roundId = currentGameState.roundId;
         const rewardGift = await get('SELECT ug.* FROM user_gifts ug WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ?) AND ug.status IN (\'OWNED\', \'WON\') ORDER BY ug.id DESC LIMIT 1', [req.user.id, giftId, giftId]);
-        if (rewardGift && isLootBoxGiftLocked(rewardGift)) {
-            return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: rewardGift.loot_box_locked_until });
-        }
-        const result = await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
+        if (rewardGift && isLootBoxGiftLocked(rewardGift)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: rewardGift.loot_box_locked_until });
+        const queued = currentGameState.phase === 'FLIGHT';
+        const result = queued ? await queueGiftBet(req.user.id, giftId, roundId, autoCashoutTarget) : await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
         await refreshRoundPlayers();
-        
-        res.json({ 
-            ok: true, 
-            bet: result,
-            roundId: roundId
-        });
+        res.json({ ok: true, queued, bet: result, roundId });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }
@@ -3858,6 +3851,32 @@ app.post('/api/bet/ton', authenticate, async (req, res) => {
             bet: result,
             roundId: roundId
         });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
+// ===== 5.8b Gift queued bet status/cancel =====
+app.get('/api/bet/gift/current', authenticate, async (req, res) => {
+    try {
+        const active = await get('SELECT id, round_id, gift_value_at_bet, auto_cashout_target FROM gift_bets WHERE user_id = ? AND round_id = ? AND status = \'ACTIVE\' ORDER BY id DESC LIMIT 1', [req.user.id, currentGameState.roundId]);
+        if (active) return res.json({ ok: true, state: 'active', betId: active.id, roundId: active.round_id, amount: Number(active.gift_value_at_bet), autoCashoutTarget: active.auto_cashout_target });
+        const queued = await get('SELECT id, round_id, user_gift_id, gift_value_at_bet, auto_cashout_target FROM queued_gift_bets WHERE user_id = ? AND round_id = ? AND status = \'QUEUED\' ORDER BY id DESC LIMIT 1', [req.user.id, currentGameState.roundId + 1]);
+        if (queued) return res.json({ ok: true, state: 'queued', betId: queued.id, userGiftId: queued.user_gift_id, roundId: queued.round_id, amount: Number(queued.gift_value_at_bet), autoCashoutTarget: queued.auto_cashout_target });
+        return res.json({ ok: true, state: 'none' });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/bet/gift/cancel-queued', authenticate, async (req, res) => {
+    try {
+        const { betId } = req.body;
+        if (!betId) return res.status(400).json({ ok: false, error: 'betId required' });
+        if (currentGameState.phase !== 'FLIGHT') return res.status(400).json({ ok: false, error: 'Queued bet is locked' });
+        const result = await cancelQueuedGiftBet(betId, req.user.id, currentGameState.roundId + 1);
+        await refreshRoundPlayers();
+        res.json({ ok: true, cancelled: true, ...result });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }

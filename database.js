@@ -313,6 +313,26 @@ function initDatabase() {
             `);
             db.run(`CREATE INDEX IF NOT EXISTS idx_queued_ton_bets_round ON queued_ton_bets(round_id, status)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_queued_ton_bets_user ON queued_ton_bets(user_id, status)`);
+            // Rocket-only queue for Gift bets placed during FLIGHT.
+            // The gift is reserved in user_gifts as IN_BET until cancel or promotion.
+            db.run(`
+                CREATE TABLE IF NOT EXISTS queued_gift_bets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    round_id INTEGER NOT NULL,
+                    user_gift_id INTEGER NOT NULL,
+                    gift_value_at_bet REAL NOT NULL,
+                    auto_cashout_target REAL,
+                    previous_status TEXT NOT NULL CHECK(previous_status IN ('OWNED', 'WON')),
+                    status TEXT DEFAULT 'QUEUED' CHECK(status = 'QUEUED'),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_gift_id) REFERENCES user_gifts(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_queued_gift_bets_round ON queued_gift_bets(round_id, status)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_queued_gift_bets_user ON queued_gift_bets(user_id, status)`);
             // Migration: add bet_currency column for existing databases (default TON, never affects real balance).
             db.run(`ALTER TABLE ton_bets ADD COLUMN bet_currency TEXT DEFAULT 'TON' CHECK(bet_currency IN ('TON', 'TEST'))`, error => {
                 if (error && !error.message.includes('duplicate column name')) {
@@ -2389,6 +2409,78 @@ async function getQueuedTonBetsForRound(roundId) {
     `, [roundId]);
 }
 
+// ===== Rocket queued Gift bets =====
+async function queueGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
+    const normalizedAutoCashoutTarget = normalizeAutoCashoutTarget(autoCashoutTarget);
+    return await transaction(async () => {
+        const existing = await get('SELECT id FROM queued_gift_bets WHERE user_id = ? AND status = \'QUEUED\' LIMIT 1', [userId]);
+        if (existing) throw new Error('A queued bet already exists');
+        const userGift = await get(`
+            SELECT ug.*, g.name AS gift_name, COALESCE(ug.market_value, g.value) AS gift_value
+            FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id
+            WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ? OR g.id = ? OR g.telegram_gift_id = ?)
+              AND ug.status IN ('OWNED', 'WON')
+            ORDER BY ug.ownership_verified DESC, ug.id DESC LIMIT 1
+        `, [userId, giftId, giftId, giftId, giftId]);
+        if (!userGift) throw new Error('Gift not owned or not available');
+        const isCollectible = !!userGift.unique_collectible_id && userGift.ownership_verified === 1;
+        if (isCollectible && (!Number.isFinite(userGift.gift_value) || userGift.gift_value <= 0)) throw new Error('Collectible has no valid market valuation — cannot bet');
+        const giftValue = Number(userGift.gift_value || 0);
+        if (!Number.isFinite(giftValue) || giftValue <= 0) throw new Error('Gift has no valid value');
+        if (isLootBoxGiftLocked(userGift)) throw new Error('This loot-box gift is locked for 7 days');
+        const reserve = await run(`
+            UPDATE user_gifts SET status = 'IN_BET', market_value_snapshot = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status IN ('OWNED', 'WON')
+        `, [giftValue, userGift.id]);
+        if (reserve.changes !== 1) throw new Error('Collectible was reserved concurrently');
+        const result = await run(`
+            INSERT INTO queued_gift_bets
+            (user_id, round_id, user_gift_id, gift_value_at_bet, auto_cashout_target, previous_status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [userId, roundId, userGift.id, giftValue, normalizedAutoCashoutTarget, userGift.status]);
+        return { betId: result.lastID, userGiftId: userGift.id, giftName: userGift.gift_name, giftValue, roundId, status: 'QUEUED' };
+    });
+}
+
+async function cancelQueuedGiftBet(betId, userId, roundId) {
+    return await transaction(async () => {
+        const queued = await get(`SELECT * FROM queued_gift_bets WHERE id = ? AND user_id = ? AND round_id = ? AND status = 'QUEUED'`, [betId, userId, roundId]);
+        if (!queued) throw new Error('Queued gift bet not found or already locked');
+        const deleted = await run('DELETE FROM queued_gift_bets WHERE id = ? AND status = \'QUEUED\'', [betId]);
+        if (deleted.changes !== 1) throw new Error('Queued gift bet was settled concurrently');
+        const restored = await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = \'IN_BET\'', [queued.previous_status, queued.user_gift_id]);
+        if (restored.changes !== 1) throw new Error('Queued gift ownership could not be restored');
+        return { betId, userGiftId: queued.user_gift_id, giftValue: Number(queued.gift_value_at_bet) };
+    });
+}
+
+async function promoteQueuedGiftBets(roundId) {
+    return await transaction(async () => {
+        const queued = await query(`SELECT * FROM queued_gift_bets WHERE round_id = ? AND status = 'QUEUED' ORDER BY id ASC`, [roundId]);
+        for (const bet of queued) {
+            await run(`
+                INSERT INTO gift_bets (user_id, user_gift_id, round_id, gift_value_at_bet, auto_cashout_target, status)
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE')
+            `, [bet.user_id, bet.user_gift_id, bet.round_id, bet.gift_value_at_bet, bet.auto_cashout_target]);
+            await run('UPDATE users SET total_turnover = total_turnover + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [bet.gift_value_at_bet, bet.user_id]);
+            await run('DELETE FROM queued_gift_bets WHERE id = ? AND status = \'QUEUED\'', [bet.id]);
+        }
+        return queued.length;
+    });
+}
+
+async function getQueuedGiftBetsForRound(roundId) {
+    return await query(`
+        SELECT qb.id AS bet_id, qb.user_id, qb.gift_value_at_bet AS amount, qb.status,
+               NULL AS multiplier, u.first_name, u.last_name, u.avatar_url,
+               ug.unique_collectible_id, g.image_url AS gift_image_url, g.name AS gift_name,
+               'GIFT' AS bet_type
+        FROM queued_gift_bets qb JOIN users u ON u.id = qb.user_id
+        JOIN user_gifts ug ON ug.id = qb.user_gift_id JOIN gifts g ON g.id = ug.gift_id
+        WHERE qb.round_id = ? AND qb.status = 'QUEUED' ORDER BY qb.id ASC
+    `, [roundId]);
+}
+
 async function cashoutTonBet(betId, userId, multiplier) {
     return await transaction(async () => {
         // 1. التحقق من وجود الرهان
@@ -3562,6 +3654,10 @@ module.exports = {
     queueTonBet,
     cancelQueuedTonBet,
     promoteQueuedTonBets,
+    queueGiftBet,
+    cancelQueuedGiftBet,
+    promoteQueuedGiftBets,
+    getQueuedGiftBetsForRound,
     cashoutBet,
     crashRound,
     

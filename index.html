@@ -7141,15 +7141,8 @@
 
                 if (gamePhase === 'COUNTDOWN') {
                     await sendGiftBet(payload.giftId, payload.amount, currentRoundId, false, null);
-                } else {
-                    pendingNextBet = payload;
-                    pendingNextBetSubmitted = false;
-                    isQueuedForNextRound = true;
-                    hasBet = false;
-                    updateMainBetButton();
-                    updateAutoCashoutUI();
-                    showToast((translations[currentLanguage] || translations.ar).betQueued || 'تم حجز الهدية للجولة القادمة');
-                    if (gamePhase === 'FLIGHT') trySubmitQueuedBet();
+                } else if (gamePhase === 'FLIGHT') {
+                    await sendGiftBet(payload.giftId, payload.amount, currentRoundId + 1, false, null);
                 }
             } catch (error) {
                 console.error('LOOT BOX GIFT BET ERROR:', error);
@@ -8737,6 +8730,7 @@
             // previous round's phase.
             if (previousRoundId && previousRoundId !== currentRoundId) {
                 syncCurrentTonBet();
+                syncCurrentGiftBet();
             }
         }
 
@@ -9410,8 +9404,8 @@
             
             if (isQueuedForNextRound) {
                 button.classList.add("queued-main");
-                button.textContent = gamePhase === "FLIGHT" ? "Cancel queued bet" : t.betQueuedBtn;
-                button.disabled = false;
+                button.textContent = gamePhase === "FLIGHT" ? "Cancel Bet" : t.betQueuedBtn;
+                button.disabled = gamePhase !== "FLIGHT";
                 button.dataset.updating = 'false';
                 return;
             }
@@ -9448,7 +9442,8 @@
             actionInProgress = true;
             updateMainBetButton();
             try {
-                const response = await fetch(`${BACKEND_URL}/api/bet/ton/cancel-queued`, {
+                const endpoint = currentBetType === "GIFT" ? "/api/bet/gift/cancel-queued" : "/api/bet/ton/cancel-queued";
+                const response = await fetch(BACKEND_URL + endpoint, {
                     method: "POST",
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ betId: currentBetId })
@@ -9512,6 +9507,30 @@
                 updateAutoCashoutUI();
             } catch (error) {
                 console.error("CURRENT TON BET SYNC ERROR:", error);
+            }
+        }
+
+        async function syncCurrentGiftBet() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/bet/gift/current`, {
+                    headers: getAuthHeaders(),
+                    cache: "no-store"
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) return;
+                if (data.state === "active") {
+                    hasBet = true; isQueuedForNextRound = false; currentBetId = data.betId || null;
+                    currentBetType = "GIFT"; userBetAmount = Number(data.amount) || userBetAmount; playedThisRound = true;
+                } else if (data.state === "queued") {
+                    hasBet = false; isQueuedForNextRound = true; currentBetId = data.betId || null;
+                    currentBetType = "GIFT"; userBetAmount = Number(data.amount) || userBetAmount; playedThisRound = true;
+                } else if (currentBetType === "GIFT") {
+                    hasBet = false; isQueuedForNextRound = false; currentBetId = null;
+                }
+                updateMainBetButton();
+                updateAutoCashoutUI();
+            } catch (error) {
+                console.error("CURRENT GIFT BET SYNC ERROR:", error);
             }
         }
 
@@ -9833,14 +9852,8 @@
             const t = translations[currentLanguage] || translations.ar;
             if (!navigator.onLine) { showToast(t.connecting); return; }
             if (gamePhase === "FLIGHT") {
-                pendingNextBet = { type: "GIFT", giftId: giftId, amount: amount, autoCashout: autoCashoutEnabled, autoTarget: autoCashoutTarget };
-                pendingNextBetSubmitted = false;
-                isQueuedForNextRound = true;
-                hasBet = false;
-                closeModal("bet-modal");
-                updateMainBetButton();
-                showToast(t.betQueued);
-                trySubmitQueuedBet();
+                const success = await sendGiftBet(giftId, amount, currentRoundId + 1, autoCashoutEnabled, autoCashoutTarget);
+                if (success) closeModal("bet-modal");
                 return;
             }
             if (gamePhase !== "COUNTDOWN") { showToast(t.waitingNext); return; }
@@ -9866,30 +9879,22 @@
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.ok) throw new Error(data.error || t.giftBetFailed);
                 await fetchCollectibles();
-                hasBet = true;
+                const queued = !!data.queued;
+                hasBet = !queued;
                 currentBetId = data.bet?.betId || null;
                 currentBetType = "GIFT";
                 playedThisRound = true;
-                isQueuedForNextRound = false;
+                isQueuedForNextRound = queued;
                 pendingNextBet = null;
                 pendingNextBetSubmitted = false;
                 updateMainBetButton();
                 updateAutoCashoutUI();
-                showToast(t.giftBetPlaced);
+                showToast(queued ? t.betQueued : t.giftBetPlaced);
                 return true;
             } catch (error) {
                 console.error("GIFT BET ERROR:", error);
                 const message = String(error.message || "");
-                if (gamePhase === "FLIGHT") {
-                    pendingNextBet = { type: "GIFT", giftId: giftId, amount: amount, autoCashout: autoCashout, autoTarget: autoTarget };
-                    pendingNextBetSubmitted = false;
-                    isQueuedForNextRound = true;
-                    hasBet = false;
-                    updateMainBetButton();
-                    showToast(t.betQueued);
-                } else {
-                    showToast(message || t.giftBetFailed);
-                }
+                showToast(message || t.giftBetFailed);
                 return false;
             } finally {
                 actionInProgress = false;
@@ -10025,13 +10030,7 @@
             if (!pendingNextBet || pendingNextBetSubmitted || hasBet || gamePhase !== "COUNTDOWN" || !serverConnected || actionInProgress) return;
             pendingNextBetSubmitted = true;
             const queued = { ...pendingNextBet };
-            if (queued.type === "GIFT") {
-                sendGiftBet(queued.giftId, queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success) {
-                    if (success) { pendingNextBet = null; pendingNextBetSubmitted = false; isQueuedForNextRound = false; selectedGiftId = null; selectedGiftForBet = null; }
-                    else { pendingNextBetSubmitted = false; if (gamePhase !== "COUNTDOWN") { pendingNextBet = null; isQueuedForNextRound = false; } }
-                    updateMainBetButton();
-                });
-            } else if (queued.type === "TEST") {
+            if (queued.type === "TEST") {
                 sendTestBet(queued.amount, currentRoundId, queued.autoCashout, queued.autoTarget).then(function(success) {
                     if (success) { pendingNextBet = null; pendingNextBetSubmitted = false; isQueuedForNextRound = false; }
                     else { pendingNextBetSubmitted = false; if (gamePhase !== "COUNTDOWN") { pendingNextBet = null; isQueuedForNextRound = false; } }
