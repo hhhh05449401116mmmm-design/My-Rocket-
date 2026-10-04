@@ -6326,10 +6326,33 @@
 
             if (!variants.length) return;
 
+            // Keep every catalog item, but send each exact variant identity to the
+            // market endpoint only once. Duplicate model entries still receive the
+            // same returned price without repeating network work.
+            const uniqueVariants = [];
+            const seenVariants = new Set();
+            variants.forEach(function(variant) {
+                const identity = [
+                    variant.name || '',
+                    variant.label || '',
+                    variant.backdrop || '',
+                    variant.model_name || ''
+                ].join('|').toLowerCase();
+                if (seenVariants.has(identity)) return;
+                seenVariants.add(identity);
+                uniqueVariants.push({
+                    key: identity,
+                    name: variant.name,
+                    label: variant.label,
+                    backdrop: variant.backdrop,
+                    model_name: variant.model_name
+                });
+            });
+
             try {
                 const response = await fetch(
-                    BACKEND_URL + '/api/loot-box/market-items?variants=' +
-                    encodeURIComponent(JSON.stringify(variants)),
+                    BACKEND_URL + '/api/loot-box/market-items?' +
+                    'variants=' + encodeURIComponent(JSON.stringify(uniqueVariants)),
                     { headers: getAuthHeaders(), cache: 'no-store' }
                 );
                 const payload = await response.json();
@@ -6339,8 +6362,14 @@
                     return [String(item.key || ''), Number(item.marketValueTon || 0)];
                 }));
 
-                variants.forEach(function(variant, index) {
-                    const value = byKey.get(String(index));
+                variants.forEach(function(variant) {
+                    const identity = [
+                        variant.name || '',
+                        variant.label || '',
+                        variant.backdrop || '',
+                        variant.model_name || ''
+                    ].join('|').toLowerCase();
+                    const value = byKey.get(identity);
                     if (!(value > 0)) return;
                     const localItem = items.find(function(item) {
                         return item &&
@@ -6554,10 +6583,20 @@
 
             const targetIndex = Math.floor(repeats * 0.72) * visualItems.length + winnerIndex;
 
+            // Keep the complete logical sequence above, but render only a small
+            // visual window around the winning cell. This preserves every gift and
+            // the exact winner while preventing hundreds of image DOM nodes at once.
+            const reelWindowBefore = 15;
+            const reelWindowAfter = 15;
+            const windowStart = Math.max(0, targetIndex - reelWindowBefore);
+            const windowEnd = Math.min(sequence.length, targetIndex + reelWindowAfter + 1);
+            const visibleSequence = sequence.slice(windowStart, windowEnd);
+            const visibleTargetIndex = targetIndex - windowStart;
+
             strip.style.transition = 'none';
             strip.style.transform = 'translate3d(0,0,0)';
-            strip.innerHTML = sequence.map(function(item, index) {
-                const targetClass = index === targetIndex ? ' loot-box-reel-target' : '';
+            strip.innerHTML = visibleSequence.map(function(item, index) {
+                const targetClass = index === visibleTargetIndex ? ' loot-box-reel-target' : '';
                 return '<div class="loot-box-modal-strip-item ' + (item.rewardType === 'ton' ? 'ton' : (item.rewardType === 'nothing' ? 'nothing' : 'gift')) + targetClass + '">' +
                     (item.rewardType === 'nothing'
                         ? '<span class="loot-box-nothing-reel">—</span>'
