@@ -1122,8 +1122,8 @@
         .loot-box-modal-title { flex:1; text-align:center; color:#fff; font-size:20px; font-weight:900; }
         .loot-box-modal-subtitle { text-align:center; color:#8f8f96; font-size:11px; margin:-4px 0 12px; }
         .loot-box-modal-strip-wrap { position:relative; width:100%; height:68px; overflow:hidden; border-radius:12px; background:rgba(255,255,255,.055); }
-        .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:transform 4.2s cubic-bezier(.12,.75,.18,1); overflow:visible; user-select:none; pointer-events:auto; touch-action:pan-y; }
-        .loot-box-modal-strip-item { flex:0 0 52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); overflow:hidden; }
+        .loot-box-modal-strip { display:flex; gap:6px; width:max-content; height:68px; padding:8px 0; transform:translate3d(0,0,0); transition:none; overflow:visible; user-select:none; pointer-events:none; touch-action:none; will-change:transform; backface-visibility:hidden; contain:layout paint; }
+        .loot-box-modal-strip-item { flex:0 0 52px; width:52px; min-width:52px; height:52px; min-height:52px; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); overflow:hidden; box-sizing:border-box; contain:layout paint; }
         .loot-box-modal-strip-item.ton {
             background: linear-gradient(145deg,#16c8a2 0%,#16a9e8 100%);
             border-color: rgba(255,255,255,.10);
@@ -6321,7 +6321,7 @@
             let winnerIndex = visualItems.findIndex(matchesWinner);
             if (winnerIndex < 0) winnerIndex = 0;
 
-            const repeats = 18;
+            const repeats = 12;
             const sequence = [];
             for (let i = 0; i < repeats; i++) {
                 sequence.push.apply(sequence, visualItems);
@@ -6341,23 +6341,24 @@
                 '</div>';
             }).join('');
 
+            // Decode the actual reward images before starting the movement. This prevents
+            // late image layout/paint work from making the reel stutter or jump on mobile.
             const reelImages = Array.from(strip.querySelectorAll('img'));
-            await Promise.race([
-                Promise.all(reelImages.map(function(img) {
-                    if (img.complete) return Promise.resolve();
-                    return new Promise(function(resolve) {
-                        img.addEventListener('load', resolve, { once: true });
-                        img.addEventListener('error', resolve, { once: true });
-                    });
-                })),
-                new Promise(function(resolve) { window.setTimeout(resolve, 1200); })
-            ]);
+            await Promise.all(reelImages.map(function(img) {
+                if (img.complete && typeof img.decode === 'function') {
+                    return img.decode().catch(function() {});
+                }
+                if (img.complete) return Promise.resolve();
+                return new Promise(function(resolve) {
+                    img.addEventListener('load', resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
+                });
+            }));
 
-            // Use the actual rendered item width/gap so the selected reward
-            // lands exactly under the center pointer on every screen size.
-            const firstReelItem = strip.querySelector('.loot-box-modal-strip-item');
-            const itemWidth = firstReelItem ? firstReelItem.getBoundingClientRect().width : 52;
-            const gap = parseFloat(window.getComputedStyle(strip).gap) || 6;
+            // Every reel cell has a fixed 52px width, so the destination does not
+            // depend on image loading or changing DOM measurements.
+            const itemWidth = 52;
+            const gap = 6;
             const step = itemWidth + gap;
             const wrap = strip.parentElement;
             const centerOffset = Math.max(0, ((wrap ? wrap.clientWidth : 320) / 2) - (itemWidth / 2));
@@ -6365,11 +6366,11 @@
 
             return new Promise(function(resolve) {
                 requestAnimationFrame(function() {
-                    requestAnimationFrame(function() {
-                        strip.style.transition = 'transform 5.2s cubic-bezier(.10,.78,.16,1)';
-                        strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
-                        window.setTimeout(resolve, 5300);
-                    });
+                    // Force one stable layout pass before enabling the GPU transform.
+                    void strip.offsetWidth;
+                    strip.style.transition = 'transform 5.2s cubic-bezier(.10,.78,.16,1)';
+                    strip.style.transform = 'translate3d(' + destination + 'px,0,0)';
+                    window.setTimeout(resolve, 5350);
                 });
             });
         }
@@ -9244,6 +9245,10 @@
         }
 
         function closeModalOutside(event, id) {
+            // Loot boxes close only through their explicit Back/Close controls.
+            // This prevents the result view from disappearing when a touch lands
+            // on the fullscreen backdrop after the reel stops.
+            if (id === 'loot-box-modal') return;
             if (event.target.id === id) closeModal(id);
         }
 
