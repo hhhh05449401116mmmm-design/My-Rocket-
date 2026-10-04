@@ -1183,7 +1183,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #303030;
+            background: linear-gradient(145deg, #2a1546 0%, #1b0d31 100%);
             border: 2px solid rgba(58, 202, 155, .78);
             border-radius: 12px;
             box-sizing: border-box;
@@ -6175,7 +6175,7 @@
                 return '<div class="loot-box-collectible' + (isTonReward ? ' ton-reward' : '') + '">' +
                     '<div class="loot-box-collectible-image-wrap">' +
                         paidLootBoxItemMarkup(item, item.name + (item.label && item.label !== 'Random' ? ' - ' + item.label : ''), 'lazy', box.id === 'box_0_1') +
-                        (hasTonValue ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
+                        (hasTonValue && !isTonReward ? '<span class="loot-box-collectible-value-badge">' + escapeHtml(valueText.replace(/\s*TON\s*$/i, '')) + ' <img src="/assets/ton-icon.svg" alt="TON"></span>' : '') +
                     '</div>' +
                     '<span class="loot-box-collectible-name">' + escapeHtml(item.name) + '</span>' +
                     '<span class="loot-box-collectible-random' + (item.label === 'Black' ? ' black-variant-label' : '') + '">' + escapeHtml(item.label || 'Reward') + '</span>' +
