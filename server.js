@@ -4160,8 +4160,8 @@ app.get('/api/loot-box/0_1/market-items', authenticate, async (req, res) => {
 // only used as a fallback when Telegram has no matching TON listing.
 const TELEGRAM_VARIANT_PRICE_TTL_MS = 60 * 1000;
 const telegramVariantPriceCache = new Map();
-let telegramGiftCatalogCache = null;
-let telegramGiftCatalogExpiresAt = 0;
+let telegramExactGiftCatalogCache = null;
+let telegramExactGiftCatalogExpiresAt = 0;
 const telegramGiftAttributesCache = new Map();
 
 function telegramAttributeClass(attribute) {
@@ -4209,14 +4209,14 @@ function findTelegramAttribute(attributes, kind, name) {
 }
 
 async function getTelegramGiftCatalog() {
-    if (telegramGiftCatalogCache && telegramGiftCatalogExpiresAt > Date.now()) {
-        return telegramGiftCatalogCache;
+    if (telegramExactGiftCatalogCache && telegramExactGiftCatalogExpiresAt > Date.now()) {
+        return telegramExactGiftCatalogCache;
     }
     const client = await ensureTelegramMtprotoClient();
     const result = await client.api.payments.getStarGifts({ hash: 0 });
     const gifts = Array.isArray(result?.gifts) ? result.gifts : [];
-    telegramGiftCatalogCache = gifts;
-    telegramGiftCatalogExpiresAt = Date.now() + 30 * 60 * 1000;
+    telegramExactGiftCatalogCache = gifts;
+    telegramExactGiftCatalogExpiresAt = Date.now() + 30 * 60 * 1000;
     return gifts;
 }
 
