@@ -2894,8 +2894,26 @@
         .telegram-rocket.hidden { display: none !important; }
         #rocket.telegram-fallback-hidden { visibility: hidden; }
         
-        .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; aspect-ratio:auto !important; height:auto !important; }
-        .image-banner .banner-art { position:relative; inset:auto; width:100%; height:auto !important; aspect-ratio:auto; object-fit:contain; object-position:center; display:block; z-index:0; pointer-events:none; }
+        .image-banner {
+            padding: 0 !important;
+            background: transparent !important;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 1228 / 314 !important;
+            height: auto !important;
+        }
+        .image-banner .banner-art {
+            position: absolute;
+            inset: 0;
+            width: 100% !important;
+            height: 100% !important;
+            aspect-ratio: auto !important;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            z-index: 0;
+            pointer-events: none;
+        }
 /* Hide native iOS/Telegram video play overlays without changing playback. */
 .image-banner .banner-art::-webkit-media-controls-start-playback-button,
 .image-banner .banner-art::-webkit-media-controls-play-button,
@@ -2906,7 +2924,7 @@
     pointer-events: none !important;
 }
 
-        .image-banner.playhub-banner .banner-art { height:auto !important; object-position:center; }
+        .image-banner.playhub-banner .banner-art { height:100% !important; object-position:center; }
 
         /* =========================================================
            EARNINGS / WITHDRAWAL
