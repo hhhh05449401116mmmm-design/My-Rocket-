@@ -4889,12 +4889,11 @@ video::-webkit-media-controls-enclosure {
         /* Required channel subscription popup */
         .channel-subscription-overlay{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,8,20,.68);backdrop-filter:blur(5px)}
         .channel-subscription-overlay.show{display:flex}
-        .channel-subscription-card{width:min(360px,88vw);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:24px 20px;text-align:center;background:linear-gradient(160deg,#16294a,#0b1427);box-shadow:0 20px 70px rgba(0,0,0,.45)}
-        .channel-subscription-icon{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#2aabee,#168bd0);font-size:30px}
-        .channel-subscription-title{font-size:21px;font-weight:900;color:#fff;margin-bottom:8px}.channel-subscription-text{font-size:14px;line-height:1.65;color:#bcd0ea;margin-bottom:14px}
-        .channel-subscription-link{display:block;color:#55b9ff;font-weight:900;text-decoration:none;direction:ltr;margin-bottom:16px;cursor:pointer}.channel-subscription-link:hover{text-decoration:underline}
-        .channel-subscription-actions{display:flex;flex-direction:column;gap:9px}.channel-subscription-btn{width:100%;border:0;border-radius:13px;padding:12px 16px;font-weight:900;font-size:15px;cursor:pointer}.channel-subscribe-btn{background:#2aabee;color:#fff}.channel-check-btn{background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.13)}
-        .channel-subscription-status{min-height:20px;margin-top:10px;font-size:12px;color:#ffcf66}
+        .channel-subscription-card{width:min(300px,82vw);border:1px solid rgba(198,132,255,.32);border-radius:20px;padding:18px 16px;text-align:center;background:linear-gradient(160deg,#6f2dbd 0%,#4a1d80 52%,#2b124d 100%);box-shadow:0 18px 55px rgba(39,10,70,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+        .channel-subscription-title{font-size:20px;font-weight:900;color:#fff;margin-bottom:8px}
+        .channel-subscription-link{display:block;color:#d7b2ff;font-weight:900;text-decoration:none;direction:ltr;margin-bottom:14px;cursor:pointer}.channel-subscription-link:hover{text-decoration:underline}
+        .channel-subscription-actions{display:flex;flex-direction:column;gap:8px}.channel-subscription-btn{width:100%;border:0;border-radius:12px;padding:11px 14px;font-weight:900;font-size:14px;cursor:pointer}.channel-subscribe-btn{background:#a855f7;color:#fff}.channel-check-btn{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.18)}
+        .channel-subscription-status{min-height:18px;margin-top:8px;font-size:11px;color:#f1d1ff}
 </style>
 </head>
 <body>
@@ -5660,9 +5659,7 @@ video::-webkit-media-controls-enclosure {
 
         <div id="channel-subscription-overlay" class="channel-subscription-overlay" role="dialog" aria-modal="true" aria-hidden="true">
             <div class="channel-subscription-card">
-                <div class="channel-subscription-icon">✈️</div>
                 <div class="channel-subscription-title" id="channel-subscription-title"></div>
-                <div class="channel-subscription-text" id="channel-subscription-text"></div>
                 <a id="channel-subscription-link" class="channel-subscription-link" href="https://t.me/Crazy_Rocket_official" target="_blank" rel="noopener">@Crazy_Rocket_official</a>
                 <div class="channel-subscription-actions">
                     <button id="channel-subscribe-btn" class="channel-subscription-btn channel-subscribe-btn" type="button"></button>
@@ -7126,16 +7123,6 @@ document.getElementById('channel-subscription-link')?.addEventListener('click',o
 document.getElementById('channel-check-btn')?.addEventListener('click',checkChannelSubscription);
 
 async function openLootBox(box) {
-            if (box && (box.id === 'free' || box.id === 'free24')) {
-                try {
-                    const response = await fetch(BACKEND_URL + '/api/channel-subscription/status', { headers: getAuthHeaders(), cache: 'no-store' });
-                    const data = await response.json().catch(() => ({}));
-                    if (!data.ok || !data.subscribed) { const subscribed = await showChannelSubscriptionPopup(); if (!subscribed) return; }
-                } catch (error) {
-                    showToast((translations[currentLanguage] || translations.ar).channelRequiredError);
-                    return;
-                }
-            }
             const t = translations[currentLanguage] || translations.ar;
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
@@ -7281,6 +7268,21 @@ async function openLootBox(box) {
             if (!selectedLootBox) return;
 
             const box = selectedLootBox;
+
+            if (box.id === 'free' || box.id === 'free24') {
+                try {
+                    const response = await fetch(BACKEND_URL + '/api/channel-subscription/status', { headers: getAuthHeaders(), cache: 'no-store' });
+                    const data = await response.json().catch(() => ({}));
+                    if (!data.ok || !data.subscribed) {
+                        const subscribed = await showChannelSubscriptionPopup();
+                        if (!subscribed) return;
+                    }
+                } catch (error) {
+                    showToast((translations[currentLanguage] || translations.ar).channelRequiredError);
+                    return;
+                }
+            }
+
             const requiredBalance = Number(box.price || 0);
             const currentBalance = Number(tonBalance || 0);
 
