@@ -4776,13 +4776,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" src="/assets/ADJtCAFOdpAFHHbg.MP4" autoplay muted loop playsinline preload="metadata" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" data-video-src="/assets/ADJtCAFOdpAFHHbg.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" src="/assets/WddYFBEPUHJZYMlo.MP4" autoplay muted loop playsinline preload="metadata" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" data-video-src="/assets/WddYFBEPUHJZYMlo.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" src="/assets/IlLXxhvJRWznUUZY.MP4" autoplay muted loop playsinline preload="metadata" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" data-video-src="/assets/IlLXxhvJRWznUUZY.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -10609,6 +10609,10 @@
             } catch (error) { /* silent: status check is best-effort only */ }
         }
 
+        document.addEventListener('pointerdown', function() {
+            try { unlockRocketBannerAudio(); } catch (e) {}
+        }, { once: true, passive: true });
+
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
                 checkCollectibleVerificationStatus();
@@ -12048,12 +12052,34 @@
             } catch (e) {}
         }
 
+        let bannerVideoAudioUnlocked = false;
+
+        function unlockRocketBannerAudio() {
+            bannerVideoAudioUnlocked = true;
+            const video = document.querySelector('.rocket-banner video.banner-art');
+            if (!video) return;
+            try {
+                video.muted = false;
+                video.defaultMuted = false;
+                const p = video.play();
+                if (p && typeof p.catch === 'function') p.catch(function() {});
+            } catch (e) {}
+        }
+
         function keepHomeBannerVideosPlaying() {
             document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
                 try {
-                    video.autoplay = true;
+                    video.autoplay = false;
                     video.loop = true;
                     video.muted = true;
+                    video.defaultMuted = true;
+                    const source = video.getAttribute('data-video-src');
+                    if (source && video.getAttribute('src') !== source) {
+                        video.removeAttribute('src');
+                        video.load();
+                        video.setAttribute('src', source);
+                        video.load();
+                    }
                     video.defaultMuted = true;
                     video.playsInline = true;
                     video.controls = false;
@@ -12065,7 +12091,12 @@
                     video.setAttribute('controlslist', 'nodownload noplaybackrate');
                     video.disablePictureInPicture = true;
                     video.removeAttribute('controls');
-                    video.addEventListener('loadedmetadata', function() { playBannerVideoSynchronized(video); }, { once: true });
+                    video.addEventListener('loadedmetadata', function() {
+                        video.muted = !bannerVideoAudioUnlocked;
+                        video.controls = false;
+                        playBannerVideoSynchronized(video);
+                    }, { once: true });
+                    video.addEventListener('loadeddata', function() { playBannerVideoSynchronized(video); });
                     video.addEventListener('canplay', function() { playBannerVideoSynchronized(video); });
                     video.addEventListener('canplaythrough', function() { playBannerVideoSynchronized(video); });
                     video.addEventListener('ended', function() {
