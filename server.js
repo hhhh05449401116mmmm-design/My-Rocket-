@@ -1582,13 +1582,13 @@ app.get('/api/live-gifts', async (req, res) => {
             if (source !== 'paid-loot-box' && source !== 'free-box') continue;
 
             const value = Number(row.gift_value || 0);
-            if (!row.gift_name || !row.gift_image || !Number.isFinite(value) || value <= 0) continue;
+            if (!row.gift_name) continue;
 
             playerWins.push({
                 type: 'player',
                 name: row.gift_name,
-                image: row.gift_image,
-                value,
+                image: row.gift_image || '',
+                value: Number.isFinite(value) && value > 0 ? value : null,
                 boxName: String(data.boxName || '').trim(),
                 createdAt: row.created_at
             });
@@ -1611,10 +1611,10 @@ app.get('/api/live-gifts', async (req, res) => {
             .map(row => ({
                 type: 'random',
                 name: row.name,
-                image: row.image_url,
-                value: Number(row.value)
+                image: row.image_url || '',
+                value: Number.isFinite(Number(row.value)) && Number(row.value) > 0 && Number(row.value) <= 100 ? Number(row.value) : null
             }))
-            .filter(item => item.name && item.image && Number.isFinite(item.value) && item.value > 0 && item.value <= 100);
+            .filter(item => item.name);
 
         const items = [...playerWins, ...randomGifts].slice(0, 16);
 
