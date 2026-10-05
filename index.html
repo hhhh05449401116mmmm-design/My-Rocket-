@@ -4776,13 +4776,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" src="/assets/ADJtCAFOdpAFHHbg.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" src="/assets/ADJtCAFOdpAFHHbg.optimized.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" src="/assets/WddYFBEPUHJZYMlo.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" src="/assets/WddYFBEPUHJZYMlo.optimized.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" src="/assets/IlLXxhvJRWznUUZY.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" src="/assets/IlLXxhvJRWznUUZY.optimized.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -12098,7 +12098,7 @@
         function keepHomeBannerVideosPlaying(forceSync) {
             document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
                 try {
-                    video.autoplay = false;
+                    video.autoplay = true;
                     video.loop = true;
                     video.controls = false;
                     video.playsInline = true;
@@ -12115,7 +12115,7 @@
                     if (video.dataset.bannerVideoBound !== '1') {
                         video.dataset.bannerVideoBound = '1';
                         video.addEventListener('loadedmetadata', function() {
-                            playBannerVideoSynchronized(video, true);
+                            if (video.readyState >= 3) playBannerVideoSynchronized(video, true);
                         });
                         video.addEventListener('canplay', function() {
                             if (video.paused) playBannerVideoSynchronized(video, false);
@@ -12148,8 +12148,7 @@
                         });
                     }
 
-                    if (forceSync) playBannerVideoSynchronized(video, true);
-                    else if (video.paused) playBannerVideoSynchronized(video, false);
+                    if (forceSync || video.paused) playBannerVideoSynchronized(video, !!forceSync);
                 } catch (e) {}
             });
         }
