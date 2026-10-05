@@ -841,7 +841,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .loot-box .loot-image {
+        .loot-box .loot-image,
+        .loot-box .loot-video {
             position: absolute;
             inset: 0;
             width: 100%;
@@ -852,6 +853,10 @@
             margin: 0;
             border: 0;
             z-index: 0;
+            pointer-events: none;
+        }
+        .loot-box .loot-video {
+            background: transparent;
         }
 
         .loot-box[data-box-id="box_100"] .loot-box-media {
@@ -5761,8 +5766,8 @@ video::-webkit-media-controls-enclosure {
         ];
 
         const LOOT_BOXES = [
-            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', image: '/assets/IMG_3703.JPG', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
-            { id: 'box_heart', name: 'Heart', priceLabel: '2 TON', emoji: '💎', price: 2, badgeType: null, badgeClass: '', collectibles: [
+            { id: 'free', nameKey: 'freeLabel', emoji: '🎁', video: '/assets/nLbmfNrGTskwHnOE.MP4', image: '/assets/IMG_3703.JPG', price: 0, badgeType: 'free', badgeClass: 'free-badge', collectibles: FREE_BOX_COLLECTIBLES },
+            { id: 'box_heart', name: 'Heart', priceLabel: '2 TON', emoji: '💎', video: '/assets/GMpASWgvsbRfpzbj.MP4', price: 2, badgeType: null, badgeClass: '', collectibles: [
                 { name: "Heart Locket", image: 'https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png', value: '— TON', label: 'Random' },
                 { name: "Cupid Charm", image: 'https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png', value: '— TON', label: 'Random' },
                 { name: "Love Candle", image: 'https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png', value: '— TON', label: 'Random' },
@@ -5770,11 +5775,11 @@ video::-webkit-media-controls-enclosure {
                 { name: "Trapped Heart", image: 'https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png', value: '— TON', label: 'Random' },
                 { name: "Diamond Ring", image: 'https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png', value: '— TON', label: 'Random' }
             ] },
-            { id: 'box_0_1', name: 'Farm', priceLabel: '0.1 TON', emoji: '💎', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
+            { id: 'box_0_1', name: 'Farm', priceLabel: '0.1 TON', emoji: '💎', video: '/assets/ypTTSWlWCLMgzgAL.MP4', price: 0.1, badgeType: null, badgeClass: '', collectibles: BOX_0_1_COLLECTIBLES },
                         { id: 'box_2',
                 name: 'Arm',
                 priceLabel: '2 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/URyiWOhXzsvUWZju.MP4',
                 price: 2,
                 badgeType: null,
                 badgeClass: '',
@@ -5823,7 +5828,7 @@ video::-webkit-media-controls-enclosure {
                 id: 'box_2_5',
                 name: 'Movie',
                 priceLabel: '4.5 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/IGlKzoKQQueXsiWU.MP4',
                 image: '/assets/IMG_3704.JPG',
                 price: 4.5,
                 badgeType: null,
@@ -5879,7 +5884,7 @@ video::-webkit-media-controls-enclosure {
                 id: 'box_5', 
                 name: 'Autumn', 
                 priceLabel: '5 TON', 
-                emoji: '💎', 
+                emoji: '💎', video: '/assets/lxMoztyDqxeOqmZR.MP4', 
                 price: 5, 
                 badgeType: null, 
                 badgeClass: '',
@@ -5938,7 +5943,7 @@ video::-webkit-media-controls-enclosure {
             { 
                 id: 'box_8', 
                 name: 'Nova', 
-                emoji: '💎', 
+                emoji: '💎', video: '/assets/QgZpFXTiRnJOAfic.MP4', 
                 price: 8, 
                 badgeType: null, 
                 badgeClass: '',
@@ -6000,7 +6005,7 @@ video::-webkit-media-controls-enclosure {
                         { id: 'box_12',
                 name: 'Pepe',
                 priceLabel: '12 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/McQqfTOHKspoIBsv.MP4',
                 price: 12,
                 badgeType: null,
                 badgeClass: '',
@@ -6047,7 +6052,7 @@ video::-webkit-media-controls-enclosure {
             { id: 'box_15',
                 name: 'Ring',
                 priceLabel: '15 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/FebmzIIYwbzDLInd.MP4',
                 image: '/assets/IMG_3705.JPG',
                 price: 15,
                 badgeType: null,
@@ -6078,7 +6083,7 @@ video::-webkit-media-controls-enclosure {
             { id: 'box_20',
                 name: 'Black',
                 priceLabel: '20 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/RLImFEQBwuZKFGgC.MP4',
                 price: 20,
                 badgeType: null,
                 badgeClass: '',
@@ -6192,7 +6197,7 @@ video::-webkit-media-controls-enclosure {
                 id: 'box_50',
                 name: 'Crazy',
                 priceLabel: '50 TON',
-                emoji: '💎',
+                emoji: '💎', video: '/assets/VQOBzfDVfHIXPVTE.MP4',
                 image: '/assets/IMG_3706.JPG',
                 price: 50,
                 badgeType: null,
@@ -6263,6 +6268,45 @@ video::-webkit-media-controls-enclosure {
             }
         ];
 
+        function initLootBoxVideos() {
+            document.querySelectorAll('.loot-box video.loot-video').forEach(function(video) {
+                try {
+                    video.autoplay = true;
+                    video.muted = true;
+                    video.defaultMuted = true;
+                    video.loop = true;
+                    video.controls = false;
+                    video.playsInline = true;
+                    video.volume = 0;
+                    video.setAttribute('muted', '');
+                    video.setAttribute('autoplay', '');
+                    video.setAttribute('loop', '');
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.setAttribute('preload', 'auto');
+                    video.removeAttribute('controls');
+
+                    const play = function() {
+                        try {
+                            video.muted = true;
+                            video.defaultMuted = true;
+                            video.volume = 0;
+                            const promise = video.play();
+                            if (promise && typeof promise.catch === 'function') promise.catch(function() {});
+                        } catch (e) {}
+                    };
+                    video.addEventListener('loadeddata', play, { once: true });
+                    video.addEventListener('canplay', play, { once: true });
+                    video.addEventListener('pause', function() {
+                        window.setTimeout(function() {
+                            if (video.paused) play();
+                        }, 100);
+                    });
+                    play();
+                } catch (e) {}
+            });
+        }
+
         function renderLootBoxes() {
             const grid = document.getElementById('loot-grid');
             if (!grid) return;
@@ -6295,9 +6339,11 @@ video::-webkit-media-controls-enclosure {
                 };
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
-                const visual = box.image
-                    ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async">'
-                    : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>';
+                const visual = box.video
+                    ? '<video class="loot-video" src="' + escapeHtmlAttribute(box.video) + '" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen" aria-hidden="true"></video>'
+                    : (box.image
+                        ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async">'
+                        : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>');
 
                 div.innerHTML = '<div class="loot-box-inner">' +
                     '<div class="loot-box-media">' +
@@ -12389,6 +12435,7 @@ video::-webkit-media-controls-enclosure {
                     }
                 } catch (e) {}
             });
+            initLootBoxVideos();
         }
 
         async function authenticateUser() {
