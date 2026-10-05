@@ -2340,6 +2340,12 @@ function stopPvpGameLoop() {
 // 5. API Routes
 // =========================================================
 
+// ===== Server clock for globally synchronized media =====
+app.get('/api/server-time', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.json({ ok: true, serverTime: Date.now() });
+});
+
 // ===== 5.1 المصادقة =====
 app.post('/api/auth', async (req, res) => {
     try {
