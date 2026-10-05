@@ -12008,6 +12008,31 @@
             }
         }
 
+        function keepHomeBannerVideosPlaying() {
+            document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
+                try {
+                    video.autoplay = true;
+                    video.loop = true;
+                    video.muted = true;
+                    video.defaultMuted = true;
+                    video.playsInline = true;
+                    video.controls = false;
+                    video.setAttribute('autoplay', '');
+                    video.setAttribute('loop', '');
+                    video.setAttribute('muted', '');
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.setAttribute('controlslist', 'nodownload noplaybackrate');
+                    video.disablePictureInPicture = true;
+
+                    if (document.visibilityState !== 'hidden') {
+                        const playPromise = video.play();
+                        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
+                    }
+                } catch (e) {}
+            });
+        }
+
         async function authenticateUser() {
             // Telegram Mini App auth must use signed initData. Read the WebApp object
             // dynamically because Telegram can finish initializing it after page load.
