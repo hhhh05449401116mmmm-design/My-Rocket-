@@ -2896,6 +2896,16 @@
         
         .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; aspect-ratio:auto !important; height:auto !important; }
         .image-banner .banner-art { position:relative; inset:auto; width:100%; height:auto !important; aspect-ratio:auto; object-fit:contain; object-position:center; display:block; z-index:0; pointer-events:none; }
+/* Hide native iOS/Telegram video play overlays without changing playback. */
+.image-banner .banner-art::-webkit-media-controls-start-playback-button,
+.image-banner .banner-art::-webkit-media-controls-play-button,
+.image-banner .banner-art::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
         .image-banner.playhub-banner .banner-art { height:auto !important; object-position:center; }
 
         /* =========================================================
