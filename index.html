@@ -11089,9 +11089,9 @@ video::-webkit-media-controls-enclosure {
             document.getElementById("earn-page").classList.remove("show");
             document.getElementById("top-page").classList.remove("show");
             if (page === "home") {
-                try { setHomeBannerAudioEnabled(false); keepHomeBannerVideosPlaying(true); } catch (e) {}
                 document.getElementById("nav-home").classList.add("active");
                 document.getElementById("game-hub").classList.remove("hidden");
+                try { setHomeBannerAudioEnabled(false); keepHomeBannerVideosPlaying(true); } catch (e) {}
             } else if (page === "top") {
                 document.getElementById("nav-top").classList.add("active");
                 document.getElementById("top-page").classList.add("show");
@@ -12360,8 +12360,6 @@ video::-webkit-media-controls-enclosure {
                                         playBannerVideoSynchronized(video, true);
                                     }
                                 }, 120);
-                            } else {
-                                stopHomeBannerCanvas(video);
                             }
                         });
                         video.addEventListener('stalled', function() {
