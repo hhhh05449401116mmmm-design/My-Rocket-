@@ -7135,7 +7135,11 @@ async function checkChannelSubscription(){
     if(channelSubscriptionBusy)return; channelSubscriptionBusy=true; const t=translations[currentLanguage]||translations.ar; const s=document.getElementById('channel-subscription-status');
     if(s)s.textContent=t.channelChecking;
     try{const r=await fetch(BACKEND_URL+'/api/channel-subscription/status',{headers:getAuthHeaders(),cache:'no-store'});const d=await r.json();
-        if(d.ok&&d.subscribed){closeChannelSubscriptionPopup(true);return true;} if(s)s.textContent=t.channelRequiredError; return false;
+        if(d.ok&&d.subscribed){closeChannelSubscriptionPopup(true);return true;}
+        if(s)s.textContent=d.code==='CHANNEL_BOT_ADMIN_REQUIRED'
+            ? (currentLanguage==='ar' ? '⚠️ يجب إضافة البوت كمشرف في القناة حتى يتمكن من التحقق من الاشتراك.' : '⚠️ The bot must be an admin in the channel to verify your subscription.')
+            : (d.error || t.channelRequiredError);
+        return false;
     }catch(e){if(s)s.textContent=t.channelRequiredError;return false;}finally{channelSubscriptionBusy=false;}
 }
 function requireChannelSubscriptionForAction(){return showChannelSubscriptionPopup();}
