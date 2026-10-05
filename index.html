@@ -11203,6 +11203,7 @@ video::-webkit-media-controls-enclosure {
             document.getElementById("game-hub").classList.remove("hidden");
             document.getElementById("profile-page").classList.remove("show");
             document.getElementById("gifts-page").classList.remove("show");
+            resumeHomeBannersAfterGameClose();
         }
 
         document.addEventListener("visibilitychange", function() {
@@ -11250,7 +11251,14 @@ video::-webkit-media-controls-enclosure {
         function closePlayHub() {
             var screen = document.getElementById('playhub-screen');
             if (screen) screen.classList.add('hidden');
+        }        function resumeHomeBannersAfterGameClose() {
+            requestAnimationFrame(function() {
+                if (!isHomeBannerScreenVisible()) return;
+                try { keepHomeBannerVideosPlaying(true); } catch (e) {}
+            });
         }
+
+
 
         function hideAllPages() {
             document.getElementById("profile-page").classList.remove("show");
@@ -11340,6 +11348,7 @@ video::-webkit-media-controls-enclosure {
              document.getElementById("playhub-screen").classList.add("hidden");
              document.getElementById("game-hub").classList.remove("hidden");
              hideAllPages();
+             resumeHomeBannersAfterGameClose();
          }
 
          function openUpgradeGame() {
