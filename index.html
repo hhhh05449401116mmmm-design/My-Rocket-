@@ -398,39 +398,51 @@
              color: #ffffff;
              font-size: 12px;
              min-width: 0;
-             height: 36px;
+             height: 46px;
              display: flex;
              align-items: center;
          }
          .live-strip-track {
-             display: inline-flex;
+             width: 100%;
+             height: 42px;
+             display: grid;
+             grid-template-columns: repeat(7, minmax(34px, 1fr));
              align-items: center;
-             gap: 8px;
-             min-width: max-content;
-             white-space: nowrap;
-             will-change: transform;
-             animation: live-gifts-marquee 18s linear infinite;
+             gap: 5px;
          }
          .live-strip-gift {
+             width: 42px;
+             height: 42px;
+             justify-self: center;
+             border-radius: 10px;
              display: inline-flex;
              align-items: center;
              justify-content: center;
-             width: 38px;
-             height: 38px;
-             border-radius: 12px;
-             background: rgba(255,255,255,0.07);
-             border: 1px solid rgba(255,255,255,0.12);
              box-sizing: border-box;
              flex: 0 0 auto;
              overflow: hidden;
+             position: relative;
+             opacity: 1;
+             transform: scale(1);
+             transition: opacity 0.28s ease, transform 0.28s ease;
+         }
+         .live-strip-gift.gold {
+             background: linear-gradient(145deg, #ffdc69, #c9850c);
+             border: 1px solid rgba(255, 231, 141, 0.9);
+             box-shadow: 0 0 10px rgba(245, 183, 45, 0.25);
+         }
+         .live-strip-gift.purple {
+             background: linear-gradient(145deg, #a855f7, #5b21b6);
+             border: 1px solid rgba(196, 142, 255, 0.9);
+             box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
          }
          .live-strip-gift-image {
              width: 100%;
              height: 100%;
-             border-radius: 11px;
+             border-radius: 9px;
              object-fit: cover;
              display: block;
-             background: rgba(255,255,255,0.08);
+             background: transparent;
          }
          .live-strip-gift-fallback {
              width: 100%;
@@ -440,6 +452,14 @@
              justify-content: center;
              font-size: 19px;
          }
+         .live-strip-gift.entering {
+             animation: live-gift-appear 0.55s ease both;
+         }
+         @keyframes live-gift-appear {
+             0% { opacity: 0; transform: scale(0.72); }
+             65% { opacity: 1; transform: scale(1.06); }
+             100% { opacity: 1; transform: scale(1); }
+         }
          .live-strip-scroll::before,
          .live-strip-scroll::after {
              content: '';
@@ -447,7 +467,7 @@
              z-index: 2;
              top: 0;
              bottom: 0;
-             width: 34px;
+             width: 20px;
              pointer-events: none;
          }
          .live-strip-scroll::before {
@@ -457,10 +477,6 @@
          .live-strip-scroll::after {
              right: 0;
              background: linear-gradient(to left, #0a1a30, transparent);
-         }
-         @keyframes live-gifts-marquee {
-             0% { transform: translateX(0); }
-             100% { transform: translateX(-50%); }
          }
          .live-strip-empty {
              color: #b9c8dd;
@@ -11604,43 +11620,46 @@ video::-webkit-media-controls-enclosure {
               if (modal) modal.classList.add('show');
           }
 
-          var liveStripItems = [];
+          var liveStripQueue = [];
+          var liveStripVisible = [];
           var liveStripKnownPlayerWins = {};
           var liveStripRefreshTimer = null;
-          var liveStripLastSignature = '';
+          var liveStripStepTimer = null;
+          var liveStripSlotIndex = 0;
 
-          function renderLiveStripItem(items) {
+          function renderLiveStripSlots(changedSlot) {
               var scroll = document.getElementById('live-strip-scroll');
               if (!scroll) return;
 
-              var list = Array.isArray(items) ? items.filter(function(item) {
-                  return item && item.name;
-              }) : [];
-
-              if (!list.length) {
+              if (!liveStripVisible.length) {
                   scroll.innerHTML = '<span class="live-strip-empty">🎁</span>';
                   return;
               }
 
-              function card(item) {
+              var html = '<div class="live-strip-track">';
+              for (var i = 0; i < 7; i++) {
+                  var item = liveStripVisible[i];
+                  if (!item) {
+                      html += '<span class="live-strip-gift purple" aria-hidden="true"></span>';
+                      continue;
+                  }
+
+                  var tone = ((i + liveStripSlotIndex) % 2 === 0) ? 'gold' : 'purple';
                   var image = item.image
                       ? '<img class="live-strip-gift-image" src="' + escapeHtmlAttribute(item.image) + '" alt="" loading="eager" decoding="async">'
                       : '<span class="live-strip-gift-fallback">🎁</span>';
-                  return '<span class="live-strip-gift" title="' + escapeHtmlAttribute(item.name || 'Gift') + '">' + image + '</span>';
-              }
 
-              var cards = list.map(card).join('');
-              scroll.innerHTML =
-                  '<div class="live-strip-track">' + cards + cards + '</div>';
+                  html += '<span class="live-strip-gift ' + tone + (i === changedSlot ? ' entering' : '') +
+                      '" title="' + escapeHtmlAttribute(item.name || 'Gift') + '">' + image + '</span>';
+              }
+              html += '</div>';
+              scroll.innerHTML = html;
           }
 
-          function mergeLiveStripItems(items) {
+          function addLiveStripItems(items) {
               var incoming = Array.isArray(items) ? items.filter(function(item) {
                   return item && item.name;
               }) : [];
-
-              var newPlayerWins = [];
-              var randomItems = [];
 
               incoming.forEach(function(item) {
                   if (item.type === 'player') {
@@ -11651,34 +11670,47 @@ video::-webkit-media-controls-enclosure {
                           item.boxName || ''
                       ].join('|');
 
-                      if (!liveStripKnownPlayerWins[key]) {
-                          liveStripKnownPlayerWins[key] = true;
-                          newPlayerWins.push(item);
-                      }
+                      if (liveStripKnownPlayerWins[key]) return;
+                      liveStripKnownPlayerWins[key] = true;
+
+                      // Real player wins go to the front of the queue.
+                      liveStripQueue.unshift(item);
                   } else {
-                      randomItems.push(item);
+                      liveStripQueue.push(item);
                   }
               });
 
-              if (!liveStripItems.length) {
-                  liveStripItems = incoming.slice(0, 24);
-              } else {
-                  liveStripItems = newPlayerWins.concat(liveStripItems);
-                  liveStripItems = liveStripItems.concat(randomItems.slice(0, 4));
+              // Prevent the queue from growing forever.
+              if (liveStripQueue.length > 60) {
+                  liveStripQueue = liveStripQueue.slice(0, 60);
+              }
 
-                  if (liveStripItems.length > 32) {
-                      liveStripItems = liveStripItems.slice(0, 32);
+              if (!liveStripVisible.length) {
+                  while (liveStripVisible.length < 7 && liveStripQueue.length) {
+                      liveStripVisible.push(liveStripQueue.pop());
                   }
+                  renderLiveStripSlots(0);
+              }
+          }
+
+          function showNextLiveGift() {
+              if (!liveStripQueue.length) {
+                  refreshLiveStrip();
+                  return;
               }
 
-              var signature = liveStripItems.map(function(item) {
-                  return (item.type || '') + '|' + (item.createdAt || '') + '|' + (item.name || '') + '|' + (item.image || '');
-              }).join('||');
+              var next = liveStripQueue.shift();
+              if (!next) return;
 
-              if (signature !== liveStripLastSignature) {
-                  liveStripLastSignature = signature;
-                  renderLiveStripItem(liveStripItems);
+              if (liveStripVisible.length < 7) {
+                  liveStripVisible.push(next);
+                  liveStripSlotIndex = liveStripVisible.length - 1;
+              } else {
+                  liveStripSlotIndex = (liveStripSlotIndex + 1) % 7;
+                  liveStripVisible[liveStripSlotIndex] = next;
               }
+
+              renderLiveStripSlots(liveStripSlotIndex);
           }
 
           function refreshLiveStrip() {
@@ -11695,7 +11727,7 @@ video::-webkit-media-controls-enclosure {
               })
               .then(function(payload) {
                   if (!payload || !payload.ok || !Array.isArray(payload.items)) return;
-                  mergeLiveStripItems(payload.items);
+                  addLiveStripItems(payload.items);
               })
               .catch(function() {});
           }
@@ -11705,9 +11737,15 @@ video::-webkit-media-controls-enclosure {
               if (!scroll) return;
 
               if (liveStripRefreshTimer) clearInterval(liveStripRefreshTimer);
+              if (liveStripStepTimer) clearInterval(liveStripStepTimer);
+
               refreshLiveStrip();
+
+              // One gift appears/replaces one slot at a time. No continuous marquee.
+              liveStripStepTimer = window.setInterval(showNextLiveGift, 2800);
               liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 6000);
           }
+
 
 
 
