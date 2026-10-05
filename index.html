@@ -10609,9 +10609,17 @@
             } catch (error) { /* silent: status check is best-effort only */ }
         }
 
-        document.addEventListener('pointerdown', function() {
-            try { unlockRocketBannerAudio(); } catch (e) {}
-        }, { once: true, passive: true });
+        function handleHomeBannerUserInteraction() {
+            try {
+                if (document.getElementById('game-hub') && !document.getElementById('game-hub').classList.contains('hidden')) {
+                    setHomeBannerAudioEnabled(true);
+                    keepHomeBannerVideosPlaying(false);
+                }
+            } catch (e) {}
+        }
+
+        document.addEventListener('pointerdown', handleHomeBannerUserInteraction, { passive: true });
+        document.addEventListener('touchstart', handleHomeBannerUserInteraction, { passive: true });
 
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
@@ -10982,6 +10990,7 @@
         }
 
         function showPage(page) {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             document.querySelectorAll(".nav-button").forEach(function(button) { button.classList.remove("active"); });
             document.querySelectorAll(".modal").forEach(function(m) { m.classList.remove("show"); });
             document.getElementById("game-hub").classList.add("hidden");
@@ -10996,6 +11005,7 @@
             document.getElementById("earn-page").classList.remove("show");
             document.getElementById("top-page").classList.remove("show");
             if (page === "home") {
+                try { setHomeBannerAudioEnabled(false); keepHomeBannerVideosPlaying(true); } catch (e) {}
                 document.getElementById("nav-home").classList.add("active");
                 document.getElementById("game-hub").classList.remove("hidden");
             } else if (page === "top") {
@@ -11068,6 +11078,7 @@
         }
 
         function openRocketGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             rocketBackdropPhase = "";
             resetRocketBackdrop();
             hideAllPages();
@@ -11144,6 +11155,7 @@
         }
 
         function openPlayHub() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             hideAllPages();
             closeAllGames();
             document.getElementById("game-hub").classList.add("hidden");
@@ -11162,6 +11174,7 @@
         }
 
         function openMinesGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             hideAllPages();
             closeAllGames();
             closePlayHub();
@@ -11178,6 +11191,7 @@
         }
 
         function openPlinkoGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             hideAllPages();
             closeAllGames();
             closePlayHub();
@@ -11194,6 +11208,7 @@
         }
 
         function openDiceGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             hideAllPages();
             closeAllGames();
             closePlayHub();
@@ -11209,6 +11224,7 @@
         }
 
         function openCraftsGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
             hideAllPages();
             closeAllGames();
             closePlayHub();
@@ -11225,6 +11241,7 @@
         }
 
          function openPvpGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
              hideAllPages();
              closeAllGames();
              closePlayHub();
@@ -11242,6 +11259,7 @@
          }
 
          function openUpgradeGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
              hideAllPages();
              closeAllGames();
              closePlayHub();
@@ -11258,6 +11276,7 @@
          }
 
          function openLotteryGame() {
+            try { setHomeBannerAudioEnabled(false); } catch (e) {}
              hideAllPages();
              closeAllGames();
              closePlayHub();
@@ -12035,75 +12054,108 @@
             return ((now % durationMs) / 1000);
         }
 
-        function playBannerVideoSynchronized(video) {
+        function playBannerVideoSynchronized(video, forceSync) {
             try {
                 if (document.visibilityState === 'hidden') return;
+                if (video.dataset.bannerHomeAudio !== '1') {
+                    video.muted = true;
+                    video.defaultMuted = true;
+                }
+                video.controls = false;
                 const duration = Number(video.duration);
-                if (Number.isFinite(duration) && duration > 0) {
-                    const target = getSynchronizedBannerOffset(video);
-                    if (Math.abs(video.currentTime - target) > 0.35) {
-                        try { video.currentTime = target; } catch (e) {}
+                if (forceSync || video.paused) {
+                    if (Number.isFinite(duration) && duration > 0) {
+                        const target = getSynchronizedBannerOffset(video);
+                        if (Math.abs(video.currentTime - target) > 0.15) {
+                            try { video.currentTime = target; } catch (e) {}
+                        }
                     }
                 }
                 const playPromise = video.play();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                    playPromise.catch(function() {});
-                }
+                if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
             } catch (e) {}
         }
 
-        let bannerVideoAudioUnlocked = false;
+        let bannerHomeAudioEnabled = false;
 
-        function unlockRocketBannerAudio() {
-            bannerVideoAudioUnlocked = true;
-            const video = document.querySelector('.rocket-banner video.banner-art');
-            if (!video) return;
-            try {
-                video.muted = false;
-                video.defaultMuted = false;
-                const p = video.play();
-                if (p && typeof p.catch === 'function') p.catch(function() {});
-            } catch (e) {}
+        function setHomeBannerAudioEnabled(enabled) {
+            bannerHomeAudioEnabled = !!enabled;
+            document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
+                try {
+                    video.dataset.bannerHomeAudio = bannerHomeAudioEnabled ? '1' : '0';
+                    video.muted = !bannerHomeAudioEnabled;
+                    video.defaultMuted = !bannerHomeAudioEnabled;
+                    if (!bannerHomeAudioEnabled) video.volume = 0;
+                    else video.volume = 1;
+                    if (document.visibilityState === 'visible' && !video.paused) {
+                        const p = video.play();
+                        if (p && typeof p.catch === 'function') p.catch(function() {});
+                    }
+                } catch (e) {}
+            });
         }
 
-        function keepHomeBannerVideosPlaying() {
+        function keepHomeBannerVideosPlaying(forceSync) {
             document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
                 try {
                     video.autoplay = false;
                     video.loop = true;
-                    video.muted = true;
-                    video.defaultMuted = true;
-                    const source = video.getAttribute('data-video-src');
-                    if (source && video.getAttribute('src') !== source) {
-                        video.removeAttribute('src');
-                        video.load();
-                        video.setAttribute('src', source);
-                        video.load();
-                    }
-                    video.defaultMuted = true;
-                    video.playsInline = true;
                     video.controls = false;
-                    video.setAttribute('autoplay', '');
-                    video.setAttribute('loop', '');
-                    video.setAttribute('muted', '');
+                    video.playsInline = true;
+                    video.disablePictureInPicture = true;
+                    video.dataset.bannerHomeAudio = bannerHomeAudioEnabled ? '1' : '0';
+                    video.muted = !bannerHomeAudioEnabled;
+                    video.defaultMuted = !bannerHomeAudioEnabled;
+                    video.volume = bannerHomeAudioEnabled ? 1 : 0;
                     video.setAttribute('playsinline', '');
                     video.setAttribute('webkit-playsinline', '');
                     video.setAttribute('controlslist', 'nodownload noplaybackrate');
-                    video.disablePictureInPicture = true;
                     video.removeAttribute('controls');
-                    video.addEventListener('loadedmetadata', function() {
-                        video.muted = !bannerVideoAudioUnlocked;
-                        video.controls = false;
-                        playBannerVideoSynchronized(video);
-                    }, { once: true });
-                    video.addEventListener('loadeddata', function() { playBannerVideoSynchronized(video); });
-                    video.addEventListener('canplay', function() { playBannerVideoSynchronized(video); });
-                    video.addEventListener('canplaythrough', function() { playBannerVideoSynchronized(video); });
-                    video.addEventListener('ended', function() {
-                        try { video.currentTime = getSynchronizedBannerOffset(video); } catch (e) {}
-                        playBannerVideoSynchronized(video);
-                    });
-                    playBannerVideoSynchronized(video);
+
+                    const source = video.getAttribute('data-video-src');
+                    if (source && !video.dataset.bannerVideoSourceLoaded) {
+                        video.dataset.bannerVideoSourceLoaded = '1';
+                        video.setAttribute('src', source);
+                        video.load();
+                    }
+
+                    if (video.dataset.bannerVideoBound !== '1') {
+                        video.dataset.bannerVideoBound = '1';
+                        video.addEventListener('loadedmetadata', function() {
+                            playBannerVideoSynchronized(video, true);
+                        });
+                        video.addEventListener('canplay', function() {
+                            if (video.paused) playBannerVideoSynchronized(video, false);
+                        });
+                        video.addEventListener('playing', function() {
+                            video.controls = false;
+                        });
+                        video.addEventListener('pause', function() {
+                            if (document.visibilityState === 'visible' && bannerHomeAudioEnabled === (video.dataset.bannerHomeAudio === '1')) {
+                                window.setTimeout(function() {
+                                    if (document.visibilityState === 'visible' && video.paused) {
+                                        playBannerVideoSynchronized(video, true);
+                                    }
+                                }, 120);
+                            }
+                        });
+                        video.addEventListener('stalled', function() {
+                            if (document.visibilityState === 'visible') {
+                                window.setTimeout(function() {
+                                    if (video.paused) playBannerVideoSynchronized(video, false);
+                                }, 250);
+                            }
+                        });
+                        video.addEventListener('waiting', function() {
+                            window.setTimeout(function() {
+                                if (document.visibilityState === 'visible' && video.paused) {
+                                    playBannerVideoSynchronized(video, false);
+                                }
+                            }, 300);
+                        });
+                    }
+
+                    if (forceSync || video.paused) playBannerVideoSynchronized(video, !!forceSync);
                 } catch (e) {}
             });
         }
