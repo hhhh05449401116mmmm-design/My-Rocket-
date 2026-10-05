@@ -11251,14 +11251,14 @@ video::-webkit-media-controls-enclosure {
         function closePlayHub() {
             var screen = document.getElementById('playhub-screen');
             if (screen) screen.classList.add('hidden');
-        }        function resumeHomeBannersAfterGameClose() {
+        }
+
+        function resumeHomeBannersAfterGameClose() {
             requestAnimationFrame(function() {
                 if (!isHomeBannerScreenVisible()) return;
                 try { keepHomeBannerVideosPlaying(true); } catch (e) {}
             });
         }
-
-
 
         function hideAllPages() {
             document.getElementById("profile-page").classList.remove("show");
