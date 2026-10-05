@@ -1563,17 +1563,23 @@ app.get('/api/loot-box/recent-wins', async (req, res) => {
 app.get('/api/live-gifts', async (req, res) => {
     try {
         const recentRows = await query(`
-            SELECT n.data, n.created_at,
-                   g.name AS gift_name, g.image_url AS gift_image, g.value AS gift_value
+            SELECT n.type, n.data, n.created_at,
+                   g.name AS gift_name, g.image_url AS gift_image
             FROM notifications n
             LEFT JOIN gifts g
-              ON g.id = CAST(json_extract(n.data, '$.giftId') AS INTEGER)
-            WHERE n.type = 'GIFT_WON'
+              ON g.id = CASE
+                    WHEN n.type = 'GIFT_WON'
+                    THEN CAST(json_extract(n.data, '$.giftId') AS INTEGER)
+                    ELSE NULL
+                 END
+            WHERE n.type IN ('GIFT_WON', 'BALANCE_WON')
             ORDER BY n.created_at DESC
-            LIMIT 40
+            LIMIT 80
         `);
 
         const playerWins = [];
+        const tonWins = [];
+
         for (const row of recentRows) {
             let data = {};
             try { data = row.data ? JSON.parse(row.data) : {}; } catch {}
@@ -1581,45 +1587,102 @@ app.get('/api/live-gifts', async (req, res) => {
             const source = String(data.source || '');
             if (source !== 'paid-loot-box' && source !== 'free-box') continue;
 
-            const value = Number(row.gift_value || 0);
+            const isTon = row.type === 'BALANCE_WON' || Number(data.tonReward) > 0;
+
+            if (isTon) {
+                const tonReward = Number(data.tonReward || 0);
+                if (Number.isFinite(tonReward) && tonReward > 0) {
+                    tonWins.push({
+                        type: 'ton',
+                        id: 'real-ton-' + String(row.created_at) + '-' + String(tonReward),
+                        name: 'TON Reward',
+                        image: '/assets/ton-icon.svg',
+                        createdAt: row.created_at
+                    });
+                }
+                continue;
+            }
+
             if (!row.gift_name) continue;
 
             playerWins.push({
                 type: 'player',
+                id: 'player-' + String(row.created_at) + '-' + String(row.gift_name),
                 name: row.gift_name,
                 image: row.gift_image || '',
-                value: Number.isFinite(value) && value > 0 ? value : null,
                 boxName: String(data.boxName || '').trim(),
                 createdAt: row.created_at
             });
 
-            if (playerWins.length >= 8) break;
+            if (playerWins.length >= 12) break;
         }
 
-        const randomRows = await query(`
-            SELECT name, image_url, value
-            FROM gifts
-            WHERE image_url IS NOT NULL
-              AND TRIM(image_url) <> ''
-              AND CAST(value AS REAL) > 0
-              AND CAST(value AS REAL) <= 100
-            ORDER BY RANDOM()
-            LIMIT 4
-        `);
+        // Use Telegram's live Star Gift catalog instead of the small local gifts table.
+        const telegramGifts = await getTelegramStarGiftCatalog();
+        const playerNames = new Set(playerWins.map(item => String(item.name).trim().toLowerCase()));
 
-        const randomGifts = randomRows
-            .map(row => ({
-                type: 'random',
-                name: row.name,
-                image: row.image_url || '',
-                value: Number.isFinite(Number(row.value)) && Number(row.value) > 0 && Number(row.value) <= 100 ? Number(row.value) : null
-            }))
-            .filter(item => item.name);
+        const catalog = telegramGifts
+            .filter(gift => gift && gift.title && gift.sticker)
+            .map(gift => {
+                const name = String(gift.title).trim();
+                return {
+                    type: 'telegram',
+                    id: 'tg-' + String(gift.id || name),
+                    name,
+                    image: '/api/gift-media/' + encodeURIComponent(name)
+                };
+            })
+            .filter(item => !playerNames.has(item.name.toLowerCase()));
 
-        const items = [...playerWins.slice(0, 12), ...randomGifts.slice(0, 4)];
+        // Shuffle the full Telegram catalog and take distinct gifts for this refresh.
+        for (let i = catalog.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = catalog[i];
+            catalog[i] = catalog[j];
+            catalog[j] = tmp;
+        }
+
+        const randomTelegramGifts = [];
+        for (const item of catalog) {
+            const key = item.id.toLowerCase();
+            if (randomTelegramGifts.some(existing => existing.id.toLowerCase() === key)) continue;
+            randomTelegramGifts.push(item);
+            if (randomTelegramGifts.length >= 6) break;
+        }
+
+        // Add a few TON rewards to the feed so the strip is not collectibles-only.
+        const randomTonRewards = [];
+        const tonCount = Math.random() < 0.5 ? 1 : 2;
+        for (let i = 0; i < tonCount; i++) {
+            randomTonRewards.push({
+                type: 'ton',
+                id: 'random-ton-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2, 8),
+                name: 'TON Reward',
+                image: '/assets/ton-icon.svg'
+            });
+        }
+
+        const items = [
+            ...playerWins.slice(0, 12),
+            ...tonWins.slice(0, 3),
+            ...randomTelegramGifts,
+            ...randomTonRewards
+        ];
+
+        // Mix the non-player additions while keeping real player wins first.
+        const liveTail = items.slice(playerWins.length);
+        for (let i = liveTail.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = liveTail[i];
+            liveTail[i] = liveTail[j];
+            liveTail[j] = tmp;
+        }
 
         res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, items });
+        res.json({
+            ok: true,
+            items: [...playerWins.slice(0, 12), ...liveTail.slice(0, 10)]
+        });
     } catch (error) {
         console.error('Live gifts feed failed:', error.message);
         res.status(200).json({ ok: true, items: [] });
