@@ -369,17 +369,35 @@
          }
          .live-strip-title {
              font-size: 12px;
-             font-weight: 800;
-             color: #ff6b6b;
+             font-weight: 900;
+             color: #ffffff;
              white-space: nowrap;
              flex-shrink: 0;
+             display: inline-flex;
+             align-items: center;
+             gap: 7px;
+             letter-spacing: 0.2px;
+         }
+         .live-strip-dot {
+             width: 8px;
+             height: 8px;
+             border-radius: 50%;
+             background: #22c55e;
+             box-shadow: 0 0 8px rgba(34, 197, 94, 0.95);
+             animation: live-dot-pulse 1.15s ease-in-out infinite;
+             flex: 0 0 auto;
+         }
+         @keyframes live-dot-pulse {
+             0%, 100% { opacity: 1; transform: scale(1); }
+             50% { opacity: 0.3; transform: scale(0.72); }
          }
          .live-strip-scroll {
              flex: 1;
              overflow: hidden;
              position: relative;
-             color: #7a9bcb;
+             color: #ffffff;
              font-size: 12px;
+             min-width: 0;
          }
          .live-strip-scroll::after {
              content: '';
@@ -4859,7 +4877,7 @@ video::-webkit-media-controls-enclosure {
          <div id="game-hub" class="game-hub">
              <!-- ==== Live Strip ==== -->
              <div class="live-strip" id="live-strip">
-                 <div class="live-strip-title">🔴 LIVE</div>
+                 <div class="live-strip-title"><span class="live-strip-dot" aria-hidden="true"></span><span>LIVE</span></div>
                  <div class="live-strip-scroll" id="live-strip-scroll">
                      <span class="live-strip-item">🎁 Gifts arriving...</span>
                  </div>
@@ -11537,12 +11555,61 @@ video::-webkit-media-controls-enclosure {
               if (modal) modal.classList.add('show');
           }
 
+          var liveStripItems = [];
+          var liveStripIndex = 0;
+          var liveStripRefreshTimer = null;
+          var liveStripRotateTimer = null;
+
+          function renderLiveStripItem(item) {
+              var scroll = document.getElementById('live-strip-scroll');
+              if (!scroll || !item) return;
+
+              var value = Number(item.value);
+              var valueText = Number.isFinite(value) && value > 0 ? value.toFixed(2).replace(/\\.00$/, '') + ' TON' : '';
+              var sourceText = item.type === 'player' ? '🎁 Player won' : '🎁 New gift';
+              var boxText = item.boxName ? ' • ' + item.boxName : '';
+
+              scroll.innerHTML =
+                  '<span class="live-strip-item">' +
+                  sourceText + ' • <strong>' + escapeHtml(item.name || 'Gift') + '</strong>' +
+                  (valueText ? ' • ' + escapeHtml(valueText) : '') +
+                  boxText +
+                  '</span>';
+          }
+
+          function refreshLiveStrip() {
+              var scroll = document.getElementById('live-strip-scroll');
+              if (!scroll) return;
+
+              fetch(BACKEND_URL + '/api/live-gifts', {
+                  method: 'GET',
+                  cache: 'no-store',
+                  headers: getAuthHeaders()
+              })
+              .then(function(response) { return response.json().catch(function() { return { ok: false }; }); })
+              .then(function(payload) {
+                  if (!payload || !payload.ok || !Array.isArray(payload.items) || !payload.items.length) return;
+                  liveStripItems = payload.items;
+                  liveStripIndex = 0;
+                  renderLiveStripItem(liveStripItems[0]);
+              })
+              .catch(function() {});
+          }
+
           function initLiveStrip() {
               var scroll = document.getElementById('live-strip-scroll');
               if (!scroll) return;
-              if (window.liveGamesCount) {
-                  scroll.innerHTML = '<span class="live-strip-item">🎮 ' + window.liveGamesCount + ' live games • 🎁 Daily gifts • 💰 Jackpot active</span>';
-              }
+
+              if (liveStripRefreshTimer) clearInterval(liveStripRefreshTimer);
+              if (liveStripRotateTimer) clearInterval(liveStripRotateTimer);
+
+              refreshLiveStrip();
+              liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 15000);
+              liveStripRotateTimer = window.setInterval(function() {
+                  if (!liveStripItems.length) return;
+                  liveStripIndex = (liveStripIndex + 1) % liveStripItems.length;
+                  renderLiveStripItem(liveStripItems[liveStripIndex]);
+              }, 4500);
           }
 
          /* =========================================================
