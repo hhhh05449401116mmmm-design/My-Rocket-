@@ -1560,6 +1560,72 @@ app.get('/api/loot-box/recent-wins', async (req, res) => {
     }
 });
 
+app.get('/api/live-gifts', async (req, res) => {
+    try {
+        const recentRows = await query(`
+            SELECT n.data, n.created_at,
+                   g.name AS gift_name, g.image_url AS gift_image, g.value AS gift_value
+            FROM notifications n
+            LEFT JOIN gifts g
+              ON g.id = CAST(json_extract(n.data, '$.giftId') AS INTEGER)
+            WHERE n.type = 'GIFT_WON'
+            ORDER BY n.created_at DESC
+            LIMIT 40
+        `);
+
+        const playerWins = [];
+        for (const row of recentRows) {
+            let data = {};
+            try { data = row.data ? JSON.parse(row.data) : {}; } catch {}
+
+            const source = String(data.source || '');
+            if (source !== 'paid-loot-box' && source !== 'free-box') continue;
+
+            const value = Number(row.gift_value || 0);
+            if (!row.gift_name || !row.gift_image || !Number.isFinite(value) || value <= 0) continue;
+
+            playerWins.push({
+                type: 'player',
+                name: row.gift_name,
+                image: row.gift_image,
+                value,
+                boxName: String(data.boxName || '').trim(),
+                createdAt: row.created_at
+            });
+
+            if (playerWins.length >= 8) break;
+        }
+
+        const randomRows = await query(`
+            SELECT name, image_url, value
+            FROM gifts
+            WHERE image_url IS NOT NULL
+              AND TRIM(image_url) <> ''
+              AND CAST(value AS REAL) > 0
+              AND CAST(value AS REAL) <= 100
+            ORDER BY RANDOM()
+            LIMIT 8
+        `);
+
+        const randomGifts = randomRows
+            .map(row => ({
+                type: 'random',
+                name: row.name,
+                image: row.image_url,
+                value: Number(row.value)
+            }))
+            .filter(item => item.name && item.image && Number.isFinite(item.value) && item.value > 0 && item.value <= 100);
+
+        const items = [...playerWins, ...randomGifts].slice(0, 16);
+
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ ok: true, items });
+    } catch (error) {
+        console.error('Live gifts feed failed:', error.message);
+        res.status(200).json({ ok: true, items: [] });
+    }
+});
+
 app.get('/api/rocket-gifts', async (req, res) => {
     try {
         const catalog = await refreshTelegramRocketCatalog();
