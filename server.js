@@ -1604,7 +1604,7 @@ app.get('/api/live-gifts', async (req, res) => {
               AND CAST(value AS REAL) > 0
               AND CAST(value AS REAL) <= 100
             ORDER BY RANDOM()
-            LIMIT 8
+            LIMIT 4
         `);
 
         const randomGifts = randomRows
@@ -1616,7 +1616,7 @@ app.get('/api/live-gifts', async (req, res) => {
             }))
             .filter(item => item.name);
 
-        const items = [...playerWins, ...randomGifts].slice(0, 16);
+        const items = [...playerWins.slice(0, 12), ...randomGifts.slice(0, 4)];
 
         res.setHeader('Cache-Control', 'no-store');
         res.json({ ok: true, items });
