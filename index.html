@@ -398,24 +398,89 @@
              color: #ffffff;
              font-size: 12px;
              min-width: 0;
+             height: 36px;
+             display: flex;
+             align-items: center;
          }
+         .live-strip-track {
+             display: inline-flex;
+             align-items: center;
+             gap: 8px;
+             min-width: max-content;
+             white-space: nowrap;
+             will-change: transform;
+             animation: live-gifts-marquee 18s linear infinite;
+         }
+         .live-strip-gift {
+             display: inline-flex;
+             align-items: center;
+             gap: 6px;
+             height: 30px;
+             padding: 3px 9px 3px 4px;
+             border-radius: 16px;
+             background: rgba(255,255,255,0.08);
+             border: 1px solid rgba(255,255,255,0.12);
+             box-sizing: border-box;
+             flex: 0 0 auto;
+         }
+         .live-strip-gift-image {
+             width: 24px;
+             height: 24px;
+             border-radius: 8px;
+             object-fit: cover;
+             display: block;
+             background: rgba(255,255,255,0.08);
+         }
+         .live-strip-gift-fallback {
+             width: 24px;
+             height: 24px;
+             border-radius: 8px;
+             display: inline-flex;
+             align-items: center;
+             justify-content: center;
+             background: rgba(255,255,255,0.08);
+             font-size: 15px;
+         }
+         .live-strip-gift-name {
+             max-width: 105px;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             font-weight: 800;
+             color: #fff;
+         }
+         .live-strip-gift-value {
+             color: #8fffa7;
+             font-weight: 900;
+         }
+         .live-strip-gift-source {
+             color: #b9c8dd;
+             font-size: 10px;
+         }
+         .live-strip-scroll::before,
          .live-strip-scroll::after {
              content: '';
              position: absolute;
-             right: -4px;
+             z-index: 2;
              top: 0;
              bottom: 0;
-             width: 60px;
-             background: linear-gradient(to right, rgba(15, 24, 39, 0.9), transparent);
+             width: 34px;
              pointer-events: none;
          }
-         @keyframes scroll-left {
-             0% { transform: translateX(100%); }
-             100% { transform: translateX(-100%); }
+         .live-strip-scroll::before {
+             left: 0;
+             background: linear-gradient(to right, #0f2847, transparent);
          }
-         .live-strip-item {
-             display: inline-block;
-             animation: scroll-left 12s linear infinite;
+         .live-strip-scroll::after {
+             right: 0;
+             background: linear-gradient(to left, #0a1a30, transparent);
+         }
+         @keyframes live-gifts-marquee {
+             0% { transform: translateX(0); }
+             100% { transform: translateX(-50%); }
+         }
+         .live-strip-empty {
+             color: #b9c8dd;
+             font-weight: 700;
              white-space: nowrap;
          }
 
@@ -11556,25 +11621,43 @@ video::-webkit-media-controls-enclosure {
           }
 
           var liveStripItems = [];
-          var liveStripIndex = 0;
           var liveStripRefreshTimer = null;
-          var liveStripRotateTimer = null;
 
-          function renderLiveStripItem(item) {
+          function renderLiveStripItem(items) {
               var scroll = document.getElementById('live-strip-scroll');
-              if (!scroll || !item) return;
+              if (!scroll) return;
 
-              var value = Number(item.value);
-              var valueText = Number.isFinite(value) && value > 0 ? value.toFixed(2).replace(/\\.00$/, '') + ' TON' : '';
-              var sourceText = item.type === 'player' ? '🎁 Player won' : '🎁 New gift';
-              var boxText = item.boxName ? ' • ' + item.boxName : '';
+              var list = Array.isArray(items) ? items.filter(function(item) {
+                  return item && item.name;
+              }) : [];
 
+              if (!list.length) {
+                  scroll.innerHTML = '<span class="live-strip-empty">🎁 Gifts arriving...</span>';
+                  return;
+              }
+
+              function card(item) {
+                  var value = Number(item.value);
+                  var valueText = Number.isFinite(value) && value > 0
+                      ? value.toFixed(2).replace(/\\.00$/, '') + ' TON'
+                      : '';
+                  var sourceText = item.type === 'player' ? 'LIVE' : 'NEW';
+                  var safeName = escapeHtml(item.name || 'Gift');
+                  var image = item.image
+                      ? '<img class="live-strip-gift-image" src="' + escapeHtmlAttribute(item.image) + '" alt="" loading="eager" decoding="async">'
+                      : '<span class="live-strip-gift-fallback">🎁</span>';
+
+                  return '<span class="live-strip-gift">' +
+                      image +
+                      '<span class="live-strip-gift-name">' + safeName + '</span>' +
+                      (valueText ? '<span class="live-strip-gift-value">' + escapeHtml(valueText) + '</span>' : '') +
+                      '<span class="live-strip-gift-source">' + sourceText + '</span>' +
+                      '</span>';
+              }
+
+              var cards = list.map(card).join('');
               scroll.innerHTML =
-                  '<span class="live-strip-item">' +
-                  sourceText + ' • <strong>' + escapeHtml(item.name || 'Gift') + '</strong>' +
-                  (valueText ? ' • ' + escapeHtml(valueText) : '') +
-                  boxText +
-                  '</span>';
+                  '<div class="live-strip-track">' + cards + cards + '</div>';
           }
 
           function refreshLiveStrip() {
@@ -11586,12 +11669,13 @@ video::-webkit-media-controls-enclosure {
                   cache: 'no-store',
                   headers: getAuthHeaders()
               })
-              .then(function(response) { return response.json().catch(function() { return { ok: false }; }); })
+              .then(function(response) {
+                  return response.json().catch(function() { return { ok: false }; });
+              })
               .then(function(payload) {
-                  if (!payload || !payload.ok || !Array.isArray(payload.items) || !payload.items.length) return;
+                  if (!payload || !payload.ok || !Array.isArray(payload.items)) return;
                   liveStripItems = payload.items;
-                  liveStripIndex = 0;
-                  renderLiveStripItem(liveStripItems[0]);
+                  renderLiveStripItem(liveStripItems);
               })
               .catch(function() {});
           }
@@ -11601,16 +11685,10 @@ video::-webkit-media-controls-enclosure {
               if (!scroll) return;
 
               if (liveStripRefreshTimer) clearInterval(liveStripRefreshTimer);
-              if (liveStripRotateTimer) clearInterval(liveStripRotateTimer);
-
               refreshLiveStrip();
               liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 15000);
-              liveStripRotateTimer = window.setInterval(function() {
-                  if (!liveStripItems.length) return;
-                  liveStripIndex = (liveStripIndex + 1) % liveStripItems.length;
-                  renderLiveStripItem(liveStripItems[liveStripIndex]);
-              }, 4500);
           }
+
 
          /* =========================================================
             MINES GAME
