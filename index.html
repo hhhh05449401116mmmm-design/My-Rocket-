@@ -4401,7 +4401,40 @@
         }
 
 
-        /* FINAL BOTTOM NAV STATE
+        
+        /* FINAL BANNER SIZE/HIT-AREA FIX */
+        .image-banner.rocket-banner,
+        .image-banner.pvp-banner,
+        .image-banner.playhub-banner {
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 1228 / 314 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: relative !important;
+            display: block !important;
+            box-sizing: border-box !important;
+        }
+
+        .image-banner.rocket-banner .banner-art,
+        .image-banner.pvp-banner .banner-art,
+        .image-banner.playhub-banner .banner-art {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
+            aspect-ratio: auto !important;
+            object-fit: cover !important;
+            object-position: center !important;
+            display: block !important;
+            pointer-events: none !important;
+        }
+
+/* FINAL BOTTOM NAV STATE
            Inactive buttons stay white; the selected button is purple. */
         .bottom-nav .nav-button,
         .bottom-nav .nav-button span:last-child {
