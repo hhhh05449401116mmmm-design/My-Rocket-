@@ -7130,7 +7130,7 @@ async function openLootBox(box) {
                 try {
                     const response = await fetch(BACKEND_URL + '/api/channel-subscription/status', { headers: getAuthHeaders(), cache: 'no-store' });
                     const data = await response.json().catch(() => ({}));
-                    if (!data.ok || !data.subscribed) { await showChannelSubscriptionPopup(); return; }
+                    if (!data.ok || !data.subscribed) { const subscribed = await showChannelSubscriptionPopup(); if (!subscribed) return; }
                 } catch (error) {
                     showToast((translations[currentLanguage] || translations.ar).channelRequiredError);
                     return;
