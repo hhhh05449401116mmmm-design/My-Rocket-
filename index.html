@@ -12008,6 +12008,46 @@
             }
         }
 
+        let bannerVideoServerOffsetMs = 0;
+
+        async function syncBannerVideoServerClock() {
+            const startedAt = Date.now();
+            try {
+                const response = await fetch('/api/server-time', { cache: 'no-store' });
+                const data = await response.json();
+                if (response.ok && data.ok && Number.isFinite(Number(data.serverTime))) {
+                    const receivedAt = Date.now();
+                    const midpoint = startedAt + ((receivedAt - startedAt) / 2);
+                    bannerVideoServerOffsetMs = Number(data.serverTime) - midpoint;
+                }
+            } catch (e) {}
+        }
+
+        function getSynchronizedBannerOffset(video) {
+            const duration = Number(video.duration);
+            if (!Number.isFinite(duration) || duration <= 0) return 0;
+            const now = Date.now() + bannerVideoServerOffsetMs;
+            const durationMs = duration * 1000;
+            return ((now % durationMs) / 1000);
+        }
+
+        function playBannerVideoSynchronized(video) {
+            try {
+                if (document.visibilityState === 'hidden') return;
+                const duration = Number(video.duration);
+                if (Number.isFinite(duration) && duration > 0) {
+                    const target = getSynchronizedBannerOffset(video);
+                    if (Math.abs(video.currentTime - target) > 0.35) {
+                        try { video.currentTime = target; } catch (e) {}
+                    }
+                }
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(function() {});
+                }
+            } catch (e) {}
+        }
+
         function keepHomeBannerVideosPlaying() {
             document.querySelectorAll('.image-banner video.banner-art').forEach(function(video) {
                 try {
@@ -12024,11 +12064,15 @@
                     video.setAttribute('webkit-playsinline', '');
                     video.setAttribute('controlslist', 'nodownload noplaybackrate');
                     video.disablePictureInPicture = true;
-
-                    if (document.visibilityState !== 'hidden') {
-                        const playPromise = video.play();
-                        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
-                    }
+                    video.removeAttribute('controls');
+                    video.addEventListener('loadedmetadata', function() { playBannerVideoSynchronized(video); }, { once: true });
+                    video.addEventListener('canplay', function() { playBannerVideoSynchronized(video); });
+                    video.addEventListener('canplaythrough', function() { playBannerVideoSynchronized(video); });
+                    video.addEventListener('ended', function() {
+                        try { video.currentTime = getSynchronizedBannerOffset(video); } catch (e) {}
+                        playBannerVideoSynchronized(video);
+                    });
+                    playBannerVideoSynchronized(video);
                 } catch (e) {}
             });
         }
@@ -12165,6 +12209,7 @@
         async function bootstrapRocketApp() {
             try { initTelegramChrome(); } catch (e) { console.error('Telegram chrome init error:', e); }
             try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
+            try { syncBannerVideoServerClock(); } catch (e) {}
             try { keepHomeBannerVideosPlaying(); } catch (e) { console.error('Banner video init error:', e); }
             const authenticated = await authenticateUser();
             if (!authenticated) {
@@ -12206,13 +12251,20 @@
 
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
+                try { syncBannerVideoServerClock(); } catch (e) {}
                 try { keepHomeBannerVideosPlaying(); } catch (e) {}
             }
         });
 
         window.addEventListener('pageshow', function() {
+            try { syncBannerVideoServerClock(); } catch (e) {}
             try { keepHomeBannerVideosPlaying(); } catch (e) {}
         });
+
+        window.setInterval(function() {
+            try { syncBannerVideoServerClock(); } catch (e) {}
+            try { keepHomeBannerVideosPlaying(); } catch (e) {}
+        }, 30000);
 
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", bootstrapRocketApp, { once: true });
