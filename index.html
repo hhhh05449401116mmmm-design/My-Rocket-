@@ -6296,7 +6296,7 @@ video::-webkit-media-controls-enclosure {
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
                 const visual = box.image
-                    ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="lazy">'
+                    ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async">'
                     : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>';
 
                 div.innerHTML = '<div class="loot-box-inner">' +
@@ -12525,6 +12525,7 @@ video::-webkit-media-controls-enclosure {
             try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
             try { syncBannerVideoServerClock(); } catch (e) {}
             try { keepHomeBannerVideosPlaying(); } catch (e) { console.error('Banner video init error:', e); }
+            try { renderLootBoxes(); } catch (e) { console.error('Home loot-box render error:', e); }
             const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
