@@ -5032,7 +5032,13 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                 }
             }
 
-            const reward = FREE_BOX_REWARDS[Math.floor(Math.random() * FREE_BOX_REWARDS.length)];
+            // FREE / FREE24 odds are server-authoritative:
+            // 35% collectible gift, 65% TON reward from the TON rewards in this box.
+            const giftRewards = FREE_BOX_REWARDS.filter(item => item.rewardType !== 'ton');
+            const tonRewards = FREE_BOX_REWARDS.filter(item => item.rewardType === 'ton');
+            const reward = Math.random() < 0.35
+                ? giftRewards[Math.floor(Math.random() * giftRewards.length)]
+                : tonRewards[Math.floor(Math.random() * tonRewards.length)];
             let gift = null;
             let userGift = null;
 
