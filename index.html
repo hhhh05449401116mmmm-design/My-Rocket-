@@ -11623,6 +11623,7 @@ video::-webkit-media-controls-enclosure {
           var liveStripQueue = [];
           var liveStripVisible = [];
           var liveStripKnownPlayerWins = {};
+          var liveStripSeenRandomGifts = {};
           var liveStripRefreshTimer = null;
           var liveStripStepTimer = null;
           var liveStripSlotIndex = 0;
@@ -11644,10 +11645,13 @@ video::-webkit-media-controls-enclosure {
                       continue;
                   }
 
-                  var tone = ((i + liveStripSlotIndex) % 2 === 0) ? 'gold' : 'purple';
+                  var tone = item.type === 'ton'
+                      ? 'gold'
+                      : (((i + liveStripSlotIndex) % 2 === 0) ? 'gold' : 'purple');
+
                   var image = item.image
                       ? '<img class="live-strip-gift-image" src="' + escapeHtmlAttribute(item.image) + '" alt="" loading="eager" decoding="async">'
-                      : '<span class="live-strip-gift-fallback">🎁</span>';
+                      : '<span class="live-strip-gift-fallback">' + (item.type === 'ton' ? '💎' : '🎁') + '</span>';
 
                   html += '<span class="live-strip-gift ' + tone + (i === changedSlot ? ' entering' : '') +
                       '" title="' + escapeHtmlAttribute(item.name || 'Gift') + '">' + image + '</span>';
@@ -11672,22 +11676,36 @@ video::-webkit-media-controls-enclosure {
 
                       if (liveStripKnownPlayerWins[key]) return;
                       liveStripKnownPlayerWins[key] = true;
-
-                      // Real player wins go to the front of the queue.
                       liveStripQueue.unshift(item);
-                  } else {
-                      liveStripQueue.push(item);
+                      return;
                   }
+
+                  if (item.type === 'ton') {
+                      var tonKey = [
+                          item.id || '',
+                          item.createdAt || '',
+                          item.name || ''
+                      ].join('|');
+                      if (liveStripSeenRandomGifts[tonKey]) return;
+                      liveStripSeenRandomGifts[tonKey] = true;
+                      liveStripQueue.push(item);
+                      return;
+                  }
+
+                  // Telegram catalog gift: avoid repeating the same gift too often.
+                  var giftKey = String(item.id || item.name || '').toLowerCase();
+                  if (liveStripSeenRandomGifts[giftKey]) return;
+                  liveStripSeenRandomGifts[giftKey] = true;
+                  liveStripQueue.push(item);
               });
 
-              // Prevent the queue from growing forever.
-              if (liveStripQueue.length > 60) {
-                  liveStripQueue = liveStripQueue.slice(0, 60);
+              if (liveStripQueue.length > 80) {
+                  liveStripQueue = liveStripQueue.slice(-80);
               }
 
               if (!liveStripVisible.length) {
                   while (liveStripVisible.length < 7 && liveStripQueue.length) {
-                      liveStripVisible.push(liveStripQueue.pop());
+                      liveStripVisible.push(liveStripQueue.shift());
                   }
                   renderLiveStripSlots(0);
               }
@@ -11741,7 +11759,7 @@ video::-webkit-media-controls-enclosure {
 
               refreshLiveStrip();
 
-              // One gift appears/replaces one slot at a time. No continuous marquee.
+              // One item at a time; no marquee. Real wins are injected immediately.
               liveStripStepTimer = window.setInterval(showNextLiveGift, 2800);
               liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 6000);
           }
