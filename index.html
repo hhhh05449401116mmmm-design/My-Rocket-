@@ -2895,7 +2895,7 @@
         #rocket.telegram-fallback-hidden { visibility: hidden; }
         
         .image-banner { padding:0 !important; background:transparent !important; overflow:hidden; position:relative; aspect-ratio:auto !important; height:auto !important; }
-        .image-banner .banner-art { position:relative; inset:auto; width:100%; height:auto !important; aspect-ratio:auto; object-fit:contain; object-position:center; display:block; z-index:0; }
+        .image-banner .banner-art { position:relative; inset:auto; width:100%; height:auto !important; aspect-ratio:auto; object-fit:contain; object-position:center; display:block; z-index:0; pointer-events:none; }
         .image-banner.playhub-banner .banner-art { height:auto !important; object-position:center; }
 
         /* =========================================================
@@ -12140,6 +12140,7 @@
         async function bootstrapRocketApp() {
             try { initTelegramChrome(); } catch (e) { console.error('Telegram chrome init error:', e); }
             try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
+            try { keepHomeBannerVideosPlaying(); } catch (e) { console.error('Banner video init error:', e); }
             const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
@@ -12177,6 +12178,16 @@
             try { loadTelegramTgsRenderer().catch(() => {}); } catch (e) {}
             try { initLiveStrip(); } catch (e) {}
         }
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                try { keepHomeBannerVideosPlaying(); } catch (e) {}
+            }
+        });
+
+        window.addEventListener('pageshow', function() {
+            try { keepHomeBannerVideosPlaying(); } catch (e) {}
+        });
 
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", bootstrapRocketApp, { once: true });
