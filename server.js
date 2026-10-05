@@ -702,6 +702,32 @@ function verifyTelegramData(initData) {
 // requires the business bot to have the "can_view_gifts_and_stars" right.
 // Never invents endpoints; never trusts client-provided gift data.
 // =========================================================
+const REQUIRED_CHANNEL_USERNAME = '@Crazy_Rocket_official';
+const REQUIRED_CHANNEL_URL = 'https://t.me/Crazy_Rocket_official';
+
+async function getRequiredChannelMembership(telegramUserId) {
+    const userId = Number(telegramUserId);
+    if (!Number.isSafeInteger(userId) || userId <= 0) return { subscribed: false, status: 'invalid_user' };
+    const member = await callTelegramBotApi('getChatMember', { chat_id: REQUIRED_CHANNEL_USERNAME, user_id: userId });
+    const status = String(member?.status || '');
+    const subscribed = status === 'creator' || status === 'administrator' || status === 'member' || (status === 'restricted' && member?.is_member === true);
+    return { subscribed, status };
+}
+
+async function requireRequiredChannelSubscription(user) {
+    const membership = await getRequiredChannelMembership(user?.telegram_id);
+    if (!membership.subscribed) {
+        const error = new Error('CHANNEL_SUBSCRIPTION_REQUIRED');
+        error.statusCode = 403;
+        error.code = 'CHANNEL_SUBSCRIPTION_REQUIRED';
+        error.channelUsername = REQUIRED_CHANNEL_USERNAME;
+        error.channelUrl = REQUIRED_CHANNEL_URL;
+        error.membershipStatus = membership.status;
+        throw error;
+    }
+    return membership;
+}
+
 function callTelegramBotApi(method, payload = {}) {
     return new Promise((resolve, reject) => {
         if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
@@ -3517,6 +3543,16 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
     }
 });
 
+app.get('/api/channel-subscription/status', authenticate, async (req, res) => {
+    try {
+        const membership = await getRequiredChannelMembership(req.user.telegram_id);
+        res.json({ ok: true, subscribed: membership.subscribed, status: membership.status, channelUsername: REQUIRED_CHANNEL_USERNAME, channelUrl: REQUIRED_CHANNEL_URL });
+    } catch (error) {
+        console.error('Channel subscription status failed:', error.message);
+        res.status(503).json({ ok: false, error: 'Unable to verify channel subscription' });
+    }
+});
+
 // ===== Loot-box keep pending gift =====
 app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
     try {
@@ -3592,6 +3628,12 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
 
 // ===== 5.6.3 سحب هدية =====
 app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
+    try {
+        await requireRequiredChannelSubscription(req.user);
+    } catch (subscriptionError) {
+        if (subscriptionError.code === 'CHANNEL_SUBSCRIPTION_REQUIRED') return res.status(403).json({ ok: false, error: subscriptionError.message, code: subscriptionError.code, channelUsername: subscriptionError.channelUsername, channelUrl: subscriptionError.channelUrl });
+        return res.status(503).json({ ok: false, error: 'Unable to verify channel subscription' });
+    }
     try {
         const { collectibleId } = req.body || {};
         if (!collectibleId) return res.status(400).json({ ok: false, error: 'collectibleId required' });
@@ -4893,6 +4935,12 @@ app.get('/api/loot-box/free/status', authenticate, async (req, res) => {
 
 app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
     try {
+        await requireRequiredChannelSubscription(req.user);
+    } catch (subscriptionError) {
+        if (subscriptionError.code === 'CHANNEL_SUBSCRIPTION_REQUIRED') return res.status(403).json({ ok: false, error: subscriptionError.message, code: subscriptionError.code, channelUsername: subscriptionError.channelUsername, channelUrl: subscriptionError.channelUrl });
+        return res.status(503).json({ ok: false, error: 'Unable to verify channel subscription' });
+    }
+    try {
         const boxId = req.body?.boxId === 'free24' ? 'free24' : 'free';
         const result = await transaction(async () => {
             const latestOpen = await get(
@@ -5147,6 +5195,16 @@ app.post('/api/loot-box/100/draw', authenticate, async (req, res) => {
 
 // ===== 5.9 فتح صندوق الحظ =====
 app.post('/api/lootbox/open', authenticate, async (req, res) => {
+    try {
+        const requestedBoxId = req.body?.boxId;
+        if (requestedBoxId === 'free' || requestedBoxId === 'free24') {
+            await requireRequiredChannelSubscription(req.user);
+        }
+    } catch (subscriptionError) {
+        if (subscriptionError.code === 'CHANNEL_SUBSCRIPTION_REQUIRED') {
+            return res.status(403).json({ ok: false, error: subscriptionError.message, code: subscriptionError.code, channelUsername: subscriptionError.channelUsername, channelUrl: subscriptionError.channelUrl });
+        }
+    }
     try {
         const { boxId } = req.body;
         
