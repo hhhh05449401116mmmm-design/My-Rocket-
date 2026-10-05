@@ -414,47 +414,31 @@
          .live-strip-gift {
              display: inline-flex;
              align-items: center;
-             gap: 6px;
-             height: 30px;
-             padding: 3px 9px 3px 4px;
-             border-radius: 16px;
-             background: rgba(255,255,255,0.08);
+             justify-content: center;
+             width: 38px;
+             height: 38px;
+             border-radius: 12px;
+             background: rgba(255,255,255,0.07);
              border: 1px solid rgba(255,255,255,0.12);
              box-sizing: border-box;
              flex: 0 0 auto;
+             overflow: hidden;
          }
          .live-strip-gift-image {
-             width: 24px;
-             height: 24px;
-             border-radius: 8px;
+             width: 100%;
+             height: 100%;
+             border-radius: 11px;
              object-fit: cover;
              display: block;
              background: rgba(255,255,255,0.08);
          }
          .live-strip-gift-fallback {
-             width: 24px;
-             height: 24px;
-             border-radius: 8px;
+             width: 100%;
+             height: 100%;
              display: inline-flex;
              align-items: center;
              justify-content: center;
-             background: rgba(255,255,255,0.08);
-             font-size: 15px;
-         }
-         .live-strip-gift-name {
-             max-width: 105px;
-             overflow: hidden;
-             text-overflow: ellipsis;
-             font-weight: 800;
-             color: #fff;
-         }
-         .live-strip-gift-value {
-             color: #8fffa7;
-             font-weight: 900;
-         }
-         .live-strip-gift-source {
-             color: #b9c8dd;
-             font-size: 10px;
+             font-size: 19px;
          }
          .live-strip-scroll::before,
          .live-strip-scroll::after {
@@ -11621,7 +11605,9 @@ video::-webkit-media-controls-enclosure {
           }
 
           var liveStripItems = [];
+          var liveStripKnownPlayerWins = {};
           var liveStripRefreshTimer = null;
+          var liveStripLastSignature = '';
 
           function renderLiveStripItem(items) {
               var scroll = document.getElementById('live-strip-scroll');
@@ -11632,32 +11618,67 @@ video::-webkit-media-controls-enclosure {
               }) : [];
 
               if (!list.length) {
-                  scroll.innerHTML = '<span class="live-strip-empty">🎁 Gifts arriving...</span>';
+                  scroll.innerHTML = '<span class="live-strip-empty">🎁</span>';
                   return;
               }
 
               function card(item) {
-                  var value = Number(item.value);
-                  var valueText = Number.isFinite(value) && value > 0
-                      ? value.toFixed(2).replace(/\\.00$/, '') + ' TON'
-                      : '';
-                  var sourceText = item.type === 'player' ? 'LIVE' : 'NEW';
-                  var safeName = escapeHtml(item.name || 'Gift');
                   var image = item.image
                       ? '<img class="live-strip-gift-image" src="' + escapeHtmlAttribute(item.image) + '" alt="" loading="eager" decoding="async">'
                       : '<span class="live-strip-gift-fallback">🎁</span>';
-
-                  return '<span class="live-strip-gift">' +
-                      image +
-                      '<span class="live-strip-gift-name">' + safeName + '</span>' +
-                      (valueText ? '<span class="live-strip-gift-value">' + escapeHtml(valueText) + '</span>' : '') +
-                      '<span class="live-strip-gift-source">' + sourceText + '</span>' +
-                      '</span>';
+                  return '<span class="live-strip-gift" title="' + escapeHtmlAttribute(item.name || 'Gift') + '">' + image + '</span>';
               }
 
               var cards = list.map(card).join('');
               scroll.innerHTML =
                   '<div class="live-strip-track">' + cards + cards + '</div>';
+          }
+
+          function mergeLiveStripItems(items) {
+              var incoming = Array.isArray(items) ? items.filter(function(item) {
+                  return item && item.name;
+              }) : [];
+
+              var newPlayerWins = [];
+              var randomItems = [];
+
+              incoming.forEach(function(item) {
+                  if (item.type === 'player') {
+                      var key = [
+                          item.createdAt || '',
+                          item.name || '',
+                          item.image || '',
+                          item.boxName || ''
+                      ].join('|');
+
+                      if (!liveStripKnownPlayerWins[key]) {
+                          liveStripKnownPlayerWins[key] = true;
+                          newPlayerWins.push(item);
+                      }
+                  } else {
+                      randomItems.push(item);
+                  }
+              });
+
+              if (!liveStripItems.length) {
+                  liveStripItems = incoming.slice(0, 24);
+              } else {
+                  liveStripItems = newPlayerWins.concat(liveStripItems);
+                  liveStripItems = liveStripItems.concat(randomItems.slice(0, 4));
+
+                  if (liveStripItems.length > 32) {
+                      liveStripItems = liveStripItems.slice(0, 32);
+                  }
+              }
+
+              var signature = liveStripItems.map(function(item) {
+                  return (item.type || '') + '|' + (item.createdAt || '') + '|' + (item.name || '') + '|' + (item.image || '');
+              }).join('||');
+
+              if (signature !== liveStripLastSignature) {
+                  liveStripLastSignature = signature;
+                  renderLiveStripItem(liveStripItems);
+              }
           }
 
           function refreshLiveStrip() {
@@ -11674,8 +11695,7 @@ video::-webkit-media-controls-enclosure {
               })
               .then(function(payload) {
                   if (!payload || !payload.ok || !Array.isArray(payload.items)) return;
-                  liveStripItems = payload.items;
-                  renderLiveStripItem(liveStripItems);
+                  mergeLiveStripItems(payload.items);
               })
               .catch(function() {});
           }
@@ -11686,8 +11706,9 @@ video::-webkit-media-controls-enclosure {
 
               if (liveStripRefreshTimer) clearInterval(liveStripRefreshTimer);
               refreshLiveStrip();
-              liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 15000);
+              liveStripRefreshTimer = window.setInterval(refreshLiveStrip, 6000);
           }
+
 
 
          /* =========================================================
