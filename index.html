@@ -12285,10 +12285,7 @@ video::-webkit-media-controls-enclosure {
                     video.muted = true;
                     video.defaultMuted = true;
                     video.volume = 0;
-                    if (!bannerHomeAudioEnabled) {
-                        stopHomeBannerCanvas(video);
-                        video.pause();
-                    } else if (isHomeBannerScreenVisible()) {
+                    if (isHomeBannerScreenVisible()) {
                         const p = video.play();
                         if (p && typeof p.catch === 'function') p.catch(function() {});
                     }
@@ -12391,9 +12388,6 @@ video::-webkit-media-controls-enclosure {
                             window.setTimeout(function() { if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false); }, 600);
                             window.setTimeout(function() { if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false); }, 1500);
                         }
-                    } else {
-                        stopHomeBannerCanvas(video);
-                        video.pause();
                     }
                 } catch (e) {}
             });
