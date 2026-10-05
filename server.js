@@ -4595,7 +4595,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
 const PAID_LOOT_BOX_CONFIG = {
     box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [], nothingChance: 9999, giftChance: 1 },
     box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.05] },
-    box_heart: { name: 'Heart', price: 2, rarity: 'rare', tonRewards: [0.05] },
+    box_heart: { name: 'Heart', price: 2, rarity: 'rare', tonRewards: [0.20, 0.30] },
     box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.50, 0.40, 1.00, 0.20] },
     box_5:   { name: 'Autumn', price: 5,   rarity: 'rare',   tonRewards: [0.25, 0.40, 0.60, 0.80] },
     box_8:   { name: 'space',   price: 8,   rarity: 'epic',   tonRewards: [0.40, 0.60, 0.80, 1.20] },
@@ -4608,7 +4608,7 @@ const PAID_LOOT_BOX_CONFIG = {
 };
 
 const PAID_BOX_GIFT_NAMES = {
-    box_heart: ["Heart Locket","Cupid Charm","Love Candle","Eternal Rose","Trapped Heart","Diamond Ring"],
+    box_heart: ["Heart Locket","Cupid Charm","Love Candle","Eternal Rose","Trapped Heart","Diamond Ring","Mousse Cake","Cookie Heart","Spiced Wine","Whip Cupcake","Input Key","Lush Bouquet","Spring Basket","Restless Jar","Homemade Cake","Pretty Posy","Berry Box","Bunny Muffin","Joyful Bundle","Love Potion","Valentine Box","Sakura Flower","Toy Bear"],
     box_0_1: ["Plush Pepe","Heart Locket","Durov's Cap","Precious Peach","Scared Cat","Heroic Helmet","Loot Bag","Mighty Arm","Astral Shard","Nail Bracelet","Westside Sign","Durov's Glasses","Perfume Bottle","Ion Gem","Mini Oscar","Artisan Brick","Gem Signet","Low Rider","Swiss Watch","Magic Potion","Sharp Tongue","Kissed Frog","Bonded Ring","Vintage Cigar","Voodoo Doll","Neko Helmet","Toy Bear","Genie Lamp","Signet Ring","Diamond Ring","Rare Bird","Bling Binky","Electric Skull","Khabib's Papakha","Eternal Rose","Cupid Charm","Sky Stilettos","Trapped Heart","Ionic Dryer","UFC Strike","Snoop Cigar","Love Potion","Mad Pumpkin","Crystal Ball","Flying Broom","Record Player","Skull Flower","Valentine Box","Sakura Flower","Top Hat","Love Candle","Jingle Bells","Hanging Star","Fine Pen","Chill Flame","Instant Ramen","Pool Float","Vice Cream","Candy Cane","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Bunny Muffin","Party Sparkler","Spring Basket","Star Notepad","Bow Tie","Homemade Cake","Snow Mittens","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
     box_5: ["Durov's Cap","Precious Peach","Loot Bag","Mini Oscar","Crystal Ball","Candy Cane","Vice Cream","Chill Flame","Lush Bouquet","Desk Calendar","Money Pot","Jester Hat","Cookie Heart","Restless Jar","Lol Pop","Winter Wreath","Mousse Cake","Snake Box","Liberty Figure","Santa Hat","Pet Snake","Snow Globe","B-Day Candle","Mad Pumpkin","Bunny Muffin","Party Sparkler","Magic Potion","Jingle Bells","Sakura Flower","Voodoo Doll","Khabib's Papakha","Electric Skull","Love Candle","Spring Basket","Flying Broom"],
     box_8: ["Genie Lamp","Nail Bracelet","Bonded Ring","Mighty Arm","Swiss Watch","Vintage Cigar","Top Hat","Signet Ring","Mini Oscar","Neko Helmet","Voodoo Doll","Bling Binky","Star Notepad","Bow Tie","Snoop Cigar","Homemade Cake","Mad Pumpkin","Snow Mittens","Snoop Cigar","Holiday Drink","Sleigh Bell","Light Sword","Input Key","Spiced Wine","Jack-in-the-Box","Stellar Rocket","Mood Pack"],
@@ -4625,6 +4625,32 @@ const PAID_BOX_GIFT_NAMES = {
 function paidBoxGiftImage(name) {
     return '/api/gift-media/' + encodeURIComponent(String(name || ''));
 }
+
+const HEART_BOX_ODDS_PRICES = {
+    'Heart Locket': 999,
+    'Cupid Charm': 20.81,
+    'Love Candle': 10.19,
+    'Eternal Rose': 23.10,
+    'Trapped Heart': 15.84,
+    'Diamond Ring': 28.42,
+    'Mousse Cake': 5.06,
+    'Cookie Heart': 5.01,
+    'Spiced Wine': 4.67,
+    'Whip Cupcake': 4.01,
+    'Input Key': 6.40,
+    'Lush Bouquet': 6.37,
+    'Spring Basket': 5.80,
+    'Restless Jar': 5.73,
+    'Homemade Cake': 5.28,
+    'Pretty Posy': 5.25,
+    'Berry Box': 8.54,
+    'Bunny Muffin': 8.15,
+    'Joyful Bundle': 7.65,
+    'Love Potion': 14.87,
+    'Valentine Box': 11.09,
+    'Sakura Flower': 10.25,
+    'Toy Bear': 32.34
+};
 
 async function getPaidBoxGiftPool(boxId, rarity) {
     const names = PAID_BOX_GIFT_NAMES[boxId] || [];
@@ -4675,8 +4701,8 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             );
             if (debit.changes !== 1) throw new Error('Insufficient balance');
 
-            // Prize odds are server-authoritative:
-            // 70% TON, 23% gift below 7 TON, 7% gift above 7 TON.
+            // Prize odds are server-authoritative. Heart uses 82% TON,
+            // 17% gifts under 5 TON, and 1% gifts over 5 TON.
             // The spinner is only a visual presentation of the already-selected
             // server result; it never decides the reward.
             let giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
@@ -4698,8 +4724,16 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                 return { ...item, marketValue };
             });
 
-            const highValueGifts = enrichedGiftPool.filter(item => item.marketValue > 7);
-            const lowValueGifts = enrichedGiftPool.filter(item => item.marketValue <= 7);
+            const heartOddsValue = item => {
+                const override = HEART_BOX_ODDS_PRICES[item.name];
+                return Number.isFinite(Number(override)) ? Number(override) : Number(item.marketValue || 0);
+            };
+            const highValueGifts = enrichedGiftPool.filter(item =>
+                boxId === 'box_heart' ? heartOddsValue(item) > 5 : item.marketValue > 7
+            );
+            const lowValueGifts = enrichedGiftPool.filter(item =>
+                boxId === 'box_heart' ? heartOddsValue(item) < 5 : item.marketValue <= 7
+            );
 
             const roll = crypto.randomInt(0, 10000);
             const allowedTonRewards = Array.isArray(config.tonRewards)
@@ -4719,6 +4753,19 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             } else if (boxId === 'box_15') {
                 // Ring is gift-only: no TON balance reward is allowed for this box.
                 gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
+            } else if (boxId === 'box_heart') {
+                // Heart (2 TON): 82% TON rewards, 17% gifts under 5 TON, 1% gifts over 5 TON.
+                // TON can only come from the rewards explicitly configured for this box.
+                if (roll < 8200) {
+                    if (!allowedTonRewards.length) throw new Error('No configured TON rewards for this box');
+                    tonReward = allowedTonRewards[crypto.randomInt(0, allowedTonRewards.length)];
+                } else if (roll < 9900) {
+                    if (!lowValueGifts.length) throw new Error('No gifts under 5 TON available for this box');
+                    gift = lowValueGifts[crypto.randomInt(0, lowValueGifts.length)];
+                } else {
+                    if (!highValueGifts.length) throw new Error('No gifts over 5 TON available for this box');
+                    gift = highValueGifts[crypto.randomInt(0, highValueGifts.length)];
+                }
             } else if (roll < 7000) {
                 // TON can only come from the rewards explicitly configured for this box.
                 if (!allowedTonRewards.length) {
