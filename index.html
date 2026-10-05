@@ -12182,7 +12182,6 @@ video::-webkit-media-controls-enclosure {
                     video.muted = true;
                     video.defaultMuted = true;
                     video.volume = 0;
-                    try { video.load(); } catch (e) {}
 
                     const tryBannerAutoplay = function(forceSync) {
                         if (document.visibilityState === 'hidden') return;
