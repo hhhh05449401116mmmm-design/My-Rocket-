@@ -4627,7 +4627,6 @@ function paidBoxGiftImage(name) {
 }
 
 const HEART_BOX_ODDS_PRICES = {
-    'Heart Locket': 999,
     'Cupid Charm': 20.81,
     'Love Candle': 10.19,
     'Eternal Rose': 23.10,
