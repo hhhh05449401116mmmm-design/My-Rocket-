@@ -7125,7 +7125,17 @@ document.getElementById('channel-subscribe-btn')?.addEventListener('click',openR
 document.getElementById('channel-subscription-link')?.addEventListener('click',openRequiredChannel);
 document.getElementById('channel-check-btn')?.addEventListener('click',checkChannelSubscription);
 
-function openLootBox(box) {
+async function openLootBox(box) {
+            if (box && (box.id === 'free' || box.id === 'free24')) {
+                try {
+                    const response = await fetch(BACKEND_URL + '/api/channel-subscription/status', { headers: getAuthHeaders(), cache: 'no-store' });
+                    const data = await response.json().catch(() => ({}));
+                    if (!data.ok || !data.subscribed) { await showChannelSubscriptionPopup(); return; }
+                } catch (error) {
+                    showToast((translations[currentLanguage] || translations.ar).channelRequiredError);
+                    return;
+                }
+            }
             const t = translations[currentLanguage] || translations.ar;
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
@@ -7311,6 +7321,11 @@ function openLootBox(box) {
                     });
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok || !data.ok) {
+                        if (data.code === 'CHANNEL_SUBSCRIPTION_REQUIRED') {
+                            if (playButton) { playButton.disabled = false; playButton.textContent = currentLanguage === 'ar' ? 'فتح' : 'Open'; }
+                            await showChannelSubscriptionPopup();
+                            return;
+                        }
                         const error = new Error(data.error || 'Claim failed');
                         error.nextAvailableAt = data.nextAvailableAt || null;
                         throw error;
@@ -7497,7 +7512,13 @@ function openLootBox(box) {
                     body: JSON.stringify({ collectibleId: 'pending:' + Number(userGiftId) })
                 });
                 const data = await response.json().catch(() => ({}));
-                if (!response.ok || !data.ok) throw new Error(data.error || 'Withdrawal failed');
+                if (!response.ok || !data.ok) {
+                    if (data.code === 'CHANNEL_SUBSCRIPTION_REQUIRED') {
+                        await showChannelSubscriptionPopup();
+                        return;
+                    }
+                    throw new Error(data.error || 'Withdrawal failed');
+                }
                 closeLootBoxResult();
                 showToast(currentLanguage === 'ar' ? '🎁 تم إرسال الهدية إلى Telegram' : '🎁 Gift sent to Telegram');
             } catch (error) {
