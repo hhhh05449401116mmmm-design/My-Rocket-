@@ -4776,13 +4776,13 @@
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" data-video-src="/assets/ADJtCAFOdpAFHHbg.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-art" src="/assets/ADJtCAFOdpAFHHbg.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Rocket"></video></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" data-video-src="/assets/WddYFBEPUHJZYMlo.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-art" src="/assets/WddYFBEPUHJZYMlo.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="PVP"></video></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" data-video-src="/assets/IlLXxhvJRWznUUZY.MP4" muted playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-art" src="/assets/IlLXxhvJRWznUUZY.MP4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-label="Play Hub"></video></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -8542,7 +8542,7 @@
             if (isWebm || !isTgs) {
                 try {
                     const video = document.createElement('video');
-                    video.autoplay = false;
+                    video.autoplay = true;
                     video.loop = true;
                     video.muted = true;
                     video.playsInline = true;
@@ -12112,13 +12112,6 @@
                     video.setAttribute('controlslist', 'nodownload noplaybackrate');
                     video.removeAttribute('controls');
 
-                    const source = video.getAttribute('data-video-src');
-                    if (source && !video.dataset.bannerVideoSourceLoaded) {
-                        video.dataset.bannerVideoSourceLoaded = '1';
-                        video.setAttribute('src', source);
-                        video.load();
-                    }
-
                     if (video.dataset.bannerVideoBound !== '1') {
                         video.dataset.bannerVideoBound = '1';
                         video.addEventListener('loadedmetadata', function() {
@@ -12155,7 +12148,8 @@
                         });
                     }
 
-                    if (forceSync || video.paused) playBannerVideoSynchronized(video, !!forceSync);
+                    if (forceSync) playBannerVideoSynchronized(video, true);
+                    else if (video.paused) playBannerVideoSynchronized(video, false);
                 } catch (e) {}
             });
         }
@@ -12344,10 +12338,11 @@
             try { keepHomeBannerVideosPlaying(); } catch (e) {}
         });
 
+        // Do not periodically seek/reload home videos: that causes visible stutter.
+        // Only refresh the server clock in the background; video playback stays continuous.
         window.setInterval(function() {
             try { syncBannerVideoServerClock(); } catch (e) {}
-            try { keepHomeBannerVideosPlaying(); } catch (e) {}
-        }, 30000);
+        }, 60000);
 
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", bootstrapRocketApp, { once: true });
