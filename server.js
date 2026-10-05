@@ -3549,7 +3549,17 @@ app.get('/api/channel-subscription/status', authenticate, async (req, res) => {
         res.json({ ok: true, subscribed: membership.subscribed, status: membership.status, channelUsername: REQUIRED_CHANNEL_USERNAME, channelUrl: REQUIRED_CHANNEL_URL });
     } catch (error) {
         console.error('Channel subscription status failed:', error.message);
-        res.status(503).json({ ok: false, error: 'Unable to verify channel subscription' });
+        const message = String(error?.message || '');
+        const botAdminRequired = /member list is inaccessible/i.test(message);
+        res.status(503).json({
+            ok: false,
+            code: botAdminRequired ? 'CHANNEL_BOT_ADMIN_REQUIRED' : 'CHANNEL_SUBSCRIPTION_CHECK_FAILED',
+            error: botAdminRequired
+                ? 'The bot must be an administrator in the required channel to verify member subscriptions.'
+                : 'Unable to verify channel subscription',
+            channelUsername: REQUIRED_CHANNEL_USERNAME,
+            channelUrl: REQUIRED_CHANNEL_URL
+        });
     }
 });
 
