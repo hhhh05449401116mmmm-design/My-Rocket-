@@ -6,7 +6,7 @@ const ffmpeg = require('ffmpeg-static');
 const root = process.cwd();
 const assets = path.join(root, 'assets');
 const videos = [
-  ['ADJtCAFOdpAFHHbg.MP4', 'ADJtCAFOdpAFHHbg.silent.mp4'],
+  ['ADJtCAFOdpAFHHbg.MP4', 'ADJtCAFOdpAFHHbg.optimized.mp4'],
   ['WddYFBEPUHJZYMlo.MP4', 'WddYFBEPUHJZYMlo.silent.mp4'],
   ['IlLXxhvJRWznUUZY.MP4', 'IlLXxhvJRWznUUZY.silent.mp4']
 ];
@@ -22,7 +22,7 @@ for (const [inputName, outputName] of videos) {
     '-vf', 'scale=1280:-2:flags=lanczos',
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '24',
     '-profile:v', 'main', '-level', '4.0', '-pix_fmt', 'yuv420p',
-    '-an',
+    ...(output.endsWith('.optimized.mp4') ? ['-c:a', 'aac', '-b:a', '96k', '-ac', '2'] : ['-an']),
     '-movflags', '+faststart', output
   ];
 
