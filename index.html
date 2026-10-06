@@ -34,6 +34,15 @@
         .plinko-amount{width:100%;height:48px;border-radius:22px;border:1px solid #3b3b3b;background:#303030;color:#aaa;text-align:center;font-size:18px;font-weight:800;outline:none}
         .plinko-drop-main{width:100%;height:54px;margin-top:10px;border:0;border-radius:18px;background:#303030;color:#777;font-size:19px;font-weight:900}
         .plinko-drop-main.ready{background:linear-gradient(135deg,#9d3dff,#c05aff);color:#fff}
+        .plinko-mode{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px;padding:4px;border-radius:22px;background:#2b2b2b}
+        .plinko-mode button{border:0;background:transparent;color:#999;border-radius:18px;padding:10px 8px;font-size:15px;font-weight:900}
+        .plinko-mode button.active{background:#a64dff;color:#fff}
+        .plinko-gift-select{width:100%;height:48px;margin-top:10px;border-radius:22px;border:1px solid #3b3b3b;background:#303030;color:#fff;padding:0 16px;font-size:15px;font-weight:800;outline:none}
+        .plinko-gift-select:disabled{opacity:.45}
+        .plinko-gift-select.hidden,.plinko-amount.hidden{display:none}
+        .plinko-board-wrap[data-rows="8"] #plinko-board{height:270px!important}
+        .plinko-board-wrap[data-rows="12"] #plinko-board{height:370px!important}
+        .plinko-board-wrap[data-rows="16"] #plinko-board{height:470px!important}
         @media (max-width:420px){.plinko-shell{padding-left:8px;padding-right:8px}.plinko-board-wrap{padding-left:4px;padding-right:4px}.plinko-slot{height:38px}.plinko-controls{padding:10px}.plinko-input-row{grid-template-columns:82px 1fr}.plinko-difficulty button{font-size:15px}}
         
         /* =========================================================
@@ -5180,10 +5189,16 @@ video::-webkit-media-controls-enclosure {
                         <button type="button" data-plinko-difficulty="medium">Medium</button>
                         <button type="button" data-plinko-difficulty="hard">Hard</button>
                     </div>
+                    <div class="plinko-mode">
+                        <button type="button" id="plinko-ton-mode" class="active">◆ TON</button>
+                        <button type="button" id="plinko-gift-mode">🎁 Gift</button>
+                    </div>
                     <div class="plinko-input-row">
-                        <div class="plinko-type-toggle"><span>🎁</span><span class="ton-dot">◆</span></div>
                         <input id="plinko-amount-input" class="plinko-amount" type="number" min="0.1" step="0.1" value="0.1" placeholder="TON amount">
                     </div>
+                    <select id="plinko-gift-select" class="plinko-gift-select hidden">
+                        <option value="">Select a gift</option>
+                    </select>
                     <button id="plinko-bet-btn" class="plinko-drop-main" type="button">Place Bet</button>
                     <div id="plinko-status" style="margin-top:10px;text-align:center;font-size:13px;color:#8b8b8b;" data-key="plinko-status">Select bet and drop the chip</div>
                 </div>
@@ -12047,7 +12062,23 @@ async function openLootBox(box) {
          /* =========================================================
             PLINKO GAME
          ========================================================= */
-         var plinkoState = { gameId: null, serverSeedHash: '', clientSeed: '', slotMultiplier: 1, difficulty: 'easy', busy: false };
+         var plinkoState = { gameId: null, serverSeedHash: '', clientSeed: '', slotMultiplier: 1, difficulty: 'easy', busy: false, currency: 'TON', giftId: null };
+         function setPlinkoMode(mode) {
+            plinkoState.currency = mode === 'GIFT' ? 'GIFT' : 'TON';
+            var tonBtn=document.getElementById('plinko-ton-mode'), giftBtn=document.getElementById('plinko-gift-mode');
+            var amount=document.getElementById('plinko-amount-input'), gift=document.getElementById('plinko-gift-select');
+            tonBtn.classList.toggle('active',plinkoState.currency==='TON'); giftBtn.classList.toggle('active',plinkoState.currency==='GIFT');
+            amount.classList.toggle('hidden',plinkoState.currency!=='TON'); gift.classList.toggle('hidden',plinkoState.currency!=='GIFT');
+            if(plinkoState.currency==='GIFT') populatePlinkoGifts();
+         }
+         function populatePlinkoGifts() {
+            var select=document.getElementById('plinko-gift-select'); if(!select)return;
+            var gifts=Array.isArray(window.verifiedCollectibles)?window.verifiedCollectibles:[];
+            var available=gifts.filter(function(g){return g&&g.status!=='IN_BET'&&g.id;});
+            select.innerHTML='<option value="">Select a gift</option>';
+            available.forEach(function(g){var opt=document.createElement('option');opt.value=String(g.id);opt.textContent=(g.name||'Telegram Gift')+' — '+Number(g.value||0).toFixed(2)+' TON';select.appendChild(opt);});
+            select.disabled=available.length===0; if(available.length===0)select.innerHTML='<option value="">No available gifts</option>';
+         }
          var PLINKO_CLIENT_CONFIG = {
             easy: { rows: 8, slots: [5.6,2.1,1.1,1,0.5,1,1.1,2.1,5.6] },
             medium: { rows: 12, slots: [33,11,4,2,1.1,0.6,0.3,0.6,1.1,2,4,11,33] },
@@ -12059,6 +12090,7 @@ async function openLootBox(box) {
             var cfg = PLINKO_CLIENT_CONFIG[plinkoState.difficulty];
             if (!board || !slotsEl || !cfg) return;
             board.innerHTML = ''; slotsEl.innerHTML = '';
+            var wrap=document.querySelector('.plinko-board-wrap'); if(wrap)wrap.dataset.rows=String(cfg.rows);
             var width = board.clientWidth || 320, height = board.clientHeight || 420, rows = cfg.rows;
             var stepX = Math.min(34, (width - 30) / (rows + 1));
             var stepY = Math.max(25, (height - 38) / rows);
@@ -12078,8 +12110,11 @@ async function openLootBox(box) {
             });
          }
          function initPlinkoGame() {
-            plinkoState={gameId:null,serverSeedHash:'',clientSeed:'',slotMultiplier:1,difficulty:'easy',busy:false};
-            renderPlinkoBoard();
+            plinkoState={gameId:null,serverSeedHash:'',clientSeed:'',slotMultiplier:1,difficulty:'easy',busy:false,currency:'TON',giftId:null};
+            renderPlinkoBoard(); setPlinkoMode('TON');
+            document.getElementById('plinko-ton-mode').onclick=function(){if(!plinkoState.busy)setPlinkoMode('TON');};
+            document.getElementById('plinko-gift-mode').onclick=function(){if(!plinkoState.busy)setPlinkoMode('GIFT');};
+            document.getElementById('plinko-gift-select').onchange=function(){plinkoState.giftId=this.value||null;};
             document.querySelectorAll('[data-plinko-difficulty]').forEach(function(btn){
                btn.classList.toggle('active',btn.dataset.plinkoDifficulty==='easy');
                btn.onclick=function(){if(plinkoState.gameId||plinkoState.busy)return;plinkoState.difficulty=btn.dataset.plinkoDifficulty;document.querySelectorAll('[data-plinko-difficulty]').forEach(function(b){b.classList.toggle('active',b===btn)});renderPlinkoBoard();};
@@ -12090,11 +12125,13 @@ async function openLootBox(box) {
          async function placePlinkoBet() {
             if(plinkoState.busy)return;
             var t=translations[currentLanguage]||translations.ar, input=document.getElementById('plinko-amount-input');
-            var betAmount=Number(input&&input.value);
-            if(!Number.isFinite(betAmount)||betAmount<0.1){showToast(t.insufficientBalance||'❌ Invalid amount');return;}
+            var currency=plinkoState.currency, betAmount=currency==='TON'?Number(input&&input.value):0;
+            if(currency==='TON'&&(!Number.isFinite(betAmount)||betAmount<0.1)){showToast(t.insufficientBalance||'❌ Minimum bet is 0.1 TON');return;}
+            var giftSelect=document.getElementById('plinko-gift-select'), giftId=currency==='GIFT'?(giftSelect&&giftSelect.value?giftSelect.value:null):null;
+            if(currency==='GIFT'&&!giftId){showToast('🎁 Select a gift first');return;}
             plinkoState.busy=true;
             try{
-               var response=await fetch(`${BACKEND_URL}/api/plinko/bet`,{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({amount:betAmount,currency:'TON',difficulty:plinkoState.difficulty})});
+               var response=await fetch(BACKEND_URL+'/api/plinko/bet',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({amount:betAmount,currency:currency,giftId:giftId,difficulty:plinkoState.difficulty})});
                var data=await response.json(); if(!data.ok)throw new Error(data.error||t.betFailed||'❌ Bet failed');
                plinkoState.gameId=data.gameId;plinkoState.serverSeedHash=data.serverSeedHash;plinkoState.clientSeed=data.clientSeed;
                var btn=document.getElementById('plinko-bet-btn');btn.textContent='Drop Chip';btn.classList.add('ready');
