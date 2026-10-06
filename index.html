@@ -20,8 +20,8 @@
         #plinko-board{position:relative!important;width:100%!important;max-width:none!important;height:clamp(360px,72vw,590px)!important;margin:0!important;border:0!important}
         .plinko-peg{position:absolute;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 24%,#d9dce5 55%,#8d929e 100%);box-shadow:0 4px 6px rgba(0,0,0,.42)}
         .plinko-chip{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 18%,#8bd5ff 35%,#1597e7 72%,#0870b9 100%);box-shadow:0 0 12px rgba(48,170,255,.75),0 3px 6px rgba(0,0,0,.45);z-index:20;transform:translate(-50%,-50%)}
-        .plinko-slots{display:grid;gap:5px;padding:0 8px 12px;align-items:stretch}
-        .plinko-slot{height:42px;min-width:0;border-radius:9px;border:1px solid rgba(177,140,255,.75);background:linear-gradient(180deg,#a96cff,#7044ba);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+        .plinko-slots{display:grid;gap:6px;padding:0 8px 12px;align-items:stretch}
+        .plinko-slot{height:50px;min-width:0;border-radius:9px;border:1px solid rgba(177,140,255,.75);background:linear-gradient(180deg,#a96cff,#7044ba);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.35)}
         .plinko-board-wrap[data-rows="8"] .plinko-slot{font-size:20px}
         .plinko-board-wrap[data-rows="12"] .plinko-slot{font-size:18px}
         .plinko-board-wrap[data-rows="16"] .plinko-slot{font-size:16px;border-radius:8px}
@@ -46,7 +46,7 @@
         .plinko-board-wrap[data-rows="8"] #plinko-board{height:270px!important}
         .plinko-board-wrap[data-rows="12"] #plinko-board{height:370px!important}
         .plinko-board-wrap[data-rows="16"] #plinko-board{height:470px!important}
-        @media (max-width:420px){.plinko-shell{padding-left:8px;padding-right:8px}.plinko-board-wrap{padding-left:4px;padding-right:4px}.plinko-slot{height:38px}.plinko-controls{padding:10px}.plinko-input-row{grid-template-columns:82px 1fr}.plinko-difficulty button{font-size:15px}}
+        @media (max-width:420px){.plinko-shell{padding-left:8px;padding-right:8px}.plinko-board-wrap{padding-left:4px;padding-right:4px}.plinko-slot{height:50px}.plinko-controls{padding:10px}.plinko-input-row{grid-template-columns:82px 1fr}.plinko-difficulty button{font-size:15px}}
         
         /* =========================================================
            BASE STYLES - PREMIUM ICE THEME
