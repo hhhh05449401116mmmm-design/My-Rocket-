@@ -20,8 +20,11 @@
         #plinko-board{position:relative!important;width:100%!important;max-width:none!important;height:clamp(360px,72vw,590px)!important;margin:0!important;border:0!important}
         .plinko-peg{position:absolute;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 24%,#d9dce5 55%,#8d929e 100%);box-shadow:0 4px 6px rgba(0,0,0,.42)}
         .plinko-chip{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 18%,#8bd5ff 35%,#1597e7 72%,#0870b9 100%);box-shadow:0 0 12px rgba(48,170,255,.75),0 3px 6px rgba(0,0,0,.45);z-index:20;transform:translate(-50%,-50%)}
-        .plinko-slots{display:grid;gap:5px;padding:0 8px 12px}
-        .plinko-slot{height:42px;border-radius:8px;border:1px solid rgba(177,140,255,.7);background:linear-gradient(180deg,#a96cff,#7044ba);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;color:#fff;font-size:clamp(13px,3.6vw,21px);font-weight:900;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+        .plinko-slots{display:grid;gap:6px;padding:0 8px 12px;align-items:stretch}
+        .plinko-slot{height:48px;min-width:0;border-radius:9px;border:1px solid rgba(177,140,255,.75);background:linear-gradient(180deg,#a96cff,#7044ba);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+        .plinko-board-wrap[data-rows="8"] .plinko-slot{font-size:20px}
+        .plinko-board-wrap[data-rows="12"] .plinko-slot{font-size:18px}
+        .plinko-board-wrap[data-rows="16"] .plinko-slot{font-size:15px;border-radius:8px}
         .plinko-slot.low{background:linear-gradient(180deg,#8064bd,#493a6b)}
         .plinko-slot.hot{background:linear-gradient(180deg,#b777ff,#7650d1)}
         .plinko-controls{margin-top:14px;padding:14px;border-radius:24px;background:#202020;border:1px solid rgba(255,255,255,.035)}
