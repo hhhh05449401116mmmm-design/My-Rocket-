@@ -3703,11 +3703,11 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Invalid loot-box gift' });
         }
 
-        const reward = await get("SELECT ug.*, g.name, COALESCE(ug.market_value, g.value) AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
+        const reward = await get("SELECT ug.*, g.name, g.value AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
         if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
 
-        const baseValue = Number(reward.value || 0);
+        const baseValue = getGeneralGiftPrice(reward.name, reward.value);
         const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
         if (!Number.isFinite(baseValue) || baseValue <= 0 || !Number.isFinite(sellRate) || sellRate <= 0 || sellRate > 1) {
             return res.status(409).json({ ok: false, error: 'No valid market value is available for this gift' });
@@ -4810,21 +4810,12 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
             if (!giftPool.length) throw new Error('No gifts available for this box');
 
-            try {
-                await ensureGiftMarketCache();
-            } catch (marketError) {
-                console.warn('Paid loot-box market cache unavailable:', marketError.message);
-            }
-
-            const enrichedGiftPool = giftPool.map(item => {
-                const market = getCollectibleMarketValue({
-                    name: item.name,
-                    base_name: item.telegram_gift_id,
-                    model_name: item.name
-                });
-                const marketValue = Number(market?.floorPriceTon ?? item.value ?? 0);
-                return { ...item, marketValue };
-            });
+            // Random gift boxes use the fixed general Telegram gift price catalog.
+            // No live market refresh or market API is used for box pricing.
+            const enrichedGiftPool = giftPool.map(item => ({
+                ...item,
+                marketValue: getGeneralGiftPrice(item.name, item.value)
+            }));
 
             const heartOddsValue = item => {
                 const override = HEART_BOX_ODDS_PRICES[item.name];
@@ -4951,15 +4942,10 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let userGift = null;
             let giftMarketValue = 0;
             if (gift) {
-                giftMarketValue = Number(gift.marketValue || 0);
-                userGift = await addLootBoxGiftToUser(req.user.id, gift.id);
-                if (giftMarketValue > 0) {
-                    await run(
-                        'UPDATE user_gifts SET market_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                        [giftMarketValue, userGift.id]
-                    );
-                    userGift.market_value = giftMarketValue;
-                }
+                giftMarketValue = getGeneralGiftPrice(gift.name, gift.value);
+                userGift = await addLootBoxGiftToUser(req.user.id, gift.id, giftMarketValue);
+                userGift.market_value = giftMarketValue;
+                gift.marketValue = giftMarketValue;
             }
 
             await run(
