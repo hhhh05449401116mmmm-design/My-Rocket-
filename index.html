@@ -6566,8 +6566,8 @@ video::-webkit-media-controls-enclosure {
         }
 
         async function load100TonMarketValues(box, forceRefresh) {
-            const token = ++lootBoxMarketRequestToken;
-            if (!box || box.id !== 'box_100') return;
+            // Keep 100 TON gift prices fixed as defined by the box catalog.
+            return;
 
             try {
                 const response = await fetch(BACKEND_URL + '/api/loot-box/100/market-items' + (forceRefresh ? '?refresh=1' : ''), {
@@ -6685,8 +6685,9 @@ video::-webkit-media-controls-enclosure {
         }
 
         async function refreshPaidLootBoxVariantMarketValues(box, items, collections) {
-            if (!box || !Array.isArray(items) || !items.length || !collections) return;
-            if (box.id === 'box_100') return;
+            // Gift prices shown in Random boxes are fixed general catalog prices.
+            // Never refresh them from the market.
+            return;
 
             const variants = items
                 .filter(function(item) { return item && item.rewardType !== 'ton'; })
@@ -6884,7 +6885,7 @@ video::-webkit-media-controls-enclosure {
                             ? ringPreview.image
                             : (winner.gift.image_url || item.image || paidLootBoxItemImage(item)),
                         rewardType: 'gift',
-                        marketValue: Number(winner.gift.marketValue || item.marketValue || 0)
+                        marketValue: Number(item.marketValue || winner.gift.value || 0)
                     };
                 }
 
@@ -7597,7 +7598,10 @@ async function openLootBox(box) {
                     gift.image_url = paidLootBox100GiftImage(gift);
                 }
                 const sellValue = Number(gift.sellValue || 0);
-                const marketValue = Number(gift.marketValue || gift.value || sellValue || 0);
+                const previewPrice = previewGift && Number(previewGift.value);
+                const marketValue = Number.isFinite(previewPrice) && previewPrice > 0
+                    ? previewPrice
+                    : Number(gift.value || sellValue || 0);
                 const userGiftId = Number(gift.userGiftId || 0);
                 const lockedUntilMs = gift.lootBoxLockedUntil ? new Date(String(gift.lootBoxLockedUntil).replace(' ', 'T')).getTime() : 0;
                 const lootBoxGiftLocked = Number.isFinite(lockedUntilMs) && lockedUntilMs > Date.now();
