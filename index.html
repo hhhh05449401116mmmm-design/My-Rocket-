@@ -7088,6 +7088,46 @@ video::-webkit-media-controls-enclosure {
         }
 
 
+        // Fill missing Random gift prices from the fixed general gift-price catalog.
+        // This keeps every box display consistent without querying live market prices.
+        const GENERAL_GIFT_PRICES = Object.freeze({
+            "Durov": 380.24, "Precious Peach": 247.42, "Scared Cat": 227.87, "Heroic Helmet": 174.59,
+            "Loot Bag": 199.57, "Astral Shard": 110.57, "Nail Bracelet": 102.77, "Westside Sign": 97.92,
+            "Mini Oscar": 63.73, "Artisan Brick": 56.05, "Gem Signet": 55.54, "Low Rider": 53.42,
+            "Sharp Tongue": 44.47, "Kissed Frog": 41.95, "Bonded Ring": 38.97, "Vintage Cigar": 36.13,
+            "Toy Bear": 32.34, "Genie Lamp": 31.31, "Signet Ring": 30.77, "Diamond Ring": 28.42,
+            "Electric Skull": 23.40, "Khabib": 23.23, "Eternal Rose": 23.06, "Cupid Charm": 20.09,
+            "Ionic Dryer": 14.59, "UFC Strike": 14.49, "Snoop Cigar": 14.46, "Love Potion": 14.02,
+            "Flying Broom": 11.81, "Record Player": 11.72, "Skull Flower": 11.27, "Valentine Box": 11.06,
+            "Love Candle": 10.13, "Jingle Bells": 9.68, "Hanging Star": 9.31, "Fine Pen": 8.79,
+            "Pool Float": 3.99, "Vice Cream": 3.98, "Trapped Heart": 15.84, "Mousse Cake": 5.06,
+            "Cookie Heart": 5.01, "Spiced Wine": 4.67, "Whip Cupcake": 4.01, "Input Key": 6.40,
+            "Lush Bouquet": 6.37, "Spring Basket": 5.80, "Restless Jar": 5.73, "Homemade Cake": 5.28,
+            "Pretty Posy": 5.25, "Berry Box": 8.54, "Bunny Muffin": 8.15, "Joyful Bundle": 7.65,
+            "Sakura Flower": 10.25, "Light Sword": 35.05, "Rare Bird": 34.33, "Bow Tie": 20.36,
+            "Swag Bag": 5.53, "Snoop Dogg": 5.50, "Surge Board": 221.43, "Ice Cream": 82.45,
+            "Star Notepad": 38.69, "Snow Globe": 38.65, "Timeless Book": 29.84, "Winter Wreath": 29.23,
+            "Jester Hat": 5.40, "Spy Agaric": 17.50, "Jack-in-the-Box": 17.36, "Ginger Cookie": 16.37,
+            "Fresh Socks": 12.50, "Easter Egg": 10.60, "Hypno Lollipop": 10.60, "Party Sparkler": 9.80,
+            "Pet Snake": 4.75, "Heart Locket": 1096.44, "Mighty Arm": 199.80, "Perfume Bottle": 64.86,
+            "Ion Gem": 62.93, "Magic Potion": 51.74, "Crystal Ball": 12.33, "Top Hat": 10.36,
+            "Jolly Chimp": 7.38, "Plush Pepe": 5637.27, "Neko Helmet": 35.64, "Bling Binky": 24.12
+        });
+
+        function applyGeneralGiftPricesToBoxItems(items) {
+            if (!Array.isArray(items)) return items;
+            items.forEach(function(item) {
+                if (!item || item.rewardType === 'ton' || item.rewardType === 'nothing') return;
+                if (item.label && item.label !== 'Random') return;
+                const price = Number(GENERAL_GIFT_PRICES[String(item.name || '').trim()]);
+                if (Number.isFinite(price) && price > 0) {
+                    item.value = price.toFixed(2) + ' TON';
+                    item.marketValueTon = price;
+                }
+            });
+            return items;
+        }
+
         const PAID_LOOT_BOX_TON_REWARDS = {
             box_2: [0.05],
             box_2_5: [0.50, 0.40, 1.00, 0.20],
@@ -7184,6 +7224,7 @@ async function openLootBox(box) {
                 : (box.id === 'free24' ? 'Telegram Collectibles • Daily Free Box' : (box.id === 'free' ? 'Telegram Collectibles • Free Box' : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق')));
 
             const items = box.price > 0 ? paidLootBoxDisplayItems(box) : (Array.isArray(box.collectibles) ? box.collectibles : []);
+            applyGeneralGiftPricesToBoxItems(items);
             renderLootBoxFeatured(box, items);
             if (box.id === 'box_100') {
                 render100TonCollectibles(box);
