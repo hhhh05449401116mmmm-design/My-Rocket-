@@ -3948,7 +3948,7 @@ app.get('/api/collectibles/pending-payouts', authenticate, async (req, res) => {
 // --- MINES ---
 app.post('/api/mines/bet', authenticate, async (req, res) => {
     try {
-        const { amount, currency, giftId } = req.body;
+        const { amount, currency, giftId, difficulty } = req.body;
         const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
         if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
             return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
@@ -4013,7 +4013,7 @@ app.post('/api/plinko/bet', authenticate, async (req, res) => {
         }
         const betCurrency = currency === 'GIFT' ? 'GIFT' : currency === 'TEST' ? 'TEST' : 'TON';
 
-        const result = await createPlinkoGame(req.user.id, betAmount, betCurrency, giftId);
+        const result = await createPlinkoGame(req.user.id, betAmount, betCurrency, giftId, difficulty);
         res.json({
             ok: true,
             gameId: result.gameId,
