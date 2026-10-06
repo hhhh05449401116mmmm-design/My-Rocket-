@@ -6624,6 +6624,11 @@ video::-webkit-media-controls-enclosure {
             if (item.label && item.label !== 'Random') {
                 return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/' + encodeURIComponent(item.label) + '.png';
             }
+            // Heart and Farm use the same full-resolution Original.png source
+            // as the sharp gift images used by the other loot boxes.
+            if (selectedLootBox && (selectedLootBox.id === 'box_heart' || selectedLootBox.id === 'box_0_1')) {
+                return 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(item.name) + '/png/Original.png';
+            }
             if (item.image && String(item.image).indexOf('/api/gift-media/') === 0) return item.image + '?v=20261002-1100';
             return item.image || '/assets/ton-icon.svg';
         }
@@ -6672,10 +6677,9 @@ video::-webkit-media-controls-enclosure {
             const name = String(item && item.name || '');
             const position = useSprite ? BOX_0_1_GIFT_SPRITE_POSITIONS[name] : null;
             const alt = escapeHtmlAttribute(altText || name || 'Reward');
-            if (position && !BOX_0_1_BROKEN_GIFT_IMAGES.has(name)) {
-                const x = ((position[0] / 7) * 100).toFixed(4) + '%';
-                const y = ((position[1] / 7) * 100).toFixed(4) + '%';
-                return '<span class="paid-loot-gift-sprite" style="--paid-gift-x:' + x + ';--paid-gift-y:' + y + ';" role="img" aria-label="' + alt + '"></span>';
+            if (position && selectedLootBox && selectedLootBox.id === 'box_0_1' && !BOX_0_1_BROKEN_GIFT_IMAGES.has(name)) {
+                // Farm uses the full-resolution Original image; do not use the low-resolution atlas.
+                // Keep this fallback branch only for compatibility with older callers.
             }
             // Use the same working source as Collections for 0.1 TON gifts.
             // Broken CDN model URLs are replaced by the server media endpoint instead of
