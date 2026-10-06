@@ -3118,7 +3118,7 @@ async function cashoutMinesGame(gameId, userId) {
     });
 }
 
-async function createPlinkoGame(userId, betAmount, betCurrency, betGiftId) {
+async function createPlinkoGame(userId, betAmount, betCurrency, betGiftId, difficulty = 'easy') {
     return await transaction(async () => {
         const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
         if (!user) throw new Error('User not found');
@@ -3161,9 +3161,17 @@ async function createPlinkoGame(userId, betAmount, betCurrency, betGiftId) {
         const serverSeedHash = hashGameServerSeed(serverSeed);
         const clientSeed = crypto.randomBytes(8).toString('hex');
 
-        // 12 slots at the bottom, each with a multiplier
-        const slots = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 2.0, 1.0, 0.5, 0.2, 0.1];
-        const gameData = JSON.stringify({ serverSeed, serverSeedHash, clientSeed, slots, nonce: 0 });
+        // Plinko difficulty presets mirror the reference layout.
+        // The selected preset is stored with the game so the server result
+        // always matches the board shown to the player.
+        const PLINKO_SLOTS = {
+            easy: [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
+            medium: [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
+            hard: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000]
+        };
+        const selectedDifficulty = Object.prototype.hasOwnProperty.call(PLINKO_SLOTS, String(difficulty)) ? String(difficulty) : 'easy';
+        const slots = PLINKO_SLOTS[selectedDifficulty];
+        const gameData = JSON.stringify({ serverSeed, serverSeedHash, clientSeed, slots, difficulty: selectedDifficulty, nonce: 0 });
 
         const result = await run(`
             INSERT INTO mini_games (user_id, game_type, bet_amount, bet_currency, game_data, server_seed, server_seed_hash, status)
