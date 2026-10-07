@@ -4019,7 +4019,7 @@ async function getPvpRoundWithParticipants(roundId) {
     const round = await get('SELECT * FROM pvp_rounds WHERE id = ?', [roundId]);
     if (!round) return null;
     const participants = await query(`
-        SELECT p.*, u.first_name, u.last_name, u.telegram_id,
+        SELECT p.*, u.first_name, u.last_name, u.username, u.telegram_id, u.avatar_url,
                g.name AS gift_name, g.image_url AS gift_image_url
         FROM pvp_participants p
         JOIN users u ON u.id = p.user_id
