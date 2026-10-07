@@ -5500,7 +5500,26 @@ video::-webkit-media-controls-enclosure {
 <div id="pvp-game" class="rocket-game-container hidden">
 <style>
 #pvp-game{background:#111;color:#fff;min-height:100vh}
-#pvp-game .pvp-shell{max-width:720px;margin:0 auto;padding:10px 14px 120px}
+#pvp-game{position:fixed!important;inset:0!important;z-index:5000!important;overflow:hidden!important;height:100dvh!important;min-height:0!important;padding:0!important;box-sizing:border-box;background:#111}
+#pvp-game .pvp-shell{position:relative;max-width:720px;width:100%;height:100dvh;margin:0 auto;padding:8px 14px 92px;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column}
+#pvp-game .pvp-topbar{flex:0 0 48px}
+#pvp-game .pvp-stats{flex:0 0 auto}
+#pvp-game .pvp-pot{flex:1 1 auto;min-height:0;height:auto;margin:0 -14px;overflow:hidden}
+#pvp-game .pvp-join{flex:0 0 auto;margin:8px 0 6px}
+#pvp-game .pvp-players-title,#pvp-game .pvp-players{display:none}
+#pvp-game .pvp-join-btn{padding:14px;font-size:20px}
+#pvp-game .pvp-wheel{bottom:-235px;width:min(420px,88vw);height:min(420px,88vw)}
+#pvp-game .pvp-participant-strip-wrap{bottom:4px}
+#pvp-game .pvp-result{position:absolute;left:14px;right:14px;bottom:96px;margin:0;z-index:50}
+#pvp-game .pvp-title{font-size:24px}
+@media(max-width:430px){
+ #pvp-game .pvp-shell{padding-left:10px;padding-right:10px;padding-bottom:88px}
+ #pvp-game .pvp-pot{margin:0 -10px}
+ #pvp-game .pvp-wheel{bottom:-235px;width:380px;height:380px}
+ #pvp-game .pvp-stats{gap:8px;margin:6px 0 8px}
+ #pvp-game .pvp-stat{padding:8px}
+ #pvp-game .pvp-stat-value{font-size:19px}
+}
 #pvp-game .pvp-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 #pvp-game .pvp-back,#pvp-game .pvp-history{border:0;border-radius:17px;background:#292929;color:#fff;height:48px;padding:0 16px;font-weight:900}
 #pvp-game .pvp-history{width:48px;padding:0;font-size:25px}
@@ -5584,7 +5603,7 @@ video::-webkit-media-controls-enclosure {
 <div class="pvp-shell">
   <div class="pvp-topbar">
     <button class="pvp-back" type="button" onclick="closePvPGame()">← رجوع</button>
-    <div class="pvp-title">🎁 Epic Gift</div>
+    <div class="pvp-title">🚀 Crazy Rocket</div>
     <button class="pvp-history" type="button" onclick="showToast('History')">↶</button>
   </div>
 
@@ -5625,7 +5644,7 @@ video::-webkit-media-controls-enclosure {
   </div>
 
   <div class="pvp-join">
-    <button id="pvp-join-main" class="pvp-join-btn ready" type="button" onclick="openPvpBetModal()">Place Bet</button>
+    <button id="pvp-join-main" class="pvp-join-btn ready" type="button" onclick="openPvpBetModal()">Join the Battle</button>
   </div>
 
   <div class="pvp-players-title"><span>Players</span><span id="pvp-player-count" style="color:#777">0</span></div>
@@ -6055,7 +6074,7 @@ video::-webkit-media-controls-enclosure {
             <div class="loot-box-modal-card">
                 <div class="loot-box-modal-head">
                     <button class="loot-box-back-button" type="button" onclick="closeModal('loot-box-modal')" aria-label="Back">← <span>Back</span></button>
-                    <div class="loot-box-modal-title" id="loot-box-modal-title">Epic Gift</div>
+                    <div class="loot-box-modal-title" id="loot-box-modal-title">Crazy Rocket</div>
                     <div class="loot-box-head-spacer" aria-hidden="true"></div>
                 </div>
                 <div class="loot-box-modal-subtitle" id="loot-box-modal-subtitle"></div>
@@ -7636,7 +7655,7 @@ async function openLootBox(box) {
             const topupButtonReset = document.getElementById('loot-box-topup-button');
             if (topupButtonReset) topupButtonReset.style.display = box.price > 0 ? 'flex' : 'none';
 
-            title.textContent = box.name || (box.nameKey ? t[box.nameKey] : 'Epic Gift');
+            title.textContent = box.name || (box.nameKey ? t[box.nameKey] : 'Crazy Rocket');
             subtitle.textContent = box.id === 'box_100'
                 ? 'Telegram Collectibles • TON Market Value'
                 : (box.id === 'free24' ? 'Telegram Collectibles • Daily Free Box' : (box.id === 'free' ? 'Telegram Collectibles • Free Box' : (Array.isArray(box.collectibles) && box.collectibles.length ? 'Collections in this Box' : 'محتويات الصندوق')));
@@ -13020,7 +13039,7 @@ function updatePvpUI(){
   updatePvpHighlights(d);
   renderPvpWheel(ps);renderPvpParticipants(ps);renderPvpPlayers(ps);
   const j=el('pvp-join-main'),r=el('pvp-result');
-  if(j){j.disabled=d.phase==='LIVE';j.textContent=d.phase==='LIVE'?'LIVE':'Place Bet';}
+  if(j){j.disabled=d.phase==='LIVE';j.textContent=d.phase==='LIVE'?'LIVE':'Join the Battle';}
   if(r){
     if(d.phase==='RESULT'){
       r.classList.add('show');
