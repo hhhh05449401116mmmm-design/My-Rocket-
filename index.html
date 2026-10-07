@@ -12326,6 +12326,8 @@ async function openLootBox(box) {
                      tiles[idx].textContent = '💣';
                      minesState.mineHit = true;
                      document.getElementById('mines-cashout-btn').disabled = true;
+                     var mineSelectAfterHit = document.getElementById('mines-count-select');
+                     if (mineSelectAfterHit) mineSelectAfterHit.disabled = false;
                      showToast((t.minesBoom || '💥 BOOM! You hit a mine'));
                      var statusEl = document.getElementById('mines-status');
                       if (statusEl) statusEl.textContent = (t.minesGameOver || 'نهاية اللعبة');
