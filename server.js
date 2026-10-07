@@ -345,6 +345,14 @@ const {
     createDiceGame,
     getMiniGame,
     createLotteryGame,
+    LOTTERY_GAME_CONFIGS,
+    getLotteryConfig,
+    createLotteryRound,
+    getOpenLotteryRound,
+    getLotteryRoundsForUser,
+    getLotteryRoundsSummary,
+    createLotteryTicket,
+    drawLotteryRound,
     getPvpActiveRound,
     createPvpRound,
     startPvpCountdown,
@@ -4092,6 +4100,147 @@ app.post('/api/lottery/bet', authenticate, async (req, res) => {
     }
 });
 
+// --- Scheduled Lottery ---
+function berlinParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Berlin',
+        weekday: 'short',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).formatToParts(date);
+    const out = {};
+    for (const p of parts) if (p.type !== 'literal') out[p.type] = p.value;
+    return out;
+}
+
+function berlinOffsetMinutes(date) {
+    const tz = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Berlin',
+        timeZoneName: 'longOffset'
+    }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'GMT+01:00';
+    const m = tz.match(/GMT([+-])(\d{2}):?(\d{2})?/);
+    if (!m) return 60;
+    return (m[1] === '+' ? 1 : -1) * (Number(m[2]) * 60 + Number(m[3] || 0));
+}
+
+function berlinLocalToUtcIso(year, month, day, hour, minute = 0) {
+    const probe = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+    const offset = berlinOffsetMinutes(probe);
+    return new Date(probe.getTime() - offset * 60000).toISOString();
+}
+
+function nextLotteryDrawIso(config, from = new Date()) {
+    const current = berlinParts(from);
+    const currentDay = Number(current.day);
+    const currentMonth = Number(current.month);
+    const currentYear = Number(current.year);
+    const weekdayNames = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const nowWeekday = weekdayNames[current.weekday];
+    for (let add = 0; add <= 8; add++) {
+        const probe = new Date(Date.UTC(currentYear, currentMonth - 1, currentDay + add));
+        const wd = probe.getUTCDay();
+        if (wd !== config.drawWeekday) continue;
+        if (add === 0 && (Number(current.hour) > config.drawHour || (Number(current.hour) === config.drawHour && Number(current.minute) >= 0))) continue;
+        return berlinLocalToUtcIso(probe.getUTCFullYear(), probe.getUTCMonth() + 1, probe.getUTCDate(), config.drawHour, 0);
+    }
+    throw new Error('Unable to calculate lottery draw time');
+}
+
+async function ensureScheduledLotteryRounds() {
+    for (const config of Object.values(LOTTERY_GAME_CONFIGS)) {
+        const nextDraw = nextLotteryDrawIso(config);
+        await createLotteryRound(config.key, nextDraw);
+        const open = await getOpenLotteryRound(config.key);
+        if (!open) {
+            await createLotteryRound(config.key, nextDraw);
+        }
+    }
+}
+
+let lotterySchedulerTimer = null;
+let lotterySchedulerBusy = false;
+
+async function runScheduledLotteryWorker() {
+    if (lotterySchedulerBusy) return;
+    lotterySchedulerBusy = true;
+    try {
+        await ensureScheduledLotteryRounds();
+        const due = await query(`
+            SELECT id, game_key, draw_at
+            FROM lottery_rounds
+            WHERE status = 'OPEN' AND draw_at <= datetime('now')
+            ORDER BY draw_at ASC
+            LIMIT 30
+        `);
+        for (const round of due) {
+            try {
+                const result = await drawLotteryRound(round.id);
+                console.log('🎰 Lottery draw settled:', JSON.stringify(result));
+            } catch (error) {
+                console.error('🎰 Lottery draw failed:', round.id, error.message);
+            }
+        }
+        await ensureScheduledLotteryRounds();
+    } finally {
+        lotterySchedulerBusy = false;
+    }
+}
+
+function startLotteryScheduler() {
+    if (lotterySchedulerTimer) return;
+    runScheduledLotteryWorker().catch(error => console.error('Lottery scheduler startup error:', error.message));
+    lotterySchedulerTimer = setInterval(() => {
+        runScheduledLotteryWorker().catch(error => console.error('Lottery scheduler error:', error.message));
+    }, 30000);
+}
+
+function stopLotteryScheduler() {
+    if (lotterySchedulerTimer) clearInterval(lotterySchedulerTimer);
+    lotterySchedulerTimer = null;
+}
+
+app.get('/api/lottery/config', authenticate, async (req, res) => {
+    res.json({
+        ok: true,
+        games: Object.values(LOTTERY_GAME_CONFIGS).map(config => ({
+            ...config,
+            nextDrawAt: null
+        }))
+    });
+});
+
+app.get('/api/lottery/rounds', authenticate, async (req, res) => {
+    try {
+        const rounds = await getLotteryRoundsForUser(req.user.id);
+        res.json({ ok: true, rounds });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.get('/api/lottery/summary', authenticate, async (req, res) => {
+    try {
+        res.json({ ok: true, rounds: await getLotteryRoundsSummary() });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+app.post('/api/lottery/ticket', authenticate, async (req, res) => {
+    try {
+        const { gameKey, mainNumbers, bonusNumbers } = req.body || {};
+        const result = await createLotteryTicket(req.user.id, String(gameKey || ''), mainNumbers, bonusNumbers);
+        res.json({ ok: true, ...result });
+    } catch (error) {
+        res.status(400).json({ ok: false, error: error.message });
+    }
+});
+
 // --- 5.7 الرهان بـ TON ---
 app.post('/api/bet/ton', authenticate, async (req, res) => {
     try {
@@ -5750,6 +5899,8 @@ async function startServer(port = PORT) {
         console.log('🎮 Game loop started');
         startPvpGameLoop();
         startCollectibleReconciliationWorker();
+        startLotteryScheduler();
+        console.log('🎰 Scheduled lottery worker started');
 
         // Warm the Telegram Stellar Rocket catalog without ever blocking or modifying the game loop.
         // Failure here only disables the optional rocket-media feature.
@@ -5787,6 +5938,7 @@ if (require.main === module) {
         stopGameLoop();
         stopPvpGameLoop();
         stopLeaderboardCycleWorker();
+        stopLotteryScheduler();
         db.close(() => {
             console.log('✅ Database closed');
             process.exit(0);
