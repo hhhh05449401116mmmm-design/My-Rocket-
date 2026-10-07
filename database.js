@@ -790,6 +790,52 @@ function initDatabase() {
             db.run(`CREATE INDEX IF NOT EXISTS idx_pvp_participants_user ON pvp_participants(user_id)`);
             db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_pvp_participant_unique ON pvp_participants(pvp_round_id, user_id)`);
 
+            // ===== 5.13 Scheduled Lottery System =====
+            db.run(`
+                CREATE TABLE IF NOT EXISTS lottery_rounds (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game_key TEXT NOT NULL,
+                    draw_at DATETIME NOT NULL,
+                    status TEXT NOT NULL CHECK(status IN ('OPEN', 'DRAWING', 'DRAWN')),
+                    ticket_price REAL NOT NULL,
+                    jackpot REAL NOT NULL,
+                    main_numbers_count INTEGER NOT NULL,
+                    main_pick_count INTEGER NOT NULL,
+                    bonus_numbers_count INTEGER NOT NULL,
+                    bonus_pick_count INTEGER NOT NULL,
+                    max_participants INTEGER NOT NULL,
+                    participant_count INTEGER DEFAULT 0,
+                    draw_numbers TEXT,
+                    draw_bonus_numbers TEXT,
+                    winner_count INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    drawn_at DATETIME,
+                    UNIQUE(game_key, draw_at)
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_lottery_rounds_game_status ON lottery_rounds(game_key, status)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_lottery_rounds_draw_at ON lottery_rounds(draw_at)`);
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS lottery_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    round_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    main_numbers TEXT NOT NULL,
+                    bonus_numbers TEXT NOT NULL,
+                    ticket_price REAL NOT NULL,
+                    payout REAL DEFAULT 0,
+                    status TEXT NOT NULL CHECK(status IN ('ACTIVE', 'WINNER', 'LOST')),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    settled_at DATETIME,
+                    FOREIGN KEY (round_id) REFERENCES lottery_rounds(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            `);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_lottery_entries_round ON lottery_entries(round_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_lottery_entries_winner_lookup ON lottery_entries(round_id, main_numbers, bonus_numbers)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_lottery_entries_user ON lottery_entries(user_id)`);
+
             // ===== 5.12 PvP Rewards =====
             db.run(`
                 CREATE TABLE IF NOT EXISTS pvp_rewards (
@@ -3348,6 +3394,268 @@ function getLotteryPrize(matchCount, betAmount) {
     return betAmount * multiplier;
 }
 
+const LOTTERY_GAME_CONFIGS = {
+    classic: {
+        key: 'classic',
+        title: '3.5K TON',
+        ticketPrice: 3,
+        jackpot: 3500,
+        mainNumbersCount: 50,
+        mainPickCount: 5,
+        bonusNumbersCount: 12,
+        bonusPickCount: 1,
+        maxParticipants: 2000000,
+        drawWeekday: 6,
+        drawHour: 20
+    },
+    mega: {
+        key: 'mega',
+        title: '15K TON',
+        ticketPrice: 6,
+        jackpot: 15000,
+        mainNumbersCount: 60,
+        mainPickCount: 6,
+        bonusNumbersCount: 12,
+        bonusPickCount: 1,
+        maxParticipants: 2000000,
+        drawWeekday: 2,
+        drawHour: 20
+    },
+    ultra: {
+        key: 'ultra',
+        title: '100K TON',
+        ticketPrice: 10,
+        jackpot: 100000,
+        mainNumbersCount: 60,
+        mainPickCount: 7,
+        bonusNumbersCount: 12,
+        bonusPickCount: 2,
+        maxParticipants: 2000000,
+        drawWeekday: 4,
+        drawHour: 20
+    }
+};
+
+function getLotteryConfig(gameKey) {
+    const config = LOTTERY_GAME_CONFIGS[gameKey];
+    if (!config) throw new Error('Unknown lottery game');
+    return config;
+}
+
+function normalizeLotteryNumbers(numbers, count, max, label) {
+    if (!Array.isArray(numbers) || numbers.length !== count) {
+        throw new Error(`You must select exactly ${count} ${label}`);
+    }
+    const seen = new Set();
+    const normalized = numbers.map(Number).sort((a, b) => a - b);
+    for (const num of normalized) {
+        if (!Number.isInteger(num) || num < 1 || num > max) {
+            throw new Error(`${label} must be integers between 1 and ${max}`);
+        }
+        if (seen.has(num)) throw new Error(`Duplicate ${label.toLowerCase()} are not allowed`);
+        seen.add(num);
+    }
+    return normalized;
+}
+
+function lotteryNumbersSignature(numbers) {
+    return JSON.stringify([...numbers].sort((a, b) => a - b));
+}
+
+function drawUniqueLotteryNumbers(count, max) {
+    const set = new Set();
+    while (set.size < count) set.add(crypto.randomInt(1, max + 1));
+    return Array.from(set).sort((a, b) => a - b);
+}
+
+async function createLotteryRound(gameKey, drawAt) {
+    const config = getLotteryConfig(gameKey);
+    const existing = await get(
+        'SELECT * FROM lottery_rounds WHERE game_key = ? AND draw_at = ? LIMIT 1',
+        [gameKey, drawAt]
+    );
+    if (existing) return existing;
+
+    const result = await run(`
+        INSERT INTO lottery_rounds
+        (game_key, draw_at, status, ticket_price, jackpot, main_numbers_count, main_pick_count,
+         bonus_numbers_count, bonus_pick_count, max_participants, participant_count)
+        VALUES (?, ?, 'OPEN', ?, ?, ?, ?, ?, ?, ?, 0)
+    `, [
+        gameKey, drawAt, config.ticketPrice, config.jackpot, config.mainNumbersCount,
+        config.mainPickCount, config.bonusNumbersCount, config.bonusPickCount, config.maxParticipants
+    ]);
+    return await get('SELECT * FROM lottery_rounds WHERE id = ?', [result.lastID]);
+}
+
+async function getOpenLotteryRound(gameKey) {
+    return await get(
+        `SELECT * FROM lottery_rounds
+         WHERE game_key = ? AND status = 'OPEN'
+         ORDER BY draw_at ASC LIMIT 1`,
+        [gameKey]
+    );
+}
+
+async function getLotteryRoundsForUser(userId) {
+    return await query(`
+        SELECT r.id, r.game_key, r.draw_at, r.status, r.ticket_price, r.jackpot,
+               r.main_numbers_count, r.main_pick_count, r.bonus_numbers_count, r.bonus_pick_count,
+               r.max_participants, r.participant_count, r.draw_numbers, r.draw_bonus_numbers,
+               e.id AS entry_id, e.main_numbers, e.bonus_numbers, e.payout, e.status AS entry_status
+        FROM lottery_rounds r
+        LEFT JOIN lottery_entries e ON e.round_id = r.id AND e.user_id = ?
+        WHERE r.draw_at >= datetime('now', '-14 days')
+        ORDER BY r.draw_at DESC, e.id DESC
+        LIMIT 200
+    `, [userId]);
+}
+
+async function getLotteryRoundsSummary() {
+    return await query(`
+        SELECT r.*,
+               (SELECT COUNT(*) FROM lottery_entries e WHERE e.round_id = r.id) AS live_entry_count
+        FROM lottery_rounds r
+        WHERE r.status = 'OPEN'
+        ORDER BY r.draw_at ASC
+    `);
+}
+
+async function createLotteryTicket(userId, gameKey, mainNumbers, bonusNumbers) {
+    const config = getLotteryConfig(gameKey);
+    const normalizedMain = normalizeLotteryNumbers(mainNumbers, config.mainPickCount, config.mainNumbersCount, 'main numbers');
+    const normalizedBonus = normalizeLotteryNumbers(bonusNumbers, config.bonusPickCount, config.bonusNumbersCount, 'bonus numbers');
+
+    return await transaction(async () => {
+        const round = await get(
+            `SELECT * FROM lottery_rounds WHERE game_key = ? AND status = 'OPEN' ORDER BY draw_at ASC LIMIT 1`,
+            [gameKey]
+        );
+        if (!round) throw new Error('No active draw is available yet');
+        if (new Date(round.draw_at).getTime() <= Date.now()) throw new Error('This draw is closed');
+
+        const countRow = await get('SELECT COUNT(*) AS count FROM lottery_entries WHERE round_id = ?', [round.id]);
+        const count = Number(countRow?.count || 0);
+        if (count >= config.maxParticipants) throw new Error('This lottery is full');
+
+        const balance = await getUserBalance(userId);
+        if (balance < config.ticketPrice) throw new Error('Insufficient balance');
+
+        const debit = await run(
+            'UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?',
+            [config.ticketPrice, userId, config.ticketPrice]
+        );
+        if (debit.changes !== 1) throw new Error('Insufficient balance');
+
+        const result = await run(`
+            INSERT INTO lottery_entries
+            (round_id, user_id, main_numbers, bonus_numbers, ticket_price, status)
+            VALUES (?, ?, ?, ?, ?, 'ACTIVE')
+        `, [
+            round.id,
+            userId,
+            lotteryNumbersSignature(normalizedMain),
+            lotteryNumbersSignature(normalizedBonus),
+            config.ticketPrice
+        ]);
+
+        await run(
+            'UPDATE lottery_rounds SET participant_count = participant_count + 1 WHERE id = ?',
+            [round.id]
+        );
+
+        return {
+            entryId: result.lastID,
+            roundId: round.id,
+            gameKey,
+            ticketPrice: config.ticketPrice,
+            jackpot: config.jackpot,
+            mainNumbers: normalizedMain,
+            bonusNumbers: normalizedBonus,
+            drawAt: round.draw_at,
+            participantCount: count + 1,
+            maxParticipants: config.maxParticipants
+        };
+    });
+}
+
+async function drawLotteryRound(roundId) {
+    return await transaction(async () => {
+        const round = await get('SELECT * FROM lottery_rounds WHERE id = ?', [roundId]);
+        if (!round) throw new Error('Lottery round not found');
+        if (round.status === 'DRAWN') return { alreadyDrawn: true, round };
+
+        const claimed = await run(
+            `UPDATE lottery_rounds SET status = 'DRAWING' WHERE id = ? AND status = 'OPEN'`,
+            [roundId]
+        );
+        if (claimed.changes !== 1) return { alreadyDrawing: true, round };
+
+        const config = getLotteryConfig(round.game_key);
+        const drawNumbers = drawUniqueLotteryNumbers(config.mainPickCount, config.mainNumbersCount);
+        const drawBonusNumbers = drawUniqueLotteryNumbers(config.bonusPickCount, config.bonusNumbersCount);
+        const mainSignature = lotteryNumbersSignature(drawNumbers);
+        const bonusSignature = lotteryNumbersSignature(drawBonusNumbers);
+
+        const winners = await query(
+            `SELECT id, user_id FROM lottery_entries
+             WHERE round_id = ? AND status = 'ACTIVE'
+               AND main_numbers = ? AND bonus_numbers = ?`,
+            [roundId, mainSignature, bonusSignature]
+        );
+
+        const winnerCount = winners.length;
+        const perWinner = winnerCount > 0
+            ? Math.floor((config.jackpot / winnerCount) * 1000000) / 1000000
+            : 0;
+
+        for (const winner of winners) {
+            if (perWinner > 0) {
+                await run(
+                    'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [perWinner, winner.user_id]
+                );
+            }
+            await run(
+                `UPDATE lottery_entries
+                 SET status = 'WINNER', payout = ?, settled_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [perWinner, winner.id]
+            );
+        }
+
+        await run(
+            `UPDATE lottery_entries
+             SET status = 'LOST', settled_at = CURRENT_TIMESTAMP
+             WHERE round_id = ? AND status = 'ACTIVE'`,
+            [roundId]
+        );
+
+        await run(
+            `UPDATE lottery_rounds
+             SET status = 'DRAWN',
+                 participant_count = (SELECT COUNT(*) FROM lottery_entries WHERE round_id = ?),
+                 draw_numbers = ?,
+                 draw_bonus_numbers = ?,
+                 winner_count = ?,
+                 drawn_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [roundId, JSON.stringify(drawNumbers), JSON.stringify(drawBonusNumbers), winnerCount, roundId]
+        );
+
+        return {
+            roundId,
+            gameKey: round.game_key,
+            drawNumbers,
+            drawBonusNumbers,
+            winnerCount,
+            jackpot: config.jackpot,
+            payoutPerWinner: perWinner,
+            winners
+        };
+    });
+}
+
 async function createLotteryGame(userId, betAmount, betCurrency, betGiftId, playerNumbers) {
     return await transaction(async () => {
         const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
@@ -3760,6 +4068,14 @@ module.exports = {
     dropPlinkoChip,
     createDiceGame,
     getMiniGame,
+    LOTTERY_GAME_CONFIGS,
+    getLotteryConfig,
+    createLotteryRound,
+    getOpenLotteryRound,
+    getLotteryRoundsForUser,
+    getLotteryRoundsSummary,
+    createLotteryTicket,
+    drawLotteryRound,
     createLotteryGame,
     getLotteryPrize,
     getPvpActiveRound,
