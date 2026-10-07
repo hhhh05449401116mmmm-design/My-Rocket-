@@ -2343,7 +2343,8 @@ let pvpState = {
     poolTon: 0,
     poolGift: 0,
     participants: [],
-    lastWinnerUserId: null
+    lastWinnerUserId: null,
+    highlights: { lastWinner: null, topOfDay: null }
 };
 
 let pvpGameLoopTimer = null;
@@ -2363,9 +2364,12 @@ function getPvpStateSnapshot() {
         poolTon: pvpState.poolTon,
         poolGift: pvpState.poolGift,
         totalPool: Number(pvpState.poolTon || 0) + Number(pvpState.poolGift || 0),
+        highlights: pvpState.highlights,
         participants: pvpState.participants.map(p => ({
             id: p.id,
+            user_id: p.user_id,
             name: p.name,
+            username: p.username || null,
             avatar: p.avatar,
             betCurrency: p.bet_currency,
             betAmount: Number(p.bet_amount || 0),
@@ -2392,7 +2396,8 @@ async function refreshPvpParticipants() {
     pvpState.participants = data.participants.map(p => ({
         ...p,
         name: buildPlayerName(p),
-        avatar: p.telegram_id ? `https://t.me/i/userpic/${p.telegram_id}.jpg` : '',
+        username: p.username || null,
+        avatar: p.avatar_url || (p.telegram_id ? `https://t.me/i/userpic/${p.telegram_id}.jpg` : ''),
         participation_percent: calculatePercent(Number(p.bet_amount || 0), totalPool)
     }));
     pvpState.poolTon = data.participants
@@ -2405,6 +2410,43 @@ async function refreshPvpParticipants() {
 
 function calculatePercent(contrib, total) {
     return total > 0 ? parseFloat((contrib / total * 100).toFixed(2)) : 0;
+}
+
+async function refreshPvpHighlights() {
+    try {
+        const last = await get(`
+            SELECT r.round_number, r.ended_at, r.winner_user_id,
+                   COALESCE(r.pool_ton, 0) + COALESCE(r.pool_gift_value, 0) AS prize,
+                   u.first_name, u.last_name, u.username, u.avatar_url
+            FROM pvp_rounds r
+            LEFT JOIN users u ON u.id = r.winner_user_id
+            WHERE r.phase = 'RESULT' AND r.winner_user_id IS NOT NULL
+            ORDER BY r.ended_at DESC, r.id DESC
+            LIMIT 1
+        `);
+        const top = await get(`
+            SELECT r.round_number, r.ended_at, r.winner_user_id,
+                   COALESCE(r.pool_ton, 0) + COALESCE(r.pool_gift_value, 0) AS prize,
+                   u.first_name, u.last_name, u.username, u.avatar_url
+            FROM pvp_rounds r
+            LEFT JOIN users u ON u.id = r.winner_user_id
+            WHERE r.phase = 'RESULT' AND r.winner_user_id IS NOT NULL
+              AND date(r.ended_at, 'localtime') = date('now', 'localtime')
+            ORDER BY prize DESC, r.ended_at DESC, r.id DESC
+            LIMIT 1
+        `);
+        const mapWinner = row => row ? {
+            userId: row.winner_user_id,
+            name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.username || 'Player',
+            username: row.username || null,
+            avatar: row.avatar_url || null,
+            prize: Number(row.prize || 0),
+            roundNumber: row.round_number
+        } : null;
+        pvpState.highlights = { lastWinner: mapWinner(last), topOfDay: mapWinner(top) };
+    } catch (error) {
+        console.error('PvP highlights refresh error:', error.message);
+    }
 }
 
 async function startPvpRound() {
@@ -2425,7 +2467,8 @@ async function startPvpRound() {
         poolTon: 0,
         poolGift: 0,
         participants: [],
-        lastWinnerUserId: null
+        lastWinnerUserId: null,
+        highlights: pvpState.highlights || { lastWinner: null, topOfDay: null }
     };
     console.log(`🎮 PvP Round ${round.round_number} created (WAITING)`);
 }
@@ -2462,6 +2505,7 @@ async function settlePvpRound() {
         pvpState.poolGift = result.poolGift;
         pvpState.crashAt = null;
         await refreshPvpParticipants();
+        await refreshPvpHighlights();
         console.log(`🏆 PvP Round ${pvpState.roundNumber} winner=${result.winnerUserId} pool=${result.totalPool}`);
         await new Promise(resolve => setTimeout(resolve, 4500));
         await startPvpRound();
@@ -2499,6 +2543,7 @@ async function startPvpGameLoop() {
             pvpBusy = false;
         }
     }, 1000);
+    await refreshPvpHighlights();
     await startPvpRound();
     await triggerPvpCountdown();
     return pvpGameLoopTimer;
