@@ -11960,6 +11960,21 @@ async function openLootBox(box) {
                  '<span>★ Special: <b>' + (bonus.length ? bonus.join(' · ') : '—') + '</b></span>';
              var ready = main.length === config.mainPickCount && bonus.length === config.bonusPickCount;
              summary.classList.toggle('ready', ready);
+
+             // One ticket per game, not one ticket for the whole lottery system.
+             // This lets the player join Classic + Mega + Ultra once each.
+             var currentRound = (lotteryState.rounds || []).find(function(r){
+                 return r.game_key === config.key && r.status === 'OPEN' && r.entry_id;
+             });
+             var ticketBtn = document.getElementById('lottery-ticket-btn');
+             if (ticketBtn) {
+                 ticketBtn.disabled = !!currentRound;
+                 if (currentRound) {
+                     ticketBtn.innerHTML = '<span>✓ Ticket owned</span><strong>' + config.title + ' · already joined</strong>';
+                 } else {
+                     ticketBtn.innerHTML = '<span>' + config.ticketPrice + ' TON</span><strong>Join ' + config.jackpot.toLocaleString() + ' TON draw</strong>';
+                 }
+             }
          }
 
          function updateLotteryStatus(msg, isError) {
