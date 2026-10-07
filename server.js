@@ -2679,9 +2679,7 @@ app.post('/api/pvp/join', authenticate, async (req, res) => {
     try {
         const { betCurrency, betAmount, giftUniqueId } = req.body;
         const result = await joinPvpRound(req.user.id, betCurrency || 'TON', betAmount, giftUniqueId || null);
-        if (result.betCurrency === 'TON') {
-            await refreshPvpParticipants();
-        }
+        await refreshPvpParticipants();
         res.json({ ok: true, ...result });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
