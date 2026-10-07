@@ -4848,7 +4848,7 @@ app.get('/api/loot-box/market-items', authenticate, async (req, res) => {
 
 // ===== Server-authoritative paid loot-box roulette =====
 const PAID_LOOT_BOX_CONFIG = {
-    box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [], nothingChance: 9999, giftChance: 1 },
+    box_0_1: { name: 'Farm', price: 0.1, rarity: 'common', tonRewards: [], nothingChance: 0, giftChance: 10000, guaranteedGift: 'Plush Pepe' },
     box_2:   { name: 'Arm',   price: 2,   rarity: 'rare',   tonRewards: [0.05] },
     box_heart: { name: 'Heart', price: 2, rarity: 'rare', tonRewards: [0.20, 0.30] },
     box_2_5: { name: 'Movie', price: 4.5, rarity: 'rare',   tonRewards: [0.50, 0.40, 1.00, 0.20] },
@@ -4959,8 +4959,19 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             // 17% gifts under 5 TON, and 1% gifts over 5 TON.
             // The spinner is only a visual presentation of the already-selected
             // server result; it never decides the reward.
-            let giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
-            if (!giftPool.length) throw new Error('No gifts available for this box');
+            let giftPool;
+            if (boxId === 'box_0_1') {
+                // Farm (0.1 TON) is guaranteed to award Plush Pepe.
+                const guaranteedGift = await get(
+                    'SELECT * FROM gifts WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1',
+                    [config.guaranteedGift]
+                );
+                if (!guaranteedGift) throw new Error('Guaranteed Farm gift is not available');
+                giftPool = [guaranteedGift];
+            } else {
+                giftPool = await getPaidBoxGiftPool(boxId, config.rarity);
+                if (!giftPool.length) throw new Error('No gifts available for this box');
+            }
 
             // Random gift boxes use the fixed general Telegram gift price catalog.
             // No live market refresh or market API is used for box pricing.
@@ -4989,12 +5000,8 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
             let nothing = false;
 
             if (boxId === 'box_0_1') {
-                // Farm is gift-or-Nothing only: 0.01% gift, 99.99% Nothing.
-                if (roll < Number(config.nothingChance || 0)) {
-                    nothing = true;
-                } else if (roll < Number(config.nothingChance || 0) + Number(config.giftChance || 0)) {
-                    gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
-                }
+                // Farm (0.1 TON) is 100% guaranteed to award Plush Pepe.
+                gift = enrichedGiftPool[0];
             } else if (boxId === 'box_15') {
                 // Ring is gift-only: no TON balance reward is allowed for this box.
                 gift = enrichedGiftPool[crypto.randomInt(0, enrichedGiftPool.length)];
@@ -5110,7 +5117,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     req.user.id,
                     'GIFT_WON',
                     '🎁 You won ' + gift.name + ' from the ' + config.name + ' box!',
-                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.25 : 0.07 }
+                    { giftId: gift.id, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 1 : 0.07 }
                 );
             } else if (!nothing) {
                 await updateUserBalance(req.user.id, tonReward, 'add');
@@ -5118,7 +5125,7 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
                     req.user.id,
                     'BALANCE_WON',
                     '💎 You won ' + Number(tonReward).toFixed(2) + ' TON from the ' + config.name + ' box!',
-                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0.70 : 0.93 }
+                    { tonReward, boxName: config.name, source: 'paid-loot-box', probability: boxId === 'box_0_1' ? 0 : 0.93 }
                 );
             }
 
