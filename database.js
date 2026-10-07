@@ -3534,8 +3534,17 @@ async function createLotteryTicket(userId, gameKey, mainNumbers, bonusNumbers) {
         if (!round) throw new Error('No active draw is available yet');
         if (new Date(round.draw_at).getTime() <= Date.now()) throw new Error('This draw is closed');
 
-        const existingEntry = await get('SELECT id FROM lottery_entries WHERE round_id = ? AND user_id = ? LIMIT 1', [round.id, userId]);
-        if (existingEntry) throw new Error('You already have a ticket for this draw');
+        // A player may hold exactly ONE ticket in each lottery game for the current draw.
+        // The three games are independent, so the same player may participate in all three.
+        const existingEntry = await get(
+            `SELECT e.id
+             FROM lottery_entries e
+             JOIN lottery_rounds r ON r.id = e.round_id
+             WHERE r.game_key = ? AND r.status = 'OPEN' AND e.user_id = ?
+             LIMIT 1`,
+            [gameKey, userId]
+        );
+        if (existingEntry) throw new Error('You already have a ticket for this game');
 
         const countRow = await get('SELECT COUNT(*) AS count FROM lottery_entries WHERE round_id = ?', [round.id]);
         const count = Number(countRow?.count || 0);
