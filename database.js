@@ -3534,6 +3534,9 @@ async function createLotteryTicket(userId, gameKey, mainNumbers, bonusNumbers) {
         if (!round) throw new Error('No active draw is available yet');
         if (new Date(round.draw_at).getTime() <= Date.now()) throw new Error('This draw is closed');
 
+        const existingEntry = await get('SELECT id FROM lottery_entries WHERE round_id = ? AND user_id = ? LIMIT 1', [round.id, userId]);
+        if (existingEntry) throw new Error('You already have a ticket for this draw');
+
         const countRow = await get('SELECT COUNT(*) AS count FROM lottery_entries WHERE round_id = ?', [round.id]);
         const count = Number(countRow?.count || 0);
         if (count >= config.maxParticipants) throw new Error('This lottery is full');
