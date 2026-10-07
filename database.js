@@ -1377,8 +1377,6 @@ async function sellLootBoxGiftForBalance(userId, userGiftId, sellValue) {
             LIMIT 1
         `, [userGiftId, userId]);
         if (!reward) throw new Error('Loot-box gift not found or already used');
-        if (isLootBoxGiftLocked(reward)) throw new Error('This loot-box gift is locked for 7 days');
-
         const amount = Number(sellValue);
         if (!Number.isFinite(amount) || amount <= 0) throw new Error('Invalid gift sale value');
 
@@ -1873,8 +1871,6 @@ async function placeGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
         }
 
         const giftValue = userGift.gift_value || 0;
-        const lootBoxLocked = isLootBoxGiftLocked(userGift);
-        if (lootBoxLocked) throw new Error('This loot-box gift is locked for 7 days');
         
         // 3. قفل الهدية
         const update = await run(`
@@ -2431,7 +2427,6 @@ async function queueGiftBet(userId, giftId, roundId, autoCashoutTarget = null) {
         if (isCollectible && (!Number.isFinite(userGift.gift_value) || userGift.gift_value <= 0)) throw new Error('Collectible has no valid market valuation — cannot bet');
         const giftValue = Number(userGift.gift_value || 0);
         if (!Number.isFinite(giftValue) || giftValue <= 0) throw new Error('Gift has no valid value');
-        if (isLootBoxGiftLocked(userGift)) throw new Error('This loot-box gift is locked for 7 days');
         const reserve = await run(`
             UPDATE user_gifts SET status = 'IN_BET', market_value_snapshot = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status IN ('OWNED', 'WON')
