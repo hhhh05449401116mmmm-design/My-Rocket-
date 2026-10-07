@@ -5249,10 +5249,16 @@ video::-webkit-media-controls-enclosure {
                     <div class="stars"></div>
                     <div class="fog-effect"></div>
                     <div style="padding:20px;text-align:center;">
-                        <div id="mines-bet-amount" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:16px;">💎 1.00</div>
-                         <div id="mines-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:280px;margin:0 auto 16px;">
-                         </div>
-                         <button id="mines-bet-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;margin-bottom:8px;" data-key="minesBetBtn">Place Bet</button>
+                        <div id="mines-multipliers" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:4px 2px 10px;margin:0 auto 8px;max-width:360px;"></div>
+                        <div id="mines-bet-amount" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:12px;">💎 1.00x</div>
+                        <div id="mines-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:320px;margin:0 auto 16px;">
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 12px;max-width:320px;">
+                            <label for="mines-count-select" style="font-size:13px;font-weight:800;color:#aab8d0;">💣 Mines</label>
+                            <select id="mines-count-select" style="flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(100,200,255,.15);background:rgba(15,40,71,.65);color:#e8f4ff;font-weight:800;">
+                            </select>
+                        </div>
+                        <button id="mines-bet-btn" class="place-bet-main" type="button" style="width:100%;max-width:240px;margin-bottom:8px;" data-key="minesBetBtn">Place Bet</button>
                          <button id="mines-cashout-btn" class="place-bet-main" type="button" style="width:100%;max-width:200px;" disabled data-key="mines-cashout">Cash Out</button>
                         <div id="mines-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="mines-status">Place your bet to start</div>
                     </div>
@@ -12212,11 +12218,52 @@ async function openLootBox(box) {
          /* =========================================================
             MINES GAME
          ========================================================= */
-         var minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON' };
+         var minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON', mineCount: 5 };
+         function getMinesMultiplier(mineCount, safeReveals) {
+            var mines = Number(mineCount), reveals = Number(safeReveals);
+            if (!Number.isInteger(mines) || mines < 1 || mines > 24 || reveals < 0 || reveals > 25 - mines) return 1;
+            if (reveals === 0) return 1;
+            var multiplier = 0.975;
+            for (var i = 0; i < reveals; i++) multiplier *= (25 - i) / (25 - mines - i);
+            return Number(multiplier.toFixed(2));
+         }
+         function renderMinesMultipliers() {
+            var strip = document.getElementById('mines-multipliers');
+            if (!strip) return;
+            strip.innerHTML = '';
+            var maxSafe = 25 - minesState.mineCount;
+            for (var i = 1; i <= maxSafe; i++) {
+                var chip = document.createElement('div');
+                chip.style.cssText = 'flex:0 0 auto;min-width:50px;padding:6px 8px;border-radius:8px;border:1px solid rgba(120,90,210,.45);background:rgba(55,36,88,.55);color:#c9b8ff;font-size:11px;font-weight:800;text-align:center;';
+                chip.textContent = getMinesMultiplier(minesState.mineCount, i).toFixed(2) + 'x';
+                if (i === minesState.revealed.length) {
+                    chip.style.background = '#a84cff';
+                    chip.style.color = '#fff';
+                }
+                strip.appendChild(chip);
+            }
+         }
          function initMinesGame() {
-            minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON' };
+            minesState = { gameId: null, revealed: [], mineHit: false, multiplier: 1.0, betAmount: 0, currency: 'TON', mineCount: 5 };
             var grid = document.getElementById('mines-grid');
             grid.innerHTML = '';
+            var select = document.getElementById('mines-count-select');
+            if (select) {
+                select.innerHTML = '';
+                for (var m = 1; m <= 24; m++) {
+                    var option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = m + ' 💣';
+                    if (m === 5) option.selected = true;
+                    select.appendChild(option);
+                }
+                select.disabled = false;
+                select.onchange = function() {
+                    if (minesState.gameId) return;
+                    minesState.mineCount = Number(this.value) || 5;
+                    renderMinesMultipliers();
+                };
+            }
             for (var i = 0; i < 25; i++) {
                 var tile = document.createElement('button');
                 tile.className = 'mines-tile';
@@ -12225,6 +12272,7 @@ async function openLootBox(box) {
                 tile.onclick = function() { revealMineTile(parseInt(this.dataset.idx)); };
                 grid.appendChild(tile);
             }
+            renderMinesMultipliers();
             document.getElementById('mines-bet-btn').onclick = function() { placeMinesBet(); };
             document.getElementById('mines-cashout-btn').onclick = function() { cashoutMines(); };
             document.getElementById('mines-cashout-btn').disabled = true;
@@ -12237,19 +12285,24 @@ async function openLootBox(box) {
             if (!amountInput) return;
             var betAmount = Number(amountInput);
             if (!Number.isFinite(betAmount) || betAmount < 0.1) { showToast(t.insufficientBalance || '❌ Invalid amount'); return; }
+            var selectedMineCount = Number(minesState.mineCount) || 5;
             try {
                var response = await fetch(`${BACKEND_URL}/api/mines/bet`, {
                   method: 'POST', headers: getAuthHeaders(),
-                  body: JSON.stringify({ amount: betAmount, currency: 'TON' })
+                  body: JSON.stringify({ amount: betAmount, currency: 'TON', mineCount: selectedMineCount })
                });
                var data = await response.json();
                if (data.ok) {
                   minesState.gameId = data.gameId;
                   minesState.betAmount = data.betAmount;
                   minesState.currency = data.currency;
+                  minesState.mineCount = Number(data.mineCount || selectedMineCount);
                   minesState.multiplier = 1.0;
-                  document.getElementById('mines-bet-amount').textContent = '💎 ' + minesState.multiplier.toFixed(2) + 'x';
+                  document.getElementById('mines-bet-amount').textContent = '💎 1.00x';
                   document.getElementById('mines-cashout-btn').disabled = false;
+                  var mineSelect = document.getElementById('mines-count-select');
+                  if (mineSelect) mineSelect.disabled = true;
+                  renderMinesMultipliers();
                   showToast((t.minesGameReady || 'Mines game started!'));
                } else {
                   showToast(data.error || (t.giftBetFailed || '❌ Bet failed'));
@@ -12281,6 +12334,7 @@ async function openLootBox(box) {
                      tiles[idx].style.background = 'rgba(77,225,139,0.2)';
                      minesState.multiplier = data.multiplier;
                      document.getElementById('mines-bet-amount').textContent = '💎 ' + minesState.multiplier.toFixed(2) + 'x';
+                     renderMinesMultipliers();
                   }
                 } else {
                    showToast(data.error || (t.errorGeneric || '❌ Error'));
@@ -12300,6 +12354,8 @@ async function openLootBox(box) {
                    showToast((t.minesWonMsg || '🎉 You won ') + data.payout.toFixed(2) + ' TON!');
                    document.getElementById('mines-cashout-btn').disabled = true;
                    minesState.gameId = null;
+                   var mineSelect = document.getElementById('mines-count-select');
+                   if (mineSelect) mineSelect.disabled = false;
                 } else {
                    showToast(data.error || (t.cashoutFailed || '❌ Cashout failed'));
                 }
