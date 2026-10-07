@@ -3902,50 +3902,117 @@ async function cashoutPvpBet(participantId, userId) {
     });
 }
 
-async function crashPvpRound(roundId) {
+function derivePvpWinnerIndex(serverSeed, roundNumber, participants) {
+    if (!participants.length) return -1;
+    const message = `my-rocket-pvp-v1:${roundNumber}:winner`;
+    const digest = crypto.createHmac('sha256', serverSeed).update(message, 'utf8').digest();
+    const value = Number((digest.readBigUInt64BE(0) >> 12n)) / (2 ** 52);
+    const totalWeight = participants.reduce((sum, p) => sum + Math.max(0, Number(p.bet_amount) || 0), 0);
+    if (!(totalWeight > 0)) return 0;
+    let cursor = value * totalWeight;
+    for (let i = 0; i < participants.length; i++) {
+        cursor -= Math.max(0, Number(participants[i].bet_amount) || 0);
+        if (cursor < 0) return i;
+    }
+    return participants.length - 1;
+}
+
+async function settlePvpRound(roundId) {
     return await transaction(async () => {
         const round = await get('SELECT * FROM pvp_rounds WHERE id = ? AND phase = \'LIVE\'', [roundId]);
         if (!round) throw new Error('Round not in LIVE state');
 
-        await run('UPDATE pvp_rounds SET phase = ? WHERE id = ?', ['RESULT', roundId]);
-
         const participants = await query(`
-            SELECT p.*, u.first_name, u.last_name, u.telegram_id
+            SELECT p.*, u.first_name, u.last_name, u.telegram_id,
+                   ug.id AS user_gift_id, ug.gift_id AS locked_gift_id,
+                   g.name AS gift_name, g.image_url AS gift_image_url
             FROM pvp_participants p
             JOIN users u ON u.id = p.user_id
+            LEFT JOIN user_gifts ug ON ug.unique_collectible_id = p.gift_unique_id
+            LEFT JOIN gifts g ON g.id = ug.gift_id
             WHERE p.pvp_round_id = ? AND p.status = 'ACTIVE'
-            ORDER BY p.bet_amount DESC, p.id ASC
+            ORDER BY p.id ASC
         `, [roundId]);
 
         if (participants.length === 0) {
-            await run('UPDATE pvp_rounds SET phase = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?', ['CRASH', roundId]);
-            return { roundId, crashAt: round.crash_at, winnerUserId: null, payouts: [] };
+            await run('UPDATE pvp_rounds SET phase = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?', ['RESULT', roundId]);
+            return { roundId, winnerUserId: null, totalPool: 0, poolTon: 0, poolGift: 0, winnerPayout: 0 };
         }
 
-        const crashAt = round.crash_at;
-        const winner = participants[0];
+        const totalPool = participants.reduce((sum, p) => sum + Number(p.bet_amount || 0), 0);
+        const poolTon = participants
+            .filter(p => p.bet_currency === 'TON')
+            .reduce((sum, p) => sum + Number(p.bet_amount || 0), 0);
+        const poolGift = participants
+            .filter(p => p.bet_currency === 'GIFT')
+            .reduce((sum, p) => sum + Number(p.bet_amount || 0), 0);
 
-        await run('UPDATE pvp_participants SET status = ?, cashout_multiplier = ?, payout = ? WHERE id = ?', ['WON', crashAt, winner.bet_amount * crashAt, winner.id]);
-        await run('UPDATE pvp_participants SET status = ? WHERE pvp_round_id = ? AND id != ? AND status = ?', ['LOST', roundId, winner.id, 'ACTIVE']);
+        const winnerIndex = derivePvpWinnerIndex(round.server_seed, round.round_number, participants);
+        const winner = participants[winnerIndex];
+        const winnerPercent = calculateParticipationPercent(winner.bet_amount, totalPool);
 
-        if (winner.bet_currency === 'TON') {
-            const totalPool = participants.reduce((sum, p) => sum + p.bet_amount, 0);
-            const winnerShare = totalPool - winner.bet_amount;
-            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [winnerShare, winner.user_id]);
-            await run('UPDATE pvp_rounds SET winner_user_id = ?, winner_multiplier = ?, pool_ton = ? WHERE id = ?', [winner.user_id, crashAt, totalPool, roundId]);
+        await run(
+            'UPDATE pvp_participants SET status = ?, payout = ?, cashout_multiplier = ? WHERE id = ?',
+            ['WON', totalPool, 1, winner.id]
+        );
+        await run(
+            'UPDATE pvp_participants SET status = ?, payout = 0 WHERE pvp_round_id = ? AND id != ? AND status = ?',
+            ['LOST', roundId, winner.id, 'ACTIVE']
+        );
+
+        if (poolTon > 0) {
+            await run(
+                'UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [poolTon, winner.user_id]
+            );
         }
 
-        await run('UPDATE pvp_rounds SET phase = ?, winner_user_id = ?, winner_multiplier = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?', ['CRASH', winner.user_id, crashAt, roundId]);
+        const giftParticipants = participants.filter(p => p.bet_currency === 'GIFT' && p.gift_unique_id);
+        for (const participant of giftParticipants) {
+            const gift = await get(
+                'SELECT * FROM user_gifts WHERE unique_collectible_id = ? AND status = ?',
+                [participant.gift_unique_id, 'IN_BET']
+            );
+            if (!gift) continue;
+
+            await run(
+                'UPDATE user_gifts SET user_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?',
+                [winner.user_id, 'OWNED', participant.gift_unique_id, 'IN_BET']
+            );
+
+            await run(
+                `INSERT INTO pvp_rewards
+                 (pvp_round_id, winner_user_id, reward_gift_unique_id, reward_value, claimed, created_at)
+                 VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)`,
+                [roundId, winner.user_id, participant.gift_unique_id, Number(participant.bet_amount || 0)]
+            );
+        }
+
+        await run(
+            `UPDATE pvp_rounds
+             SET phase = ?, winner_user_id = ?, winner_multiplier = ?, pool_ton = ?, pool_gift_value = ?, ended_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            ['RESULT', winner.user_id, winnerPercent, poolTon, poolGift, roundId]
+        );
 
         return {
             roundId,
-            crashAt,
             winnerUserId: winner.user_id,
-            winnerMultiplier: crashAt,
-            totalPool: participants.reduce((sum, p) => sum + p.bet_amount, 0),
-            winnerPayout: winner.bet_currency === 'TON' ? winner.bet_amount * crashAt : 0
+            winnerName: [winner.first_name, winner.last_name].filter(Boolean).join(' ').trim() || 'Unknown',
+            winnerParticipationPercent: winnerPercent,
+            totalPool,
+            poolTon,
+            poolGift,
+            winnerPayout: totalPool,
+            serverSeed: round.server_seed,
+            serverSeedHash: round.server_seed_hash
         };
     });
+}
+
+// Backwards-compatible name for older callers/tests. PvP is now a weighted pot, not a crash game.
+async function crashPvpRound(roundId) {
+    return settlePvpRound(roundId);
 }
 
 async function getPvpRoundWithParticipants(roundId) {
