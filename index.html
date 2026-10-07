@@ -5495,20 +5495,172 @@ video::-webkit-media-controls-enclosure {
         </div>
 
         <!-- =========================================================
-            PVP GAME
+            PVP / EPIC GIFT - REFERENCE LAYOUT
         ========================================================= -->
-         <div id="pvp-game" class="rocket-game-container hidden">
+<div id="pvp-game" class="rocket-game-container hidden">
 <style>
-#pvp-game{background:#121212;color:#fff;min-height:100vh}#pvp-game .pvp-shell{max-width:720px;margin:0 auto;padding:10px 14px 110px}#pvp-game .pvp-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}#pvp-game .pvp-back{border:0;border-radius:16px;background:#292929;color:#fff;padding:10px 16px;font-weight:800}#pvp-game .pvp-title{font-size:25px;font-weight:900;text-align:center;flex:1}#pvp-game .pvp-history{width:48px;height:48px;border:0;border-radius:16px;background:#292929;color:#fff;font-size:25px}#pvp-game .pvp-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}#pvp-game .pvp-stat{background:#202020;border-radius:18px;padding:12px;text-align:center}#pvp-game .pvp-stat-name{font-size:14px;color:#bdbdbd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pvp-game .pvp-stat-value{font-size:22px;font-weight:900;color:#fff;margin-top:3px}#pvp-game .pvp-stat-sub{font-size:12px;color:#999;margin-top:2px}#pvp-game .pvp-pot{position:relative;margin:0 -14px;background:radial-gradient(circle at 50% 48%,#282828 0,#191919 48%,#101010 75%);min-height:420px;padding:26px 10px 18px;overflow:hidden}@keyframes pvpSpin{to{transform:rotate(360deg)}}#pvp-game .pvp-wheel{width:310px;height:310px;margin:22px auto 0;border-radius:50%;position:relative;border:10px solid #242424;box-shadow:0 0 0 1px #3d3d3d,0 0 35px rgba(0,0,0,.65);background:conic-gradient(#ff4f6d 0 18%,#35d8a2 18% 34%,#397cff 34% 52%,#8e62ff 52% 72%,#ffb63f 72% 86%,#efefef 86% 100%)}#pvp-game .pvp-wheel.live{animation:pvpSpin 1.8s linear infinite}#pvp-game .pvp-wheel-segments{position:absolute;inset:0;z-index:2}#pvp-game .pvp-wheel-segment{position:absolute;left:50%;top:50%;width:76px;min-height:70px;transform-origin:center 0;background:#252525;border-radius:16px;padding:6px 4px;text-align:center;box-shadow:0 4px 10px #0008;border-top:4px solid #397cff;color:#fff;font-weight:900;font-size:11px}#pvp-game .pvp-wheel-segment img{width:30px;height:30px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 3px}#pvp-game .pvp-wheel-segment .pct{font-size:12px}#pvp-game .pvp-wheel:after{content:"";position:absolute;inset:20%;border-radius:50%;background:#171717;border:2px solid #444;box-shadow:inset 0 0 30px #000}#pvp-game .pvp-wheel-center{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:150px}#pvp-game .pvp-timer{display:inline-block;background:#666;color:#fff;border:2px solid #858585;border-radius:24px;padding:6px 16px;font-size:27px;font-weight:900;line-height:1}#pvp-game .pvp-pool-label{font-size:15px;letter-spacing:2px;color:#aaa;margin-top:18px;font-weight:800}#pvp-game .pvp-pool-total{font-size:31px;font-weight:950;margin-top:3px}#pvp-game .pvp-pointer{position:absolute;z-index:5;top:7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:24px solid #4b91ff;filter:drop-shadow(0 2px 3px #000)}#pvp-game .pvp-quick{display:flex;gap:7px;overflow:hidden;justify-content:center;margin:-4px auto 0;max-width:620px;position:relative;z-index:6}#pvp-game .pvp-mini{min-width:110px;background:#292929;border-radius:14px;padding:8px 6px;text-align:center;border-top:4px solid #4b91ff}#pvp-game .pvp-mini img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #777}#pvp-game .pvp-mini-name{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pvp-game .pvp-mini-pct{font-size:15px;font-weight:950;margin-top:2px}#pvp-game .pvp-join{margin:22px 0 14px}#pvp-game .pvp-join-btn{width:100%;border:0;border-radius:20px;padding:18px;background:linear-gradient(90deg,#ffad0a,#ffe34d);color:#111;font-size:24px;font-weight:950}#pvp-game .pvp-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}#pvp-game .pvp-control{background:#292929;border:1px solid #454545;border-radius:14px;color:#fff;padding:12px}#pvp-game .pvp-control label{display:block;color:#aaa;font-size:12px;margin-bottom:5px}#pvp-game .pvp-control input,#pvp-game .pvp-control select{width:100%;background:#171717;color:#fff;border:0;outline:0;font-size:18px;font-weight:800}#pvp-game .pvp-players-title{display:flex;justify-content:space-between;align-items:center;font-size:23px;font-weight:950;margin:18px 0 10px}#pvp-game .pvp-players{display:flex;flex-direction:column;gap:10px}#pvp-game .pvp-player{display:grid;grid-template-columns:8px 54px 1fr auto;gap:12px;align-items:center;background:#2b2b2b;border-radius:18px;padding:12px 14px 12px 0;overflow:hidden}#pvp-game .pvp-player-bar{height:100%;min-height:74px}#pvp-game .pvp-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:#444;border:3px solid #4b91ff}#pvp-game .pvp-player-name{font-size:17px;font-weight:900}#pvp-game .pvp-player-bet{margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:#202020;border:1px solid #168fd0;border-radius:9px;padding:5px 8px;color:#fff;font-weight:800;font-size:14px}#pvp-game .pvp-player-pct{text-align:right;font-size:25px;font-weight:950}#pvp-game .pvp-player-value{text-align:right;color:#999;font-size:16px;font-weight:800;margin-top:3px}#pvp-game .pvp-result{display:none;text-align:center;background:linear-gradient(180deg,#2a2137,#171717);border:1px solid #8c50ff;border-radius:20px;padding:20px;margin:16px 0}#pvp-game .pvp-result.show{display:block}#pvp-game .pvp-result-title{font-size:26px;font-weight:950}#pvp-game .pvp-result-name{font-size:20px;color:#ffd85a;font-weight:900;margin-top:5px}#pvp-game .pvp-result-pool{font-size:30px;font-weight:950;margin-top:8px}#pvp-game .pvp-hash{font-size:12px;color:#777;text-align:center;margin-top:16px;word-break:break-all}@media(max-width:430px){#pvp-game .pvp-wheel{width:275px;height:275px}#pvp-game .pvp-player-pct{font-size:21px}}
+#pvp-game{background:#111;color:#fff;min-height:100vh}
+#pvp-game .pvp-shell{max-width:720px;margin:0 auto;padding:10px 14px 120px}
+#pvp-game .pvp-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#pvp-game .pvp-back,#pvp-game .pvp-history{border:0;border-radius:17px;background:#292929;color:#fff;height:48px;padding:0 16px;font-weight:900}
+#pvp-game .pvp-history{width:48px;padding:0;font-size:25px}
+#pvp-game .pvp-title{font-size:26px;font-weight:950;text-align:center;flex:1}
+#pvp-game .pvp-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px;direction:ltr}
+#pvp-game .pvp-stat{background:#202020;border-radius:20px;padding:12px 10px;text-align:center;min-width:0}
+#pvp-game .pvp-stat-name{font-size:14px;color:#c5c5c5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pvp-game .pvp-stat-value{font-size:22px;font-weight:950;color:#fff;margin-top:3px}
+#pvp-game .pvp-stat-sub{font-size:12px;color:#999;margin-top:2px}
+#pvp-game .pvp-pot{position:relative;margin:0 -14px;height:480px;background:radial-gradient(circle at 50% 55%,#292929 0,#191919 52%,#101010 78%);overflow:hidden;padding:0}
+#pvp-game .pvp-pointer{position:absolute;z-index:20;top:3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:25px solid #4b91ff;filter:drop-shadow(0 2px 3px #000)}
+#pvp-game .pvp-wheel{position:absolute;z-index:2;left:50%;bottom:-285px;transform:translateX(-50%);width:min(440px,92vw);height:min(440px,92vw);border-radius:50%;border:10px solid #242424;box-shadow:0 0 0 1px #454545,0 0 45px rgba(0,0,0,.7);background:#252525}
+#pvp-game .pvp-wheel.live{animation:pvpSpin 1.35s linear infinite}
+@keyframes pvpSpin{to{transform:translateX(-50%) rotate(360deg)}}
+#pvp-game .pvp-wheel-segments{position:absolute;inset:0;z-index:3}
+#pvp-game .pvp-wheel-segment{position:absolute;left:50%;top:50%;width:78px;min-height:68px;transform-origin:center 0;background:#252525;border-radius:15px;padding:6px 4px;text-align:center;box-shadow:0 4px 10px #0008;border-top:4px solid #397cff;color:#fff;font-weight:900;font-size:11px}
+#pvp-game .pvp-wheel-segment img{width:30px;height:30px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 3px}
+#pvp-game .pvp-wheel-segment .pct{font-size:12px}
+#pvp-game .pvp-wheel:after{content:"";position:absolute;inset:20%;border-radius:50%;background:#171717;border:2px solid #444;box-shadow:inset 0 0 30px #000}
+#pvp-game .pvp-wheel-center{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:180px}
+#pvp-game .pvp-timer{display:inline-block;background:#666;color:#fff;border:2px solid #858585;border-radius:24px;padding:6px 16px;font-size:27px;font-weight:900;line-height:1}
+#pvp-game .pvp-pool-label{font-size:15px;letter-spacing:2px;color:#aaa;margin-top:18px;font-weight:800}
+#pvp-game .pvp-pool-total{font-size:31px;font-weight:950;margin-top:3px}
+#pvp-game .pvp-round-small{color:#777;margin-top:6px;font-size:12px}
+#pvp-game .pvp-participant-strip-wrap{position:absolute;z-index:30;left:0;right:0;bottom:8px;padding:0 12px}
+#pvp-game .pvp-participant-strip{position:relative;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:10px 8px 8px;direction:ltr}
+#pvp-game .pvp-participant-strip::-webkit-scrollbar{display:none}
+#pvp-game .pvp-participant{position:relative;flex:0 0 112px;background:#292929;border-radius:15px;padding:8px 7px;text-align:center;border-top:4px solid #397cff;box-shadow:0 5px 16px rgba(0,0,0,.35)}
+#pvp-game .pvp-participant img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #777;margin:auto;display:block}
+#pvp-game .pvp-participant-name{font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+#pvp-game .pvp-participant-bet{font-size:12px;color:#cfcfcf;margin-top:2px}
+#pvp-game .pvp-participant.winner{outline:2px solid #ffd85a;box-shadow:0 0 22px rgba(255,216,90,.3)}
+#pvp-game .pvp-winner-line{position:absolute;z-index:40;left:50%;top:0;bottom:0;width:2px;background:#ffd85a;transform:translateX(-50%);pointer-events:none;box-shadow:0 0 9px rgba(255,216,90,.7)}
+#pvp-game .pvp-join{margin:12px 0 14px}
+#pvp-game .pvp-join-btn{width:100%;border:0;border-radius:20px;padding:18px;background:#2c2c2c;color:#fff;font-size:23px;font-weight:950;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+#pvp-game .pvp-join-btn.ready{background:linear-gradient(135deg,#9c42ff,#6d21c8)}
+#pvp-game .pvp-players-title{display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:950;margin:18px 0 10px}
+#pvp-game .pvp-players{display:flex;flex-direction:column;gap:10px}
+#pvp-game .pvp-player{display:grid;grid-template-columns:7px 54px 1fr auto;gap:12px;align-items:center;background:#242424;border-radius:17px;padding:10px 12px 10px 0;overflow:hidden}
+#pvp-game .pvp-player-bar{height:100%;min-height:70px}
+#pvp-game .pvp-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;background:#444;border:3px solid #4b91ff}
+#pvp-game .pvp-player-name{font-size:16px;font-weight:900}
+#pvp-game .pvp-player-bet{margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:#1d1d1d;border:1px solid #168fd0;border-radius:9px;padding:5px 8px;color:#fff;font-weight:800;font-size:13px}
+#pvp-game .pvp-player-pct{text-align:right;font-size:22px;font-weight:950}
+#pvp-game .pvp-player-value{text-align:right;color:#999;font-size:14px;font-weight:800;margin-top:3px}
+#pvp-game .pvp-result{display:none;text-align:center;background:linear-gradient(180deg,#2a2137,#171717);border:1px solid #8c50ff;border-radius:20px;padding:18px;margin:14px 0}
+#pvp-game .pvp-result.show{display:block}
+#pvp-game .pvp-result-title{font-size:24px;font-weight:950}
+#pvp-game .pvp-result-name{font-size:19px;color:#ffd85a;font-weight:900;margin-top:5px}
+#pvp-game .pvp-result-pool{font-size:28px;font-weight:950;margin-top:8px}
+@media(max-width:430px){
+ #pvp-game .pvp-shell{padding-left:10px;padding-right:10px}
+ #pvp-game .pvp-pot{margin:0 -10px;height:455px}
+ #pvp-game .pvp-wheel{bottom:-265px;width:400px;height:400px}
+ #pvp-game .pvp-participant{flex-basis:98px}
+}
+#pvp-bet-modal{position:fixed;inset:0;z-index:99999;display:none;background:rgba(0,0,0,.76);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);align-items:flex-end}
+#pvp-bet-modal.show{display:flex}
+#pvp-bet-modal .pvp-bet-sheet{width:100%;max-width:720px;margin:0 auto;background:#202020;border-radius:28px 28px 0 0;box-shadow:0 -18px 60px rgba(0,0,0,.5);overflow:hidden;color:#fff;max-height:88vh;display:flex;flex-direction:column}
+#pvp-bet-modal .pvp-bet-head{height:82px;min-height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid rgba(255,255,255,.12)}
+#pvp-bet-modal .pvp-bet-title{font-size:26px;font-weight:950}
+#pvp-bet-modal .pvp-bet-close{width:52px;height:52px;border:0;border-radius:50%;background:#3a3a3a;color:#fff;font-size:30px}
+#pvp-bet-modal .pvp-bet-body{padding:18px 20px 28px;overflow:auto}
+#pvp-bet-modal .pvp-bet-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;border-radius:20px;background:#2b2b2b}
+#pvp-bet-modal .pvp-bet-tab{border:0;background:transparent;color:#aaa;border-radius:17px;padding:12px 8px;font-size:18px;font-weight:950}
+#pvp-bet-modal .pvp-bet-tab.active{background:#a64dff;color:#fff}
+#pvp-bet-modal .pvp-bet-section{margin-top:14px;background:#292929;border:1px solid #404040;border-radius:18px;padding:14px}
+#pvp-bet-modal .pvp-bet-label{display:block;color:#aaa;font-size:14px;font-weight:800;margin-bottom:8px}
+#pvp-bet-modal .pvp-bet-input{width:100%;height:54px;border-radius:16px;border:1px solid #3d3d3d;background:#202020;color:#fff;text-align:center;font-size:22px;font-weight:900;outline:0}
+#pvp-bet-modal .pvp-gift-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#pvp-bet-modal .pvp-gift-item{background:#202020;border:2px solid #3a3a3a;border-radius:14px;padding:8px;text-align:center}
+#pvp-bet-modal .pvp-gift-item.selected{border-color:#a64dff}
+#pvp-bet-modal .pvp-gift-item img{width:60px;height:60px;object-fit:contain;border-radius:10px;display:block;margin:0 auto 5px}
+#pvp-bet-modal .pvp-gift-item-name{font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pvp-bet-modal .pvp-gift-item-value{font-size:9px;color:#999;margin-top:2px}
+#pvp-bet-modal .pvp-empty-gifts{text-align:center;color:#aaa;padding:18px 8px;font-size:15px;line-height:1.6}
+#pvp-bet-modal .pvp-send-gifts{width:100%;height:56px;margin-top:10px;border:0;border-radius:17px;background:linear-gradient(100deg,#11a8df,#3978f4);color:#fff;font-size:19px;font-weight:950}
+#pvp-bet-modal .pvp-place-bet{width:100%;height:58px;margin-top:14px;border:0;border-radius:18px;background:linear-gradient(135deg,#9d3dff,#c05aff);color:#fff;font-size:20px;font-weight:950}
+#pvp-bet-modal .pvp-place-bet:disabled{opacity:.45}
 </style>
 <div class="pvp-shell">
-<div class="pvp-topbar"><button class="pvp-back" type="button" onclick="closePvPGame()">← رجوع</button><div class="pvp-title">🎁 Epic Gift</div><button class="pvp-history" type="button">↶</button></div>
-<div class="pvp-stats"><div class="pvp-stat"><div class="pvp-stat-name" id="pvp-last-player">—</div><div class="pvp-stat-value" id="pvp-last-prize">+0 TON</div><div class="pvp-stat-sub">Last Game</div></div><div class="pvp-stat"><div class="pvp-stat-name" id="pvp-top-player">—</div><div class="pvp-stat-value" id="pvp-top-prize">+0 TON</div><div class="pvp-stat-sub">Top of the Day</div></div></div>
-<div class="pvp-pot"><div class="pvp-pointer"></div><div id="pvp-wheel" class="pvp-wheel"><div id="pvp-wheel-segments" class="pvp-wheel-segments"></div><div class="pvp-wheel-center"><div id="pvp-countdown" class="pvp-timer">00:10</div><div class="pvp-pool-label">TOTAL POOL</div><div id="pvp-pool-total" class="pvp-pool-total">💎 0.00</div><div id="pvp-round-small" style="color:#777;margin-top:6px;font-size:12px">Game #—</div></div></div><div id="pvp-quick" class="pvp-quick"></div></div>
-<div id="pvp-result" class="pvp-result"><div class="pvp-result-title">🏆 WINNER</div><div id="pvp-result-name" class="pvp-result-name">—</div><div id="pvp-result-pool" class="pvp-result-pool">0.00 TON</div></div>
-<div class="pvp-join"><button id="pvp-join-main" class="pvp-join-btn" type="button" onclick="joinPvpRound()">Join the Battle</button><div id="pvp-bet-panel" class="pvp-controls"><div class="pvp-control"><label>Amount</label><input id="pvp-bet-input" type="number" min="0.1" step="0.01" value="0.1"></div><div class="pvp-control"><label>Bet type</label><select id="pvp-bet-currency" onchange="togglePvpGiftSelect()"><option value="TON">TON</option><option value="GIFT">Gift</option></select></div></div><div id="pvp-gift-panel" class="pvp-control" style="display:none;margin-top:10px"><label>Gift to bet</label><select id="pvp-gift-select"><option value="">Select your gift</option></select></div></div>
-<div class="pvp-players-title"><span>Players</span><span id="pvp-player-count" style="color:#777">0</span></div><div id="pvp-players" class="pvp-players"></div><div id="pvp-hash" class="pvp-hash"></div>
-</div></div>
+  <div class="pvp-topbar">
+    <button class="pvp-back" type="button" onclick="closePvPGame()">← رجوع</button>
+    <div class="pvp-title">🎁 Epic Gift</div>
+    <button class="pvp-history" type="button" onclick="showToast('History')">↶</button>
+  </div>
+
+  <div class="pvp-stats">
+    <div class="pvp-stat">
+      <div class="pvp-stat-name" id="pvp-last-player">—</div>
+      <div class="pvp-stat-value" id="pvp-last-prize">+0 TON</div>
+      <div class="pvp-stat-sub">Last Game</div>
+    </div>
+    <div class="pvp-stat">
+      <div class="pvp-stat-name" id="pvp-top-player">—</div>
+      <div class="pvp-stat-value" id="pvp-top-prize">+0 TON</div>
+      <div class="pvp-stat-sub">Top of the Day</div>
+    </div>
+  </div>
+
+  <div class="pvp-pot">
+    <div class="pvp-pointer"></div>
+    <div id="pvp-wheel" class="pvp-wheel">
+      <div id="pvp-wheel-segments" class="pvp-wheel-segments"></div>
+      <div class="pvp-wheel-center">
+        <div id="pvp-countdown" class="pvp-timer">00:10</div>
+        <div class="pvp-pool-label">TOTAL POOL</div>
+        <div id="pvp-pool-total" class="pvp-pool-total">💎 0.00</div>
+        <div id="pvp-round-small" class="pvp-round-small">Game #—</div>
+      </div>
+    </div>
+    <div class="pvp-participant-strip-wrap">
+      <div id="pvp-participant-strip" class="pvp-participant-strip"></div>
+      <div class="pvp-winner-line"></div>
+    </div>
+  </div>
+
+  <div id="pvp-result" class="pvp-result">
+    <div class="pvp-result-title">🏆 WINNER</div>
+    <div id="pvp-result-name" class="pvp-result-name">—</div>
+    <div id="pvp-result-pool" class="pvp-result-pool">0.00 TON</div>
+  </div>
+
+  <div class="pvp-join">
+    <button id="pvp-join-main" class="pvp-join-btn ready" type="button" onclick="openPvpBetModal()">Place Bet</button>
+  </div>
+
+  <div class="pvp-players-title"><span>Players</span><span id="pvp-player-count" style="color:#777">0</span></div>
+  <div id="pvp-players" class="pvp-players"></div>
+</div>
+</div>
+
+<div id="pvp-bet-modal" aria-hidden="true">
+  <div class="pvp-bet-sheet" role="dialog" aria-modal="true">
+    <div class="pvp-bet-head">
+      <div class="pvp-bet-title">Place Bet</div>
+      <button type="button" class="pvp-bet-close" onclick="closePvpBetModal()">×</button>
+    </div>
+    <div class="pvp-bet-body">
+      <div class="pvp-bet-tabs">
+        <button id="pvp-modal-ton-tab" class="pvp-bet-tab active" type="button" onclick="selectPvpBetType('TON')">TON</button>
+        <button id="pvp-modal-gift-tab" class="pvp-bet-tab" type="button" onclick="selectPvpBetType('GIFT')">Gifts</button>
+      </div>
+      <div id="pvp-modal-ton-section" class="pvp-bet-section">
+        <label class="pvp-bet-label" for="pvp-modal-ton-input">Bet Amount</label>
+        <input id="pvp-modal-ton-input" class="pvp-bet-input" type="number" min="0.1" step="0.01" value="0.1" inputmode="decimal" placeholder="0.1 TON">
+      </div>
+      <div id="pvp-modal-gift-section" class="pvp-bet-section" style="display:none">
+        <div class="pvp-bet-label">Your Gifts</div>
+        <div id="pvp-modal-gift-grid" class="pvp-gift-grid"></div>
+        <div id="pvp-modal-gift-empty" class="pvp-empty-gifts" style="display:none">
+          لا توجد هدايا متاحة للرهان.<br>
+          <strong id="pvp-modal-gift-username">@crazy_rocket_bank</strong>
+          <button type="button" class="pvp-send-gifts" onclick="sendPvpGiftsToBackpack()">↗ إرسال هدية</button>
+        </div>
+      </div>
+      <button id="pvp-modal-place-btn" class="pvp-place-bet" type="button" onclick="submitPvpBet()">Place Bet</button>
+    </div>
+  </div>
+</div>
 <div id="upgrade-game" class="rocket-game-container hidden">
             <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
                 <button class="back-button show" type="button" onclick="closeUpgradeGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
@@ -12764,23 +12916,184 @@ async function openLootBox(box) {
          ========================================================= */
          var pvpState = { timer: null, sse: null, data: null };
 var pvpGiftsLoaded = false;
+var pvpModalBetType = 'TON';
+var pvpSelectedGiftId = null;
+
 function initPvPGame(){stopPvpTimer();pvpState.data=null;loadPvpGifts();connectPvpStream();}
 function stopPvpTimer(){if(pvpState.timer)clearInterval(pvpState.timer);pvpState.timer=null;}
-async function loadPvpGifts(){try{const r=await fetch(BACKEND_URL+'/api/collectibles',{headers:getAuthHeaders(),cache:'no-store'}),d=await r.json(),gs=Array.isArray(d.collectibles)?d.collectibles:[],s=document.getElementById('pvp-gift-select');if(!s)return;s.innerHTML='<option value="">Select your gift</option>';gs.filter(g=>g&&g.status!=='IN_BET').forEach(g=>{const o=document.createElement('option');o.value=g.id||'';o.textContent=(g.name||'Gift')+' — '+Number(g.value||0).toFixed(2)+' TON';s.appendChild(o);});pvpGiftsLoaded=true;}catch(e){console.error('PvP gift load error:',e);}}
-function togglePvpGiftSelect(){const c=document.getElementById('pvp-bet-currency')?.value||'TON',p=document.getElementById('pvp-gift-panel'),a=document.getElementById('pvp-bet-input');if(p)p.style.display=c==='GIFT'?'block':'none';if(a)a.disabled=c==='GIFT';}
-function connectPvpStream(){if(pvpState.sse)pvpState.sse.close();const token=localStorage.getItem('authToken')||'';pvpState.sse=new EventSource('/api/pvp-stream?token='+encodeURIComponent(token));pvpState.sse.addEventListener('pvp-state',e=>{try{pvpState.data=JSON.parse(e.data);updatePvpUI();}catch(err){console.error('PvP state parse error',err);}});pvpState.sse.onerror=()=>{if(pvpState.sse)pvpState.sse.close();pvpState.sse=null;};}
-function pvpGiftImage(p){return p.giftImage||'/assets/gift-icon.svg';}
-function renderPvpWheel(ps){
- const wheel=document.getElementById('pvp-wheel'),el=document.getElementById('pvp-wheel-segments');if(!wheel||!el)return;el.innerHTML='';
- const colors=['#397cff','#ff6687','#36d39f','#48db83','#ef3e46','#08a66f','#a7eb31','#9a62ff'];
- let cursor=-90,stops=[],total=ps.reduce((s,p)=>s+Number(p.participationPercent||0),0)||100;
- ps.forEach((p,i)=>{const pct=Number(p.participationPercent||0),span=pct/total*360,mid=cursor+span/2;const color=colors[i%colors.length];stops.push(color+' '+cursor+'deg '+(cursor+span)+'deg');const card=document.createElement('div');card.className='pvp-wheel-segment';card.style.borderTopColor=color;card.style.transform='translate(-50%,-50%) rotate('+mid+'deg) translateY(-104px) rotate('+(-mid)+'deg)';const img=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');card.innerHTML=(img?'<img src="'+escapeHtmlAttribute(img)+'" alt="">':'<div style="width:30px;height:30px;border-radius:50%;margin:0 auto 3px;background:#444"></div>')+'<div>'+escapeHtml(p.betCurrency==='GIFT'?(p.giftName||'Gift'):Number(p.betAmount||0).toFixed(2))+'</div><div class="pct">'+pct.toFixed(1)+'%</div>';el.appendChild(card);cursor+=span;});
- wheel.style.background=stops.length?'conic-gradient(from -90deg,'+stops.join(',')+')':'#252525';
+
+async function loadPvpGifts(){
+  try{
+    const r=await fetch(BACKEND_URL+'/api/collectibles',{headers:getAuthHeaders(),cache:'no-store'});
+    const d=await r.json();
+    const gs=Array.isArray(d.collectibles)?d.collectibles:[];
+    pvpGiftsLoaded=true;
+    window.__pvpGifts=gs.filter(g=>g&&g.status!=='IN_BET');
+  }catch(e){window.__pvpGifts=[];console.error('PvP gift load error:',e);}
 }
-function renderPvpQuick(ps){const el=document.getElementById('pvp-quick');if(!el)return;el.innerHTML='';ps.slice(0,6).forEach((p,i)=>{const card=document.createElement('div');card.className='pvp-mini';card.style.borderTopColor=['#397cff','#ff6687','#36d39f','#ef3e46','#a7eb31'][i%5];const img=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');card.innerHTML=(img?'<img src="'+escapeHtmlAttribute(img)+'" alt="">':'<div style="width:42px;height:42px;border-radius:50%;margin:auto;background:#333"></div>')+'<div class="pvp-mini-name">'+escapeHtml(p.name||'Player')+'</div><div class="pvp-mini-pct">'+Number(p.participationPercent||0).toFixed(1)+'%</div>';el.appendChild(card);});}
-function renderPvpPlayers(ps){const el=document.getElementById('pvp-players');if(!el)return;el.innerHTML='';const colors=['#397cff','#ff6687','#36d39f','#48db83','#ef3e46','#08a66f','#a7eb31'];ps.forEach((p,i)=>{const row=document.createElement('div');row.className='pvp-player';const color=colors[i%colors.length],avatar=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):''),icon=p.betCurrency==='GIFT'?'<img src="'+escapeHtmlAttribute(pvpGiftImage(p))+'" style="width:22px;height:22px;object-fit:contain;border-radius:5px" alt="">':'<img src="'+TON_ICON_URL+'" style="width:20px;height:20px" alt="TON">';row.innerHTML='<div class="pvp-player-bar" style="background:'+color+'"></div>'+(avatar?'<img class="pvp-avatar" style="border-color:'+color+'" src="'+escapeHtmlAttribute(avatar)+'" alt="">':'<div class="pvp-avatar" style="border-color:'+color+'"></div>')+'<div><div class="pvp-player-name">'+escapeHtml(p.name||'Player')+'</div><div class="pvp-player-bet">'+icon+escapeHtml(Number(p.betAmount||0).toFixed(2))+'</div></div><div><div class="pvp-player-pct">'+Number(p.participationPercent||0).toFixed(1)+'%</div><div class="pvp-player-value">'+Number(p.betAmount||0).toFixed(2)+' TON</div></div>';el.appendChild(row);});}
-function updatePvpUI(){const d=pvpState.data;if(!d)return;const ps=d.participants||[],el=id=>document.getElementById(id);if(el('pvp-player-count'))el('pvp-player-count').textContent=ps.length;if(el('pvp-round-small'))el('pvp-round-small').textContent='Game #'+(d.roundNumber||'—');if(el('pvp-pool-total'))el('pvp-pool-total').textContent='💎 '+Number(d.totalPool||0).toFixed(2);if(el('pvp-countdown'))el('pvp-countdown').textContent=d.phase==='COUNTDOWN'?'00:'+String(Math.max(0,d.seconds||0)).padStart(2,'0'):d.phase==='WAITING'?'00:10':d.phase==='LIVE'?'00:00':'WIN';renderPvpWheel(ps);renderPvpQuick(ps);renderPvpPlayers(ps);const j=el('pvp-join-main'),b=el('pvp-bet-panel'),r=el('pvp-result');if(d.phase==='WAITING'||d.phase==='COUNTDOWN'){if(j){j.style.display='block';j.disabled=false;j.textContent='Join the Battle';}if(b)b.style.display='grid';if(r)r.classList.remove('show');}else if(d.phase==='LIVE'){if(j){j.style.display='block';j.disabled=true;j.textContent='LIVE';}if(b)b.style.display='none';if(r)r.classList.remove('show');}else if(d.phase==='RESULT'){if(j){j.style.display='block';j.disabled=true;j.textContent='Round Ended';}if(b)b.style.display='none';if(r){r.classList.add('show');const w=ps.find(p=>p.status==='WON' || Number(p.user_id)===Number(d.winnerUserId));if(el('pvp-result-name'))el('pvp-result-name').textContent=w?w.name:'Winner';if(el('pvp-result-pool'))el('pvp-result-pool').textContent=Number(d.totalPool||0).toFixed(2)+' TON';}}const wheel=el('pvp-wheel');if(wheel)wheel.classList.toggle('live',d.phase==='LIVE');const h=el('pvp-hash');if(h&&d.serverSeedHash)h.textContent='Hash: '+String(d.serverSeedHash).slice(0,12)+'...'+String(d.serverSeedHash).slice(-8)+(d.serverSeed?' | Seed: '+String(d.serverSeed).slice(0,12)+'...':'');}
-async function joinPvpRound(){const c=document.getElementById('pvp-bet-currency')?.value||'TON',a=document.getElementById('pvp-bet-input'),s=document.getElementById('pvp-gift-select');let amount=parseFloat(a?.value||'0'),gid=null;if(c==='GIFT'){gid=s?.value||null;if(!gid){showToast('Select a gift first');return;}const g=verifiedCollectibles.find(x=>String(x.id)===String(gid));amount=Number(g?.value||0);if(!(amount>0)){showToast('Gift has no value');return;}}else if(amount<0.1){showToast('Min bet: 0.1 TON');return;}try{const r=await fetch('/api/pvp/join',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({betCurrency:c,betAmount:amount,giftUniqueId:gid})}),d=await r.json();if(!r.ok||d.error){showToast(d.error||'Bet failed');return;}showToast('Joined the battle!');}catch(e){showToast('Bet failed');}}
+
+function connectPvpStream(){
+  if(pvpState.sse)pvpState.sse.close();
+  const token=localStorage.getItem('authToken')||'';
+  pvpState.sse=new EventSource('/api/pvp-stream?token='+encodeURIComponent(token));
+  pvpState.sse.addEventListener('pvp-state',e=>{
+    try{pvpState.data=JSON.parse(e.data);updatePvpUI();}catch(err){console.error('PvP state parse error',err);}
+  });
+  pvpState.sse.onerror=()=>{if(pvpState.sse)pvpState.sse.close();pvpState.sse=null;};
+}
+
+function pvpGiftImage(p){return p.giftImage||'/assets/gift-icon.svg';}
+
+function renderPvpWheel(ps){
+  const wheel=document.getElementById('pvp-wheel'),el=document.getElementById('pvp-wheel-segments');
+  if(!wheel||!el)return;
+  el.innerHTML='';
+  const colors=['#397cff','#ff6687','#36d39f','#48db83','#ef3e46','#08a66f','#a7eb31','#9a62ff'];
+  let cursor=-90,stops=[],total=ps.reduce((s,p)=>s+Number(p.participationPercent||0),0)||100;
+  ps.forEach((p,i)=>{
+    const pct=Number(p.participationPercent||0),span=pct/total*360,mid=cursor+span/2,color=colors[i%colors.length];
+    stops.push(color+' '+cursor+'deg '+(cursor+span)+'deg');
+    const card=document.createElement('div');
+    card.className='pvp-wheel-segment';
+    card.style.borderTopColor=color;
+    card.style.transform='translate(-50%,-50%) rotate('+mid+'deg) translateY(-150px) rotate('+(-mid)+'deg)';
+    const img=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');
+    card.innerHTML=(img?'<img src="'+escapeHtmlAttribute(img)+'" alt="">':'<div style="width:30px;height:30px;border-radius:50%;margin:0 auto 3px;background:#444"></div>')+
+      '<div>'+escapeHtml(p.betCurrency==='GIFT'?(p.giftName||'Gift'):Number(p.betAmount||0).toFixed(2)+' TON')+'</div>'+
+      '<div class="pct">'+pct.toFixed(1)+'%</div>';
+    el.appendChild(card);
+    cursor+=span;
+  });
+  wheel.style.background=stops.length?'conic-gradient(from -90deg,'+stops.join(',')+')':'#252525';
+}
+
+function renderPvpParticipants(ps){
+  const el=document.getElementById('pvp-participant-strip');if(!el)return;
+  el.innerHTML='';
+  ps.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='pvp-participant'+(p.status==='WON'?' winner':'');
+    card.dataset.participantId=p.id;
+    card.style.borderTopColor=['#397cff','#ff6687','#36d39f','#ef3e46','#a7eb31','#9a62ff'][i%6];
+    const img=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');
+    card.innerHTML=(img?'<img src="'+escapeHtmlAttribute(img)+'" alt="">':'<div style="width:42px;height:42px;border-radius:50%;margin:auto;background:#333"></div>')+
+      '<div class="pvp-participant-name">'+escapeHtml(p.name||p.username||'Player')+'</div>'+
+      '<div class="pvp-participant-bet">'+(p.betCurrency==='GIFT'?escapeHtml(p.giftName||'Gift'):Number(p.betAmount||0).toFixed(2)+' TON')+'</div>';
+    el.appendChild(card);
+  });
+  const winner=ps.find(p=>p.status==='WON');
+  if(winner){
+    const w=el.querySelector('[data-participant-id="'+winner.id+'"]');
+    if(w)setTimeout(()=>{try{w.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}catch(e){}},0);
+  }
+}
+
+function renderPvpPlayers(ps){
+  const el=document.getElementById('pvp-players');if(!el)return;el.innerHTML='';
+  const colors=['#397cff','#ff6687','#36d39f','#48db83','#ef3e46','#08a66f','#a7eb31'];
+  ps.forEach((p,i)=>{
+    const row=document.createElement('div');row.className='pvp-player';
+    const color=colors[i%colors.length],avatar=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');
+    const icon=p.betCurrency==='GIFT'?'<img src="'+escapeHtmlAttribute(pvpGiftImage(p))+'" style="width:22px;height:22px;object-fit:contain;border-radius:5px" alt="">':'<img src="'+TON_ICON_URL+'" style="width:20px;height:20px" alt="TON">';
+    row.innerHTML='<div class="pvp-player-bar" style="background:'+color+'"></div>'+
+      (avatar?'<img class="pvp-avatar" style="border-color:'+color+'" src="'+escapeHtmlAttribute(avatar)+'" alt="">':'<div class="pvp-avatar" style="border-color:'+color+'"></div>')+
+      '<div><div class="pvp-player-name">'+escapeHtml(p.name||p.username||'Player')+'</div><div class="pvp-player-bet">'+icon+(p.betCurrency==='GIFT'?escapeHtml(p.giftName||'Gift'):Number(p.betAmount||0).toFixed(2)+' TON')+'</div></div>'+
+      '<div><div class="pvp-player-pct">'+Number(p.participationPercent||0).toFixed(1)+'%</div><div class="pvp-player-value">'+Number(p.betAmount||0).toFixed(2)+' TON</div></div>';
+    el.appendChild(row);
+  });
+}
+
+function updatePvpHighlights(d){
+  const h=d.highlights||{},last=h.lastWinner||{},top=h.topOfDay||{};
+  const ln=document.getElementById('pvp-last-player'),lp=document.getElementById('pvp-last-prize'),tn=document.getElementById('pvp-top-player'),tp=document.getElementById('pvp-top-prize');
+  if(ln)ln.textContent=last.name||'—'; if(lp)lp.textContent='+'+Number(last.prize||0).toFixed(2)+' TON';
+  if(tn)tn.textContent=top.name||'—'; if(tp)tp.textContent='+'+Number(top.prize||0).toFixed(2)+' TON';
+}
+
+function updatePvpUI(){
+  const d=pvpState.data;if(!d)return;
+  const ps=d.participants||[],el=id=>document.getElementById(id);
+  if(el('pvp-player-count'))el('pvp-player-count').textContent=ps.length;
+  if(el('pvp-round-small'))el('pvp-round-small').textContent='Game #'+(d.roundNumber||'—');
+  if(el('pvp-pool-total'))el('pvp-pool-total').textContent='💎 '+Number(d.totalPool||0).toFixed(2);
+  if(el('pvp-countdown'))el('pvp-countdown').textContent=d.phase==='COUNTDOWN'?'00:'+String(Math.max(0,d.seconds||0)).padStart(2,'0'):d.phase==='WAITING'?'00:10':d.phase==='LIVE'?'00:00':'WIN';
+  updatePvpHighlights(d);
+  renderPvpWheel(ps);renderPvpParticipants(ps);renderPvpPlayers(ps);
+  const j=el('pvp-join-main'),r=el('pvp-result');
+  if(j){j.disabled=d.phase==='LIVE';j.textContent=d.phase==='LIVE'?'LIVE':'Place Bet';}
+  if(r){
+    if(d.phase==='RESULT'){
+      r.classList.add('show');
+      const w=ps.find(p=>p.status==='WON'||Number(p.user_id)===Number(d.winnerUserId));
+      if(el('pvp-result-name'))el('pvp-result-name').textContent=w?w.name:'Winner';
+      if(el('pvp-result-pool'))el('pvp-result-pool').textContent=Number(d.totalPool||0).toFixed(2)+' TON';
+    }else r.classList.remove('show');
+  }
+  const wheel=el('pvp-wheel');if(wheel)wheel.classList.toggle('live',d.phase==='LIVE');
+}
+
+function openPvpBetModal(){
+  const modal=document.getElementById('pvp-bet-modal');
+  if(!modal)return;
+  if(pvpState.data?.phase==='LIVE'){showToast('الجولة بدأت بالفعل');return;}
+  loadPvpGifts();
+  renderPvpBetModal();
+  modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+}
+
+function closePvpBetModal(){
+  const modal=document.getElementById('pvp-bet-modal');
+  if(modal){modal.classList.remove('show');modal.setAttribute('aria-hidden','true');}
+}
+
+function selectPvpBetType(type){
+  pvpModalBetType=type==='GIFT'?'GIFT':'TON';
+  document.getElementById('pvp-modal-ton-tab')?.classList.toggle('active',pvpModalBetType==='TON');
+  document.getElementById('pvp-modal-gift-tab')?.classList.toggle('active',pvpModalBetType==='GIFT');
+  document.getElementById('pvp-modal-ton-section').style.display=pvpModalBetType==='TON'?'block':'none';
+  document.getElementById('pvp-modal-gift-section').style.display=pvpModalBetType==='GIFT'?'block':'none';
+  const btn=document.getElementById('pvp-modal-place-btn');if(btn)btn.disabled=pvpModalBetType==='GIFT'&&!pvpSelectedGiftId;
+  if(pvpModalBetType==='GIFT')renderPvpBetModal();
+}
+
+function renderPvpBetModal(){
+  const grid=document.getElementById('pvp-modal-gift-grid'),empty=document.getElementById('pvp-modal-gift-empty');
+  if(!grid||!empty)return;
+  const gifts=(window.__pvpGifts||[]).filter(g=>g&&g.status!=='IN_BET');
+  grid.innerHTML='';
+  empty.style.display=gifts.length?'none':'block';
+  if(!gifts.length){pvpSelectedGiftId=null;return;}
+  gifts.forEach(g=>{
+    const item=document.createElement('button');item.type='button';item.className='pvp-gift-item'+(String(g.id)===String(pvpSelectedGiftId)?' selected':'');
+    const img=typeof g.imageUrl==='string'&&g.imageUrl?(g.imageUrl.startsWith('/')?BACKEND_URL+g.imageUrl:g.imageUrl):'/assets/gift-icon.svg';
+    item.innerHTML='<img src="'+escapeHtmlAttribute(img)+'" alt=""><div class="pvp-gift-item-name">'+escapeHtml(g.name||'Gift')+'</div><div class="pvp-gift-item-value">'+Number(g.value||0).toFixed(2)+' TON</div>';
+    item.onclick=()=>{pvpSelectedGiftId=g.id;renderPvpBetModal();document.getElementById('pvp-modal-place-btn').disabled=false;};
+    grid.appendChild(item);
+  });
+}
+
+function sendPvpGiftsToBackpack(){window.open('https://t.me/crazy_rocket_bank','_blank','noopener,noreferrer');}
+
+async function submitPvpBet(){
+  if(pvpState.data?.phase==='LIVE'){showToast('الجولة بدأت بالفعل');return;}
+  let amount=0,gid=null;
+  if(pvpModalBetType==='GIFT'){
+    gid=pvpSelectedGiftId;
+    const g=(window.__pvpGifts||[]).find(x=>String(x.id)===String(gid));
+    if(!g){showToast('اختر هدية أولاً');return;}
+    amount=Number(g.value||0);
+    if(!(amount>0)){showToast('الهدية بلا قيمة');return;}
+  }else{
+    amount=Number(document.getElementById('pvp-modal-ton-input')?.value||0);
+    if(!(amount>=0.1)){showToast('الحد الأدنى 0.1 TON');return;}
+  }
+  try{
+    const r=await fetch('/api/pvp/join',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({betCurrency:pvpModalBetType,betAmount:amount,giftUniqueId:gid})});
+    const d=await r.json();
+    if(!r.ok||d.error){showToast(d.error||'فشل الرهان');return;}
+    closePvpBetModal();showToast('تم وضع الرهان');
+  }catch(e){showToast('فشل الرهان');}
+}
          /* =========================================================
             UPGRADE GAME (Coming Soon)
          ========================================================= */
