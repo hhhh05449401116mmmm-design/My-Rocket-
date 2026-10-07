@@ -2354,19 +2354,25 @@ const PVP_COUNTDOWN_SECONDS = 10;
 function getPvpStateSnapshot() {
     return {
         roundId: pvpState.roundId,
+        roundNumber: pvpState.roundNumber,
         phase: pvpState.phase,
         seconds: pvpState.seconds,
+        serverSeedHash: pvpState.serverSeedHash,
+        winnerUserId: pvpState.lastWinnerUserId,
         poolTon: pvpState.poolTon,
         poolGift: pvpState.poolGift,
+        totalPool: Number(pvpState.poolTon || 0) + Number(pvpState.poolGift || 0),
         participants: pvpState.participants.map(p => ({
             id: p.id,
             name: p.name,
             avatar: p.avatar,
             betCurrency: p.bet_currency,
-            betAmount: p.bet_amount,
-            participationPercent: p.participation_percent,
+            betAmount: Number(p.bet_amount || 0),
+            participationPercent: Number(p.participation_percent || 0),
             status: p.status,
-            multiplier: p.cashout_multiplier
+            giftUniqueId: p.gift_unique_id || null,
+            giftName: p.gift_name || null,
+            giftImage: p.gift_image_url || null
         })),
         serverTime: Date.now(),
         maxPlayers: MAX_PVP_PLAYERS
@@ -2381,11 +2387,12 @@ async function refreshPvpParticipants() {
     if (!pvpState.roundId) return;
     const data = await getPvpRoundWithParticipants(pvpState.roundId);
     if (!data) return;
+    const totalPool = data.participants.reduce((s, x) => s + Number(x.bet_amount || 0), 0);
     pvpState.participants = data.participants.map(p => ({
         ...p,
         name: buildPlayerName(p),
         avatar: p.telegram_id ? `https://t.me/i/userpic/${p.telegram_id}.jpg` : '',
-        participation_percent: calculatePercent(p.bet_amount, data.participants.reduce((s, x) => s + x.bet_amount, 0))
+        participation_percent: calculatePercent(Number(p.bet_amount || 0), totalPool)
     }));
     pvpState.poolTon = data.participants
         .filter(p => p.bet_currency === 'TON')
@@ -2450,8 +2457,12 @@ async function settlePvpRound() {
         const result = await crashPvpRound(pvpState.roundId);
         pvpState.phase = 'RESULT';
         pvpState.lastWinnerUserId = result.winnerUserId;
-        pvpState.crashAt = result.crashAt;
-        console.log(`💥 PvP Round ${pvpState.roundNumber} crashed at ${result.crashAt}x`);
+        pvpState.poolTon = result.poolTon;
+        pvpState.poolGift = result.poolGift;
+        pvpState.crashAt = null;
+        await refreshPvpParticipants();
+        console.log(`🏆 PvP Round ${pvpState.roundNumber} winner=${result.winnerUserId} pool=${result.totalPool}`);
+        await new Promise(resolve => setTimeout(resolve, 4500));
         await startPvpRound();
         await triggerPvpCountdown();
     } catch (error) {
@@ -2477,7 +2488,7 @@ async function startPvpGameLoop() {
                 }
             } else if (pvpState.phase === 'LIVE') {
                 pvpState.seconds--;
-                if (pvpState.seconds <= -15) {
+                if (pvpState.seconds <= -12) {
                     await settlePvpRound();
                 }
             }
