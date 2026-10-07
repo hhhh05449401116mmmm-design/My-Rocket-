@@ -5501,23 +5501,23 @@ video::-webkit-media-controls-enclosure {
 <style>
 #pvp-game{background:#111;color:#fff;min-height:100vh}
 #pvp-game{position:fixed!important;inset:0!important;z-index:5000!important;overflow:hidden!important;height:100dvh!important;min-height:0!important;padding:0!important;box-sizing:border-box;background:#111}
-#pvp-game .pvp-shell{position:relative;max-width:720px;width:100%;height:100dvh;margin:0 auto;padding:8px 14px 92px;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column}
+#pvp-game .pvp-shell{position:relative;max-width:720px;width:100%;height:100dvh;margin:0 auto;padding:8px 14px 94px;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column}
 #pvp-game .pvp-topbar{flex:0 0 48px}
-#pvp-game .pvp-stats{flex:0 0 auto}
-#pvp-game .pvp-pot{flex:1 1 auto;min-height:0;height:auto;margin:0 -14px;overflow:hidden}
+#pvp-game .pvp-stats{flex:0 0 88px;gap:8px;margin:6px 0 8px}
+#pvp-game .pvp-pot{flex:0 0 535px;height:535px;min-height:535px;margin:0 -14px;overflow:hidden;position:relative}
 #pvp-game .pvp-join{flex:0 0 auto;margin:8px 0 6px}
 #pvp-game .pvp-players-title,#pvp-game .pvp-players{display:none}
-#pvp-game .pvp-join-btn{padding:14px;font-size:20px}
-#pvp-game .pvp-wheel{bottom:-235px;width:min(420px,88vw);height:min(420px,88vw)}
+#pvp-game .pvp-join-btn{padding:16px;font-size:22px;background:linear-gradient(135deg,#9d3dff,#6e22d2)}
+#pvp-game .pvp-wheel{bottom:-135px;width:min(500px,100vw);height:min(500px,100vw)}
 #pvp-game .pvp-participant-strip-wrap{bottom:4px}
 #pvp-game .pvp-result{position:absolute;left:14px;right:14px;bottom:96px;margin:0;z-index:50}
 #pvp-game .pvp-title{font-size:24px}
 @media(max-width:430px){
  #pvp-game .pvp-shell{padding-left:10px;padding-right:10px;padding-bottom:88px}
- #pvp-game .pvp-pot{margin:0 -10px}
- #pvp-game .pvp-wheel{bottom:-235px;width:380px;height:380px}
- #pvp-game .pvp-stats{gap:8px;margin:6px 0 8px}
- #pvp-game .pvp-stat{padding:8px}
+ #pvp-game .pvp-pot{margin:0 -10px;height:520px;min-height:520px}
+ #pvp-game .pvp-wheel{bottom:-145px;width:460px;height:460px}
+ #pvp-game .pvp-stats{flex-basis:88px;gap:8px;margin:5px 0 7px}
+ #pvp-game .pvp-stat{padding:8px 5px}
  #pvp-game .pvp-stat-value{font-size:19px}
 }
 #pvp-game .pvp-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
