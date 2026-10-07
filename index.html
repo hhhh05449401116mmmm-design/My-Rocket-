@@ -4979,6 +4979,36 @@ video::-webkit-media-controls-enclosure {
         .channel-subscription-link{display:block;color:#d7b2ff;font-weight:900;text-decoration:none;direction:ltr;margin-bottom:10px;cursor:pointer}.channel-subscription-link:hover{text-decoration:underline}
         .channel-subscription-actions{display:flex;flex-direction:column;gap:6px}.channel-subscription-btn{width:100%;border:0;border-radius:12px;padding:9px 12px;font-weight:900;font-size:13px;cursor:pointer}.channel-subscribe-btn{background:#a855f7;color:#fff}.channel-check-btn{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.18)}
         .channel-subscription-status{min-height:16px;margin-top:6px;font-size:10px;color:#f1d1ff}
+        .lottery-shell{max-width:760px;margin:0 auto;padding:4px 12px 90px;color:#eaf4ff}
+        .lottery-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .lottery-title{font-size:18px;font-weight:900;flex:1}
+        .lottery-head-note{font-size:10px;color:#8fa6c7}
+        .lottery-game-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+        .lottery-game-tab{min-height:58px;border:1px solid rgba(130,80,255,.28);border-radius:14px;background:rgba(25,19,53,.8);color:#c9c3d8;cursor:pointer}
+        .lottery-game-tab strong{display:block;font-size:18px;color:#fff}.lottery-game-tab span{display:block;font-size:10px;margin-top:4px}
+        .lottery-game-tab.active{background:linear-gradient(135deg,#9a45ff,#6b1dce);border-color:#b76cff;box-shadow:0 0 18px rgba(150,70,255,.28)}
+        .lottery-card,.lottery-history-card{background:linear-gradient(180deg,rgba(20,29,57,.98),rgba(12,15,32,.98));border:1px solid rgba(91,137,255,.22);border-radius:20px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+        .lottery-card-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+        .lottery-kicker{font-size:9px;letter-spacing:1.5px;color:#6ca9ff}.lottery-next-draw{font-size:14px;font-weight:900;margin-top:3px}
+        .lottery-cap{text-align:right}.lottery-cap span{display:block;font-size:8px;color:#7186a8}.lottery-cap strong{font-size:12px}
+        .lottery-instructions{font-size:12px;color:#aebbd2;text-align:center;margin:6px 0 14px}
+        .lottery-board-title{text-align:center;font-weight:900;font-size:15px;margin-bottom:9px}
+        .lottery-number-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+        .lottery-number-btn{height:34px;border-radius:8px;border:1px solid rgba(93,151,255,.25);background:rgba(18,35,66,.88);color:#edf5ff;font-size:12px;font-weight:800;cursor:pointer}
+        .lottery-number-btn.selected{background:linear-gradient(135deg,#4fc3f7,#007edb);color:#061529;border-color:#8fe5ff;box-shadow:0 0 10px rgba(79,195,247,.35)}
+        .lottery-bonus-title{display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;color:#ffd85a;font-weight:900;font-size:12px}
+        .lottery-bonus-title small{font-size:10px;color:#93a4bf}
+        .lottery-bonus-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:5px}
+        .lottery-bonus-btn{height:39px;border:1px solid rgba(255,205,70,.25);border-radius:9px;background:rgba(42,31,20,.9);color:#ffeaa2;cursor:pointer}
+        .lottery-bonus-btn span{display:block;font-size:10px;line-height:9px}.lottery-bonus-btn b{font-size:12px}.lottery-bonus-btn.selected{background:linear-gradient(135deg,#ffd84f,#b77800);color:#1c1606;border-color:#ffe999;box-shadow:0 0 12px rgba(255,210,70,.35)}
+        .lottery-selection-summary{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0;padding:10px 12px;border-radius:11px;background:rgba(4,12,27,.75);font-size:11px;color:#8398b8}
+        .lottery-selection-summary b{color:#fff}.lottery-selection-summary.ready{border:1px solid rgba(83,222,161,.35)}
+        .lottery-ticket-btn{width:100%;border:1px solid #9e58ff;border-radius:13px;padding:11px 14px;background:linear-gradient(135deg,#9b43ff,#6418c9);color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:900}
+        .lottery-ticket-btn span{font-size:14px}.lottery-ticket-btn strong{font-size:13px}.lottery-ticket-btn:disabled{opacity:.55;cursor:wait}
+        .lottery-status{min-height:18px;text-align:center;font-size:11px;color:#7fd4ff;margin-top:10px}.lottery-status.error{color:#ff7c96}
+        .lottery-odds-note{text-align:center;color:#667a99;font-size:9px;margin-top:8px}
+        .lottery-history-card{margin-top:12px}.lottery-history-title{font-size:13px;font-weight:900;margin-bottom:9px}.lottery-history-row{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid rgba(100,130,180,.1);font-size:9px;color:#91a4c0}.lottery-history-row b{color:#fff}.lottery-win{color:#53dfa2}.lottery-empty{font-size:10px;color:#657894}
+        @media(max-width:520px){.lottery-game-tabs{gap:5px}.lottery-game-tab strong{font-size:15px}.lottery-game-tab span{font-size:8px}.lottery-number-grid{gap:4px}.lottery-number-btn{height:31px;font-size:11px}.lottery-bonus-grid{gap:4px}.lottery-bonus-btn{height:35px}}
 </style>
 </head>
 <body>
@@ -5418,30 +5448,63 @@ video::-webkit-media-controls-enclosure {
             LOTTERY GAME
         ========================================================= -->
         <div id="lottery-game" class="rocket-game-container hidden">
-            <div style="padding:4px 12px 0;display:flex;align-items:center;gap:10px;">
-                <button class="back-button show" type="button" onclick="closeLotteryGame()" style="display:flex;align-items:center;gap:6px;background:rgba(15,40,71,0.6);color:#7a9bcb;font-size:14px;font-weight:700;padding:6px 14px;border:1px solid rgba(100,200,255,0.06);border-radius:12px;">
-                    ← Back
-                </button>
-                <span style="font-size:14px;font-weight:700;color:#4fc3f7;">🎰 Lottery</span>
-            </div>
-            <main>
-                <section class="game-card">
-                    <div class="stars"></div>
-                    <div class="fog-effect"></div>
-                    <div style="padding:20px;text-align:center;">
-                        <div id="lottery-result" style="font-size:24px;font-weight:900;color:#e8f4ff;margin-bottom:20px;" data-key="lottery-draw">Draw Result</div>
-                        <div id="lottery-numbers" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">
-                            <!-- Generated by JS -->
+            <div class="lottery-shell">
+                <div class="lottery-head">
+                    <button class="back-button show" type="button" onclick="closeLotteryGame()">← Back</button>
+                    <div class="lottery-title">🎰 Lottery</div>
+                    <div class="lottery-head-note">Berlin time · Automatic draw</div>
+                </div>
+
+                <div class="lottery-game-tabs" id="lottery-game-tabs">
+                    <button type="button" class="lottery-game-tab active" data-lottery-key="classic" onclick="selectLotteryGame('classic')">
+                        <strong>3.5K TON</strong><span>3 TON · Sat 20:00</span>
+                    </button>
+                    <button type="button" class="lottery-game-tab" data-lottery-key="mega" onclick="selectLotteryGame('mega')">
+                        <strong>15K TON</strong><span>6 TON · Tue 20:00</span>
+                    </button>
+                    <button type="button" class="lottery-game-tab" data-lottery-key="ultra" onclick="selectLotteryGame('ultra')">
+                        <strong>100K TON</strong><span>10 TON · Thu 20:00</span>
+                    </button>
+                </div>
+
+                <section class="lottery-card">
+                    <div class="lottery-card-top">
+                        <div>
+                            <div class="lottery-kicker">NEXT DRAW</div>
+                            <div id="lottery-next-draw" class="lottery-next-draw">—</div>
                         </div>
-                        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;align-items:center;">
-                            <input id="lottery-bet-input" type="number" min="0.1" step="0.1" value="1" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;text-align:center;">
-                            <span style="font-size:14px;color:#7a9bcb;" data-key="lottery-bet">TON</span>
+                        <div class="lottery-cap">
+                            <span>MAX PLAYERS</span>
+                            <strong>2,000,000</strong>
                         </div>
-                        <button id="lottery-play-btn" class="place-bet-main" type="button" onclick="playLottery()" style="width:100%;max-width:200px;" data-key="lottery-draw">Play</button>
-                        <div id="lottery-status" style="margin-top:16px;font-size:14px;color:#7a9bcb;" data-key="lottery-pick">Pick 5 numbers from 1-50</div>
                     </div>
+
+                    <div id="lottery-instructions" class="lottery-instructions"></div>
+
+                    <div class="lottery-board-title">Choose your numbers</div>
+                    <div id="lottery-main-numbers" class="lottery-number-grid"></div>
+
+                    <div class="lottery-bonus-title">
+                        <span>★ BONUS / SPECIAL NUMBER</span>
+                        <small id="lottery-bonus-help">Choose 1</small>
+                    </div>
+                    <div id="lottery-bonus-numbers" class="lottery-bonus-grid"></div>
+
+                    <div id="lottery-selection-summary" class="lottery-selection-summary">Select your numbers</div>
+
+                    <button id="lottery-ticket-btn" class="lottery-ticket-btn" type="button" onclick="buyLotteryTicket()">
+                        <span>3 TON</span><strong>Join draw</strong>
+                    </button>
+
+                    <div id="lottery-status" class="lottery-status"></div>
+                    <div class="lottery-odds-note">Jackpot requires the exact main numbers + exact special number(s). Winning is intentionally extremely rare.</div>
                 </section>
-            </main>
+
+                <section class="lottery-history-card">
+                    <div class="lottery-history-title">Your tickets &amp; results</div>
+                    <div id="lottery-history" class="lottery-history"></div>
+                </section>
+            </div>
         </div>
 
         <!-- =========================================================
@@ -11782,100 +11845,185 @@ async function openLootBox(box) {
               hideAllPages();
           }
 
-         var lotteryState = { selected: [], drawn: null, betAmount: 1, statusEl: null };
+         var lotteryState = {
+             selected: [],
+             bonusSelected: [],
+             gameKey: 'classic',
+             rounds: [],
+             statusEl: null,
+             configs: {
+                 classic: { key:'classic', ticketPrice:3, jackpot:3500, mainNumbersCount:50, mainPickCount:5, bonusNumbersCount:12, bonusPickCount:1, drawLabel:'Saturday 20:00' },
+                 mega: { key:'mega', ticketPrice:6, jackpot:15000, mainNumbersCount:60, mainPickCount:6, bonusNumbersCount:12, bonusPickCount:1, drawLabel:'Tuesday 20:00' },
+                 ultra: { key:'ultra', ticketPrice:10, jackpot:100000, mainNumbersCount:60, mainPickCount:7, bonusNumbersCount:12, bonusPickCount:2, drawLabel:'Thursday 20:00' }
+             }
+         };
+
+         function lotteryConfig() {
+             return lotteryState.configs[lotteryState.gameKey];
+         }
+
+         function selectLotteryGame(gameKey) {
+             if (!lotteryState.configs[gameKey]) return;
+             lotteryState.gameKey = gameKey;
+             lotteryState.selected = [];
+             lotteryState.bonusSelected = [];
+             renderLotteryBoard();
+             loadLotteryRounds();
+         }
 
          function initLotteryGame() {
-             lotteryState = { selected: [], drawn: null, betAmount: 1, statusEl: document.getElementById('lottery-status') };
-             var numbersDiv = document.getElementById('lottery-numbers');
-             numbersDiv.innerHTML = '';
-             for (var i = 1; i <= 50; i++) {
-                 var btn = document.createElement('button');
-                 btn.className = 'lottery-number-btn';
-                 btn.textContent = i;
-                 btn.style.cssText = 'width:44px;height:44px;border-radius:10px;border:1px solid rgba(100,200,255,0.2);background:rgba(15,40,71,0.6);color:#e8f4ff;font-size:14px;cursor:pointer;transition:all 0.2s;';
-                 btn.onclick = function() { selectLotteryNumber(parseInt(this.textContent)); };
-                 numbersDiv.appendChild(btn);
-             }
-             updateLotteryStatus('Pick 5 numbers from 1-50');
+             lotteryState.statusEl = document.getElementById('lottery-status');
+             lotteryState.gameKey = lotteryState.gameKey || 'classic';
+             lotteryState.selected = [];
+             lotteryState.bonusSelected = [];
+             renderLotteryBoard();
+             loadLotteryRounds();
          }
 
-         function selectLotteryNumber(num) {
-             if (lotteryState.drawn) return;
-             var idx = lotteryState.selected.indexOf(num);
-             if (idx >= 0) {
-                 lotteryState.selected.splice(idx, 1);
-             } else if (lotteryState.selected.length < 5) {
+         function renderLotteryBoard() {
+             var config = lotteryConfig();
+             document.querySelectorAll('.lottery-game-tab').forEach(function(btn) {
+                 btn.classList.toggle('active', btn.getAttribute('data-lottery-key') === config.key);
+             });
+
+             var main = document.getElementById('lottery-main-numbers');
+             var bonus = document.getElementById('lottery-bonus-numbers');
+             if (!main || !bonus) return;
+             main.innerHTML = '';
+             bonus.innerHTML = '';
+
+             for (var i = 1; i <= config.mainNumbersCount; i++) {
+                 var btn = document.createElement('button');
+                 btn.type = 'button';
+                 btn.className = 'lottery-number-btn' + (lotteryState.selected.includes(i) ? ' selected' : '');
+                 btn.textContent = i;
+                 btn.onclick = function() { toggleLotteryMainNumber(parseInt(this.textContent, 10)); };
+                 main.appendChild(btn);
+             }
+             for (var j = 1; j <= config.bonusNumbersCount; j++) {
+                 var b = document.createElement('button');
+                 b.type = 'button';
+                 b.className = 'lottery-bonus-btn' + (lotteryState.bonusSelected.includes(j) ? ' selected' : '');
+                 b.innerHTML = '<span>★</span><b>' + j + '</b>';
+                 b.onclick = function() { toggleLotteryBonusNumber(parseInt(this.textContent.replace(/\D/g,''), 10)); };
+                 bonus.appendChild(b);
+             }
+
+             document.getElementById('lottery-instructions').textContent =
+                 'Choose ' + config.mainPickCount + ' numbers from 1-' + config.mainNumbersCount +
+                 ' + ' + config.bonusPickCount + ' special number' + (config.bonusPickCount > 1 ? 's' : '') + ' from 1-' + config.bonusNumbersCount + '.';
+             document.getElementById('lottery-bonus-help').textContent = 'Choose ' + config.bonusPickCount;
+             document.getElementById('lottery-ticket-btn').innerHTML =
+                 '<span>' + config.ticketPrice + ' TON</span><strong>Join ' + config.jackpot.toLocaleString() + ' TON draw</strong>';
+             updateLotterySelectionSummary();
+         }
+
+         function toggleLotteryMainNumber(num) {
+             var config = lotteryConfig();
+             if (lotteryState.selected.includes(num)) {
+                 lotteryState.selected = lotteryState.selected.filter(function(n){ return n !== num; });
+             } else if (lotteryState.selected.length < config.mainPickCount) {
                  lotteryState.selected.push(num);
              }
-             renderLotteryNumbers();
+             renderLotteryBoard();
          }
 
-         function renderLotteryNumbers() {
-             var btns = document.querySelectorAll('#lottery-numbers .lottery-number-btn');
-             btns.forEach(function(btn) {
-                 var num = parseInt(btn.textContent);
-                 if (lotteryState.selected.includes(num)) {
-                     btn.style.background = 'linear-gradient(135deg,#4fc3f7,#00bcd4)';
-                     btn.style.color = '#0a1a30';
-                     btn.style.borderColor = 'rgba(50,200,255,0.4)';
-                 } else {
-                     btn.style.background = 'rgba(15,40,71,0.6)';
-                     btn.style.color = '#e8f4ff';
-                     btn.style.borderColor = 'rgba(100,200,255,0.2)';
-                 }
-             });
-             if (lotteryState.selected.length === 5) {
-                 updateLotteryStatus('Good! Press Play');
+         function toggleLotteryBonusNumber(num) {
+             var config = lotteryConfig();
+             if (lotteryState.bonusSelected.includes(num)) {
+                 lotteryState.bonusSelected = lotteryState.bonusSelected.filter(function(n){ return n !== num; });
+             } else if (lotteryState.bonusSelected.length < config.bonusPickCount) {
+                 lotteryState.bonusSelected.push(num);
              }
+             renderLotteryBoard();
          }
 
-         function updateLotteryStatus(msg) {
-             if (lotteryState.statusEl) lotteryState.statusEl.textContent = msg;
+         function updateLotterySelectionSummary() {
+             var config = lotteryConfig();
+             var summary = document.getElementById('lottery-selection-summary');
+             if (!summary) return;
+             var main = lotteryState.selected.slice().sort(function(a,b){return a-b;});
+             var bonus = lotteryState.bonusSelected.slice().sort(function(a,b){return a-b;});
+             summary.innerHTML =
+                 '<span>Main: <b>' + (main.length ? main.join(' · ') : '—') + '</b></span>' +
+                 '<span>★ Special: <b>' + (bonus.length ? bonus.join(' · ') : '—') + '</b></span>';
+             var ready = main.length === config.mainPickCount && bonus.length === config.bonusPickCount;
+             summary.classList.toggle('ready', ready);
          }
 
-         function playLottery() {
-             if (lotteryState.selected.length !== 5) {
-                 updateLotteryStatus('Select 5 numbers first');
+         function updateLotteryStatus(msg, isError) {
+             var el = document.getElementById('lottery-status');
+             if (!el) return;
+             el.textContent = msg || '';
+             el.classList.toggle('error', !!isError);
+         }
+
+         function loadLotteryRounds() {
+             fetch('/api/lottery/rounds', { headers: getAuthHeaders(), cache: 'no-store' })
+                 .then(function(r){ return r.json(); })
+                 .then(function(data){
+                     if (!data.ok) throw new Error(data.error || 'Unable to load lottery');
+                     lotteryState.rounds = data.rounds || [];
+                     renderLotteryRounds();
+                 })
+                 .catch(function(err){ updateLotteryStatus(err.message || 'Network error', true); });
+         }
+
+         function renderLotteryRounds() {
+             var config = lotteryConfig();
+             var round = lotteryState.rounds.find(function(r){ return r.game_key === config.key && r.status === 'OPEN'; });
+             var next = document.getElementById('lottery-next-draw');
+             if (next) {
+                 next.textContent = round && round.draw_at
+                     ? new Date(round.draw_at).toLocaleString('en-GB', { timeZone:'Europe/Berlin', weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:false }) + ' Berlin'
+                     : config.drawLabel + ' Berlin';
+             }
+             var history = document.getElementById('lottery-history');
+             var mine = lotteryState.rounds.filter(function(r){ return r.game_key === config.key && r.entry_id; }).slice(0,8);
+             if (!mine.length) {
+                 history.innerHTML = '<div class="lottery-empty">No tickets yet.</div>';
                  return;
              }
-             lotteryState.betAmount = parseFloat(document.getElementById('lottery-bet-input').value) || 1;
-             if (lotteryState.betAmount < 0.1) {
-                 updateLotteryStatus('Minimum bet: 0.1 TON');
+             history.innerHTML = mine.map(function(r){
+                 var main = JSON.parse(r.main_numbers || '[]');
+                 var bonus = JSON.parse(r.bonus_numbers || '[]');
+                 var result = r.status === 'DRAWN'
+                     ? (r.entry_status === 'WINNER' ? '<strong class="lottery-win">WIN · ' + Number(r.payout || 0).toLocaleString() + ' TON</strong>' : '<span>Lost</span>')
+                     : '<span>Waiting for draw</span>';
+                 return '<div class="lottery-history-row"><div><b>' + r.game_key.toUpperCase() + '</b> · ' + main.join(',') + ' · ★' + bonus.join(',') + '</div><div>' + result + '</div></div>';
+             }).join('');
+         }
+
+         function buyLotteryTicket() {
+             var config = lotteryConfig();
+             if (lotteryState.selected.length !== config.mainPickCount || lotteryState.bonusSelected.length !== config.bonusPickCount) {
+                 updateLotteryStatus('Complete your main and special-number selection first.', true);
                  return;
              }
-             fetch('/api/lottery/bet', {
+             updateLotteryStatus('Submitting ticket…');
+             var btn = document.getElementById('lottery-ticket-btn');
+             btn.disabled = true;
+             fetch('/api/lottery/ticket', {
                  method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ amount: lotteryState.betAmount, currency: 'TON', playerNumbers: lotteryState.selected })
+                 headers: Object.assign({ 'Content-Type':'application/json' }, getAuthHeaders()),
+                 body: JSON.stringify({
+                     gameKey: lotteryState.gameKey,
+                     mainNumbers: lotteryState.selected,
+                     bonusNumbers: lotteryState.bonusSelected
+                 })
              })
-             .then(r => r.json())
-              .then(data => {
-                  if (!data.ok && data.error) { updateLotteryStatus(data.error); return; }
-                  lotteryState.drawn = data.drawnNumbers;
-                  var resultEl = document.getElementById('lottery-result');
-                  if (data.won) {
-                      resultEl.innerHTML = '🎉 You won! Payout: ' + data.payout + ' TON (' + data.matchCount + ' matches)';
-                      resultEl.style.color = '#4caf50';
-                  } else {
-                      resultEl.innerHTML = '❌ No match (' + data.matchCount + ' matches)';
-                      resultEl.style.color = '#ff6b6b';
-                  }
-                  renderLotteryResult();
-                  updateLotteryStatus('');
-              })
-              .catch(err => updateLotteryStatus('Network error'));
-         }
-
-         function renderLotteryResult() {
-             if (!lotteryState.drawn) return;
-             var btns = document.querySelectorAll('#lottery-numbers .lottery-number-btn');
-             btns.forEach(function(btn) {
-                 var num = parseInt(btn.textContent);
-                 if (lotteryState.drawn.includes(num)) {
-                     btn.style.background = 'linear-gradient(135deg,#ffd700,#f0a500)';
-                     btn.style.color = '#0a1a30';
-                 }
-             });
+             .then(function(r){ return r.json(); })
+             .then(function(data){
+                 if (!data.ok) throw new Error(data.error || 'Unable to buy ticket');
+                 updateLotteryStatus('🎟️ Ticket confirmed. The draw is automatic.');
+                 lotteryState.selected = [];
+                 lotteryState.bonusSelected = [];
+                 renderLotteryBoard();
+                 loadLotteryRounds();
+                 if (typeof fetchBalance === 'function') fetchBalance();
+             })
+             .catch(function(err){ updateLotteryStatus(err.message || 'Network error', true); })
+             .finally(function(){ btn.disabled = false; });
          }
 
           function openDailyReward() {
