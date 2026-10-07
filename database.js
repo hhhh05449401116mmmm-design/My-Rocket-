@@ -3505,7 +3505,7 @@ async function getLotteryRoundsForUser(userId) {
                e.id AS entry_id, e.main_numbers, e.bonus_numbers, e.payout, e.status AS entry_status
         FROM lottery_rounds r
         LEFT JOIN lottery_entries e ON e.round_id = r.id AND e.user_id = ?
-        WHERE r.draw_at >= datetime('now', '-14 days')
+        WHERE julianday(r.draw_at) >= julianday('now', '-14 days')
         ORDER BY r.draw_at DESC, e.id DESC
         LIMIT 200
     `, [userId]);
