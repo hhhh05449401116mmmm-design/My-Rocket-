@@ -4979,6 +4979,17 @@ video::-webkit-media-controls-enclosure {
         .channel-subscription-link{display:block;color:#d7b2ff;font-weight:900;text-decoration:none;direction:ltr;margin-bottom:10px;cursor:pointer}.channel-subscription-link:hover{text-decoration:underline}
         .channel-subscription-actions{display:flex;flex-direction:column;gap:6px}.channel-subscription-btn{width:100%;border:0;border-radius:12px;padding:9px 12px;font-weight:900;font-size:13px;cursor:pointer}.channel-subscribe-btn{background:#a855f7;color:#fff}.channel-check-btn{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.18)}
         .channel-subscription-status{min-height:16px;margin-top:6px;font-size:10px;color:#f1d1ff}
+        /* Lottery screen background: match the game's purple visual identity. */
+        .app > #lottery-game{
+            background:
+                radial-gradient(circle at 50% 18%, rgba(145,72,255,.30) 0%, rgba(82,38,145,.20) 28%, transparent 58%),
+                radial-gradient(circle at 18% 55%, rgba(123,55,190,.18) 0%, transparent 45%),
+                radial-gradient(circle at 82% 78%, rgba(168,64,255,.16) 0%, transparent 42%),
+                linear-gradient(180deg,#17102d 0%,#24103d 45%,#120b23 100%);
+        }
+        .app > #lottery-game .lottery-shell{
+            background:transparent;
+        }
         .lottery-shell{max-width:760px;margin:0 auto;padding:4px 12px 90px;color:#eaf4ff}
         .lottery-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
         .lottery-title{font-size:18px;font-weight:900;flex:1}
