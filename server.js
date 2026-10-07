@@ -3954,21 +3954,26 @@ app.get('/api/collectibles/pending-payouts', authenticate, async (req, res) => {
 // --- MINES ---
 app.post('/api/mines/bet', authenticate, async (req, res) => {
     try {
-        const { amount, currency, giftId, difficulty } = req.body;
+        const { amount, currency, giftId, difficulty, mineCount } = req.body;
         const betAmount = Number(String(amount ?? '').trim().replace(',', '.'));
+        const selectedMineCount = Number(mineCount ?? 5);
+        if (!Number.isInteger(selectedMineCount) || selectedMineCount < 1 || selectedMineCount > 24) {
+            return res.status(400).json({ ok: false, error: 'Mines must be between 1 and 24' });
+        }
         if (currency === 'TEST' && !ENABLE_TEST_BALANCE) {
             return res.status(403).json({ ok: false, error: 'Test balance is not enabled' });
         }
         const betCurrency = currency === 'GIFT' ? 'GIFT' : currency === 'TEST' ? 'TEST' : 'TON';
 
-        const result = await createMinesGame(req.user.id, betAmount, betCurrency, giftId);
+        const result = await createMinesGame(req.user.id, betAmount, betCurrency, giftId, selectedMineCount);
         res.json({
             ok: true,
             gameId: result.gameId,
             serverSeedHash: result.serverSeedHash,
             clientSeed: result.clientSeed,
             betAmount: result.betAmount || betAmount,
-            currency: betCurrency
+            currency: betCurrency,
+            mineCount: selectedMineCount
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
