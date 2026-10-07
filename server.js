@@ -3391,7 +3391,6 @@ app.post('/api/bet/gift', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Betting only allowed during COUNTDOWN or FLIGHT' });
         }
         const rewardGift = await get('SELECT ug.* FROM user_gifts ug WHERE ug.user_id = ? AND (ug.id = ? OR ug.unique_collectible_id = ?) AND ug.status IN (\'OWNED\', \'WON\') ORDER BY ug.id DESC LIMIT 1', [req.user.id, giftId, giftId]);
-        if (rewardGift && isLootBoxGiftLocked(rewardGift)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: rewardGift.loot_box_locked_until });
         const queued = currentGameState.phase === 'FLIGHT';
         const result = queued ? await queueGiftBet(req.user.id, giftId, roundId, autoCashoutTarget) : await placeGiftBet(req.user.id, giftId, roundId, autoCashoutTarget);
         await refreshRoundPlayers();
@@ -3705,7 +3704,6 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
 
         const reward = await get("SELECT ug.*, g.name, g.value AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
-        if (isLootBoxGiftLocked(reward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
 
         const baseValue = getGeneralGiftPrice(reward.name, reward.value);
         const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
