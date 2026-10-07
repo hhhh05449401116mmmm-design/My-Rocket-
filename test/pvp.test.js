@@ -242,7 +242,7 @@ test('PVP: total pool is sum of all participant bets', async () => {
 // PvP SETTLEMENT TESTS
 // =========================================================
 
-test('PVP: round crash settles winner', async () => {
+test('PVP: weighted pot settles one winner', async () => {
     const round = await database.createPvpRound(1012);
     await database.startPvpCountdown(round.id);
 
@@ -255,12 +255,12 @@ test('PVP: round crash settles winner', async () => {
     // Set round to LIVE state
     await database.run('UPDATE pvp_rounds SET phase = ? WHERE id = ?', ['LIVE', round.id]);
 
-    const crashAt = round.crash_at;
     const result = await database.crashPvpRound(round.id);
-    assert.equal(result.crashAt, crashAt);
     assert.ok(result.winnerUserId > 0);
     assert.equal(result.totalPool, 15.0);
-    assert.ok(result.winnerPayout > 0);
+    assert.equal(result.poolTon, 15.0);
+    assert.equal(result.winnerPayout, 15.0);
+    assert.ok(result.winnerParticipationPercent > 0 && result.winnerParticipationPercent <= 100);
 
     const data = await database.getPvpRoundWithParticipants(round.id);
     const winner = data.participants.find(p => p.user_id === result.winnerUserId);
@@ -269,7 +269,7 @@ test('PVP: round crash settles winner', async () => {
     assert.equal(loser.status, 'LOST');
 });
 
-test('PVP: winner receives total pool minus own bet', async () => {
+test('PVP: winner receives the full TON pool', async () => {
     const round = await database.createPvpRound(1013);
     await database.startPvpCountdown(round.id);
 
@@ -283,16 +283,12 @@ test('PVP: winner receives total pool minus own bet', async () => {
     await database.run('UPDATE pvp_rounds SET phase = ? WHERE id = ?', ['LIVE', round.id]);
 
     const balBefore = await database.getUserBalance(user1.id);
-    const crashAt = round.crash_at;
     const result = await database.crashPvpRound(round.id);
-
-    if (result.winnerUserId === user1.id) {
-        const balAfter = await database.getUserBalance(user1.id);
-        assert.ok(balAfter > balBefore, 'winner balance should increase');
-    }
+    const winnerBalance = await database.getUserBalance(result.winnerUserId);
+    assert.ok(winnerBalance > 100, 'winner balance should increase by the pool');
 });
 
-test('PVP: crashPvpRound rejects non-LIVE round', async () => {
+test('PVP: settlePvpRound rejects non-LIVE round', async () => {
     const round = await database.createPvpRound(1014);
     // Phase is WAITING, not LIVE
     await assert.rejects(
@@ -301,7 +297,7 @@ test('PVP: crashPvpRound rejects non-LIVE round', async () => {
     );
 });
 
-test('PVP: settlement is transactional - double crash rejected', async () => {
+test('PVP: weighted settlement is transactional - double settle rejected', async () => {
     const round = await database.createPvpRound(1015);
     await database.startPvpCountdown(round.id);
 
