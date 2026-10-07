@@ -2358,6 +2358,7 @@ function getPvpStateSnapshot() {
         phase: pvpState.phase,
         seconds: pvpState.seconds,
         serverSeedHash: pvpState.serverSeedHash,
+        serverSeed: pvpState.phase === 'RESULT' ? pvpState.serverSeed : null,
         winnerUserId: pvpState.lastWinnerUserId,
         poolTon: pvpState.poolTon,
         poolGift: pvpState.poolGift,
