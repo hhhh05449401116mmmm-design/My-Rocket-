@@ -4173,7 +4173,7 @@ async function runScheduledLotteryWorker() {
         const due = await query(`
             SELECT id, game_key, draw_at
             FROM lottery_rounds
-            WHERE status = 'OPEN' AND draw_at <= datetime('now')
+            WHERE status = 'OPEN' AND julianday(draw_at) <= julianday('now')
             ORDER BY draw_at ASC
             LIMIT 30
         `);
