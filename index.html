@@ -7958,16 +7958,6 @@ async function openLootBox(box) {
                 if (box.id === 'box_100' && gift.name) {
                     gift.image_url = paidLootBox100GiftImage(gift);
                 }
-                const sellValue = Number(gift.sellValue || 0);
-                const previewPrice = previewGift && Number(previewGift.value);
-                const marketValue = Number.isFinite(previewPrice) && previewPrice > 0
-                    ? previewPrice
-                    : Number(gift.value || sellValue || 0);
-                const userGiftId = Number(gift.userGiftId || 0);
-                const lockedUntilMs = gift.lootBoxLockedUntil ? new Date(String(gift.lootBoxLockedUntil).replace(' ', 'T')).getTime() : 0;
-                const lootBoxGiftLocked = Number.isFinite(lockedUntilMs) && lockedUntilMs > Date.now();
-                if (userGiftId) pendingLootBoxRewardId = userGiftId;
-
                 const previewGift = box.id === 'box_100'
                     ? null
                     : (Array.isArray(box.collectibles)
@@ -7978,6 +7968,15 @@ async function openLootBox(box) {
                             return !giftLabel || !itemLabel || String(giftLabel) === String(itemLabel);
                         })
                         : null);
+                const sellValue = Number(gift.sellValue || 0);
+                const previewPrice = previewGift && Number(previewGift.value);
+                const marketValue = Number.isFinite(previewPrice) && previewPrice > 0
+                    ? previewPrice
+                    : Number(gift.value || sellValue || 0);
+                const userGiftId = Number(gift.userGiftId || 0);
+                const lockedUntilMs = gift.lootBoxLockedUntil ? new Date(String(gift.lootBoxLockedUntil).replace(' ', 'T')).getTime() : 0;
+                const lootBoxGiftLocked = Number.isFinite(lockedUntilMs) && lockedUntilMs > Date.now();
+                if (userGiftId) pendingLootBoxRewardId = userGiftId;
                 const image = box.id === 'box_100'
                     ? paidLootBox100GiftImage(gift)
                     : (previewGift ? lootBoxVisualImage(box, previewGift) : paidLootBoxItemImage(gift));
