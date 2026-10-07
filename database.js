@@ -3028,7 +3028,18 @@ function deriveGameUniform(serverSeed, clientSeed, nonce) {
     return Number(value) / Number(2n ** 52n);
 }
 
-async function createMinesGame(userId, betAmount, betCurrency, betGiftId) {
+function calculateMinesMultiplier(mineCount, safeReveals) {
+    const mines = Number(mineCount);
+    const reveals = Number(safeReveals);
+    if (!Number.isInteger(mines) || mines < 1 || mines > 24) throw new Error('Mines must be between 1 and 24');
+    if (!Number.isInteger(reveals) || reveals < 0 || reveals > 25 - mines) throw new Error('Invalid revealed tile count');
+    if (reveals === 0) return 1.0;
+    let multiplier = 0.975;
+    for (let i = 0; i < reveals; i++) multiplier *= (25 - i) / (25 - mines - i);
+    return Number(multiplier.toFixed(2));
+}
+
+async function createMinesGame(userId, betAmount, betCurrency, betGiftId, mineCount = 5) {
     return await transaction(async () => {
         const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
         if (!user) throw new Error('User not found');
@@ -3071,22 +3082,24 @@ async function createMinesGame(userId, betAmount, betCurrency, betGiftId) {
             throw new Error('Invalid bet currency');
         }
 
+        const normalizedMineCount = Number(mineCount);
+        if (!Number.isInteger(normalizedMineCount) || normalizedMineCount < 1 || normalizedMineCount > 24) {
+            throw new Error('Mines must be between 1 and 24');
+        }
+
         const serverSeed = generateGameServerSeed();
         const serverSeedHash = hashGameServerSeed(serverSeed);
 
-        // Generate mine positions using crypto — server only, never client.
         const minePositions = new Set();
-        let nonce = 0;
-        while (minePositions.size < 5) {
-            const byte = crypto.randomInt(0, 25);
-            minePositions.add(byte);
-        }
+        while (minePositions.size < normalizedMineCount) minePositions.add(crypto.randomInt(0, 25));
 
         const gameData = JSON.stringify({
             boardSize: 25,
-            mineCount: 5,
+            mineCount: normalizedMineCount,
             minePositions: Array.from(minePositions),
-            clientSeed: crypto.randomBytes(8).toString('hex')
+            clientSeed: crypto.randomBytes(8).toString('hex'),
+            multiplier: 1.0,
+            revealed: []
         });
 
         const result = await run(`
@@ -3106,6 +3119,9 @@ async function revealMinesTile(gameId, userId, tileIndex) {
 
         const gameData = JSON.parse(game.game_data);
         if (tileIndex < 0 || tileIndex >= gameData.boardSize) throw new Error('Invalid tile index');
+        if (!Number.isInteger(gameData.mineCount) || gameData.mineCount < 1 || gameData.mineCount > 24) {
+            throw new Error('Invalid mine configuration');
+        }
         if (gameData.revealed && gameData.revealed.includes(tileIndex)) throw new Error('Tile already revealed');
 
         const hitMine = gameData.minePositions.includes(tileIndex);
@@ -3122,9 +3138,9 @@ async function revealMinesTile(gameId, userId, tileIndex) {
             return { hitMine: true, multiplier: gameData.multiplier };
         }
 
-        // Multiplier grows as more safe tiles are revealed: 2^(tilesRevealed/5) capped at ~10x
-        const multiplier = Math.min(Math.pow(2, gameData.revealed.length / 5), 10.0);
-        gameData.multiplier = Number(multiplier.toFixed(2));
+        // Reference Mines curve with a 2.5% house edge.
+        const multiplier = calculateMinesMultiplier(gameData.mineCount, gameData.revealed.length);
+        gameData.multiplier = multiplier;
         await run('UPDATE mini_games SET game_data = ? WHERE id = ?', [JSON.stringify(gameData), gameId]);
         return { hitMine: false, multiplier: gameData.multiplier, tilesRevealed: gameData.revealed.length };
     });
@@ -3362,6 +3378,8 @@ async function getMiniGame(gameId, userId) {
         try {
             const gameData = JSON.parse(game.game_data);
             result.tilesRevealed = gameData.revealed ? gameData.revealed.length : 0;
+            result.mineCount = gameData.mineCount;
+            result.multiplier = gameData.multiplier || 1;
         } catch { /* ignore parse errors */ }
     }
     if (game.game_type === 'LOTTERY') {
