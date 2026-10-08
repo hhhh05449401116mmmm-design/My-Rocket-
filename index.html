@@ -11,6 +11,7 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <!-- Eruda is loaded dynamically for the admin only. -->
 
+    <script defer src="/assets/home-media.js"></script>
     <style>
         body.rocket-starting { overflow:hidden; }
         #rocket-startup { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; color:#fff; background:radial-gradient(ellipse at 20% 35%,#102c50 0,transparent 55%),radial-gradient(ellipse at 80% 65%,#271049 0,transparent 58%),#060b1b; padding:calc(max(env(safe-area-inset-top,0px),var(--tg-content-safe-area-inset-top,0px)) + var(--tg-native-controls-reserve-top,0px) + 12px) 24px max(24px,env(safe-area-inset-bottom,0px)); transition:opacity .22s ease; direction:rtl; }
@@ -19,19 +20,19 @@
         .rocket-startup-content { width:min(290px,100%); text-align:center; }
         .rocket-startup-logo { width:124px; height:124px; display:block; margin:0 auto 18px; object-fit:contain; background:transparent; filter:drop-shadow(0 0 15px #d75fee30); animation:rocket-startup-float 2.8s ease-in-out infinite; }
         .rocket-startup-name { font:800 28px Arial,Helvetica,sans-serif; letter-spacing:-.5px; direction:ltr; margin:0 0 32px; }
-        .rocket-startup-gift { --startup-completed:0; position:relative; width:156px; height:156px; margin:0 auto 18px; }
+        .rocket-startup-gift { position:relative; width:156px; height:156px; margin:0 auto 18px; }
         .rocket-startup-gift img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
         .rocket-startup-gift-base { filter:grayscale(1); opacity:.5; }
-        .rocket-startup-gift-color { clip-path:inset(calc((1 - var(--startup-completed))*100%) 0 0 0); transition:clip-path .45s ease-in-out; }
-        @media(prefers-reduced-motion:reduce){ .rocket-startup-gift-color { transition:none; } }
+        .rocket-startup-gift-reveal { position:absolute; inset:0; overflow:hidden; transform:translateY(100%); will-change:transform; }
+        .rocket-startup-gift-color { transform:translateY(-100%); will-change:transform; }
         @keyframes rocket-startup-float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)} }
         @media(prefers-reduced-motion:reduce){ .rocket-startup-logo{animation:none} #rocket-startup{transition:none} }
         .image-banner .banner-poster { z-index:-1!important; }
         .image-banner .banner-fallback-name { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#f5f8ff; font-size:26px; font-weight:850; font-family:Arial,sans-serif; background:linear-gradient(110deg,#214576,#592390); z-index:-2; pointer-events:none; }
         .image-banner { isolation:isolate; }
         .loot-box .loot-startup-poster { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none; }
-        .loot-box video.loot-video { visibility:hidden; z-index:1; }
-        .loot-box video.loot-video.loot-video-ready { visibility:visible; }
+        .loot-box video.loot-video { visibility:visible; z-index:1; }
+        .loot-box video.loot-video.home-media-failed { opacity:0; }
 
         /* =========================================================
            PLINKO - responsive reference layout
@@ -4743,27 +4744,21 @@ video::-webkit-media-controls-enclosure {
             pointer-events: none !important;
         }
 
-        /* Home banner video is a decoder only; the visible surface is Canvas.
-           This prevents iOS/Telegram native video controls from ever being painted
-           over the banner, without changing the banner dimensions or hit area. */
+        /* Native visible video lets WebKit autoplay silent inline artwork without
+           off-screen decoder policy or per-frame Canvas/layout work. */
         .image-banner .banner-video-engine {
-            position: absolute !important;
-            left: -10000px !important;
-            top: -10000px !important;
-            width: 1px !important;
-            height: 1px !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            border: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            position:absolute!important; inset:0!important; width:100%!important;
+            height:100%!important; object-fit:cover; object-position:center;
+            display:block!important; visibility:visible!important; opacity:1!important;
+            pointer-events:none!important; border:0!important; padding:0!important;
+            margin:0!important; z-index:0!important;
         }
-
-        .image-banner .banner-canvas {
-            z-index: 0 !important;
-            touch-action: none !important;
-        }
-
+        .image-banner .banner-video-engine.home-media-failed { opacity:0!important; }
+        .image-banner .banner-policy-motion { z-index:1!important; }
+        .image-banner .banner-policy-motion[hidden] { display:none!important; }
+        .image-banner video::-webkit-media-controls,
+        .image-banner video::-webkit-media-controls-start-playback-button,
+        .loot-box video::-webkit-media-controls-start-playback-button { display:none!important; }
 /* FINAL BOTTOM NAV STATE
            Inactive buttons stay white; the selected button is purple. */
         .bottom-nav .nav-button,
@@ -5158,7 +5153,7 @@ video::-webkit-media-controls-enclosure {
 </head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
-      <div class="rocket-startup-content"><img id="rocket-startup-logo" class="rocket-startup-logo" src="/assets/startup/crazy-rocket-pink-purple.webp" alt="" width="124" height="124" fetchpriority="high" decoding="async"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div></div>
+      <div class="rocket-startup-content"><img id="rocket-startup-logo" class="rocket-startup-logo" src="/assets/startup/crazy-rocket-pink-purple.webp" alt="" width="124" height="124" fetchpriority="high" decoding="async"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><div id="rocket-startup-gift-reveal" class="rocket-startup-gift-reveal"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div></div></div>
     </section>
     <noscript><style>#rocket-startup{display:none}</style></noscript>
 
@@ -5222,13 +5217,13 @@ video::-webkit-media-controls-enclosure {
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><span class="banner-fallback-name" aria-hidden="true">Rocket</span><img class="banner-art banner-poster" src="/assets/startup-posters/ADJtCAFOdpAFHHbg.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/ADJtCAFOdpAFHHbg.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Rocket"></canvas></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><span class="banner-fallback-name" aria-hidden="true">Rocket</span><img class="banner-art banner-poster" src="/assets/startup-posters/ADJtCAFOdpAFHHbg.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/ADJtCAFOdpAFHHbg.silent.mp4" data-motion-fallback="/assets/startup-motion/ADJtCAFOdpAFHHbg.webp" poster="/assets/startup-posters/ADJtCAFOdpAFHHbg.webp" muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><span class="banner-fallback-name" aria-hidden="true">PVP</span><img class="banner-art banner-poster" src="/assets/startup-posters/WddYFBEPUHJZYMlo.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/WddYFBEPUHJZYMlo.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="PVP"></canvas></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><span class="banner-fallback-name" aria-hidden="true">PVP</span><img class="banner-art banner-poster" src="/assets/startup-posters/WddYFBEPUHJZYMlo.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/WddYFBEPUHJZYMlo.silent.mp4" data-motion-fallback="/assets/startup-motion/WddYFBEPUHJZYMlo.webp" poster="/assets/startup-posters/WddYFBEPUHJZYMlo.webp" muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><span class="banner-fallback-name" aria-hidden="true">Play Hub</span><img class="banner-art banner-poster" src="/assets/startup-posters/IlLXxhvJRWznUUZY.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/IlLXxhvJRWznUUZY.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Play Hub"></canvas></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><span class="banner-fallback-name" aria-hidden="true">Play Hub</span><img class="banner-art banner-poster" src="/assets/startup-posters/IlLXxhvJRWznUUZY.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/IlLXxhvJRWznUUZY.silent.mp4" data-motion-fallback="/assets/startup-motion/IlLXxhvJRWznUUZY.webp" poster="/assets/startup-posters/IlLXxhvJRWznUUZY.webp" muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -6928,47 +6923,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
         ];
 
         function initLootBoxVideos() {
-            document.querySelectorAll('.loot-box video.loot-video').forEach(function(video) {
-                try {
-                    video.autoplay = true;
-                    video.muted = true;
-                    video.defaultMuted = true;
-                    video.loop = true;
-                    video.controls = false;
-                    video.playsInline = true;
-                    video.volume = 0;
-                    video.setAttribute('muted', '');
-                    video.setAttribute('autoplay', '');
-                    video.setAttribute('loop', '');
-                    video.setAttribute('playsinline', '');
-                    video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('preload', 'metadata');
-                    video.removeAttribute('controls');
-
-                    if (video.dataset.lootPlaybackBound === '1') return;
-                    video.dataset.lootPlaybackBound = '1';
-                    video.addEventListener('playing', () => video.classList.add('loot-video-ready'));
-                    video.addEventListener('error', () => video.classList.remove('loot-video-ready'));
-                    if (!video.paused && video.readyState >= 2) video.classList.add('loot-video-ready');
-                    const play = function() {
-                        try {
-                            video.muted = true;
-                            video.defaultMuted = true;
-                            video.volume = 0;
-                            const promise = video.play();
-                            if (promise && typeof promise.catch === 'function') promise.catch(function() {});
-                        } catch (e) {}
-                    };
-                    video.addEventListener('loadeddata', play, { once: true });
-                    video.addEventListener('canplay', play, { once: true });
-                    video.addEventListener('pause', function() {
-                        window.setTimeout(function() {
-                            if (video.paused) play();
-                        }, 100);
-                    });
-                    play();
-                } catch (e) {}
-            });
+            if (window.RocketHomeMedia) window.RocketHomeMedia.sync();
         }
 
         function renderLootBoxes() {
@@ -7005,7 +6960,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
 
                 const videoPoster = box.video ? '/assets/startup-posters/' + box.video.split('/').pop().replace(/\.mp4$/i, '.webp') : '';
                 const visual = box.video
-                    ? '<img class="loot-startup-poster" src="' + escapeHtmlAttribute(videoPoster) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async"><video class="loot-video" src="' + escapeHtmlAttribute(box.video) + '" poster="' + escapeHtmlAttribute(videoPoster) + '" autoplay muted loop playsinline webkit-playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen" aria-hidden="true"></video>'
+                    ? '<img class="loot-startup-poster" src="' + escapeHtmlAttribute(videoPoster) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async"><video class="loot-video" data-src="' + escapeHtmlAttribute(box.video) + '" poster="' + escapeHtmlAttribute(videoPoster) + '" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen" aria-hidden="true"></video>'
                     : (box.image
                         ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async">'
                         : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>');
@@ -11522,8 +11477,6 @@ async function openLootBox(box) {
             } catch (e) {}
         }
 
-        document.addEventListener('pointerdown', handleHomeBannerUserInteraction, { passive: true });
-        document.addEventListener('touchstart', handleHomeBannerUserInteraction, { passive: true });
 
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
@@ -12145,8 +12098,8 @@ else initializeTelegramNavigation();
 
         function resumeHomeBannersAfterGameClose() {
             requestAnimationFrame(function() {
-                if (!isHomeBannerScreenVisible()) return;
-                try { keepHomeBannerVideosPlaying(true); } catch (e) {}
+                // The shared manager checks both navigation and viewport readiness.
+                try { keepHomeBannerVideosPlaying(); } catch (e) {}
             });
         }
 
@@ -13972,269 +13925,11 @@ async function submitPvpBet(){
             }
         }
 
-        let bannerVideoServerOffsetMs = 0;
-
-        async function syncBannerVideoServerClock() {
-            const startedAt = Date.now();
-            try {
-                const response = await fetch('/api/server-time', { cache: 'no-store' });
-                const data = await response.json();
-                if (response.ok && data.ok && Number.isFinite(Number(data.serverTime))) {
-                    const receivedAt = Date.now();
-                    const midpoint = startedAt + ((receivedAt - startedAt) / 2);
-                    bannerVideoServerOffsetMs = Number(data.serverTime) - midpoint;
-                }
-            } catch (e) {}
-        }
-
-        function getSynchronizedBannerOffset(video) {
-            const duration = Number(video.duration);
-            if (!Number.isFinite(duration) || duration <= 0) return 0;
-            const now = Date.now() + bannerVideoServerOffsetMs;
-            const durationMs = duration * 1000;
-            return ((now % durationMs) / 1000);
-        }
-
-        function playBannerVideoSynchronized(video, forceSync) {
-            try {
-                if (document.visibilityState === 'hidden') return;
-                if (video.dataset.bannerHomeAudio !== '1') {
-                    video.muted = true;
-                    video.defaultMuted = true;
-                }
-                video.controls = false;
-                const duration = Number(video.duration);
-                if (forceSync || video.paused) {
-                    if (Number.isFinite(duration) && duration > 0) {
-                        const target = getSynchronizedBannerOffset(video);
-                        if (Math.abs(video.currentTime - target) > 0.15) {
-                            try { video.currentTime = target; } catch (e) {}
-                        }
-                    }
-                }
-                const playPromise = video.play();
-                if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
-            } catch (e) {}
-        }
-
-        let bannerHomeAudioEnabled = false;
-
-        function isHomeBannerScreenVisible() {
-            try {
-                const hub = document.getElementById('game-hub');
-                return document.visibilityState === 'visible' && !!hub && !hub.classList.contains('hidden');
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function sizeHomeBannerCanvas(canvas, video) {
-            try {
-                const rect = canvas.getBoundingClientRect();
-                const cssWidth = Math.max(1, Math.round(rect.width));
-                const cssHeight = Math.max(1, Math.round(rect.height));
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-                const targetWidth = Math.max(1, Math.round(cssWidth * dpr));
-                const targetHeight = Math.max(1, Math.round(cssHeight * dpr));
-                if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-                    canvas.width = targetWidth;
-                    canvas.height = targetHeight;
-                }
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-                }
-            } catch (e) {}
-        }
-
-        function drawHomeBannerFrame(video, canvas) {
-            try {
-                if (!canvas || !video || video.readyState < 2) return;
-                sizeHomeBannerCanvas(canvas, video);
-                const ctx = canvas.getContext('2d');
-                if (!ctx || !video.videoWidth || !video.videoHeight) return;
-
-                const targetWidth = canvas.width;
-                const targetHeight = canvas.height;
-                const sourceRatio = video.videoWidth / video.videoHeight;
-                const targetRatio = targetWidth / targetHeight;
-                let sx = 0;
-                let sy = 0;
-                let sw = video.videoWidth;
-                let sh = video.videoHeight;
-
-                // Match the existing object-fit: cover behavior exactly.
-                if (sourceRatio > targetRatio) {
-                    sw = Math.max(1, Math.round(video.videoHeight * targetRatio));
-                    sx = Math.max(0, Math.round((video.videoWidth - sw) / 2));
-                } else if (sourceRatio < targetRatio) {
-                    sh = Math.max(1, Math.round(video.videoWidth / targetRatio));
-                    sy = Math.max(0, Math.round((video.videoHeight - sh) / 2));
-                }
-
-                ctx.clearRect(0, 0, targetWidth, targetHeight);
-                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
-            } catch (e) {}
-        }
-
-        function stopHomeBannerCanvas(video) {
-            try {
-                const canvas = video && video._homeBannerCanvas;
-                if (video && video._homeBannerFrameRequestId != null && typeof video.cancelVideoFrameCallback === 'function') {
-                    video.cancelVideoFrameCallback(video._homeBannerFrameRequestId);
-                }
-                if (video) {
-                    video._homeBannerFrameRequestId = null;
-                    video._homeBannerCanvasActive = false;
-                }
-                // Preserve the last frame behind the poster when leaving the home screen.
-            } catch (e) {}
-        }
-
-        function startHomeBannerCanvas(video, canvas) {
-            try {
-                if (!video || !canvas) return;
-                video._homeBannerCanvas = canvas;
-                video._homeBannerCanvasActive = true;
-                sizeHomeBannerCanvas(canvas, video);
-                drawHomeBannerFrame(video, canvas);
-
-                if (typeof video.requestVideoFrameCallback === 'function') {
-                    if (video._homeBannerFrameRequestId == null) {
-                        const paint = function() {
-                            video._homeBannerFrameRequestId = null;
-                            if (!video._homeBannerCanvasActive || !isHomeBannerScreenVisible() || video.paused) return;
-                            drawHomeBannerFrame(video, canvas);
-                            video._homeBannerFrameRequestId = video.requestVideoFrameCallback(paint);
-                        };
-                        video._homeBannerFrameRequestId = video.requestVideoFrameCallback(paint);
-                    }
-                } else if (video._homeBannerCanvasRafId == null) {
-                    const paintFallback = function() {
-                        video._homeBannerCanvasRafId = null;
-                        if (!video._homeBannerCanvasActive || !isHomeBannerScreenVisible() || video.paused) return;
-                        drawHomeBannerFrame(video, canvas);
-                        video._homeBannerCanvasRafId = requestAnimationFrame(paintFallback);
-                    };
-                    video._homeBannerCanvasRafId = requestAnimationFrame(paintFallback);
-                }
-            } catch (e) {}
-        }
-
-        function setHomeBannerAudioEnabled(enabled) {
-            bannerHomeAudioEnabled = !!enabled;
-            document.querySelectorAll('.image-banner video.banner-video-engine').forEach(function(video) {
-                try {
-                    video.dataset.bannerHomeAudio = bannerHomeAudioEnabled ? '1' : '0';
-                    video.muted = true;
-                    video.defaultMuted = true;
-                    video.volume = 0;
-                    if (isHomeBannerScreenVisible()) {
-                        const p = video.play();
-                        if (p && typeof p.catch === 'function') p.catch(function() {});
-                    }
-                } catch (e) {}
-            });
-        }
-
-        function keepHomeBannerVideosPlaying(forceSync) {
-            document.querySelectorAll('.image-banner video.banner-video-engine').forEach(function(video) {
-                try {
-                    const canvas = video.nextElementSibling && video.nextElementSibling.matches('.banner-canvas')
-                        ? video.nextElementSibling
-                        : video.parentElement.querySelector('.banner-canvas');
-
-                    video.autoplay = true;
-                    video.loop = true;
-                    video.controls = false;
-                    video.playsInline = true;
-                    video.disablePictureInPicture = true;
-                    video.dataset.bannerHomeAudio = '0';
-                    video.muted = true;
-                    video.defaultMuted = true;
-                    video.volume = 0;
-                    video.setAttribute('playsinline', '');
-                    video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('controlslist', 'nodownload noplaybackrate');
-                    video.removeAttribute('controls');
-
-                    if (canvas) {
-                        canvas.setAttribute('aria-hidden', 'false');
-                        sizeHomeBannerCanvas(canvas, video);
-                    }
-
-                    const tryBannerAutoplay = function(forceSync) {
-                        if (!isHomeBannerScreenVisible()) return;
-                        try {
-                            video.muted = true;
-                            video.defaultMuted = true;
-                            video.volume = 0;
-                            playBannerVideoSynchronized(video, !!forceSync);
-                        } catch (e) {}
-                    };
-
-                    if (video.dataset.bannerVideoBound !== '1') {
-                        video.dataset.bannerVideoBound = '1';
-                        video.addEventListener('loadedmetadata', function() {
-                            if (isHomeBannerScreenVisible()) {
-                                sizeHomeBannerCanvas(canvas, video);
-                                tryBannerAutoplay(true);
-                            }
-                        });
-                        video.addEventListener('loadeddata', function() {
-                            if (isHomeBannerScreenVisible()) {
-                                sizeHomeBannerCanvas(canvas, video);
-                                tryBannerAutoplay(true);
-                            }
-                        });
-                        video.addEventListener('canplay', function() {
-                            if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false);
-                        });
-                        video.addEventListener('canplaythrough', function() {
-                            if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false);
-                        });
-                        video.addEventListener('playing', function() {
-                            video.controls = false;
-                            if (isHomeBannerScreenVisible()) startHomeBannerCanvas(video, canvas);
-                        });
-                        video.addEventListener('pause', function() {
-                            if (isHomeBannerScreenVisible()) {
-                                window.setTimeout(function() {
-                                    if (isHomeBannerScreenVisible() && video.paused) {
-                                        playBannerVideoSynchronized(video, true);
-                                    }
-                                }, 120);
-                            }
-                        });
-                        video.addEventListener('stalled', function() {
-                            if (isHomeBannerScreenVisible()) {
-                                window.setTimeout(function() {
-                                    if (video.paused) playBannerVideoSynchronized(video, false);
-                                }, 250);
-                            }
-                        });
-                        video.addEventListener('waiting', function() {
-                            if (isHomeBannerScreenVisible()) {
-                                window.setTimeout(function() {
-                                    if (video.paused) playBannerVideoSynchronized(video, false);
-                                }, 300);
-                            }
-                        });
-                    }
-
-                    if (isHomeBannerScreenVisible()) {
-                        startHomeBannerCanvas(video, canvas);
-                        if (forceSync || video.paused) {
-                            tryBannerAutoplay(!!forceSync);
-                            window.setTimeout(function() { if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(!!forceSync); }, 150);
-                            window.setTimeout(function() { if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false); }, 600);
-                            window.setTimeout(function() { if (isHomeBannerScreenVisible() && video.paused) tryBannerAutoplay(false); }, 1500);
-                        }
-                    }
-                } catch (e) {}
-            });
-            initLootBoxVideos();
+        // Decorative banners do not need server-time synchronization or seeking.
+        function syncBannerVideoServerClock() {}
+        function setHomeBannerAudioEnabled() { keepHomeBannerVideosPlaying(); }
+        function keepHomeBannerVideosPlaying() {
+            if (window.RocketHomeMedia) window.RocketHomeMedia.sync();
         }
 
         async function authenticateUser() {
@@ -14366,22 +14061,50 @@ async function submitPvpBet(){
         // Bootstrap authentication independently from UI initialization.
         // This prevents an earlier UI/Wallet initialization error from blocking
         // Telegram signed initData authentication and the game connection.
-var rocketStartupState = { started: false, finished: false, completing: false, mediaReady: false, bootReady: false, authenticated: false, timedOut: false, startedAt: 0, deadlineTimer: null, finishTimer: null, finishPromise: null, resolveFinish: null };
+var rocketStartupState = { started:false, finished:false, completing:false, mediaReady:false, bootReady:false, authenticated:false, timedOut:false, startedAt:0, giftFillStartedAt:0, giftFillAnimations:[], deadlineTimer:null, finishTimer:null, finishPromise:null, resolveFinish:null };
 function updateRocketStartupStatus() {
-  if (rocketStartupState.completing || rocketStartupState.finished) return;
   const progress = document.getElementById('rocket-startup-progress');
-  if (progress) {
-    const completed = Number(rocketStartupState.mediaReady) + Number(rocketStartupState.bootReady);
-    progress.setAttribute('aria-valuenow', String(completed));
-    progress.style.setProperty('--startup-completed', String(completed / 2));
-  }
+  if (progress) progress.setAttribute('aria-valuenow', String(Number(rocketStartupState.mediaReady) + Number(rocketStartupState.bootReady)));
+}
+function startRocketGiftFill() {
+  if (rocketStartupState.giftFillStartedAt || rocketStartupState.completing || rocketStartupState.finished) return;
+  const reveal = document.getElementById('rocket-startup-gift-reveal');
+  const color = document.getElementById('rocket-startup-gift-color');
+  if (!reveal || !color) return;
+  rocketStartupState.giftFillStartedAt = performance.now();
+  const reduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || typeof reveal.animate !== 'function') return;
+  // Continuous compositor transforms. Never advertise fake network percentages;
+  // visual fill caps short of full until the actual readiness gate completes.
+  const timing = { duration:7600, easing:'cubic-bezier(.15,.55,.45,1)', fill:'forwards' };
+  rocketStartupState.giftFillAnimations = [
+    reveal.animate([{ transform:'translateY(100%)' },{ transform:'translateY(8%)' }], timing),
+    color.animate([{ transform:'translateY(-100%)' },{ transform:'translateY(-8%)' }], timing)
+  ];
+}
+function completeRocketGiftFill() {
+  const reveal = document.getElementById('rocket-startup-gift-reveal');
+  const color = document.getElementById('rocket-startup-gift-color');
+  if (!reveal || !color) return 0;
+  const reduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const nodes = [reveal,color];
+  // Capture the presentation positions before cancelling the ongoing fill.
+  const transforms = nodes.map(node => typeof getComputedStyle === 'function' ? getComputedStyle(node).transform : node.style.transform);
+  rocketStartupState.giftFillAnimations.forEach(animation => animation.cancel());
+  rocketStartupState.giftFillAnimations = [];
+  nodes.forEach((node,index) => {
+    node.style.transform = 'translateY(0)';
+    if (!reduced && typeof node.animate === 'function')
+      rocketStartupState.giftFillAnimations.push(node.animate([{transform:transforms[index] || 'none'},{transform:'translateY(0)'}],{duration:650,easing:'ease-out',fill:'forwards'}));
+  });
+  return reduced ? 0 : 650;
 }
 function finishRocketStartup(reason, colorComplete) {
   if (rocketStartupState.finished || (rocketStartupState.completing && !colorComplete)) return;
-  const elapsed = performance.now() - rocketStartupState.startedAt;
-  if (reason !== 'timeout' && elapsed < 650) {
+  const elapsed = performance.now() - (rocketStartupState.giftFillStartedAt || rocketStartupState.startedAt);
+  if (reason !== 'timeout' && elapsed < 1000) {
     clearTimeout(rocketStartupState.finishTimer);
-    rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason), 650 - elapsed);
+    rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason), 1000 - elapsed);
     return;
   }
   if (!rocketStartupState.completing) {
@@ -14391,13 +14114,11 @@ function finishRocketStartup(reason, colorComplete) {
     const gift = document.getElementById('rocket-startup-progress');
     if (gift) {
       gift.setAttribute('aria-valuenow', '2');
-      gift.style.setProperty('--startup-completed', '1');
     }
-    // The gift reaches its full original color BEFORE revealing the game.
-    // This visual completion is not an authentication success indicator.
-    const reducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (gift) {
-      rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason, true), reducedMotion ? 0 : 500);
+    // Complete color from its current visible position, then reveal the app.
+    const colorDuration = completeRocketGiftFill();
+    if (colorDuration > 0) {
+      rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason, true), colorDuration);
       return;
     }
   }
@@ -14442,7 +14163,10 @@ function beginRocketStartup() {
 function prepareRocketStartupMedia() {
   const images = [...document.querySelectorAll('.image-banner .banner-poster')];
   const gift = document.getElementById('rocket-startup-gift-color');
-  if (gift) images.push(gift);
+  if (gift) {
+    images.push(gift);
+    waitForStartupImage(gift).then(() => { startRocketGiftFill(); maybeFinishRocketStartup(); });
+  }
   const rocket = document.getElementById('rocket-startup-logo');
   if (rocket) images.push(rocket);
   // Initial viewport posters only; neither all videos nor off-screen inventory blocks entry.
@@ -14524,11 +14248,7 @@ function markRocketBootstrapReady(authenticated) {
             try { keepHomeBannerVideosPlaying(); } catch (e) {}
         });
 
-        // Do not periodically seek/reload home videos: that causes visible stutter.
-        // Only refresh the server clock in the background; video playback stays continuous.
-        window.setInterval(function() {
-            try { syncBannerVideoServerClock(); } catch (e) {}
-        }, 60000);
+        // Home artwork is local decoration; no server-clock polling or seek loop.
 
         beginRocketStartup();
         if (document.readyState === "loading") {
