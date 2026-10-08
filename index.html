@@ -5516,7 +5516,9 @@ video::-webkit-media-controls-enclosure {
 }
 #pvp-game .pvp-topbar { display:flex; align-items:center; gap:8px; height:36px; flex:0 0 36px; margin-bottom:6px; }
 #pvp-game .pvp-back, #pvp-game .pvp-history { border:1px solid #353535; border-radius:12px; background:#242424; color:#eee; height:32px; padding:0 10px; font-size:12px; font-weight:700; cursor:pointer; }
-#pvp-game .pvp-history { width:34px; padding:0; font-size:20px; }
+#pvp-game .pvp-history { width:34px; padding:5px; font-size:20px; }
+#pvp-game .pvp-history svg { width:22px; height:22px; }
+#pvp-game .pvp-topbar-spacer { width:34px; }
 #pvp-game .pvp-title { flex:1; display:flex; gap:6px; align-items:center; justify-content:center; font-size:17px; font-weight:800; white-space:nowrap; }
 #pvp-game .pvp-title img { width:23px; height:23px; object-fit:contain; border-radius:6px; }
 #pvp-game .pvp-stats { flex:0 0 46px; display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:8px; border-bottom:1px solid #303030; padding-bottom:8px; }
@@ -5637,12 +5639,41 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
 #pvp-bet-modal .pvp-place-bet{width:100%;height:58px;margin-top:14px;border:0;border-radius:18px;background:linear-gradient(135deg,#9d3dff,#c05aff);color:#fff;font-size:20px;font-weight:950}
 #pvp-bet-modal .pvp-place-bet:disabled{opacity:.45}
 
+#pvp-game .pvp-shell.history-open { visibility:hidden; pointer-events:none; }
+#pvp-game .pvp-history-panel { display:none; position:absolute; inset:0; z-index:8; background:#141414; padding:calc(var(--pvp-top) + 10px) max(12px, var(--tg-content-safe-area-inset-right, 0px)) calc(104px + var(--pvp-bottom)) max(12px, var(--tg-content-safe-area-inset-left, 0px)); width:min(520px,100%); margin:0 auto; color:#f5f5f5; }
+#pvp-game .pvp-history-panel.show { display:flex; flex-direction:column; }
+#pvp-game .pvp-history-head { display:flex; align-items:center; gap:12px; min-height:44px; margin-bottom:14px; }
+#pvp-game .pvp-history-head h2 { font-size:24px; margin:0; font-weight:850; border-left:4px solid #ffc430; padding-left:9px; }
+#pvp-game .pvp-history-back { background:#353124; color:#ffe18a; width:34px; height:34px; border:1px solid #61532c; border-radius:10px; font-size:23px; cursor:pointer; }
+#pvp-game .pvp-history-tabs { display:flex; gap:9px; margin-bottom:14px; }
+#pvp-game .pvp-history-tab { border:0; border-radius:12px; padding:12px 20px; background:#2a2a2a; color:#aaa; font-weight:800; font-size:14px; cursor:pointer; }
+#pvp-game .pvp-history-tab.active { background:#ffce38; color:#141414; }
+#pvp-game .pvp-history-list { overflow-y:auto; flex:1; min-height:0; scrollbar-width:none; padding-bottom:8px; }
+#pvp-game .pvp-history-card { background:#292929; border:1px solid #363636; border-radius:16px; padding:14px; margin-bottom:12px; }
+#pvp-game .pvp-history-meta { display:flex; align-items:center; flex-wrap:wrap; gap:7px; color:#aaa; font-size:11px; border-bottom:1px solid #3b3b3b; padding-bottom:10px; }
+#pvp-game .pvp-history-date { display:flex; align-items:center; gap:6px; flex:1; }
+#pvp-game .pvp-history-date svg { width:17px; height:17px; color:#ffd546; flex-shrink:0; }
+#pvp-game .pvp-history-round { background:#393939; border:1px solid #484848; border-radius:7px; padding:3px 6px; font-weight:700; }
+#pvp-game .pvp-history-winner { display:flex; align-items:center; gap:10px; padding:14px 0; border-bottom:1px solid #3b3b3b; }
+#pvp-game .pvp-history-winner .pvp-avatar, #pvp-game .pvp-history-winner .pvp-avatar-fallback { width:44px; height:44px; border-radius:50%; border:2px solid #a37b26; flex-shrink:0; }
+#pvp-game .pvp-history-winner-name { font-size:16px; font-weight:800; min-width:0; overflow:hidden; text-overflow:ellipsis; flex:1; }
+#pvp-game .pvp-history-winner small { display:block; margin-top:4px; color:#ffd04c; font-size:12px; font-weight:600; }
+#pvp-game .pvp-history-prize { font-size:18px; color:#19b2ee; font-weight:850; text-align:right; flex-shrink:0; }
+#pvp-game .pvp-history-rewards { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:12px; }
+#pvp-game .pvp-history-ton, #pvp-game .pvp-history-gift { height:32px; border-radius:8px; display:flex; align-items:center; gap:5px; padding:4px 6px; background:#343434; border:1px solid #484848; font-weight:800; font-size:13px; }
+#pvp-game .pvp-history-ton { background:#193844; border-color:#235a70; }
+#pvp-game .pvp-history-ton img { width:20px; height:20px; }
+#pvp-game .pvp-history-gift img { width:25px; height:25px; object-fit:contain; }
+#pvp-game .pvp-history-empty { text-align:center; color:#969696; padding:35px 15px; }
+#pvp-game .pvp-history-empty button, #pvp-game .pvp-history-more { background:#2a2a2a; color:#ffce38; border:1px solid #51462a; padding:10px 18px; border-radius:10px; cursor:pointer; }
+#pvp-game .pvp-history-more { flex-shrink:0; margin-top:5px; }
+#pvp-game .pvp-history-more[hidden] { display:none; }
 </style>
 <div class="pvp-shell">
   <div class="pvp-topbar">
-    <button class="pvp-back" type="button" onclick="closePvpGame()">← رجوع</button>
+    <span class="pvp-topbar-spacer" aria-hidden="true"></span>
     <div class="pvp-title"><img src="/icon-180.png" alt="">Crazy Rocket <span style="color:#939393;font-size:11px">PVP</span></div>
-    <button class="pvp-history" type="button" onclick="showToast('History')">↶</button>
+    <button class="pvp-history" type="button" onclick="openPvpHistory()" aria-label="Round history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 1 7M3 4v6h6"/><path d="M12 7v5l3 2"/></svg></button>
   </div>
 
   <div class="pvp-stats">
@@ -5686,8 +5717,13 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
   <div class="pvp-players-title"><span>Players</span><span class="pvp-players-count"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M16 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M1 21v-3a7 7 0 0 1 14 0v3M16 13a6 6 0 0 1 7 5v3h-6v-3a9 9 0 0 0-1-5"/></svg><span id="pvp-player-count">0</span></span></div>
   <div id="pvp-players" class="pvp-players"></div>
 </div>
+<section id="pvp-history-panel" class="pvp-history-panel" aria-hidden="true" aria-label="PVP History">
+  <div class="pvp-history-head"><button type="button" class="pvp-history-back" onclick="closePvpHistory()" aria-label="Back to PvP">←</button><h2>PVP History</h2></div>
+  <div class="pvp-history-tabs"><button type="button" class="pvp-history-tab active" data-scope="all" onclick="selectPvpHistoryScope('all')">All Games</button><button type="button" class="pvp-history-tab" data-scope="mine" onclick="selectPvpHistoryScope('mine')">My Games</button></div>
+  <div id="pvp-history-list" class="pvp-history-list"></div>
+  <button type="button" id="pvp-history-more" class="pvp-history-more" hidden onclick="loadPvpHistory(true)">Load more</button>
+</section>
 </div>
-
 <div id="pvp-bet-modal" aria-hidden="true">
   <div class="pvp-bet-sheet" role="dialog" aria-modal="true">
     <div class="pvp-bet-head">
@@ -11825,6 +11861,74 @@ async function openLootBox(box) {
             }
         }
 
+// Telegram owns the header's appearance and translated label. We only control BackButton.
+var telegramNavigationButton = null;
+var telegramNavigationObserver = null;
+var telegramNavigationFrame = null;
+function navigationVisible(id, mode) {
+  const el = document.getElementById(id);
+  if (!el || el.hidden || el.classList.contains('hidden')) return false;
+  if (mode === 'show' && !el.classList.contains('show')) return false;
+  return true;
+}
+function activeNavigationOverlay() {
+  if (navigationVisible('pvp-bet-modal', 'show')) return 'pvp-bet-modal';
+  if (navigationVisible('plinko-gift-modal', 'show')) return 'plinko-gift-modal';
+  const modals = [...document.querySelectorAll('.modal.show')];
+  return modals.length ? modals[modals.length - 1].id : null;
+}
+function telegramCanGoBack() {
+  if (activeNavigationOverlay() || pvpHistoryIsOpen()) return true;
+  for (const id of ['profile-page', 'gifts-page', 'earn-page', 'top-page']) if (navigationVisible(id, 'show')) return true;
+  for (const id of ['rocket-game', 'playhub-screen', 'mines-game', 'plinko-game', 'dice-game', 'crafts-game', 'pvp-game', 'upgrade-game', 'lottery-game']) if (navigationVisible(id)) return true;
+  return false;
+}
+function syncTelegramBackButton() {
+  const button = window.Telegram?.WebApp?.BackButton; if (!button) return;
+  try { if (telegramCanGoBack()) button.show(); else button.hide(); } catch (e) {}
+}
+function handleTelegramBack() {
+  const overlay = activeNavigationOverlay();
+  if (overlay === 'pvp-bet-modal') { closePvpBetModal(); syncTelegramBackButton(); return; }
+  if (overlay === 'plinko-gift-modal') { closePlinkoGiftModal(); syncTelegramBackButton(); return; }
+  if (overlay) {
+    if (overlay === 'loot-box-modal' && navigationVisible('loot-box-result-stage', 'show')) closeLootBoxResult();
+    else closeModal(overlay);
+    syncTelegramBackButton(); return;
+  }
+  if (pvpHistoryIsOpen()) { closePvpHistory(); return; }
+  if (navigationVisible('pvp-game')) closePvpGame();
+  else if (navigationVisible('rocket-game')) closeRocketGame();
+  else {
+    const closers = [['mines-game', closeMinesGame], ['plinko-game', closePlinkoGame], ['dice-game', closeDiceGame], ['crafts-game', closeCraftsGame], ['upgrade-game', closeUpgradeGame], ['lottery-game', closeLotteryGame]];
+    const game = closers.find(([id]) => navigationVisible(id));
+    if (game) game[1]();
+    else if (navigationVisible('playhub-screen')) showPage('home');
+    else if (telegramCanGoBack()) showPage('home');
+  }
+  syncTelegramBackButton();
+}
+function initializeTelegramNavigation() {
+  const button = window.Telegram?.WebApp?.BackButton;
+  if (!button) return;
+  if (telegramNavigationButton === button) { syncTelegramBackButton(); return; }
+  try {
+    if (telegramNavigationButton) telegramNavigationButton.offClick(handleTelegramBack);
+    button.offClick(handleTelegramBack); button.onClick(handleTelegramBack);
+    telegramNavigationButton = button;
+  } catch (e) { return; }
+  if (telegramNavigationObserver) telegramNavigationObserver.disconnect();
+  telegramNavigationObserver = new MutationObserver(() => {
+    if (telegramNavigationFrame) return;
+    telegramNavigationFrame = requestAnimationFrame(() => { telegramNavigationFrame = null; syncTelegramBackButton(); });
+  });
+  // Observe only screen/overlay visibility, not animation or player-card changes.
+  document.querySelectorAll('.modal, #pvp-bet-modal, #plinko-gift-modal, #pvp-history-panel, #game-hub, #playhub-screen, #rocket-game, #mines-game, #plinko-game, #dice-game, #crafts-game, #pvp-game, #upgrade-game, #lottery-game, #profile-page, #gifts-page, #earn-page, #top-page, #loot-box-result-stage').forEach(el => telegramNavigationObserver.observe(el, { attributes: true, attributeFilter: ['class', 'hidden'] }));
+  syncTelegramBackButton();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeTelegramNavigation, { once: true });
+else initializeTelegramNavigation();
+
         function showPage(page) {
             if (pvpState && pvpState.active) { stopPvpTimer(); closePvpBetModal(); }
             try { setHomeBannerAudioEnabled(false); } catch (e) {}
@@ -12098,6 +12202,7 @@ async function openLootBox(box) {
          }
 
          function closePvpGame() {
+             closePvpHistory();
              stopPvpTimer();
              closePvpBetModal();
              document.getElementById("pvp-game").classList.add("hidden");
@@ -12982,7 +13087,7 @@ async function openLootBox(box) {
 var pvpGiftsLoaded = false;
 var pvpModalBetType = 'TON';
 var pvpSelectedGiftId = null;
-const PVP_WHEEL_DEGREES_PER_SECOND = 42;
+const PVP_WHEEL_DEGREES_PER_SECOND = 36;
 const PVP_PLAYER_COLORS = ['#19bd8e', '#ffc430', '#9d72ee', '#40a8eb', '#ef6d95', '#38c5ca', '#f78e49'];
 
 function pvpParticipantColor(p, index) {
@@ -13049,6 +13154,7 @@ function initPvPGame() {
   document.getElementById('pvp-round-small').textContent = 'Game #—';
   document.getElementById('pvp-result').classList.remove('show');
   document.getElementById('pvp-status').textContent = 'Connecting to round…';
+  document.getElementById('pvp-countdown').textContent = '—';
   pvpState.timer = setInterval(renderPvpCountdown, 150);
   pvpState.frame = requestAnimationFrame(animatePvpWheel);
   loadPvpGifts();
@@ -13057,6 +13163,7 @@ function initPvPGame() {
 }
 
 function stopPvpTimer() {
+  closePvpHistory();
   pvpState.active = false;
   pvpState.generation++;
   clearInterval(pvpState.timer); clearInterval(pvpState.pollTimer); clearTimeout(pvpState.reconnectTimer);
@@ -13136,7 +13243,7 @@ function renderPvpCountdown() {
       : Math.ceil(Number(d.seconds) - (Date.now() - pvpState.receivedAt) / 1000);
   }
   seconds = Math.max(0, seconds);
-  timer.textContent = d.phase === 'LIVE' ? 'LIVE' : String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+  timer.textContent = d.phase === 'WAITING' ? 'WAITING' : d.phase === 'LIVE' ? 'LIVE' : String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
   if (timer.classList) timer.classList.toggle('live', d.phase === 'LIVE');
   const stale = Date.now() - pvpState.receivedAt > 6000;
   if (stale) {
@@ -13371,7 +13478,7 @@ function updatePvpUI() {
   el('pvp-round-small').textContent = 'Game #' + (d.roundNumber || '—');
   el('pvp-pool-value').textContent = Number(d.totalPool || 0).toFixed(2);
   el('pvp-pool-total').title = Number(d.poolTon || 0).toFixed(2) + ' TON + ' + Number(d.poolGift || 0).toFixed(2) + ' TON gift value';
-  el('pvp-status').textContent = d.phase === 'LIVE' ? 'Selecting winner…' : d.phase === 'WAITING' ? 'Waiting for players' : d.phase === 'RESULT' ? 'Round complete' : '';
+  el('pvp-status').textContent = d.phase === 'LIVE' ? 'Selecting winner…' : d.phase === 'WAITING' ? (ps.length ? 'Waiting for a second player' : 'Waiting for players') : d.phase === 'RESULT' ? 'Round complete' : '';
   updatePvpHighlights(d); renderPvpCountdown();
   const wheelKey = JSON.stringify(ps.map(p => [p.id, p.user_id, p.betAmount, p.betCurrency, p.giftImage]));
   if (wheelKey !== pvpState.wheelKey) { renderPvpWheel(ps); pvpState.wheelKey = wheelKey; }
@@ -13392,6 +13499,81 @@ function updatePvpUI() {
     }
   }
 }
+
+var pvpHistoryState = { scope: 'all', rounds: [], nextBefore: null, loading: false, generation: 0 };
+
+function pvpHistoryIsOpen() {
+  return !!document.getElementById('pvp-history-panel')?.classList.contains('show');
+}
+function openPvpHistory() {
+  const panel = document.getElementById('pvp-history-panel'); if (!panel) return;
+  closePvpBetModal();
+  panel.classList.add('show'); panel.setAttribute('aria-hidden', 'false');
+  document.querySelector('#pvp-game .pvp-shell')?.classList.add('history-open');
+  selectPvpHistoryScope('all');
+  syncTelegramBackButton();
+}
+function closePvpHistory() {
+  const panel = document.getElementById('pvp-history-panel');
+  if (panel) { panel.classList.remove('show'); panel.setAttribute('aria-hidden', 'true'); }
+  document.querySelector('#pvp-game .pvp-shell')?.classList.remove('history-open');
+  pvpHistoryState.generation++; pvpHistoryState.loading = false;
+  syncTelegramBackButton();
+}
+function selectPvpHistoryScope(scope) {
+  pvpHistoryState.scope = scope === 'mine' ? 'mine' : 'all';
+  pvpHistoryState.generation++; pvpHistoryState.loading = false;
+  pvpHistoryState.rounds = []; pvpHistoryState.nextBefore = null;
+  document.querySelectorAll('.pvp-history-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.scope === pvpHistoryState.scope));
+  loadPvpHistory(false);
+}
+async function loadPvpHistory(append) {
+  if (pvpHistoryState.loading || !pvpHistoryIsOpen()) return;
+  const generation = pvpHistoryState.generation;
+  pvpHistoryState.loading = true;
+  const list = document.getElementById('pvp-history-list'), more = document.getElementById('pvp-history-more');
+  if (!append) list.innerHTML = '<div class="pvp-history-empty">Loading rounds…</div>';
+  more.disabled = true;
+  try {
+    const params = new URLSearchParams({ scope: pvpHistoryState.scope, limit: '20' });
+    if (append && pvpHistoryState.nextBefore) params.set('before', pvpHistoryState.nextBefore);
+    const r = await fetch(BACKEND_URL + '/api/pvp/history?' + params, { headers: getAuthHeaders(), cache: 'no-store' });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error('History unavailable');
+    if (generation !== pvpHistoryState.generation || !pvpHistoryIsOpen()) return;
+    pvpHistoryState.rounds = append ? pvpHistoryState.rounds.concat(d.rounds || []) : (d.rounds || []);
+    pvpHistoryState.nextBefore = d.nextBefore;
+    renderPvpHistory(); more.hidden = !d.hasMore;
+  } catch (e) {
+    if (generation === pvpHistoryState.generation && pvpHistoryIsOpen()) {
+      if (!append) list.innerHTML = '<div class="pvp-history-empty">Could not load rounds. <button type="button" onclick="loadPvpHistory(false)">Retry</button></div>';
+      else showToast('تعذر تحميل الجولات');
+    }
+  } finally {
+    if (generation === pvpHistoryState.generation) { pvpHistoryState.loading = false; more.disabled = false; }
+  }
+}
+function renderPvpHistory() {
+  const list = document.getElementById('pvp-history-list'); list.replaceChildren();
+  if (!pvpHistoryState.rounds.length) {
+    list.innerHTML = '<div class="pvp-history-empty">' + (pvpHistoryState.scope === 'mine' ? 'No completed rounds for your account yet' : 'No completed rounds yet') + '</div>';
+    return;
+  }
+  pvpHistoryState.rounds.forEach(r => {
+    const card = document.createElement('article'); card.className = 'pvp-history-card';
+    card.dataset.roundNumber = r.roundNumber;
+    const date = r.endedAt ? new Date(String(r.endedAt).includes('T') ? r.endedAt : r.endedAt.replace(' ', 'T') + 'Z') : null;
+    const stamp = date && Number.isFinite(date.getTime()) ? date.toLocaleString(undefined, { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const w = r.winner || {}, name = pvpName(w);
+    let gifts = '';
+    for (const g of r.gifts || []) gifts += '<span class="pvp-history-gift" title="' + escapeHtmlAttribute(g.name || 'Gift') + '"><img src="' + escapeHtmlAttribute(pvpSafeImage(g.image, '/assets/gift-icon.svg')) + '" alt="' + escapeHtmlAttribute(g.name || 'Gift') + '"></span>';
+    card.innerHTML = '<div class="pvp-history-meta"><span class="pvp-history-date">' + PVP_HISTORY_CLOCK + '<span>' + escapeHtml(stamp) + '</span></span><span class="pvp-history-round">Round #' + Number(r.roundNumber) + '</span><span>' + Number(r.playerCount) + ' players</span></div>' +
+      '<div class="pvp-history-winner">' + pvpAvatarMarkup(w) + '<div class="pvp-history-winner-name">' + escapeHtml(name) + '<small>Winner</small></div><div class="pvp-history-prize">' + Number(r.totalPool || 0).toFixed(2) + ' TON<small>' + Number(w.chance || 0).toFixed(1) + '% chance</small></div></div>' +
+      '<div class="pvp-history-rewards">' + (Number(r.poolTon) > 0 ? '<span class="pvp-history-ton"><img src="' + TON_ICON_URL + '" alt="TON">' + Number(r.poolTon).toFixed(2) + '</span>' : '') + gifts + '</div>';
+    list.appendChild(card);
+  });
+}
+const PVP_HISTORY_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 1 7M3 4v6h6"/><path d="M12 7v5l3 2"/></svg>';
 
 async function loadPvpGifts() {
   try {
@@ -13463,6 +13645,7 @@ async function submitPvpBet(){
     const r=await fetch(BACKEND_URL+'/api/pvp/join',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({betCurrency:pvpModalBetType,betAmount:amount,giftUniqueId:gid})});
     const d=await r.json();
     if(!r.ok||d.error){showToast(d.error||'فشل الرهان');return;}
+    if (d.state) acceptPvpState(d.state);
     closePvpBetModal();fetchPvpState();fetchBalance();showToast('تم وضع الرهان');
   }catch(e){showToast('فشل الرهان');}
 }

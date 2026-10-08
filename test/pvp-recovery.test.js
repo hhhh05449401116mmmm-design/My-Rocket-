@@ -22,13 +22,14 @@ test('PvP recovery keeps an existing COUNTDOWN and its balances/participants/dea
   const round = await database.createPvpRound(9001);
   await database.startPvpCountdown(round.id);
   await database.joinPvpRound(user.id, 'TON', 5, null);
+  const second = await database.findOrCreateUser('recovery-second'); await database.updateUserBalance(second.id,100,'add'); await database.joinPvpRound(second.id,'TON',1,null);
   const row = await database.get('SELECT * FROM pvp_rounds WHERE id=?', [round.id]);
   const balance = await database.getUserBalance(user.id);
   const count = (await database.get('SELECT COUNT(*) AS n FROM pvp_rounds')).n;
   await restoreOrStartPvpRound();
   const state = getPvpStateSnapshot();
   assert.equal(state.roundId, round.id); assert.equal(state.phase, 'COUNTDOWN');
-  assert.equal(state.participants.length, 1); assert.equal(state.totalPool, 5);
+  assert.equal(state.participants.length, 2); assert.equal(state.totalPool, 6);
   assert.equal(state.countdownEndsAt, Date.parse(row.started_at.replace(' ', 'T')+'Z')+20000);
   assert.equal(await database.getUserBalance(user.id), balance);
   assert.equal((await database.get('SELECT COUNT(*) AS n FROM pvp_rounds')).n, count);
@@ -53,7 +54,7 @@ test('PvP recovery keeps LIVE gift lock and resumes timing without payout or res
 
 test('PvP creates an empty real round only when no active round remains', async () => {
   await restoreOrStartPvpRound(); const state=getPvpStateSnapshot();
-  assert.equal(state.phase,'COUNTDOWN'); assert.equal(state.participants.length,0);
+  assert.equal(state.phase,'WAITING'); assert.equal(state.participants.length,0); assert.equal(state.countdownEndsAt,null);
   assert.equal(state.totalPool,0); assert.equal(state.winnerUserId,null);
   assert.equal((await database.get("SELECT COUNT(*) AS n FROM pvp_participants WHERE pvp_round_id=?",[state.roundId])).n,0);
 });

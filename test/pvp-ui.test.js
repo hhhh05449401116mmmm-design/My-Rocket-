@@ -7,7 +7,7 @@ const test = require('node:test');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const backend = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
 const start = html.indexOf('         var pvpState = {');
-const end = html.indexOf('function openPvpBetModal(){', start);
+const end = html.indexOf('var pvpHistoryState =', start);
 function sandbox(extra = {}) {
   const context = vm.createContext({ URL, console, setInterval, clearInterval, setTimeout, clearTimeout, ...extra });
   vm.runInContext(html.slice(start, end), context);
@@ -75,7 +75,7 @@ test('PvP upper carousel has equal speed in WAITING, COUNTDOWN, LIVE and RESULT'
   });
   for (const phase of ['WAITING', 'COUNTDOWN', 'LIVE', 'RESULT']) {
     vm.runInContext("pvpState.active=true;pvpState.rotation=0;pvpState.lastFrame=1000;pvpState.data={phase:'" + phase + "'};pvpState.resultAnimation=null", context);
-    context.animatePvpWheel(1100); assert.equal(vm.runInContext('pvpState.rotation', context), 4.2);
+    context.animatePvpWheel(1100); assert.equal(vm.runInContext('pvpState.rotation', context), 3.6);
   }
 });
 
@@ -125,7 +125,7 @@ test('PvP persists LIVE before the existing settlement and exposes strip timing'
 
 test('PvP realtime shutdown clears stream, polling, reconnect and animation', () => {
   const cleared = [], canceled = [], classes = []; let closed = false;
-  const context = sandbox({ clearInterval: x => cleared.push(x), clearTimeout: x => cleared.push(x), cancelAnimationFrame: x => canceled.push(x), document: { body: { classList: { remove: x => classes.push(x) } } } });
+  const context = sandbox({ closePvpHistory: () => {}, clearInterval: x => cleared.push(x), clearTimeout: x => cleared.push(x), cancelAnimationFrame: x => canceled.push(x), document: { body: { classList: { remove: x => classes.push(x) } } } });
   context.closedStream = { close: () => { closed = true; } };
   vm.runInContext('pvpState.active=true;pvpState.timer=1;pvpState.pollTimer=2;pvpState.reconnectTimer=3;pvpState.frame=4;pvpState.sse=closedStream', context);
   context.stopPvpTimer();
@@ -135,4 +135,31 @@ test('PvP realtime shutdown clears stream, polling, reconnect and animation', ()
 
 test('PvP strip rerenders on LIVE transition even without participant changes', () => {
   assert.match(html, /const cardsKey = JSON.stringify\(ps\) \+ ':' \+ \(\['LIVE', 'RESULT'\]\.includes\(d.phase\) \? 'roulette' : 'list'\)/);
+});
+
+
+test('PvP waiting is not a countdown and the player sees WAITING', () => {
+  const timer = { textContent: '' }, context = sandbox({document: {getElementById:()=>timer}});
+  vm.runInContext("pvpState.data={phase:'WAITING',seconds:20,countdownEndsAt:null};pvpState.receivedAt=Date.now()", context);
+  context.renderPvpCountdown(); assert.equal(timer.textContent,'WAITING');
+});
+test('PvP header uses history clock and removes duplicate internal back button', () => {
+  const header=html.slice(html.indexOf('<div class="pvp-topbar">'),html.indexOf('<div class="pvp-stats">'));
+  assert.doesNotMatch(header,/button class="pvp-back"/);
+  assert.match(header,/onclick="openPvpHistory\(\)"/);assert.match(header,/<svg/);
+  assert.match(html,/data-scope="all"/);assert.match(html,/data-scope="mine"/);
+});
+test('PvP phase transitions check database guards before mutating memory', () => {
+  const launch=backend.slice(backend.indexOf('async function launchPvpRound()'),backend.indexOf('async function settlePvpRound()'));
+  assert.match(launch,/transition.changes !== 1/);
+  assert.ok(launch.indexOf('transition.changes !== 1')<launch.indexOf("pvpState.phase = 'LIVE'"));
+  const hold=backend.slice(backend.indexOf('async function holdPvpRoundForPlayers()'),backend.indexOf('async function launchPvpRound()'));
+  assert.match(hold,/COUNT\(DISTINCT user_id\)/);assert.match(hold,/< 2/);
+});
+test('Telegram native navigation uses one named listener and closes nested selectors without app close', () => {
+  const nav=html.slice(html.indexOf('// Telegram owns the header'),html.indexOf('        function showPage(page)'));
+  assert.match(nav,/button.offClick\(handleTelegramBack\); button.onClick\(handleTelegramBack\)/);
+  assert.match(nav,/overlay === 'plinko-gift-modal'/);
+  assert.match(nav,/closePvpHistory\(\)/);assert.match(nav,/closeLootBoxResult\(\)/);
+  assert.doesNotMatch(nav,/WebApp.close\(/);
 });

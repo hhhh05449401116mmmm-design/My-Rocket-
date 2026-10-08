@@ -2486,27 +2486,52 @@ async function startPvpRound() {
 }
 
 async function triggerPvpCountdown() {
-    if (!pvpState.roundId) return;
-    const round = await startPvpCountdown(pvpState.roundId);
+    if (!pvpState.roundId || pvpState.phase !== 'WAITING') return false;
+    const id = pvpState.roundId;
+    const startedAt = Date.now();
+    // One conditional statement prevents concurrent joins from restarting the timer.
+    // Wagers and their locks are untouched by this phase transition.
+    const changed = await run(`UPDATE pvp_rounds
+        SET phase = 'COUNTDOWN', seconds_remaining = ?, started_at = ?
+        WHERE id = ? AND phase = 'WAITING'
+          AND (SELECT COUNT(DISTINCT user_id) FROM pvp_participants
+               WHERE pvp_round_id = ? AND status = 'ACTIVE') >= 2`,
+        [PVP_COUNTDOWN_SECONDS, new Date(startedAt).toISOString(), id, id]);
+    if (changed.changes !== 1) return false;
     pvpState.phase = 'COUNTDOWN';
     pvpState.seconds = PVP_COUNTDOWN_SECONDS;
-    pvpState.countdownEndsAt = Date.now() + PVP_COUNTDOWN_SECONDS * 1000;
-    console.log(`⏰ PvP Round ${pvpState.roundNumber} COUNTDOWN started (${PVP_COUNTDOWN_SECONDS}s)`);
+    pvpState.countdownEndsAt = startedAt + PVP_COUNTDOWN_SECONDS * 1000;
+    console.log(`PvP Round ${pvpState.roundNumber} COUNTDOWN started with at least two players`);
+    return true;
+}
+
+async function holdPvpRoundForPlayers() {
+    const changed = await run(`UPDATE pvp_rounds SET phase = 'WAITING', started_at = NULL, seconds_remaining = ?
+        WHERE id = ? AND phase = 'COUNTDOWN'
+          AND (SELECT COUNT(DISTINCT user_id) FROM pvp_participants WHERE pvp_round_id = ? AND status = 'ACTIVE') < 2`,
+        [PVP_COUNTDOWN_SECONDS, pvpState.roundId, pvpState.roundId]);
+    if (changed.changes === 1) {
+        pvpState.phase = 'WAITING';
+        pvpState.seconds = PVP_COUNTDOWN_SECONDS;
+        pvpState.countdownEndsAt = null;
+        await refreshPvpParticipants();
+    } else {
+        await restoreOrStartPvpRound();
+    }
 }
 
 async function launchPvpRound() {
     if (pvpState.phase !== 'COUNTDOWN') return;
     const data = await getPvpRoundWithParticipants(pvpState.roundId);
-    if (!data || data.participants.length === 0) {
-        console.log(`🎮 PvP Round ${pvpState.roundNumber} cancelled (no players)`);
-        await startPvpRound();
-        await triggerPvpCountdown();
+    if (!data || new Set(data.participants.filter(p => p.status === 'ACTIVE').map(p => p.user_id)).size < 2) {
+        await holdPvpRoundForPlayers();
         return;
     }
     // Settlement already requires a LIVE database round. Keep the persisted
     // phase in sync with the server state without changing winner/payout rules.
     const liveStartedAt = Date.now();
-    await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = 0, started_at = ? WHERE id = ? AND phase = ?', ['LIVE', new Date(liveStartedAt).toISOString(), pvpState.roundId, 'COUNTDOWN']);
+    const transition = await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = 0, started_at = ? WHERE id = ? AND phase = ?', ['LIVE', new Date(liveStartedAt).toISOString(), pvpState.roundId, 'COUNTDOWN']);
+    if (transition.changes !== 1) { await restoreOrStartPvpRound(); return; }
     await refreshPvpParticipants();
     pvpState.phase = 'LIVE';
     pvpState.liveStartedAt = liveStartedAt;
@@ -2576,6 +2601,11 @@ async function restoreOrStartPvpRound() {
         highlights: pvpState.highlights || { lastWinner: null, topOfDay: null }
     };
     await refreshPvpParticipants();
+    if (round.phase === 'COUNTDOWN' && new Set(pvpState.participants.filter(p => p.status === 'ACTIVE').map(p => p.user_id)).size < 2) {
+        await holdPvpRoundForPlayers();
+    } else if (round.phase === 'WAITING') {
+        await triggerPvpCountdown();
+    }
     if (round.phase === 'RESULT') {
         const delay = Math.max(0, 4500 - (Date.now() - pvpState.resultAt));
         if (pvpRoundTransitionTimer) clearTimeout(pvpRoundTransitionTimer);
@@ -2595,7 +2625,7 @@ async function startPvpGameLoop() {
         try {
             if (pvpState.phase === 'WAITING') {
                 const participants = await getPvpRoundWithParticipants(pvpState.roundId);
-                if (participants && participants.participants.length >= 1) {
+                if (participants && new Set(participants.participants.filter(p => p.status === 'ACTIVE').map(p => p.user_id)).size >= 2) {
                     await triggerPvpCountdown();
                 }
             } else if (pvpState.phase === 'COUNTDOWN') {
@@ -2792,6 +2822,21 @@ app.get('/api/pvp/state', authenticate, async (req, res) => {
     }
 });
 
+app.get('/api/pvp/history', authenticate, async (req, res) => {
+    try {
+        const { getPvpHistory } = require('./pvpHistory');
+        const history = await getPvpHistory(req.user.id, {
+            scope: req.query.scope === 'mine' ? 'mine' : 'all',
+            before: req.query.before,
+            limit: req.query.limit
+        });
+        res.set('Cache-Control', 'no-store').json({ ok: true, ...history });
+    } catch (error) {
+        console.error('PvP history error:', error.message);
+        res.status(500).json({ ok: false, error: 'History unavailable' });
+    }
+});
+
 app.post('/api/pvp/join', authenticate, async (req, res) => {
     try {
         const { betCurrency, betAmount, giftUniqueId } = req.body;
@@ -2803,7 +2848,8 @@ app.post('/api/pvp/join', authenticate, async (req, res) => {
         }
         const result = await joinPvpRound(req.user.id, betCurrency || 'TON', betAmount, giftUniqueId || null);
         await refreshPvpParticipants();
-        res.json({ ok: true, ...result });
+        await triggerPvpCountdown();
+        res.json({ ok: true, ...result, state: getPvpStateSnapshot() });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }
@@ -6115,6 +6161,8 @@ module.exports = {
     stopCollectibleReconciliationWorker,
     stopPvpGameLoop,
     restoreOrStartPvpRound,
+    triggerPvpCountdown,
+    launchPvpRound,
     getPvpStateSnapshot,
     resolveTelegramFilePath,
     streamTelegramFile
