@@ -148,6 +148,7 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
     let catalog = null;
     let catalogUntil = 0;
     let catalogPromise = null;
+    let lastCatalogMissRefresh = -Infinity;
     let active = 0;
     let cooldownUntil = 0;
     const queue = [];
@@ -163,8 +164,8 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         }
     }
 
-    async function catalogFor(client) {
-        if (catalog && catalogUntil > now()) return catalog;
+    async function catalogFor(client, force = false) {
+        if (!force && catalog && catalogUntil > now()) return catalog;
         if (!catalogPromise) {
             catalogPromise = client.api.payments.getStarGifts({ hash: 0 }).then(result => {
                 if (!Array.isArray(result?.gifts) || !result.gifts.length) throw new Error('catalog_unavailable');
@@ -257,7 +258,12 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         if (!spec.name || spec.name.length > 120) return unavailable(spec,'invalid_collection',now());
         if (cooldownUntil > now()) return unavailable(spec,'telegram_rate_limited',now());
         const client = await getClient();
-        const candidates = (await catalogFor(client)).filter(g=>normalize(g.title)===normalize(spec.name));
+        let candidates = (await catalogFor(client)).filter(g=>normalize(g.title)===normalize(spec.name));
+        // Discover newly released Telegram types without adding a box or deploying.
+        if (!candidates.length && now()-lastCatalogMissRefresh>=60000) {
+            lastCatalogMissRefresh=now();
+            candidates=(await catalogFor(client,true)).filter(g=>normalize(g.title)===normalize(spec.name));
+        }
         if (candidates.length > 1) return unavailable(spec,'ambiguous_collection',now());
         const baseId = idString(candidates[0]?.id);
         if (!baseId) return unavailable(spec,'collection_not_found',now());
@@ -382,13 +388,20 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         return result;
     }
 
+    async function listCollections() {
+        const client=await getClient();
+        const gifts=await catalogFor(client);
+        return gifts.filter(g=>idString(g.id)&&typeof g.title==='string'&&g.title.trim())
+            .map(g=>({name:g.title.trim(),telegramGiftId:idString(g.id)}));
+    }
+
     function status() {
         return { source: SOURCE, currency: 'TON', freshTtlMs: ttlMs, active,
             queued: queue.length, cached: cache.size, pending: inFlight.size,
             rateLimited: cooldownUntil > now() };
     }
 
-    return { quote, requireQuote, peek, status };
+    return { quote, requireQuote, peek, status, listCollections };
 }
 
 module.exports = { createTelegramGiftPricing, specification, keyFor, normalize,

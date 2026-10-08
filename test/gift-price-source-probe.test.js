@@ -51,3 +51,22 @@ test('quote for a different gift is rejected even when reported fresh by the eng
 test('invalid batch limits cannot launch unbounded market requests',()=>{
     for(const batchSize of [0,-1,5,1.5])assert.throws(()=>createReadOnlyGiftPriceProbe({batchSize}),TypeError);
 });
+
+
+test('official Telegram catalog adds gift types outside the boxes and refreshes shared discovery only once',async()=>{
+    let discovery=0;
+    const engine={listCollections:async()=>{discovery++;return [{name:'Gift In A Box',telegramGiftId:'1'},{name:'New Telegram Gift Outside Boxes',telegramGiftId:'2'}];},quote:async s=>quote(s,Date.now())};
+    const probe=createReadOnlyGiftPriceProbe({engine,entries:[{specification:{name:'Gift In A Box'},boxIds:['box']}]});
+    for(let i=0;i<10;i++)assert.equal(probe.getReport().body.phase,'discovering-catalog');
+    const report=await waitComplete(probe);assert.equal(discovery,1);assert.equal(report.body.scope,'all-official-telegram-types-and-game-specifications');
+    assert.equal(report.body.officialCatalog.status,'complete');assert.equal(report.body.officialCatalog.giftTypes,2);
+    assert.equal(report.body.coverage.totalGiftTypes,2);assert.equal(report.body.coverage.totalBoxes,1);
+    const row=report.body.checks.find(r=>r.specification.name==='New Telegram Gift Outside Boxes');assert.ok(row);assert.deepEqual(row.boxIds,[]);assert.equal(row.available,true);
+    assert.equal(report.body.financialPricingChanged,false);assert.equal(report.body.incomingGiftPricingChanged,false);
+});
+
+test('official catalog failure is explicit and does not claim all-Telegram coverage succeeded',async()=>{
+    const probe=createReadOnlyGiftPriceProbe({engine:{listCollections:async()=>{throw Error('source down');},quote:async()=>({available:false,reason:'telegram_unavailable'})},entries:[]});
+    const report=await waitComplete(probe);assert.equal(report.body.officialCatalog.status,'unavailable');assert.equal(report.body.officialCatalog.giftTypes,0);
+    assert.equal(report.body.financialPricingChanged,false);
+});
