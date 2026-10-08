@@ -5539,7 +5539,8 @@ video::-webkit-media-controls-enclosure {
 #pvp-game .pvp-wheel-segment img{width:30px;height:30px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 3px}
 #pvp-game .pvp-wheel-segment .pct{font-size:12px}
 #pvp-game .pvp-wheel:after{content:"";position:absolute;inset:20%;border-radius:50%;background:#171717;border:2px solid #444;box-shadow:inset 0 0 30px #000}
-#pvp-game .pvp-wheel-center{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:180px}
+#pvp-game .pvp-wheel-center{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:180px}#pvp-game .pvp-countdown-under{position:absolute;z-index:35;left:50%;top:310px;transform:translateX(-50%);white-space:nowrap}
+@media(max-width:430px){#pvp-game .pvp-countdown-under{top:310px}}
 #pvp-game .pvp-timer{display:inline-block;background:#666;color:#fff;border:2px solid #858585;border-radius:24px;padding:6px 16px;font-size:27px;font-weight:900;line-height:1}
 #pvp-game .pvp-pool-label{font-size:15px;letter-spacing:2px;color:#aaa;margin-top:18px;font-weight:800}
 #pvp-game .pvp-pool-total{font-size:31px;font-weight:950;margin-top:3px}
@@ -5625,12 +5626,12 @@ video::-webkit-media-controls-enclosure {
     <div id="pvp-wheel" class="pvp-wheel">
       <div id="pvp-wheel-segments" class="pvp-wheel-segments"></div>
       <div class="pvp-wheel-center">
-        <div id="pvp-countdown" class="pvp-timer">00:10</div>
         <div class="pvp-pool-label">TOTAL POOL</div>
         <div id="pvp-pool-total" class="pvp-pool-total">💎 0.00</div>
         <div id="pvp-round-small" class="pvp-round-small">Game #—</div>
       </div>
     </div>
+    <div id="pvp-countdown" class="pvp-timer pvp-countdown-under">00:20</div>
     <div class="pvp-participant-strip-wrap">
       <div id="pvp-participant-strip" class="pvp-participant-strip"></div>
       <div class="pvp-winner-line"></div>
@@ -13035,7 +13036,7 @@ function updatePvpUI(){
   if(el('pvp-player-count'))el('pvp-player-count').textContent=ps.length;
   if(el('pvp-round-small'))el('pvp-round-small').textContent='Game #'+(d.roundNumber||'—');
   if(el('pvp-pool-total'))el('pvp-pool-total').textContent='💎 '+Number(d.totalPool||0).toFixed(2);
-  if(el('pvp-countdown'))el('pvp-countdown').textContent=d.phase==='COUNTDOWN'?'00:'+String(Math.max(0,d.seconds||0)).padStart(2,'0'):d.phase==='WAITING'?'00:10':d.phase==='LIVE'?'00:00':'WIN';
+  if(el('pvp-countdown'))el('pvp-countdown').textContent=d.phase==='COUNTDOWN'?'00:'+String(Math.max(0,d.seconds||0)).padStart(2,'0'):d.phase==='WAITING'?'00:20':d.phase==='LIVE'?'00:00':'WIN';
   updatePvpHighlights(d);
   renderPvpWheel(ps);renderPvpParticipants(ps);renderPvpPlayers(ps);
   const j=el('pvp-join-main'),r=el('pvp-result');
