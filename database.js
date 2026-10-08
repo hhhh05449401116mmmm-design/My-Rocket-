@@ -3790,7 +3790,7 @@ async function createLotteryGame(userId, betAmount, betCurrency, betGiftId, play
 
 // ===== 5.12 PvP Battle System =====
 const MAX_PVP_PLAYERS = 75;
-const DEFAULT_PVP_COUNTDOWN_SECONDS = 10;
+const DEFAULT_PVP_COUNTDOWN_SECONDS = 20;
 
 async function getPvpActiveRound() {
     return await get('SELECT * FROM pvp_rounds WHERE phase IN (?, ?, ?) ORDER BY round_number DESC LIMIT 1', ['WAITING', 'COUNTDOWN', 'LIVE']);
