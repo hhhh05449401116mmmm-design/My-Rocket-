@@ -202,3 +202,91 @@ test('model metadata uses documented resale attributes_hash=0 and actual SDK ser
     assert.equal(metadataRequest.limit,1);assert.equal(metadataRequest.attributesHash,0n);
     assert.ok(new Api.payments.GetResaleStarGifts(metadataRequest).getBytes().length>0);
 });
+
+function officialBackdropFixture(officialAttributes, gifts) {
+    const calls = [];
+    const client = {api:{payments:{
+        getStarGifts: async () => ({gifts:[{title:'Plush Pepe',id:1n}]}),
+        getResaleStarGifts: async params => {
+            if (params.attributesHash === 0n) return {attributes:officialAttributes,gifts:[]};
+            calls.push(params); return {gifts};
+        }
+    }}};
+    return {calls, engine:createTelegramGiftPricing({getClient:async()=>client})};
+}
+
+
+test('Black and Onyx Black produce independent IDs, filters, keys and prices',async()=>{
+    const {engine,calls}=fixture({'':{gifts:[listing(7000000000n,{backdrop:'Black'}),listing(3000000000n,{backdrop:'Onyx Black'})]}});
+    const black=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+    const onyx=await engine.quote({name:'Plush Pepe',backdropName:'Onyx Black'});
+    assert.equal(black.value,7);assert.equal(onyx.value,3);
+    assert.equal(black.resolvedAttributes.backdrop.officialName,'Black');assert.equal(black.resolvedAttributes.backdrop.officialId,'21');
+    assert.equal(onyx.resolvedAttributes.backdrop.officialName,'Onyx Black');assert.equal(onyx.resolvedAttributes.backdrop.officialId,'22');
+    assert.notEqual(black.quoteId,onyx.quoteId);assert.notEqual(calls[0].attributes[0].backdropId,calls[1].attributes[0].backdropId);
+});
+
+test('missing Black metadata does not alias to Onyx Black or use its floor',async()=>{
+    const {engine,calls}=officialBackdropFixture(attributes.filter(a=>a.name!=='Black'),[listing(1000000000n,{backdrop:'Onyx Black'})]);
+    const quote=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+    assert.equal(quote.reason,'backdrop_not_found');assert.equal(quote.available,false);assert.equal(calls.length,0);
+});
+
+function referenceFixture({referenceGift,marketGifts,officialAttributes=attributes.filter(a=>a.name!=='Black')}={}){
+    const calls=[],referenceCalls=[];
+    const client={api:{payments:{
+        getStarGifts:async()=>({gifts:[{title:'Plush Pepe',id:1n}]}),
+        getUniqueStarGift:async params=>{referenceCalls.push(params);return {gift:referenceGift||{...listing(1n),className:'StarGiftUnique',slug:'PlushPepe-1056'}};},
+        getResaleStarGifts:async params=>{
+            if(params.attributesHash===0n)return {attributes:officialAttributes,gifts:[]};
+            calls.push(params);return {gifts:marketGifts||[listing(13000000000n,{backdrop:'Black'}),listing(1000000000n,{backdrop:'Onyx Black'})]};
+        }
+    }}};
+    return {calls,referenceCalls,engine:createTelegramGiftPricing({getClient:async()=>client})};
+}
+
+test('public reference supplies Black exact ID only; fresh market query determines its price',async()=>{
+    const {engine,calls,referenceCalls}=referenceFixture();
+    const quote=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+    assert.equal(quote.available,true);assert.equal(quote.value,13);assert.equal(quote.resolvedSpecification.backdropName,'Black');
+    assert.equal(quote.resolvedAttributes.backdrop.officialId,'21');
+    assert.equal(quote.resolvedAttributes.backdrop.discoverySource,'telegram-unique-gift');
+    assert.equal(quote.resolvedAttributes.backdrop.referenceSlug,'PlushPepe-1056');
+    assert.deepEqual(referenceCalls,[{slug:'PlushPepe-1056'}]);assert.equal(calls[0].attributes[0].backdropId,21);
+    const {Api}=require('teleproto');assert.ok(new Api.payments.GetUniqueStarGift(referenceCalls[0]).getBytes().length>0);
+});
+
+test('reference-based Black and requested model remain jointly required',async()=>{
+    const {engine,calls}=referenceFixture({marketGifts:[listing(1000000000n,{model:'Other Model'}),listing(2000000000n,{backdrop:'Onyx Black'}),listing(15000000000n)]});
+    const quote=await engine.quote({name:'Plush Pepe',modelName:'Pink Latex',backdropName:'Black'});
+    assert.equal(quote.value,15);assert.equal(calls[0].attributes.length,2);assert.equal(quote.resolvedSpecification.modelName,'Pink Latex');
+});
+
+test('reference with a wrong gift collection, slug, or backdrop cannot supply an ID',async()=>{
+    for(const referenceGift of [
+        {...listing(1n,{giftId:2n}),className:'StarGiftUnique',slug:'PlushPepe-1056'},
+        {...listing(1n),className:'StarGiftUnique',slug:'Wrong-1056'},
+        {...listing(1n,{backdrop:'Onyx Black'}),className:'StarGiftUnique',slug:'PlushPepe-1056'}
+    ]){
+        const {engine,calls}=referenceFixture({referenceGift});
+        const quote=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+        assert.equal(quote.available,false);assert.equal(quote.value,null);assert.equal(calls.length,0);
+    }
+});
+
+test('reference proves background existence but no matching TON offers still has no price',async()=>{
+    const {engine}=referenceFixture({marketGifts:[listing(1000000000n,{backdrop:'Onyx Black'}),listing(1000,{stars:true})]});
+    const quote=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+    assert.equal(quote.reason,'no_matching_ton_listings');assert.equal(quote.value,null);
+});
+
+test('ambiguous backdrop IDs and missing identifiers are never chosen arbitrarily',async()=>{
+    for(const officialAttributes of [
+        [...attributes,{className:'StarGiftAttributeBackdrop',name:'Black',backdropId:99}],
+        [{className:'StarGiftAttributeBackdrop',name:'Black',backdropId:null}]
+    ]){
+        const {engine,calls,referenceCalls}=referenceFixture({officialAttributes});
+        const quote=await engine.quote({name:'Plush Pepe',backdropName:'Black'});
+        assert.equal(quote.available,false);assert.equal(calls.length,0);assert.equal(referenceCalls.length,0);
+    }
+});

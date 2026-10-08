@@ -22,7 +22,7 @@ test('public fixed source check works without account login and cannot change fi
         await new Promise(r=>setTimeout(r,5));response=await fetch(url+'/api/gift-pricing/source-check');body=await response.json();
     }
     assert.equal(response.status,200);assert.equal(body.phase,'complete');assert.equal(body.mode,'read-only-source-check');
-    assert.equal(body.financialPricingChanged,false);assert.equal(body.checks.length,3);
+    assert.equal(body.financialPricingChanged,false);assert.equal(body.checks.length,4);
     assert.ok(body.checks.every(q=>q.available===false&&q.marketValueTon===null&&q.specification.name==='Plush Pepe'));
     assert.equal(await database.getUserBalance(user.id),balance);
     assert.equal((await database.get('SELECT COUNT(*) AS count FROM user_gifts')).count,before.count);

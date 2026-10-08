@@ -11,10 +11,10 @@ test('read-only source probe deduplicates requests and never calls finance funct
     const engine={quote:async specification=>{calls++;await new Promise(r=>setTimeout(r,2));return {available:true,scanComplete:true,source:SOURCE,currency:'TON',specification,value:5,priceNano:'5000000000',baseGiftId:'777',observedAt:clock,expiresAt:clock+300000,pagesScanned:2};}};
     const probe=createReadOnlyGiftPriceProbe({engine,now:()=>clock});
     for(let i=0;i<10;i++)assert.equal(probe.getReport().statusCode,202);
-    const result=await waitComplete(probe);assert.equal(calls,3);assert.equal(result.body.financialPricingChanged,false);
-    assert.equal(result.body.checks.length,3);assert.ok(result.body.checks.every(q=>q.available&&q.telegramGiftId==='777'));
-    probe.getReport();assert.equal(calls,3);
-    clock+=90001;assert.equal(probe.getReport().statusCode,202);await waitComplete(probe);assert.equal(calls,6);
+    const result=await waitComplete(probe);assert.equal(calls,4);assert.equal(result.body.financialPricingChanged,false);
+    assert.equal(result.body.checks.length,4);assert.ok(result.body.checks.every(q=>q.available&&q.telegramGiftId==='777'));
+    probe.getReport();assert.equal(calls,4);
+    clock+=90001;assert.equal(probe.getReport().statusCode,202);await waitComplete(probe);assert.equal(calls,8);
 });
 
 test('source or permission failure is explicit unavailable, never a zero price or estimate',async()=>{
@@ -25,4 +25,15 @@ test('source or permission failure is explicit unavailable, never a zero price o
 test('source-check module contains no database, payment, debit, bet, or gift transfer call',()=>{
     const source=fs.readFileSync(require.resolve('../giftPricingSourceProbe'),'utf8');
     assert.doesNotMatch(source,/require\(['"]\.\/database|sendStarsForm|transferStarGift|UPDATE users|createPendingLootBoxGiftReward|placeGiftBet|joinPvpRound/);
+});
+
+test('a verified backdrop identity is reported separately from an unavailable TON floor',async()=>{
+    const probe=createReadOnlyGiftPriceProbe({engine:{quote:async specification=>({available:false,reason:'no_matching_ton_listings',source:SOURCE,currency:'TON',baseGiftId:'777',specification,resolvedSpecification:specification,resolvedAttributes:specification.backdropName?{backdrop:{officialName:specification.backdropName,officialId:specification.backdropName==='Black'?'21':'22',match:'exact'}}:{},scanComplete:true,pagesScanned:1})}});
+    const result=await waitComplete(probe);
+    const black=result.body.checks.find(q=>q.specification.backdropName==='Black');
+    const onyx=result.body.checks.find(q=>q.specification.backdropName==='Onyx Black');
+    assert.equal(black.marketValueTon,null);assert.equal(black.available,false);
+    assert.equal(black.resolvedAttributes.backdrop.officialName,'Black');
+    assert.notEqual(black.resolvedAttributes.backdrop.officialId,onyx.resolvedAttributes.backdrop.officialId);
+    assert.equal(black.scanComplete,true);
 });

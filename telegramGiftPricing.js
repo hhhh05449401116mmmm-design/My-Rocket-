@@ -71,7 +71,10 @@ function unavailable(spec, reason, now) {
 
 function traitId(attribute, kind) {
     if (kind === 'backdrop') {
-        const id = Number(attribute?.backdropId ?? attribute?.backdrop_id);
+        const rawId = attribute?.backdropId ?? attribute?.backdrop_id;
+        if (rawId === undefined || rawId === null || typeof rawId === 'boolean' ||
+            !/^-?\d+$/.test(String(rawId))) return null;
+        const id = Number(rawId);
         return Number.isInteger(id) && id >= -2147483648 && id <= 2147483647
             ? new Api.StarGiftAttributeIdBackdrop({ backdropId: id }) : null;
     }
@@ -96,6 +99,28 @@ function matches(gift, spec, baseId, chosenIds) {
     return true;
 }
 
+// Black and Onyx Black are distinct official Telegram backdrops:
+// https://t.me/nft/PlushPepe-1056 (Black), https://t.me/nft/PlushPepe-1 (Onyx Black).
+// Matching is exact after whitespace/case normalization, never by color or alias.
+function resolveOfficialAttribute(attributes, kind, requestedName) {
+    const candidates = attributes.filter(attribute => className(attribute).includes(kind) &&
+        normalize(attribute.name) === normalize(requestedName));
+    if (!candidates.length) return { reason: `${kind}_not_found` };
+    const identities = new Map();
+    for (const attribute of candidates) {
+        const id = traitId(attribute, kind);
+        if (!id) return { reason: `${kind}_invalid_identifier` };
+        const key = kind === 'backdrop' ? String(id.backdropId) : String(id.documentId);
+        identities.set(key, { attribute, id });
+    }
+    if (identities.size !== 1) return { reason: `${kind}_ambiguous` };
+    return identities.values().next().value;
+}
+
+const VERIFIED_BACKDROP_REFERENCES = Object.freeze({
+    'plush pepe': Object.freeze({black:'PlushPepe-1056','onyx black':'PlushPepe-1'})
+});
+
 function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
     maxPages = 100, maxEntries = 1200, concurrency = 2, timeoutMs = 20000,
     failureTtlMs = 15000, maxPending = 160 } = {}) {
@@ -106,6 +131,7 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
     const cache = new Map();
     const inFlight = new Map();
     const attributeCache = new Map();
+    const referenceAttributeCache = new Map();
     const timedOutKeys = new Set();
     let catalog = null;
     let catalogUntil = 0;
@@ -150,6 +176,25 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         return promise;
     }
 
+    async function referenceBackdropFor(client, spec, baseId) {
+        const slug = VERIFIED_BACKDROP_REFERENCES[normalize(spec.name)]?.[normalize(spec.backdropName)];
+        if (!slug || typeof client.api.payments.getUniqueStarGift !== 'function') return { reason:'backdrop_not_found' };
+        const cacheKey = baseId + '|' + slug;
+        const cached = referenceAttributeCache.get(cacheKey);
+        if (cached && cached.until > now()) return cached.promise;
+        const promise = (async () => {
+            const result = await client.api.payments.getUniqueStarGift({slug});
+            const gift = result?.gift;
+            if (!className(gift).includes('stargiftunique') || gift.slug !== slug ||
+                idString(gift.giftId ?? gift.gift_id) !== baseId) return {reason:'backdrop_reference_mismatch'};
+            const resolved = resolveOfficialAttribute(Array.isArray(gift.attributes) ? gift.attributes : [],'backdrop',spec.backdropName);
+            if (resolved.reason) return resolved;
+            return {...resolved,discoverySource:'telegram-unique-gift',referenceSlug:slug};
+        })().catch(() => ({reason:'backdrop_reference_unavailable'}));
+        referenceAttributeCache.set(cacheKey,{promise,until:now()+300000});
+        return promise;
+    }
+
     async function lookup(spec, deadline) {
         if (!spec.name || spec.name.length > 120) return unavailable(spec, 'invalid_collection', now());
         if (cooldownUntil > now()) return unavailable(spec, 'telegram_rate_limited', now());
@@ -162,13 +207,30 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         if (!baseId) return unavailable(spec, 'collection_not_found', now());
         const chosenIds = {};
         const filters = [];
+        const resolvedSpecification = { ...spec };
+        const resolvedAttributes = {};
         if (spec.modelName || spec.backdropName || spec.patternName) {
             const attrs = await attributesFor(client, baseId);
             for (const [kind, name] of [['model', spec.modelName], ['backdrop', spec.backdropName], ['pattern', spec.patternName]]) {
                 if (!name) continue;
-                const attribute = attrs.find(a => className(a).includes(kind) && normalize(a.name) === normalize(name));
-                const id = traitId(attribute, kind);
-                if (!id) return unavailable(spec, `${kind}_not_found`, now());
+                let resolved = resolveOfficialAttribute(attrs, kind, name);
+                // Some backdrops may be absent from the market attribute metadata.
+                // A known public Telegram gift proves only its exact ID, not its floor.
+                // Prices still require fresh matching TON listings in this collection.
+                if (kind === 'backdrop' && resolved.reason === 'backdrop_not_found') {
+                    resolved = await referenceBackdropFor(client,spec,baseId);
+                }
+                if (resolved.reason) return unavailable(spec, resolved.reason, now());
+                const { attribute, id } = resolved;
+                resolvedSpecification[`${kind}Name`] = String(attribute.name).trim();
+                resolvedAttributes[kind] = {
+                    requestedName: name,
+                    officialName: String(attribute.name).trim(),
+                    officialId: kind === 'backdrop' ? String(id.backdropId) : String(id.documentId),
+                    match:'exact',
+                    discoverySource:resolved.discoverySource || 'telegram-resale-attributes',
+                    ...(resolved.referenceSlug ? {referenceSlug:resolved.referenceSlug} : {})
+                };
                 chosenIds[kind] = id;
                 filters.push(id);
             }
@@ -187,7 +249,7 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
             });
             if (!Array.isArray(result?.gifts)) return unavailable(spec, 'invalid_market_response', now());
             for (const gift of result.gifts) {
-                if (!matches(gift, spec, baseId, chosenIds)) continue;
+                if (!matches(gift, resolvedSpecification, baseId, chosenIds)) continue;
                 const nano = tonNanograms(gift.resellAmount || gift.resell_amount);
                 if (nano === null) continue;
                 listingsMatched++;
@@ -198,10 +260,15 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
             }
             const next = String(result.nextOffset ?? result.next_offset ?? '');
             if (!next) {
-                if (minimum === null) return unavailable(spec, 'no_matching_ton_listings', now());
+                if (minimum === null) return {
+                    ...unavailable(spec, 'no_matching_ton_listings', now()),
+                    baseGiftId: baseId, resolvedSpecification, resolvedAttributes,
+                    scanComplete: true, pagesScanned: page + 1
+                };
                 const observedAt = now();
                 const value = Number(tonDecimal(minimum));
                 return { available: true, status: 'fresh', specification: spec, currency: 'TON',
+                    resolvedSpecification, resolvedAttributes,
                     source: SOURCE, value, priceNano: minimum.toString(), baseGiftId: baseId, observedAt,
                     scanStartedAt: startedAt, expiresAt: observedAt + ttlMs,
                     scanComplete: true, listingsMatched, pagesScanned: page + 1,
