@@ -5600,6 +5600,29 @@ video::-webkit-media-controls-enclosure {
 #pvp-bet-modal .pvp-send-gifts{width:100%;height:56px;margin-top:10px;border:0;border-radius:17px;background:linear-gradient(100deg,#11a8df,#3978f4);color:#fff;font-size:19px;font-weight:950}
 #pvp-bet-modal .pvp-place-bet{width:100%;height:58px;margin-top:14px;border:0;border-radius:18px;background:linear-gradient(135deg,#9d3dff,#c05aff);color:#fff;font-size:20px;font-weight:950}
 #pvp-bet-modal .pvp-place-bet:disabled{opacity:.45}
+
+/* Reference PvP composition: only the upper half of the wheel is visible. */
+#pvp-game .pvp-shell{padding-top:20px}
+#pvp-game .pvp-topbar{margin-top:8px;margin-bottom:8px}
+#pvp-game .pvp-pot{flex:0 0 505px;height:505px;min-height:505px;margin:0 -14px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#292929 0,#181818 58%,#101010 82%)}
+#pvp-game .pvp-wheel{top:auto;bottom:-210px;width:min(430px,96vw);height:min(430px,96vw);transform:translateX(-50%);border-width:9px}
+#pvp-game .pvp-wheel.live{animation:pvpSpin 1.35s linear infinite}
+#pvp-game .pvp-wheel-center{top:50%;width:190px}
+#pvp-game .pvp-countdown-under{display:none!important}
+#pvp-game .pvp-participant-strip-wrap{bottom:0;left:0;right:0;padding:8px 18px 0;background:linear-gradient(180deg,rgba(30,30,30,.12),#242424 22%,#242424 100%);height:155px}
+#pvp-game .pvp-participant-strip{height:135px;align-items:flex-start;padding:8px 4px 12px;gap:7px}
+#pvp-game .pvp-participant{flex:0 0 112px;min-height:108px;padding:7px 6px}
+#pvp-game .pvp-winner-line{top:0;bottom:0}
+#pvp-game .pvp-join{margin:8px 0 5px}
+#pvp-game .pvp-join-btn{border-radius:20px;padding:16px;font-size:22px}
+@media(max-width:430px){
+ #pvp-game .pvp-shell{padding:20px 10px 88px}
+ #pvp-game .pvp-pot{margin:0 -10px;flex-basis:475px;height:475px;min-height:475px}
+ #pvp-game .pvp-wheel{bottom:-185px;width:390px;height:390px}
+ #pvp-game .pvp-participant-strip-wrap{height:145px;padding-left:12px;padding-right:12px}
+ #pvp-game .pvp-participant-strip{height:128px}
+ #pvp-game .pvp-participant{flex-basis:101px}
+}
 </style>
 <div class="pvp-shell">
   <div class="pvp-topbar">
@@ -5626,12 +5649,12 @@ video::-webkit-media-controls-enclosure {
     <div id="pvp-wheel" class="pvp-wheel">
       <div id="pvp-wheel-segments" class="pvp-wheel-segments"></div>
       <div class="pvp-wheel-center">
+        <div id="pvp-countdown" class="pvp-timer">00:20</div>
         <div class="pvp-pool-label">TOTAL POOL</div>
         <div id="pvp-pool-total" class="pvp-pool-total">💎 0.00</div>
         <div id="pvp-round-small" class="pvp-round-small">Game #—</div>
       </div>
     </div>
-    <div id="pvp-countdown" class="pvp-timer pvp-countdown-under">00:20</div>
     <div class="pvp-participant-strip-wrap">
       <div id="pvp-participant-strip" class="pvp-participant-strip"></div>
       <div class="pvp-winner-line"></div>
