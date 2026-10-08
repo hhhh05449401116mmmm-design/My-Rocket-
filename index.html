@@ -5532,16 +5532,28 @@ video::-webkit-media-controls-enclosure {
 #pvp-game .pvp-wheel-segments svg { width:100%; height:100%; display:block; overflow:visible; }
 #pvp-game .pvp-pointer { position:absolute; z-index:6; top:0; left:50%; transform:translateX(-50%); width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:11px solid #55aaff; filter:drop-shadow(0 2px 2px #000); }
 #pvp-game .pvp-wheel-center { position:absolute; z-index:5; left:50%; bottom:10px; transform:translateX(-50%); width:140px; text-align:center; pointer-events:none; background:radial-gradient(ellipse, #111 45%, transparent 72%); }
+#pvp-game .pvp-timer.live { background:#17382d; border-color:#36715b; color:#cef9e7; font-size:15px; letter-spacing:3px; }
 #pvp-game .pvp-timer { display:inline-flex; justify-content:center; align-items:center; min-width:70px; height:30px; padding:0 9px; border:1px solid #777; border-radius:18px; background:linear-gradient(#555,#414141); font-size:20px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
 #pvp-game .pvp-pool-label { font-size:10px; letter-spacing:1px; color:#999; margin:9px 0 5px; }
 #pvp-game .pvp-pool-total { display:flex; justify-content:center; align-items:center; gap:6px; font-size:25px; font-weight:800; font-variant-numeric:tabular-nums; }
 #pvp-game .pvp-pool-total img { width:18px; height:18px; }
 #pvp-game .pvp-round-small { margin-top:7px; color:#6f6f6f; font-size:9px; }
 #pvp-game .pvp-status { min-height:12px; font-size:9px; color:#999; margin-top:3px; }
-#pvp-game .pvp-participant-strip-wrap { flex:0 0 104px; min-height:104px; margin:0 -12px; padding:8px 12px 4px; background:linear-gradient(#242424,#151515); }
+#pvp-game .pvp-participant-strip-wrap { position:relative; flex:0 0 104px; min-height:104px; margin:0 -12px; padding:8px 12px 4px; background:linear-gradient(#242424,#151515); }
 #pvp-game .pvp-participant-strip { display:flex; justify-content:safe center; gap:5px; height:100%; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
 #pvp-game .pvp-participant-strip::-webkit-scrollbar { display:none; }
-#pvp-game .pvp-participant { flex:0 0 73px; height:91px; padding:8px 5px 5px; background:linear-gradient(#303033,#27272b); border-radius:13px; border-top:3px solid var(--player-color); text-align:center; }
+#pvp-game .pvp-participant-strip.roulette { display:block; overflow:hidden; direction:ltr; }
+#pvp-game .pvp-participant-track { display:flex; gap:5px; width:max-content; height:100%; will-change:transform; }
+#pvp-game .pvp-strip-pointer { display:none; position:absolute; z-index:8; left:50%; top:0; bottom:0; width:2px; transform:translateX(-50%); background:#149fdb; pointer-events:none; box-shadow:0 0 12px #149fdb55; }
+#pvp-game .pvp-strip-pointer.show { display:block; }
+#pvp-game .pvp-strip-pointer::before, #pvp-game .pvp-strip-pointer::after { content:''; position:absolute; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; }
+#pvp-game .pvp-strip-pointer::before { top:0; border-top:8px solid #149fdb; }
+#pvp-game .pvp-strip-pointer::after { bottom:0; border-bottom:8px solid #149fdb; }
+#pvp-game .pvp-participant-strip.settled + .pvp-strip-pointer { background:#ffd33e; box-shadow:0 0 14px #ffd33e66; }
+#pvp-game .pvp-participant-strip.settled + .pvp-strip-pointer::before { border-top-color:#ffd33e; }
+#pvp-game .pvp-participant-strip.settled + .pvp-strip-pointer::after { border-bottom-color:#ffd33e; }
+
+#pvp-game .pvp-participant { min-width:0; box-sizing:border-box; flex:0 0 73px; height:91px; padding:8px 5px 5px; background:linear-gradient(#303033,#27272b); border-radius:13px; border-top:3px solid var(--player-color); text-align:center; }
 #pvp-game .pvp-participant .pvp-avatar, #pvp-game .pvp-participant .pvp-avatar-fallback { width:35px; height:35px; border:1.5px solid #c7c7c7; margin:0 auto; }
 #pvp-game .pvp-participant-name { margin-top:4px; font-size:10px; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
 #pvp-game .pvp-participant-pct { font-size:14px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
@@ -5645,7 +5657,6 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
   </div>
 
   <div class="pvp-pot">
-    <div class="pvp-pointer"></div>
     <div id="pvp-wheel" class="pvp-wheel">
       <div id="pvp-wheel-segments" class="pvp-wheel-segments"></div>
     </div>
@@ -5658,7 +5669,8 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
     </div>
   </div>
   <div class="pvp-participant-strip-wrap">
-    <div id="pvp-participant-strip" class="pvp-participant-strip"></div>
+    <div id="pvp-participant-strip" class="pvp-participant-strip" aria-label="Current round players"></div>
+    <div id="pvp-strip-pointer" class="pvp-strip-pointer" aria-hidden="true"></div>
   </div>
 
   <div id="pvp-result" class="pvp-result">
@@ -12964,11 +12976,13 @@ async function openLootBox(box) {
   timer: null, sse: null, data: null, pollTimer: null, reconnectTimer: null,
   frame: null, active: false, generation: 0, fetching: false, receivedAt: 0,
   serverOffset: 0, wheelKey: '', cardsKey: '', rotation: 0, lastFrame: 0,
-  roundId: null, resultAnimation: null, resultKey: null, layout: []
+  roundId: null, resultAnimation: null, resultKey: null, layout: [],
+  stripDeck: [], stripOffset: 0, stripSpeed: 0, stripStride: 78, stripKey: '', stripMode: '', stripWinner: null
 };
 var pvpGiftsLoaded = false;
 var pvpModalBetType = 'TON';
 var pvpSelectedGiftId = null;
+const PVP_WHEEL_DEGREES_PER_SECOND = 42;
 const PVP_PLAYER_COLORS = ['#19bd8e', '#ffc430', '#9d72ee', '#40a8eb', '#ef6d95', '#38c5ca', '#f78e49'];
 
 function pvpParticipantColor(p, index) {
@@ -13024,6 +13038,8 @@ function initPvPGame() {
   pvpState.lastFrame = 0;
   pvpState.resultAnimation = null;
   pvpState.resultKey = null;
+  pvpState.stripDeck = []; pvpState.stripOffset = 0; pvpState.stripSpeed = 0;
+  pvpState.stripKey = ''; pvpState.stripMode = ''; pvpState.stripWinner = null;
   document.body.classList.add('pvp-open');
   renderPvpWheel([]); renderPvpParticipants([]); renderPvpPlayers([]);
   const join = document.getElementById('pvp-join-main');
@@ -13057,6 +13073,7 @@ function acceptPvpState(data) {
     pvpState.roundId = data.roundId;
     pvpState.resultKey = null;
     pvpState.resultAnimation = null;
+    pvpState.stripOffset = 0; pvpState.stripKey = ''; pvpState.stripMode = ''; pvpState.stripWinner = null;
   }
   pvpState.data = data;
   pvpState.receivedAt = Date.now();
@@ -13119,7 +13136,8 @@ function renderPvpCountdown() {
       : Math.ceil(Number(d.seconds) - (Date.now() - pvpState.receivedAt) / 1000);
   }
   seconds = Math.max(0, seconds);
-  timer.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+  timer.textContent = d.phase === 'LIVE' ? 'LIVE' : String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+  if (timer.classList) timer.classList.toggle('live', d.phase === 'LIVE');
   const stale = Date.now() - pvpState.receivedAt > 6000;
   if (stale) {
     document.getElementById('pvp-status').textContent = 'Reconnecting to round…';
@@ -13127,22 +13145,96 @@ function renderPvpCountdown() {
   }
 }
 
+function pvpStripDeck(ps) {
+  // Display repetitions approximate real stake proportions; this is not a draw.
+  if (!ps.length) return [];
+  const sorted = ps.slice().sort((a, b) => Number(a.id) - Number(b.id));
+  const total = sorted.reduce((sum, p) => sum + Math.max(0, Number(p.betAmount) || 0), 0);
+  const slots = Math.max(120, sorted.length), extra = slots - sorted.length;
+  const quotas = sorted.map(p => total ? Math.max(0, Number(p.betAmount) || 0) / total * extra : extra / sorted.length);
+  const counts = quotas.map(q => 1 + Math.floor(q));
+  let remaining = slots - counts.reduce((sum, n) => sum + n, 0);
+  const order = quotas.map((q, i) => ({ i, remainder: q - Math.floor(q) })).sort((a, b) => b.remainder - a.remainder || a.i - b.i);
+  for (let i = 0; i < remaining; i++) counts[order[i % order.length].i]++;
+  const used = counts.map(() => 0), deck = [];
+  for (let n = 0; n < slots; n++) {
+    let selected = -1, score = -Infinity;
+    counts.forEach((count, i) => {
+      if (used[i] >= count) return;
+      const priority = count * (n + 1) / slots - used[i];
+      if (priority > score) { selected = i; score = priority; }
+    });
+    deck.push(sorted[selected]); used[selected]++;
+  }
+  return deck;
+}
+
+function pvpStripVelocity(elapsedMs) {
+  return 150 + 570 * Math.exp(-Math.max(0, elapsedMs) / 6500);
+}
+
+function pvpStripResultTarget(offset, stride, speed, duration) {
+  const travel = Math.max(stride * 3, speed * duration / 3000);
+  return Math.ceil((offset + travel) / stride) * stride;
+}
+
+function pvpStripMetrics() {
+  const el = document.getElementById('pvp-participant-strip');
+  const card = el?.querySelector('.pvp-participant');
+  if (card) pvpState.stripStride = card.getBoundingClientRect().width + 5;
+  return el;
+}
+
+function positionPvpStrip() {
+  const el = document.getElementById('pvp-participant-strip');
+  const track = document.getElementById('pvp-participant-track');
+  if (!el || !track || pvpState.stripMode !== 'roulette' || !pvpState.stripDeck.length) return;
+  const stride = pvpState.stripStride, cycle = stride * pvpState.stripDeck.length;
+  const offset = ((pvpState.stripOffset % cycle) + cycle) % cycle;
+  track.style.transform = 'translate3d(' + (el.clientWidth / 2 - (stride - 5) / 2 - cycle - offset) + 'px,0,0)';
+}
+
+function startPvpStripResult(winner, key) {
+  if (!winner || pvpState.resultKey === key || !pvpState.stripDeck.length) return;
+  const el = pvpStripMetrics(); if (!el) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const duration = reduced ? 1 : 2600;
+  const stride = pvpState.stripStride, cycle = stride * pvpState.stripDeck.length;
+  pvpState.stripOffset = ((pvpState.stripOffset % cycle) + cycle) % cycle;
+  const to = pvpStripResultTarget(pvpState.stripOffset, stride, pvpState.stripSpeed || 180, duration);
+  const slot = Math.round(to / stride) % pvpState.stripDeck.length;
+  // Pin only the server-selected real participant at the landing coordinate.
+  // No client lottery, participant creation, payout, or change of stake odds.
+  pvpState.stripDeck[slot] = winner;
+  pvpState.stripWinner = winner.user_id;
+  renderPvpStripTrack();
+  pvpState.resultAnimation = { from: pvpState.stripOffset, to, startedAt: performance.now(), duration };
+  pvpState.resultKey = key;
+}
+
 function animatePvpWheel(now) {
   if (!pvpState.active) return;
   const dt = pvpState.lastFrame ? Math.min(.1, (now - pvpState.lastFrame) / 1000) : 0;
   pvpState.lastFrame = now;
-  const phase = pvpState.data?.phase;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (pvpState.resultAnimation) {
-    const a = pvpState.resultAnimation;
-    const t = Math.min(1, (now - a.startedAt) / a.duration);
-    pvpState.rotation = a.from + (a.to - a.from) * (1 - Math.pow(1 - t, 3));
-    if (t === 1) pvpState.resultAnimation = null;
-  } else if (!reduced && (phase === 'COUNTDOWN' || phase === 'LIVE')) {
-    pvpState.rotation += dt * (phase === 'LIVE' ? 230 : 18);
-  }
+  const d = pvpState.data, reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The upper bet carousel is independent of the winner strip, including RESULT.
+  if (!reduced) pvpState.rotation += dt * PVP_WHEEL_DEGREES_PER_SECOND;
   const rotor = document.getElementById('pvp-wheel-segments');
   if (rotor) rotor.style.transform = 'rotate(' + pvpState.rotation + 'deg)';
+  if (pvpState.resultAnimation) {
+    const a = pvpState.resultAnimation, t = Math.max(0, Math.min(1, (now - a.startedAt) / a.duration));
+    pvpState.stripOffset = a.from + (a.to - a.from) * (1 - Math.pow(1 - t, 3));
+    if (t === 1) {
+      pvpState.resultAnimation = null; pvpState.stripSpeed = 0;
+      document.getElementById('pvp-participant-strip')?.classList.add('settled');
+    }
+  } else if (!reduced && d?.phase === 'LIVE') {
+    const elapsed = Date.now() + pvpState.serverOffset - Number(d.liveStartedAt || (Date.now() + pvpState.serverOffset));
+    pvpState.stripSpeed = pvpStripVelocity(elapsed);
+    const seconds = Math.max(0, elapsed / 1000);
+    pvpState.stripOffset = 150 * seconds + 570 * 6.5 * (1 - Math.exp(-seconds / 6.5));
+  }
+  positionPvpStrip();
   pvpState.frame = requestAnimationFrame(animatePvpWheel);
 }
 
@@ -13155,77 +13247,93 @@ function renderPvpWheel(ps) {
     for (const [key, value] of Object.entries(attrs || {})) node.setAttribute(key, value);
     return node;
   };
-  const svg = svgNode('svg', { viewBox: '0 0 1000 1000', role: 'img', 'aria-label': 'PvP wheel: slices proportional to participant bets' });
-  const defs = svgNode('defs'); svg.appendChild(defs);
+  const svg = svgNode('svg', { viewBox: '0 0 1000 1000', role: 'img', 'aria-label': 'Crazy Rocket bet carousel: TON and gift stakes, not winner selection' });
   const P = (r, degrees) => ({ x: 500 + r * Math.sin(degrees * Math.PI / 180), y: 500 - r * Math.cos(degrees * Math.PI / 180) });
   const shape = (start, end, inner, outer) => {
     const a = P(outer, start), b = P(outer, end), c = P(inner, end), d = P(inner, start);
     const large = end - start > 180 ? 1 : 0;
     return `M ${a.x} ${a.y} A ${outer} ${outer} 0 ${large} 1 ${b.x} ${b.y} L ${c.x} ${c.y} A ${inner} ${inner} 0 ${large} 0 ${d.x} ${d.y} Z`;
   };
-  const labels = [];
-  const slices = ps.length ? pvpWheelSlices(ps) : Array.from({ length: 10 }, (_, i) => ({ start: i * 36, end: (i + 1) * 36, span: 36, color: '#303030', participant: null }));
-  pvpState.layout = ps.length ? slices : [];
-  slices.forEach((slice, i) => {
-    if (slice.span <= 0) return;
-    // The underlying sector preserves the full exact wager angle. Tile gaps
-    // are decorative only; odd tile counts keep the winner's midpoint visible.
-    svg.appendChild(svgNode('path', { d: shape(slice.start, slice.end - (slice.span === 360 ? .0001 : 0), 288, 478), fill: '#272729', 'data-player-id': slice.participant?.id ?? '', 'data-weight-start': slice.start, 'data-weight-end': slice.end }));
-    let count = Math.max(1, Math.ceil(slice.span / 40));
-    if (count % 2 === 0) count++;
-    const span = slice.span / count;
-    for (let j = 0; j < count; j++) {
-      const gap = Math.min(1.4, span * .10);
-      const start = slice.start + j * span + gap / 2, end = slice.start + (j + 1) * span - gap / 2;
-      svg.appendChild(svgNode('path', { d: shape(start, end, 288, 478), fill: '#272729', stroke: '#151515', 'stroke-width': Math.min(9, span * .6), 'stroke-linejoin': 'round', 'data-tile-player-id': slice.participant?.id ?? '' }));
-      if (slice.participant) {
-        const a = P(475, start + .7), b = P(475, end - .7);
-        if (end - start > 1.4) svg.appendChild(svgNode('path', { d: `M ${a.x} ${a.y} A 475 475 0 0 1 ${b.x} ${b.y}`, fill: 'none', stroke: slice.color, 'stroke-width': '10', 'stroke-linecap': 'round' }));
-      }
-      const middle = (start + end) / 2;
-      if (span < 12) continue; // Keep tiny weights exact; their labels remain readable in the list.
-      const point = P(384, middle);
-      const group = svgNode('g', { transform: `translate(${point.x} ${point.y}) rotate(${middle})` });
-      const p = slice.participant;
-      if (!p) {
-        for (const [text, y] of [['CRAZY', -10], ['ROCKET', 22]]) {
-          const t = svgNode('text', { x: 0, y, fill: '#444448', 'font-size': '24', 'font-weight': '800', 'text-anchor': 'middle' });
-          t.textContent = text; group.appendChild(t);
-        }
-      } else {
-        const gift = p.betCurrency === 'GIFT';
-        const image = gift ? pvpGiftImage(p) : pvpSafeImage(p.avatar, TON_ICON_URL);
-        const clipId = 'pvp-image-' + i + '-' + j;
-        const clip = svgNode('clipPath', { id: clipId }); clip.appendChild(svgNode('circle', { cx: 0, cy: -17, r: 44 })); defs.appendChild(clip);
-        group.appendChild(svgNode('circle', { cx: 0, cy: -17, r: 44, fill: '#149bd5' }));
-        const fallback = svgNode('text', { x: 0, y: -2, 'text-anchor': 'middle', fill: '#fff', 'font-size': '30', 'font-weight': '800' });
-        fallback.textContent = Array.from(pvpName(p))[0]?.toUpperCase() || 'P'; group.appendChild(fallback);
-        const img = svgNode('image', { href: image, x: -43, y: -60, width: 86, height: 86, preserveAspectRatio: gift ? 'xMidYMid meet' : 'xMidYMid slice' });
-        if (!gift) img.setAttribute('clip-path', 'url(#' + clipId + ')');
-        img.addEventListener('error', () => img.remove()); group.appendChild(img);
-        const value = svgNode('text', { x: 0, y: 62, fill: '#f4f4f4', 'font-size': '27', 'font-weight': '800', 'text-anchor': 'middle' });
-        value.textContent = Number(p.betAmount || 0).toFixed(2); group.appendChild(value);
-      }
-      labels.push(group);
+  const participants = ps.slice().sort((a, b) => Number(a.id) - Number(b.id));
+  const count = Math.max(10, participants.length + 3), span = 360 / count;
+  pvpState.layout = participants;
+  for (let i = 0; i < count; i++) {
+    const p = participants[i] || null, start = i * span + .9, end = (i + 1) * span - .9;
+    svg.appendChild(svgNode('path', { d: shape(start, end, 288, 478), fill: '#272729', stroke: '#151515', 'stroke-width': 9, 'stroke-linejoin': 'round', 'data-bet-id': p?.id ?? '' }));
+    if (p) {
+      const a = P(475, start + .7), b = P(475, end - .7);
+      svg.appendChild(svgNode('path', { d: `M ${a.x} ${a.y} A 475 475 0 0 1 ${b.x} ${b.y}`, fill: 'none', stroke: pvpParticipantColor(p, i), 'stroke-width': 10, 'stroke-linecap': 'round' }));
     }
-  });
-  labels.forEach(label => svg.appendChild(label));
+    const point = P(384, (start + end) / 2);
+    const group = svgNode('g', { transform: `translate(${point.x} ${point.y}) rotate(${(start + end) / 2})`, 'data-bet-label': p?.id ?? '', 'aria-label': p ? (p.betCurrency === 'GIFT' ? p.giftName || 'Gift' : 'TON') + ' ' + Number(p.betAmount).toFixed(2) : 'Crazy Rocket' });
+    const scale = Math.min(1, span / 30);
+    if (scale < 1) group.setAttribute('transform', group.getAttribute('transform') + ' scale(' + scale + ')');
+    if (!p) {
+      for (const [text, y] of [['CRAZY', -10], ['ROCKET', 22]]) {
+        const t = svgNode('text', { x: 0, y, fill: '#444448', 'font-size': 24, 'font-weight': 800, 'text-anchor': 'middle' });
+        t.textContent = text; group.appendChild(t);
+      }
+    } else {
+      const gift = p.betCurrency === 'GIFT';
+      if (!gift) group.appendChild(svgNode('circle', { cx: 0, cy: -17, r: 44, fill: '#149bd5' }));
+      const img = svgNode('image', { href: gift ? pvpGiftImage(p) : TON_ICON_URL, x: -43, y: -60, width: 86, height: 86, preserveAspectRatio: 'xMidYMid meet', 'data-bet-type': gift ? 'GIFT' : 'TON' });
+      img.addEventListener('error', () => img.setAttribute('href', gift ? '/assets/gift-icon.svg' : TON_ICON_URL));
+      group.appendChild(img);
+      const value = svgNode('text', { x: 0, y: 62, fill: '#f4f4f4', 'font-size': 27, 'font-weight': 800, 'text-anchor': 'middle' });
+      value.textContent = Number(p.betAmount || 0).toFixed(2); group.appendChild(value);
+    }
+    svg.appendChild(group);
+  }
   el.replaceChildren(svg);
+}
+
+function pvpParticipantCard(p, ps, deckIndex) {
+  const card = document.createElement('div');
+  card.className = 'pvp-participant' + (p.status === 'WON' ? ' winner' : '');
+  card.dataset.participantId = p.id;
+  if (deckIndex !== undefined) card.dataset.deckIndex = deckIndex;
+  card.style.setProperty('--player-color', pvpParticipantColor(p, 0));
+  card.title = pvpName(p) + ' · ' + (p.betCurrency === 'GIFT' ? p.giftName || 'Gift' : 'TON') + ' · ' + Number(p.betAmount || 0).toFixed(2) + ' TON';
+  card.innerHTML = pvpAvatarMarkup(p) + '<div class="pvp-participant-name">' + escapeHtml(pvpName(p)) + '</div><div class="pvp-participant-pct">' + pvpPercentage(p, ps).toFixed(1) + '%</div>';
+  return card;
+}
+
+function renderPvpStripTrack() {
+  const el = document.getElementById('pvp-participant-strip'); if (!el) return;
+  const ps = pvpState.data?.participants || [];
+  const track = document.createElement('div'); track.id = 'pvp-participant-track'; track.className = 'pvp-participant-track';
+  for (let repeat = 0; repeat < 3; repeat++) {
+    pvpState.stripDeck.forEach((p, i) => {
+      const card = pvpParticipantCard(p, ps, i);
+      if (repeat !== 1) card.setAttribute('aria-hidden', 'true');
+      track.appendChild(card);
+    });
+  }
+  el.replaceChildren(track); pvpStripMetrics(); positionPvpStrip();
 }
 
 function renderPvpParticipants(ps) {
   const el = document.getElementById('pvp-participant-strip'); if (!el) return;
+  const roulette = ['LIVE', 'RESULT'].includes(pvpState.data?.phase) && ps.length > 0;
+  const mode = roulette ? 'roulette' : 'list';
+  const key = JSON.stringify(ps.map(p => [p.id, p.user_id, p.betAmount, p.avatar, p.username, p.name])) + ':' + mode;
+  el.classList.toggle('roulette', roulette);
+  if (pvpState.stripKey !== key || pvpState.data?.phase !== 'RESULT') el.classList.remove('settled');
+  document.getElementById('pvp-strip-pointer')?.classList.toggle('show', roulette);
+  if (!ps.length) {
+    el.innerHTML = '<div class="pvp-empty-strip">Join this round to appear here</div>';
+    pvpState.stripDeck = []; pvpState.stripMode = 'list'; pvpState.stripKey = key; return;
+  }
+  if (roulette) {
+    if (pvpState.stripKey !== key) {
+      pvpState.stripDeck = pvpStripDeck(ps); pvpState.stripMode = mode; pvpState.stripKey = key;
+      renderPvpStripTrack();
+    }
+    return;
+  }
+  pvpState.stripMode = mode; pvpState.stripKey = key; pvpState.stripOffset = 0;
   const scroll = el.scrollLeft; el.replaceChildren();
-  if (!ps.length) { el.innerHTML = '<div class="pvp-empty-strip">Join this round to appear here</div>'; return; }
-  ps.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'pvp-participant' + (p.status === 'WON' ? ' winner' : '');
-    card.dataset.participantId = p.id;
-    card.style.setProperty('--player-color', pvpParticipantColor(p, i));
-    card.title = pvpName(p) + ' · ' + (p.betCurrency === 'GIFT' ? p.giftName || 'Gift' : 'TON') + ' · ' + Number(p.betAmount || 0).toFixed(2) + ' TON';
-    card.innerHTML = pvpAvatarMarkup(p) + '<div class="pvp-participant-name">' + escapeHtml(pvpName(p)) + '</div><div class="pvp-participant-pct">' + pvpPercentage(p, ps).toFixed(1) + '%</div>';
-    el.appendChild(card);
-  });
+  ps.slice().sort((a, b) => Number(a.id) - Number(b.id)).forEach(p => el.appendChild(pvpParticipantCard(p, ps)));
   el.scrollLeft = scroll;
 }
 
@@ -13265,9 +13373,9 @@ function updatePvpUI() {
   el('pvp-pool-total').title = Number(d.poolTon || 0).toFixed(2) + ' TON + ' + Number(d.poolGift || 0).toFixed(2) + ' TON gift value';
   el('pvp-status').textContent = d.phase === 'LIVE' ? 'Selecting winner…' : d.phase === 'WAITING' ? 'Waiting for players' : d.phase === 'RESULT' ? 'Round complete' : '';
   updatePvpHighlights(d); renderPvpCountdown();
-  const wheelKey = JSON.stringify(ps.map(p => [p.id, p.user_id, p.betAmount, p.betCurrency, p.avatar, p.giftImage]));
+  const wheelKey = JSON.stringify(ps.map(p => [p.id, p.user_id, p.betAmount, p.betCurrency, p.giftImage]));
   if (wheelKey !== pvpState.wheelKey) { renderPvpWheel(ps); pvpState.wheelKey = wheelKey; }
-  const cardsKey = JSON.stringify(ps);
+  const cardsKey = JSON.stringify(ps) + ':' + (['LIVE', 'RESULT'].includes(d.phase) ? 'roulette' : 'list');
   if (cardsKey !== pvpState.cardsKey) { renderPvpParticipants(ps); renderPvpPlayers(ps); pvpState.cardsKey = cardsKey; }
   const joined = ps.some(p => String(p.user_id) === String(typeof userId !== 'undefined' ? userId : localStorage.getItem('authToken')));
   const join = el('pvp-join-main');
@@ -13280,14 +13388,7 @@ function updatePvpUI() {
     el('pvp-result-pool').textContent = Number(d.totalPool || 0).toFixed(2) + ' TON total prize';
     const key = String(d.roundId) + ':' + d.winnerUserId;
     if (pvpState.resultKey !== key) {
-      const slice = pvpState.layout.find(s => String(s.participant.user_id) === String(d.winnerUserId));
-      if (slice) {
-        const current = ((pvpState.rotation % 360) + 360) % 360;
-        const target = (360 - slice.mid) % 360;
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        pvpState.resultAnimation = { from: pvpState.rotation, to: pvpState.rotation + (reduced ? 0 : 720) + ((target - current + 360) % 360), startedAt: performance.now(), duration: reduced ? 1 : 2600 };
-      }
-      pvpState.resultKey = key;
+      startPvpStripResult(winner, key);
     }
   }
 }

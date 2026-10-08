@@ -25,7 +25,7 @@ async function main() {
       const first = await inspect(); await page.waitForTimeout(900); const last = await inspect();
       assert.equal(first.center.top, last.center.top); assert.equal(first.center.left, last.center.left);
       assert.ok(last.join.bottom <= last.nav.top); assert.ok(last.list.height >= 95);
-      assert.equal(last.slices, 2); assert.equal(errors.length, 0);
+      assert.equal(last.slices, 2); assert.ok(last.rotation > first.rotation); assert.equal(errors.length, 0);
       await page.screenshot({ path: path.join(output, width + 'x' + height + '.png') });
       await page.evaluate(() => showPage('home'));
       assert.equal(await page.evaluate(() => pvpState.active), false);
@@ -45,9 +45,14 @@ async function main() {
     await page.waitForFunction(() => pvpState.data?.phase === 'RESULT', {}, { timeout: 35000 });
     await page.waitForTimeout(2900);
     assert.ok(await page.evaluate(() => {
-      const slice = pvpState.layout.find(s => String(s.participant.user_id) === String(pvpState.data.winnerUserId));
-      const angle = ((pvpState.rotation + slice.mid) % 360 + 360) % 360;
-      return angle < .001 || angle > 359.999;
+      const viewport = document.querySelector('#pvp-participant-strip').getBoundingClientRect();
+      const middle = viewport.left + viewport.width / 2;
+      const landed = [...document.querySelectorAll('#pvp-participant-track .pvp-participant')].find(card => {
+        const b = card.getBoundingClientRect(); return b.left <= middle && b.right >= middle;
+      });
+      const winner = pvpState.data.participants.find(p => String(p.user_id) === String(pvpState.data.winnerUserId));
+      return landed && winner && String(landed.dataset.participantId) === String(winner.id) &&
+        document.querySelector('#pvp-participant-strip').classList.contains('settled');
     }));
     await context.close();
     fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(reports, null, 2));

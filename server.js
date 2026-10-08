@@ -2338,6 +2338,8 @@ let pvpState = {
     phase: 'WAITING',
     seconds: 0,
     countdownEndsAt: null,
+    liveStartedAt: null,
+    resultAt: null,
     serverSeedHash: null,
     serverSeed: null,
     crashAt: null,
@@ -2362,6 +2364,9 @@ function getPvpStateSnapshot() {
             ? Math.max(0, Math.ceil((pvpState.countdownEndsAt - Date.now()) / 1000))
             : pvpState.seconds,
         countdownEndsAt: pvpState.countdownEndsAt,
+        liveStartedAt: pvpState.liveStartedAt,
+        resultAt: pvpState.resultAt,
+        spinDurationMs: 12000,
         serverSeedHash: pvpState.serverSeedHash,
         serverSeed: pvpState.phase === 'RESULT' ? pvpState.serverSeed : null,
         winnerUserId: pvpState.lastWinnerUserId,
@@ -2466,6 +2471,8 @@ async function startPvpRound() {
         phase: 'WAITING',
         seconds: PVP_COUNTDOWN_SECONDS,
         countdownEndsAt: null,
+        liveStartedAt: null,
+        resultAt: null,
         serverSeedHash: round.server_seed_hash,
         serverSeed: round.server_seed,
         crashAt: round.crash_at,
@@ -2498,9 +2505,12 @@ async function launchPvpRound() {
     }
     // Settlement already requires a LIVE database round. Keep the persisted
     // phase in sync with the server state without changing winner/payout rules.
-    await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = 0 WHERE id = ? AND phase = ?', ['LIVE', pvpState.roundId, 'COUNTDOWN']);
+    const liveStartedAt = Date.now();
+    await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = 0, started_at = ? WHERE id = ? AND phase = ?', ['LIVE', new Date(liveStartedAt).toISOString(), pvpState.roundId, 'COUNTDOWN']);
     await refreshPvpParticipants();
     pvpState.phase = 'LIVE';
+    pvpState.liveStartedAt = liveStartedAt;
+    pvpState.resultAt = null;
     pvpState.seconds = 0;
     pvpState.countdownEndsAt = null;
     console.log(`🔥 PvP Round ${pvpState.roundNumber} LIVE with ${pvpState.participants.length} players`);
@@ -2511,6 +2521,7 @@ async function settlePvpRound() {
     try {
         const result = await crashPvpRound(pvpState.roundId);
         pvpState.phase = 'RESULT';
+        pvpState.resultAt = Date.now();
         pvpState.lastWinnerUserId = result.winnerUserId;
         pvpState.poolTon = result.poolTon;
         pvpState.poolGift = result.poolGift;
@@ -2524,6 +2535,56 @@ async function settlePvpRound() {
     } catch (error) {
         console.error('PvP round settlement error:', error.message);
     }
+}
+
+function pvpStoredTimestamp(value) {
+    if (!value) return null;
+    const time = Date.parse(String(value).includes('T') ? String(value) : String(value).replace(' ', 'T') + 'Z');
+    return Number.isFinite(time) ? time : null;
+}
+
+async function restoreOrStartPvpRound() {
+    // Preserve the latest existing round and its locked wagers across a deploy.
+    // This never seeds participants, changes balances, or chooses a new winner.
+    let round = await getPvpActiveRound();
+    if (!round) {
+        const recent = await get("SELECT * FROM pvp_rounds WHERE phase = 'RESULT' ORDER BY round_number DESC LIMIT 1");
+        const ended = pvpStoredTimestamp(recent?.ended_at);
+        if (recent && ended && Date.now() - ended < 4500) round = recent;
+    }
+    if (!round) {
+        await startPvpRound();
+        await triggerPvpCountdown();
+        return;
+    }
+    const started = pvpStoredTimestamp(round.started_at) || Date.now();
+    pvpState = {
+        roundId: round.id,
+        roundNumber: round.round_number,
+        phase: round.phase,
+        seconds: Number(round.seconds_remaining) || PVP_COUNTDOWN_SECONDS,
+        countdownEndsAt: round.phase === 'COUNTDOWN' ? started + PVP_COUNTDOWN_SECONDS * 1000 : null,
+        liveStartedAt: round.phase === 'LIVE' ? started : null,
+        resultAt: round.phase === 'RESULT' ? pvpStoredTimestamp(round.ended_at) : null,
+        serverSeedHash: round.server_seed_hash,
+        serverSeed: round.server_seed,
+        crashAt: round.crash_at,
+        poolTon: 0,
+        poolGift: 0,
+        participants: [],
+        lastWinnerUserId: round.phase === 'RESULT' ? round.winner_user_id : null,
+        highlights: pvpState.highlights || { lastWinner: null, topOfDay: null }
+    };
+    await refreshPvpParticipants();
+    if (round.phase === 'RESULT') {
+        const delay = Math.max(0, 4500 - (Date.now() - pvpState.resultAt));
+        if (pvpRoundTransitionTimer) clearTimeout(pvpRoundTransitionTimer);
+        pvpRoundTransitionTimer = setTimeout(async () => {
+            try { await startPvpRound(); await triggerPvpCountdown(); }
+            catch (error) { console.error('PvP restored-result transition error:', error.message); }
+        }, delay);
+    }
+    console.log(`🎮 PvP Round ${round.round_number} restored (${round.phase})`);
 }
 
 async function startPvpGameLoop() {
@@ -2543,7 +2604,7 @@ async function startPvpGameLoop() {
                     await launchPvpRound();
                 }
             } else if (pvpState.phase === 'LIVE') {
-                pvpState.seconds--;
+                pvpState.seconds = -Math.floor((Date.now() - pvpState.liveStartedAt) / 1000);
                 if (pvpState.seconds <= -12) {
                     await settlePvpRound();
                 }
@@ -2555,8 +2616,7 @@ async function startPvpGameLoop() {
         }
     }, 1000);
     await refreshPvpHighlights();
-    await startPvpRound();
-    await triggerPvpCountdown();
+    await restoreOrStartPvpRound();
     return pvpGameLoopTimer;
 }
 
@@ -6054,6 +6114,7 @@ module.exports = {
     startCollectibleReconciliationWorker,
     stopCollectibleReconciliationWorker,
     stopPvpGameLoop,
+    restoreOrStartPvpRound,
     getPvpStateSnapshot,
     resolveTelegramFilePath,
     streamTelegramFile
