@@ -2350,7 +2350,7 @@ let pvpState = {
 let pvpGameLoopTimer = null;
 let pvpRoundTransitionTimer = null;
 let pvpBusy = false;
-const PVP_COUNTDOWN_SECONDS = 10;
+const PVP_COUNTDOWN_SECONDS = 20;
 
 function getPvpStateSnapshot() {
     return {
