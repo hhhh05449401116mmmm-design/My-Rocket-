@@ -5500,7 +5500,7 @@ video::-webkit-media-controls-enclosure {
 <div id="pvp-game" class="rocket-game-container hidden">
 <style>
 #pvp-game{background:#111;color:#fff;min-height:100vh}
-#pvp-game{position:fixed!important;inset:0!important;z-index:5000!important;overflow:hidden!important;height:100dvh!important;min-height:0!important;padding:0!important;box-sizing:border-box;background:#111}
+#pvp-game{position:fixed!important;inset:0!important;z-index:25!important;overflow:hidden!important;height:100dvh!important;min-height:0!important;padding:0!important;box-sizing:border-box;background:#111}
 #pvp-game .pvp-shell{position:relative;max-width:720px;width:100%;height:100dvh;margin:0 auto;padding:8px 14px 94px;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column}
 #pvp-game .pvp-topbar{flex:0 0 48px}
 #pvp-game .pvp-stats{flex:0 0 88px;gap:8px;margin:6px 0 8px}
@@ -5632,7 +5632,7 @@ video::-webkit-media-controls-enclosure {
 }
 #pvp-game .pvp-shell{
   width:min(520px,100%);height:100dvh;margin:0 auto;
-  padding:calc(env(safe-area-inset-top,0px) + 7px) 12px calc(env(safe-area-inset-bottom,0px) + 82px);
+  padding:calc(max(7px, var(--tg-content-safe-area-inset-top, var(--tg-safe-area-inset-top, env(safe-area-inset-top,0px))))) 12px calc(max(82px, var(--tg-content-safe-area-inset-bottom, var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom,0px)))));
   box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;
 }
 #pvp-game .pvp-topbar{
@@ -5732,7 +5732,7 @@ video::-webkit-media-controls-enclosure {
 </style>
 <div class="pvp-shell">
   <div class="pvp-topbar">
-    <button class="pvp-back" type="button" onclick="closePvPGame()">← رجوع</button>
+    <button class="pvp-back" type="button" onclick="closePvpGame()">← رجوع</button>
     <div class="pvp-title">🚀 Crazy Rocket</div>
     <button class="pvp-history" type="button" onclick="showToast('History')">↶</button>
   </div>
