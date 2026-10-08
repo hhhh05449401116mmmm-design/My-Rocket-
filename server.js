@@ -2337,6 +2337,7 @@ let pvpState = {
     roundNumber: 0,
     phase: 'WAITING',
     seconds: 0,
+    countdownEndsAt: null,
     serverSeedHash: null,
     serverSeed: null,
     crashAt: null,
@@ -2357,7 +2358,10 @@ function getPvpStateSnapshot() {
         roundId: pvpState.roundId,
         roundNumber: pvpState.roundNumber,
         phase: pvpState.phase,
-        seconds: pvpState.seconds,
+        seconds: pvpState.phase === 'COUNTDOWN' && pvpState.countdownEndsAt
+            ? Math.max(0, Math.ceil((pvpState.countdownEndsAt - Date.now()) / 1000))
+            : pvpState.seconds,
+        countdownEndsAt: pvpState.countdownEndsAt,
         serverSeedHash: pvpState.serverSeedHash,
         serverSeed: pvpState.phase === 'RESULT' ? pvpState.serverSeed : null,
         winnerUserId: pvpState.lastWinnerUserId,
@@ -2461,6 +2465,7 @@ async function startPvpRound() {
         roundNumber: round.round_number,
         phase: 'WAITING',
         seconds: PVP_COUNTDOWN_SECONDS,
+        countdownEndsAt: null,
         serverSeedHash: round.server_seed_hash,
         serverSeed: round.server_seed,
         crashAt: round.crash_at,
@@ -2478,6 +2483,7 @@ async function triggerPvpCountdown() {
     const round = await startPvpCountdown(pvpState.roundId);
     pvpState.phase = 'COUNTDOWN';
     pvpState.seconds = PVP_COUNTDOWN_SECONDS;
+    pvpState.countdownEndsAt = Date.now() + PVP_COUNTDOWN_SECONDS * 1000;
     console.log(`⏰ PvP Round ${pvpState.roundNumber} COUNTDOWN started (${PVP_COUNTDOWN_SECONDS}s)`);
 }
 
@@ -2490,8 +2496,13 @@ async function launchPvpRound() {
         await triggerPvpCountdown();
         return;
     }
+    // Settlement already requires a LIVE database round. Keep the persisted
+    // phase in sync with the server state without changing winner/payout rules.
+    await run('UPDATE pvp_rounds SET phase = ?, seconds_remaining = 0 WHERE id = ? AND phase = ?', ['LIVE', pvpState.roundId, 'COUNTDOWN']);
     await refreshPvpParticipants();
     pvpState.phase = 'LIVE';
+    pvpState.seconds = 0;
+    pvpState.countdownEndsAt = null;
     console.log(`🔥 PvP Round ${pvpState.roundNumber} LIVE with ${pvpState.participants.length} players`);
 }
 
@@ -2527,7 +2538,7 @@ async function startPvpGameLoop() {
                     await triggerPvpCountdown();
                 }
             } else if (pvpState.phase === 'COUNTDOWN') {
-                pvpState.seconds--;
+                pvpState.seconds = Math.max(0, Math.ceil((pvpState.countdownEndsAt - Date.now()) / 1000));
                 if (pvpState.seconds <= 0) {
                     await launchPvpRound();
                 }
@@ -2724,6 +2735,12 @@ app.get('/api/pvp/state', authenticate, async (req, res) => {
 app.post('/api/pvp/join', authenticate, async (req, res) => {
     try {
         const { betCurrency, betAmount, giftUniqueId } = req.body;
+        if (betCurrency === 'GIFT') {
+            const collectible = await getCollectibleByUniqueId(giftUniqueId || '');
+            if (!collectible || collectible.user_id !== req.user.id || collectible.ownership_verified !== 1) {
+                throw new Error('Verified owned collectible required for PvP');
+            }
+        }
         const result = await joinPvpRound(req.user.id, betCurrency || 'TON', betAmount, giftUniqueId || null);
         await refreshPvpParticipants();
         res.json({ ok: true, ...result });
@@ -2876,6 +2893,11 @@ function buildCollectibleApiRow(row, req) {
     return {
         id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
+        // PvP-only metadata: retain the existing general value used by other games.
+        pvpGiftUniqueId: row.unique_collectible_id || null,
+        pvpBetValue: Number(row.collectible_market_value ?? row.value ?? 0),
+        pvpEligible: row.ownership_verified === 1 && row.ownership_status === 'OWNED' &&
+            !!row.unique_collectible_id && Number(row.collectible_market_value ?? row.value ?? 0) > 0,
         pendingWithdrawal: isPendingGiftReward,
         lootBoxReward: isPendingGiftReward,
         lootBoxLocked: isLootBoxGiftLocked(row),
