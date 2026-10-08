@@ -377,6 +377,7 @@ const {
     findBusinessGiftByUniqueId,
     transferSelectedGiftToUser
 } = require('./telegramBusinessGiftTransfer');
+const { createReadOnlyGiftPriceProbe } = require('./giftPricingSourceProbe');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1721,6 +1722,14 @@ app.get('/api/live-gifts', async (req, res) => {
         console.error('Live gifts feed failed:', error.message);
         res.status(200).json({ ok: true, items: [] });
     }
+});
+
+const giftPriceSourceProbe = createReadOnlyGiftPriceProbe({ getClient: ensureTelegramMtprotoClient });
+// Fixed public-market samples only; cached reads, no user input or account data.
+// This diagnostic never changes valuation, balances, draws, sales or gift stakes.
+app.get('/api/gift-pricing/source-check', (req, res) => {
+    const result = giftPriceSourceProbe.getReport();
+    res.set('Cache-Control', 'no-store').status(result.statusCode).json(result.body);
 });
 
 app.get('/api/rocket-gifts', async (req, res) => {
