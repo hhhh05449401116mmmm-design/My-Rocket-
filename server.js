@@ -2161,6 +2161,20 @@ function buildPlayerDisplayName(firstName, lastName) {
     return name || null;
 }
 
+async function getRocketRewardPreview(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return null;
+    const gift = await get(`
+        SELECT id, name, emoji, image_url, value, rarity
+        FROM gifts
+        WHERE value > 0 AND value <= ?
+        ORDER BY value DESC, id ASC
+        LIMIT 1
+    `, [numericValue]);
+    if (!gift) return null;
+    return { giftId: gift.id, name: gift.name, emoji: gift.emoji || '🎁', imageUrl: gift.image_url || null, value: Number(gift.value), payoutValue: numericValue };
+}
+
 async function refreshRoundPlayers() {
     const rows = await getRoundPlayers(currentGameState.roundId);
     const queuedRoundId = currentGameState.phase === 'FLIGHT'
@@ -2168,18 +2182,31 @@ async function refreshRoundPlayers() {
         : currentGameState.roundId;
     const queuedRows = (await getQueuedTonBetsForRound(queuedRoundId))
         .concat(await getQueuedGiftBetsForRound(queuedRoundId));
-    currentGameState.players = rows.concat(queuedRows).map(row => ({
-        id: `${row.bet_type}:${row.bet_id}`,
-        name: buildPlayerDisplayName(row.first_name, row.last_name),
-        avatar: row.avatar_url || null,
-        amount: row.amount,
-        status: row.status === 'QUEUED' ? 'QUEUED' : row.status,
-        multiplier: row.multiplier,
-        betType: row.bet_type,
-        giftName: row.gift_name || null,
-        giftImageUrl: row.unique_collectible_id
-            ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
-            : (row.gift_image_url || null)
+    currentGameState.players = await Promise.all(rows.concat(queuedRows).map(async row => {
+        const status = row.status === 'QUEUED' ? 'QUEUED' : row.status;
+        const multiplier = Number(row.multiplier);
+        const amount = Number(row.amount || 0);
+        const effectiveMultiplier = status === 'CASHED_OUT' || status === 'LOST'
+            ? (Number.isFinite(multiplier) ? multiplier : 0)
+            : (status === 'ACTIVE' ? Number(currentGameState.multiplier || 1) : 0);
+        const currentValue = status === 'LOST' || status === 'QUEUED' ? 0 : amount * effectiveMultiplier;
+        return {
+            id: `${row.bet_type}:${row.bet_id}`,
+            name: buildPlayerDisplayName(row.first_name, row.last_name),
+            avatar: row.avatar_url || null,
+            amount: row.amount,
+            status,
+            multiplier: row.multiplier,
+            currentValue: Number(currentValue.toFixed(9)),
+            betType: row.bet_type,
+            giftName: row.gift_name || null,
+            giftImageUrl: row.unique_collectible_id
+                ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
+                : (row.gift_image_url || null),
+            rocketReward: row.bet_type === 'TON' && currentValue > 0
+                ? await getRocketRewardPreview(currentValue)
+                : null
+        };
     }));
 }
 
@@ -2290,6 +2317,7 @@ function startGameLoop() {
                     await crashCurrentRound();
                 } else {
                     currentGameState.multiplier = nextMultiplier;
+                    await refreshRoundPlayers();
                     await processAutoCashouts(nextMultiplier);
                 }
             } else if (currentGameState.phase === 'COUNTDOWN') {

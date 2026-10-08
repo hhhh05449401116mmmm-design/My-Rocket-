@@ -1112,6 +1112,33 @@ async function getRoundPlayers(roundNumber) {
     `, [roundNumber, roundNumber]);
 }
 
+async function selectRocketRewardForPayout(payout) {
+    const numericPayout = Number(payout);
+    if (!Number.isFinite(numericPayout) || numericPayout <= 0) return null;
+    return await get(`
+        SELECT id, telegram_gift_id, name, emoji, image_url, value, rarity
+        FROM gifts
+        WHERE value > 0 AND value <= ?
+        ORDER BY value DESC, id ASC
+        LIMIT 1
+    `, [numericPayout]);
+}
+
+async function grantRocketRewardGift(userId, payout) {
+    const gift = await selectRocketRewardForPayout(payout);
+    if (!gift) return null;
+    const stored = await addLootBoxGiftToUser(userId, gift.id, gift.value);
+    return {
+        userGiftId: stored?.id || stored?.user_gift_id || null,
+        giftId: gift.id,
+        name: gift.name,
+        emoji: gift.emoji || '🎁',
+        imageUrl: gift.image_url || null,
+        value: Number(gift.value),
+        rewardType: 'ROCKET_PAYOUT_GIFT'
+    };
+}
+
 async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
     const config = type === 'TON'
         ? { table: 'ton_bets', amountColumn: 'amount', payoutColumn: 'payout' }
@@ -1147,11 +1174,13 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
         if (type === 'TON') {
             await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
             await updateUserStats(userId, 'win', payout);
+            const rocketGift = await grantRocketRewardGift(userId, payout);
             return {
                 payout,
                 multiplier,
                 amount: bet[config.amountColumn],
-                giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined
+                giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined,
+                rocketGift
             };
         } else {
             return await settleGiftCashout(bet, userId, betId, multiplier, payout);
