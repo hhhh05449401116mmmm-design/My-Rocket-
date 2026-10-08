@@ -17,7 +17,7 @@
         #rocket-startup[hidden] { display:none; }
         #rocket-startup.leaving { opacity:0; pointer-events:none; }
         .rocket-startup-content { width:min(290px,100%); text-align:center; }
-        .rocket-startup-logo { width:104px; height:104px; display:block; margin:0 auto 22px; overflow:visible; background:transparent; fill:none; stroke:url(#startup-rocket-stroke); stroke-width:1.15; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 12px #4baefc65) drop-shadow(0 0 28px #b444ef35); animation:rocket-startup-float 2.8s ease-in-out infinite; }
+        .rocket-startup-logo { width:124px; height:124px; display:block; margin:0 auto 18px; object-fit:contain; background:transparent; filter:drop-shadow(0 0 15px #4baefc30); animation:rocket-startup-float 2.8s ease-in-out infinite; }
         .rocket-startup-name { font:800 28px Arial,Helvetica,sans-serif; letter-spacing:-.5px; direction:ltr; margin:0 0 32px; }
         .rocket-startup-gift { --startup-completed:0; position:relative; width:156px; height:156px; margin:0 auto 18px; }
         .rocket-startup-gift img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
@@ -5159,13 +5159,7 @@ video::-webkit-media-controls-enclosure {
 </head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
-      <div class="rocket-startup-content"><svg class="rocket-startup-logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><linearGradient id="startup-rocket-stroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5fbff"/><stop offset=".5" stop-color="#6dd9ff"/><stop offset="1" stop-color="#be75ff"/></linearGradient></defs>
-                <path d="M14.5 3.5c2.8-1.1 4.7-1.1 4.7-1.1s0 1.9-1.1 4.7c-1.4 3.6-4.1 6.9-7.2 8.3l-3.4-3.4c1.4-3.1 4.7-5.8 8.4-7.2Z"/>
-                <path d="m7.5 11.9-3.2.3-1.8 1.8 4.2 1.2"/>
-                <path d="m12.1 16.5-.3 3.2-1.8 1.8-1.2-4.2"/>
-                <path d="M15.7 8.3h.1"/>
-                <path d="m8.8 15.2-2.4 2.4"/>
-            </svg><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div><div id="rocket-startup-status" class="rocket-startup-status">جارٍ تجهيز الواجهة…</div></div>
+      <div class="rocket-startup-content"><img id="rocket-startup-logo" class="rocket-startup-logo" src="/assets/startup/crazy-rocket-premium.webp" alt="" width="124" height="124" fetchpriority="high" decoding="async"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div><div id="rocket-startup-status" class="rocket-startup-status">جارٍ تجهيز الواجهة…</div></div>
     </section>
     <noscript><style>#rocket-startup{display:none}</style></noscript>
 
@@ -14455,6 +14449,8 @@ function prepareRocketStartupMedia() {
   const images = [...document.querySelectorAll('.image-banner .banner-poster')];
   const gift = document.getElementById('rocket-startup-gift-color');
   if (gift) images.push(gift);
+  const rocket = document.getElementById('rocket-startup-logo');
+  if (rocket) images.push(rocket);
   // Initial viewport posters only; neither all videos nor off-screen inventory blocks entry.
   images.push(...[...document.querySelectorAll('#loot-grid .loot-startup-poster')].slice(0, 2));
   Promise.all(images.map(waitForStartupImage)).then(() => {
