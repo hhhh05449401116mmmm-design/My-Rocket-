@@ -70,7 +70,7 @@ test('PVP: startPvpCountdown moves round to COUNTDOWN', async () => {
     const round = await database.createPvpRound(1002);
     const updated = await database.startPvpCountdown(round.id);
     assert.equal(updated.phase, 'COUNTDOWN');
-    assert.equal(updated.seconds_remaining, 10);
+    assert.equal(updated.seconds_remaining, 20);
 });
 
 test('PVP: MAX_PVP_PLAYERS is 75', async () => {
