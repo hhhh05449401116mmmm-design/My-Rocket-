@@ -6,12 +6,31 @@
     <title>Crazy Rocket</title>
     <meta name="theme-color" content="#0a1628">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script defer src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <!-- Lottie Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <!-- Eruda is loaded dynamically for the admin only. -->
 
     <style>
+        body.rocket-starting { overflow:hidden; }
+        #rocket-startup { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; color:#fff; background:radial-gradient(ellipse at 20% 35%,#102c50 0,transparent 55%),radial-gradient(ellipse at 80% 65%,#271049 0,transparent 58%),#060b1b; padding:calc(max(env(safe-area-inset-top,0px),var(--tg-content-safe-area-inset-top,0px)) + var(--tg-native-controls-reserve-top,0px) + 12px) 24px max(24px,env(safe-area-inset-bottom,0px)); transition:opacity .22s ease; direction:rtl; }
+        #rocket-startup[hidden] { display:none; }
+        #rocket-startup.leaving { opacity:0; pointer-events:none; }
+        .rocket-startup-content { width:min(290px,100%); text-align:center; }
+        .rocket-startup-logo { width:104px; height:104px; display:block; margin:0 auto 22px; border-radius:26px; box-shadow:0 0 55px #168ac447,0 0 80px #8d36e32b; animation:rocket-startup-float 2.8s ease-in-out infinite; }
+        .rocket-startup-name { font:800 28px Arial,Helvetica,sans-serif; letter-spacing:-.5px; direction:ltr; margin:0 0 32px; }
+        .rocket-startup-progress { --startup-completed:0; height:4px; width:150px; background:#ffffff1a; border-radius:10px; overflow:hidden; margin:0 auto 16px; direction:ltr; }
+        .rocket-startup-progress span { height:100%; display:block; width:calc(var(--startup-completed)*100%); min-width:8px; transition:width .25s ease; background:linear-gradient(90deg,#249ff3,#b541ed); border-radius:10px; }
+        .rocket-startup-status { color:#98aac7; font-size:13px; min-height:20px; }
+        @keyframes rocket-startup-float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)} }
+        @media(prefers-reduced-motion:reduce){ .rocket-startup-logo{animation:none} #rocket-startup{transition:none} }
+        .image-banner .banner-poster { z-index:-1!important; }
+        .image-banner .banner-fallback-name { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#f5f8ff; font-size:26px; font-weight:850; font-family:Arial,sans-serif; background:linear-gradient(110deg,#214576,#592390); z-index:-2; pointer-events:none; }
+        .image-banner { isolation:isolate; }
+        .loot-box .loot-startup-poster { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none; }
+        .loot-box video.loot-video { visibility:hidden; z-index:1; }
+        .loot-box video.loot-video.loot-video-ready { visibility:visible; }
+
         /* =========================================================
            PLINKO - responsive reference layout
         ========================================================= */
@@ -5135,14 +5154,18 @@ video::-webkit-media-controls-enclosure {
         @media(max-width:520px){.lottery-game-tabs{gap:5px}.lottery-game-tab strong{font-size:15px}.lottery-game-tab span{font-size:8px}.lottery-number-grid{gap:4px}.lottery-number-btn{height:31px;font-size:11px}.lottery-bonus-grid{gap:4px}.lottery-bonus-btn{height:35px}}
 </style>
 </head>
-<body>
+<body class="rocket-starting">
+    <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
+      <div class="rocket-startup-content"><img src="/icon-180.png" alt="" width="104" height="104" class="rocket-startup-logo" fetchpriority="high"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-progress" role="progressbar" aria-label="مراحل تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><span></span></div><div id="rocket-startup-status" class="rocket-startup-status">جارٍ تجهيز الواجهة…</div></div>
+    </section>
+    <noscript><style>#rocket-startup{display:none}</style></noscript>
 
     <!-- =========================================================
        SNOWFALL EFFECT
     ========================================================= -->
     <div class="snowflakes" id="snowflakes"></div>
 
-    <div class="app">
+    <div class="app" inert>
         <!-- =========================================================
            HEADER
         ========================================================= -->
@@ -5197,13 +5220,13 @@ video::-webkit-media-controls-enclosure {
              </div>
 
               <!-- ==== Rocket Banner ==== -->
-              <div class="rocket-banner image-banner" onclick="openRocketGame()"><video class="banner-video-engine" src="/assets/ADJtCAFOdpAFHHbg.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Rocket"></canvas></div>
+              <div class="rocket-banner image-banner" onclick="openRocketGame()"><span class="banner-fallback-name" aria-hidden="true">Rocket</span><img class="banner-art banner-poster" src="/assets/startup-posters/ADJtCAFOdpAFHHbg.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/ADJtCAFOdpAFHHbg.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Rocket"></canvas></div>
 
               <!-- ==== PvP Banner ==== -->
-              <div class="pvp-banner image-banner" onclick="openPvpGame()"><video class="banner-video-engine" src="/assets/WddYFBEPUHJZYMlo.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="PVP"></canvas></div>
+              <div class="pvp-banner image-banner" onclick="openPvpGame()"><span class="banner-fallback-name" aria-hidden="true">PVP</span><img class="banner-art banner-poster" src="/assets/startup-posters/WddYFBEPUHJZYMlo.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/WddYFBEPUHJZYMlo.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="PVP"></canvas></div>
 
               <!-- ==== Play Hub (Folder) ==== -->
-              <div class="playhub-banner image-banner" onclick="openPlayHub()"><video class="banner-video-engine" src="/assets/IlLXxhvJRWznUUZY.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Play Hub"></canvas></div>
+              <div class="playhub-banner image-banner" onclick="openPlayHub()"><span class="banner-fallback-name" aria-hidden="true">Play Hub</span><img class="banner-art banner-poster" src="/assets/startup-posters/IlLXxhvJRWznUUZY.webp" width="800" height="205" alt="" decoding="async" fetchpriority="high"><video class="banner-video-engine" src="/assets/IlLXxhvJRWznUUZY.silent.mp4" autoplay muted loop playsinline preload="auto" controlslist="nodownload noplaybackrate" aria-hidden="true" tabindex="-1"></video><canvas class="banner-art banner-canvas" aria-label="Play Hub"></canvas></div>
 
                <!-- ==== Lucky Gift Boxes ==== -->
                <div class="loot-section">
@@ -6917,9 +6940,14 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                     video.setAttribute('loop', '');
                     video.setAttribute('playsinline', '');
                     video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('preload', 'auto');
+                    video.setAttribute('preload', 'metadata');
                     video.removeAttribute('controls');
 
+                    if (video.dataset.lootPlaybackBound === '1') return;
+                    video.dataset.lootPlaybackBound = '1';
+                    video.addEventListener('playing', () => video.classList.add('loot-video-ready'));
+                    video.addEventListener('error', () => video.classList.remove('loot-video-ready'));
+                    if (!video.paused && video.readyState >= 2) video.classList.add('loot-video-ready');
                     const play = function() {
                         try {
                             video.muted = true;
@@ -6973,8 +7001,9 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                 };
                 const badgeText = box.badgeType ? badgeLabels[box.badgeType] : '';
 
+                const videoPoster = box.video ? '/assets/startup-posters/' + box.video.split('/').pop().replace(/\.mp4$/i, '.webp') : '';
                 const visual = box.video
-                    ? '<video class="loot-video" src="' + escapeHtmlAttribute(box.video) + '" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen" aria-hidden="true"></video>'
+                    ? '<img class="loot-startup-poster" src="' + escapeHtmlAttribute(videoPoster) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async"><video class="loot-video" src="' + escapeHtmlAttribute(box.video) + '" poster="' + escapeHtmlAttribute(videoPoster) + '" autoplay muted loop playsinline webkit-playsinline preload="metadata" disablepictureinpicture controlslist="nodownload noplaybackrate nofullscreen" aria-hidden="true"></video>'
                     : (box.image
                         ? '<img class="loot-image" src="' + escapeHtmlAttribute(box.image) + '" alt="' + escapeHtmlAttribute(nameText) + '" loading="eager" decoding="async">'
                         : '<span class="loot-emoji">' + escapeHtml(box.emoji) + '</span>');
@@ -6991,6 +7020,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                 '</div>';
                 grid.appendChild(div);
             });
+            initLootBoxVideos();
         }
 
         let selectedLootBox = null;
@@ -14056,10 +14086,7 @@ async function submitPvpBet(){
                     video._homeBannerFrameRequestId = null;
                     video._homeBannerCanvasActive = false;
                 }
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
+                // Preserve the last frame behind the poster when leaving the home screen.
             } catch (e) {}
         }
 
@@ -14337,15 +14364,97 @@ async function submitPvpBet(){
         // Bootstrap authentication independently from UI initialization.
         // This prevents an earlier UI/Wallet initialization error from blocking
         // Telegram signed initData authentication and the game connection.
-        async function bootstrapRocketApp() {
+var rocketStartupState = { started: false, finished: false, mediaReady: false, bootReady: false, authenticated: false, timedOut: false, startedAt: 0, deadlineTimer: null, finishTimer: null, finishPromise: null, resolveFinish: null };
+function updateRocketStartupStatus() {
+  const label = document.getElementById('rocket-startup-status');
+  if (!label) return;
+  label.textContent = !rocketStartupState.mediaReady ? 'جارٍ تجهيز الواجهة…' : !rocketStartupState.bootReady ? 'جارٍ الاتصال باللعبة…' : rocketStartupState.authenticated ? 'جاهز للانطلاق' : 'تعذر الاتصال، ستفتح الواجهة';
+  const progress = document.getElementById('rocket-startup-progress');
+  if (progress) {
+    const completed = Number(rocketStartupState.mediaReady) + Number(rocketStartupState.bootReady);
+    progress.setAttribute('aria-valuenow', String(completed));
+    progress.style.setProperty('--startup-completed', String(completed / 2));
+  }
+}
+function finishRocketStartup(reason) {
+  if (rocketStartupState.finished) return;
+  const elapsed = performance.now() - rocketStartupState.startedAt;
+  if (reason !== 'timeout' && elapsed < 650) {
+    clearTimeout(rocketStartupState.finishTimer);
+    rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason), 650 - elapsed);
+    return;
+  }
+  rocketStartupState.finished = true;
+  rocketStartupState.timedOut = reason === 'timeout';
+  clearTimeout(rocketStartupState.deadlineTimer); clearTimeout(rocketStartupState.finishTimer);
+  const splash = document.getElementById('rocket-startup');
+  const app = document.querySelector('.app');
+  if (app) app.removeAttribute('inert');
+  document.body.classList.remove('rocket-starting');
+  if (splash) {
+    splash.classList.add('leaving');
+    splash.setAttribute('aria-hidden', 'true');
+    setTimeout(() => { splash.hidden = true; }, 240);
+  }
+  try { keepHomeBannerVideosPlaying(false); syncTelegramBackButton(); } catch (e) {}
+  if (rocketStartupState.resolveFinish) rocketStartupState.resolveFinish({ reason });
+}
+function maybeFinishRocketStartup() {
+  updateRocketStartupStatus();
+  if (rocketStartupState.mediaReady && rocketStartupState.bootReady) finishRocketStartup('ready');
+}
+function waitForStartupImage(img) {
+  return new Promise(resolve => {
+    if (img.complete) { resolve(img.naturalWidth > 0); return; }
+    const complete = () => {
+      img.removeEventListener('load', complete); img.removeEventListener('error', complete);
+      resolve(img.naturalWidth > 0);
+    };
+    img.addEventListener('load', complete, { once: true }); img.addEventListener('error', complete, { once: true });
+  });
+}
+function beginRocketStartup() {
+  if (rocketStartupState.started) return rocketStartupState.finishPromise;
+  rocketStartupState.started = true;
+  rocketStartupState.startedAt = performance.now();
+  rocketStartupState.finishPromise = new Promise(resolve => { rocketStartupState.resolveFinish = resolve; });
+  document.body.classList.add('rocket-starting');
+  rocketStartupState.deadlineTimer = setTimeout(() => finishRocketStartup('timeout'), 8000);
+  updateRocketStartupStatus();
+  return rocketStartupState.finishPromise;
+}
+function prepareRocketStartupMedia() {
+  const images = [...document.querySelectorAll('.image-banner .banner-poster')];
+  // Initial viewport posters only; neither all videos nor off-screen inventory blocks entry.
+  images.push(...[...document.querySelectorAll('#loot-grid .loot-startup-poster')].slice(0, 2));
+  Promise.all(images.map(waitForStartupImage)).then(() => {
+    rocketStartupState.mediaReady = true; maybeFinishRocketStartup();
+  });
+}
+function markRocketBootstrapReady(authenticated) {
+  rocketStartupState.authenticated = authenticated === true;
+  rocketStartupState.bootReady = true;
+  maybeFinishRocketStartup();
+}
+
+        var rocketBootstrapPromise = null;
+        function bootstrapRocketApp() {
+            if (!rocketBootstrapPromise) rocketBootstrapPromise = runRocketBootstrap();
+            return rocketBootstrapPromise;
+        }
+        async function runRocketBootstrap() {
+            beginRocketStartup();
             try { initTelegramChrome(); } catch (e) { console.error('Telegram chrome init error:', e); }
             try { initGameUiIconObserver(); } catch (e) { console.error('UI icon init error:', e); }
             try { syncBannerVideoServerClock(); } catch (e) {}
             try { keepHomeBannerVideosPlaying(); } catch (e) { console.error('Banner video init error:', e); }
             try { renderLootBoxes(); } catch (e) { console.error('Home loot-box render error:', e); }
+            prepareRocketStartupMedia();
             const authenticated = await authenticateUser();
             if (!authenticated) {
                 setServerStatus(false);
+                markRocketBootstrapReady(false);
+                await rocketStartupState.finishPromise;
                 return;
             }
 
@@ -14379,6 +14488,8 @@ async function submitPvpBet(){
             try { loadTelegramRocketGifts(); } catch (e) {}
             try { loadTelegramTgsRenderer().catch(() => {}); } catch (e) {}
             try { initLiveStrip(); } catch (e) {}
+            markRocketBootstrapReady(true);
+            await rocketStartupState.finishPromise;
         }
 
         document.addEventListener('visibilitychange', function() {
@@ -14399,6 +14510,7 @@ async function submitPvpBet(){
             try { syncBannerVideoServerClock(); } catch (e) {}
         }, 60000);
 
+        beginRocketStartup();
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", bootstrapRocketApp, { once: true });
         } else {
