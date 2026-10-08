@@ -48,3 +48,17 @@ test('Loot videos are bound synchronously immediately after rendering and recove
  assert.match(render,/grid.appendChild\(div\)/);assert.match(render,/initLootBoxVideos\(\)/);
  assert.match(html,/if \(!video.paused && video.readyState >= 2\) video.classList.add\('loot-video-ready'\)/);
 });
+
+test('Pink Latex replaces the line with a grayscale original and bottom-up original-color layer',()=>{
+ assert.match(html,/class="rocket-startup-gift"/);assert.match(html,/plush-pepe-pink-latex.png/);assert.match(html,/filter:grayscale\(1\)/);
+ assert.match(html,/clip-path:inset\(calc\(\(1 - var\(--startup-completed\)\)\*100%\) 0 0 0\)/);
+ assert.doesNotMatch(html,/class="rocket-startup-progress"/);
+});
+test('Full gift color settles before revealing the game and duplicate ready events cannot bypass it',()=>{
+ const c=controller(),props={},gift={setAttribute(){},style:{setProperty:(k,v)=>props[k]=v}};
+ c.context.document.getElementById=id=>id==='rocket-startup-progress'?gift:null;
+ c.context.beginRocketStartup();c.advance(1000);c.context.rocketStartupState.mediaReady=true;c.context.markRocketBootstrapReady(true);
+ assert.equal(c.context.rocketStartupState.completing,true);assert.equal(c.context.rocketStartupState.finished,false);assert.equal(c.isRemoved(),false);assert.equal(props['--startup-completed'],'1');
+ c.context.maybeFinishRocketStartup();assert.equal(c.context.rocketStartupState.finished,false);
+ const colorTimer=[...c.timers.values()].find(t=>t.ms===500);assert.ok(colorTimer);c.advance(500);colorTimer.fn();assert.equal(c.context.rocketStartupState.finished,true);assert.equal(c.isRemoved(),true);
+});

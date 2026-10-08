@@ -19,8 +19,11 @@
         .rocket-startup-content { width:min(290px,100%); text-align:center; }
         .rocket-startup-logo { width:104px; height:104px; display:block; margin:0 auto 22px; border-radius:26px; box-shadow:0 0 55px #168ac447,0 0 80px #8d36e32b; animation:rocket-startup-float 2.8s ease-in-out infinite; }
         .rocket-startup-name { font:800 28px Arial,Helvetica,sans-serif; letter-spacing:-.5px; direction:ltr; margin:0 0 32px; }
-        .rocket-startup-progress { --startup-completed:0; height:4px; width:150px; background:#ffffff1a; border-radius:10px; overflow:hidden; margin:0 auto 16px; direction:ltr; }
-        .rocket-startup-progress span { height:100%; display:block; width:calc(var(--startup-completed)*100%); min-width:8px; transition:width .25s ease; background:linear-gradient(90deg,#249ff3,#b541ed); border-radius:10px; }
+        .rocket-startup-gift { --startup-completed:0; position:relative; width:156px; height:156px; margin:0 auto 18px; }
+        .rocket-startup-gift img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+        .rocket-startup-gift-base { filter:grayscale(1); opacity:.5; }
+        .rocket-startup-gift-color { clip-path:inset(calc((1 - var(--startup-completed))*100%) 0 0 0); transition:clip-path .45s ease-in-out; }
+        @media(prefers-reduced-motion:reduce){ .rocket-startup-gift-color { transition:none; } }
         .rocket-startup-status { color:#98aac7; font-size:13px; min-height:20px; }
         @keyframes rocket-startup-float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)} }
         @media(prefers-reduced-motion:reduce){ .rocket-startup-logo{animation:none} #rocket-startup{transition:none} }
@@ -5156,7 +5159,7 @@ video::-webkit-media-controls-enclosure {
 </head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
-      <div class="rocket-startup-content"><img src="/icon-180.png" alt="" width="104" height="104" class="rocket-startup-logo" fetchpriority="high"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-progress" role="progressbar" aria-label="مراحل تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><span></span></div><div id="rocket-startup-status" class="rocket-startup-status">جارٍ تجهيز الواجهة…</div></div>
+      <div class="rocket-startup-content"><img src="/icon-180.png" alt="" width="104" height="104" class="rocket-startup-logo" fetchpriority="high"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div><div id="rocket-startup-status" class="rocket-startup-status">جارٍ تجهيز الواجهة…</div></div>
     </section>
     <noscript><style>#rocket-startup{display:none}</style></noscript>
 
@@ -14364,8 +14367,9 @@ async function submitPvpBet(){
         // Bootstrap authentication independently from UI initialization.
         // This prevents an earlier UI/Wallet initialization error from blocking
         // Telegram signed initData authentication and the game connection.
-var rocketStartupState = { started: false, finished: false, mediaReady: false, bootReady: false, authenticated: false, timedOut: false, startedAt: 0, deadlineTimer: null, finishTimer: null, finishPromise: null, resolveFinish: null };
+var rocketStartupState = { started: false, finished: false, completing: false, mediaReady: false, bootReady: false, authenticated: false, timedOut: false, startedAt: 0, deadlineTimer: null, finishTimer: null, finishPromise: null, resolveFinish: null };
 function updateRocketStartupStatus() {
+  if (rocketStartupState.completing || rocketStartupState.finished) return;
   const label = document.getElementById('rocket-startup-status');
   if (!label) return;
   label.textContent = !rocketStartupState.mediaReady ? 'جارٍ تجهيز الواجهة…' : !rocketStartupState.bootReady ? 'جارٍ الاتصال باللعبة…' : rocketStartupState.authenticated ? 'جاهز للانطلاق' : 'تعذر الاتصال، ستفتح الواجهة';
@@ -14376,16 +14380,34 @@ function updateRocketStartupStatus() {
     progress.style.setProperty('--startup-completed', String(completed / 2));
   }
 }
-function finishRocketStartup(reason) {
-  if (rocketStartupState.finished) return;
+function finishRocketStartup(reason, colorComplete) {
+  if (rocketStartupState.finished || (rocketStartupState.completing && !colorComplete)) return;
   const elapsed = performance.now() - rocketStartupState.startedAt;
   if (reason !== 'timeout' && elapsed < 650) {
     clearTimeout(rocketStartupState.finishTimer);
     rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason), 650 - elapsed);
     return;
   }
+  if (!rocketStartupState.completing) {
+    rocketStartupState.completing = true;
+    rocketStartupState.timedOut = reason === 'timeout';
+    clearTimeout(rocketStartupState.deadlineTimer); clearTimeout(rocketStartupState.finishTimer);
+    const gift = document.getElementById('rocket-startup-progress');
+    if (gift) {
+      gift.setAttribute('aria-valuenow', '2');
+      gift.style.setProperty('--startup-completed', '1');
+    }
+    const label = document.getElementById('rocket-startup-status');
+    if (label && reason === 'timeout') label.textContent = 'الاتصال بطيء، جارٍ فتح الواجهة…';
+    // The gift reaches its full original color BEFORE revealing the game.
+    // This visual completion is not an authentication success indicator.
+    const reducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (gift) {
+      rocketStartupState.finishTimer = setTimeout(() => finishRocketStartup(reason, true), reducedMotion ? 0 : 500);
+      return;
+    }
+  }
   rocketStartupState.finished = true;
-  rocketStartupState.timedOut = reason === 'timeout';
   clearTimeout(rocketStartupState.deadlineTimer); clearTimeout(rocketStartupState.finishTimer);
   const splash = document.getElementById('rocket-startup');
   const app = document.querySelector('.app');
@@ -14425,6 +14447,8 @@ function beginRocketStartup() {
 }
 function prepareRocketStartupMedia() {
   const images = [...document.querySelectorAll('.image-banner .banner-poster')];
+  const gift = document.getElementById('rocket-startup-gift-color');
+  if (gift) images.push(gift);
   // Initial viewport posters only; neither all videos nor off-screen inventory blocks entry.
   images.push(...[...document.querySelectorAll('#loot-grid .loot-startup-poster')].slice(0, 2));
   Promise.all(images.map(waitForStartupImage)).then(() => {
