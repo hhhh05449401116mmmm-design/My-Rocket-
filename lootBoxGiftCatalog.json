@@ -1,0 +1,5271 @@
+{
+  "version": 1,
+  "source": "existing-game-catalog",
+  "boxes": {
+    "free": {
+      "id": "free",
+      "name": "Free",
+      "price": 0,
+      "entries": [
+        {
+          "catalogKey": "free|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|bonded ring|||",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|diamond ring|||",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|crystal ball|||",
+          "name": "Crystal Ball",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Crystal%20Ball/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|love candle|||",
+          "name": "Love Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|fine pen|||",
+          "name": "Fine Pen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Fine%20Pen/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|jolly chimp|||",
+          "name": "Jolly Chimp",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|light sword|||",
+          "name": "Light Sword",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|input key|||",
+          "name": "Input Key",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Input%20Key/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|lush bouquet|||",
+          "name": "Lush Bouquet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Lush%20Bouquet/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|spring basket|||",
+          "name": "Spring Basket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|money pot|||",
+          "name": "Money Pot",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Money%20Pot/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|stellar rocket|||",
+          "name": "Stellar Rocket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Stellar%20Rocket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|snoop dogg|||",
+          "name": "Snoop Dogg",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Dogg/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|pretty posy|||",
+          "name": "Pretty Posy",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Pretty%20Posy/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|jack-in-the-box|||",
+          "name": "Jack-in-the-Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jack-in-the-Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|mousse cake|||",
+          "name": "Mousse Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mousse%20Cake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|victory medal|||",
+          "name": "Victory Medal",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Victory%20Medal/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|fresh socks|||",
+          "name": "Fresh Socks",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Fresh%20Socks/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free|mood pack|||",
+          "name": "Mood Pack",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mood%20Pack/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|happy brownie|||",
+          "name": "Happy Brownie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Happy%20Brownie/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|whip cupcake|||",
+          "name": "Whip Cupcake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Whip%20Cupcake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|chill flame|||",
+          "name": "Chill Flame",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Chill%20Flame/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|instant ramen|||",
+          "name": "Instant Ramen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Instant%20Ramen/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|vice cream|||",
+          "name": "Vice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Vice%20Cream/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free|ice cream|||",
+          "name": "Ice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ice%20Cream/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_heart": {
+      "id": "box_heart",
+      "name": "Heart",
+      "price": 2,
+      "entries": [
+        {
+          "catalogKey": "box_heart|heart locket|||",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Heart%20Locket",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Cupid%20Charm",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|love candle|||",
+          "name": "Love Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Love%20Candle",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|eternal rose|||",
+          "name": "Eternal Rose",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Eternal%20Rose",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|trapped heart|||",
+          "name": "Trapped Heart",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Trapped%20Heart",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|diamond ring|||",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Diamond%20Ring",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|mousse cake|||",
+          "name": "Mousse Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mousse%20Cake",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|cookie heart|||",
+          "name": "Cookie Heart",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Cookie%20Heart",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|spiced wine|||",
+          "name": "Spiced Wine",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Spiced%20Wine",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_heart|whip cupcake|||",
+          "name": "Whip Cupcake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Whip%20Cupcake",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_heart|input key|||",
+          "name": "Input Key",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Input%20Key",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|lush bouquet|||",
+          "name": "Lush Bouquet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Lush%20Bouquet",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|spring basket|||",
+          "name": "Spring Basket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Spring%20Basket",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|restless jar|||",
+          "name": "Restless Jar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Restless%20Jar",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|homemade cake|||",
+          "name": "Homemade Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Homemade%20Cake",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|pretty posy|||",
+          "name": "Pretty Posy",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Pretty%20Posy",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|berry box|||",
+          "name": "Berry Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Berry%20Box",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|bunny muffin|||",
+          "name": "Bunny Muffin",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Bunny%20Muffin",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|joyful bundle|||",
+          "name": "Joyful Bundle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Joyful%20Bundle",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|love potion|||",
+          "name": "Love Potion",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Love%20Potion",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|valentine box|||",
+          "name": "Valentine Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Valentine%20Box",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|sakura flower|||",
+          "name": "Sakura Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Sakura%20Flower",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_heart|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Toy%20Bear",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_0_1": {
+      "id": "box_0_1",
+      "name": "Farm",
+      "price": 0.1,
+      "entries": [
+        {
+          "catalogKey": "box_0_1|plush pepe|||",
+          "name": "Plush Pepe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Plush%20Pepe",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|heart locket|||",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Heart%20Locket",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|durov's cap|||",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Durov's%20Cap",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|precious peach|||",
+          "name": "Precious Peach",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Precious%20Peach",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|scared cat|||",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Scared%20Cat",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Heroic%20Helmet",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|loot bag|||",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Loot%20Bag",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|mighty arm|||",
+          "name": "Mighty Arm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mighty%20Arm",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|astral shard|||",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Astral%20Shard",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Nail%20Bracelet",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|westside sign|||",
+          "name": "Westside Sign",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Westside%20Sign",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|durov's glasses|||",
+          "name": "Durov's Glasses",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Durov's%20Glasses",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|perfume bottle|||",
+          "name": "Perfume Bottle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Perfume%20Bottle",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|ion gem|||",
+          "name": "Ion Gem",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Ion%20Gem",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|mini oscar|||",
+          "name": "Mini Oscar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mini%20Oscar",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|artisan brick|||",
+          "name": "Artisan Brick",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Artisan%20Brick",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|gem signet|||",
+          "name": "Gem Signet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Gem%20Signet",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|low rider|||",
+          "name": "Low Rider",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Low%20Rider",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|swiss watch|||",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Swiss%20Watch",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|magic potion|||",
+          "name": "Magic Potion",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Magic%20Potion",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|sharp tongue|||",
+          "name": "Sharp Tongue",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Sharp%20Tongue",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|kissed frog|||",
+          "name": "Kissed Frog",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Kissed%20Frog",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|bonded ring|||",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Bonded%20Ring",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|vintage cigar|||",
+          "name": "Vintage Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Vintage%20Cigar",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|voodoo doll|||",
+          "name": "Voodoo Doll",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Voodoo%20Doll",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|neko helmet|||",
+          "name": "Neko Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Neko%20Helmet",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Toy%20Bear",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|genie lamp|||",
+          "name": "Genie Lamp",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Genie%20Lamp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Signet%20Ring",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|diamond ring|||",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Diamond%20Ring",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|rare bird|||",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Rare%20Bird",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|bling binky|||",
+          "name": "Bling Binky",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Bling%20Binky",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|electric skull|||",
+          "name": "Electric Skull",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Electric%20Skull",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|khabib's papakha|||",
+          "name": "Khabib's Papakha",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Khabib's%20Papakha",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|eternal rose|||",
+          "name": "Eternal Rose",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Eternal%20Rose",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Cupid%20Charm",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|sky stilettos|||",
+          "name": "Sky Stilettos",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Sky%20Stilettos",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|trapped heart|||",
+          "name": "Trapped Heart",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Trapped%20Heart",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|ionic dryer|||",
+          "name": "Ionic Dryer",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Ionic%20Dryer",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|ufc strike|||",
+          "name": "UFC Strike",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/UFC%20Strike",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|snoop cigar|||",
+          "name": "Snoop Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Snoop%20Cigar",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|love potion|||",
+          "name": "Love Potion",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Love%20Potion",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|mad pumpkin|||",
+          "name": "Mad Pumpkin",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mad%20Pumpkin",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|crystal ball|||",
+          "name": "Crystal Ball",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Crystal%20Ball",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|flying broom|||",
+          "name": "Flying Broom",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Flying%20Broom",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|record player|||",
+          "name": "Record Player",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Record%20Player",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|skull flower|||",
+          "name": "Skull Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Skull%20Flower",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|valentine box|||",
+          "name": "Valentine Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Valentine%20Box",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|sakura flower|||",
+          "name": "Sakura Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Sakura%20Flower",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|top hat|||",
+          "name": "Top Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Top%20Hat",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|love candle|||",
+          "name": "Love Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Love%20Candle",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|jingle bells|||",
+          "name": "Jingle Bells",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Jingle%20Bells",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|hanging star|||",
+          "name": "Hanging Star",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Hanging%20Star",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|fine pen|||",
+          "name": "Fine Pen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Fine%20Pen",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|chill flame|||",
+          "name": "Chill Flame",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Chill%20Flame",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|instant ramen|||",
+          "name": "Instant Ramen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Instant%20Ramen",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|pool float|||",
+          "name": "Pool Float",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Pool%20Float",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|vice cream|||",
+          "name": "Vice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Vice%20Cream",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|candy cane|||",
+          "name": "Candy Cane",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Candy%20Cane",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|lush bouquet|||",
+          "name": "Lush Bouquet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Lush%20Bouquet",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|desk calendar|||",
+          "name": "Desk Calendar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Desk%20Calendar",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|money pot|||",
+          "name": "Money Pot",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Money%20Pot",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|jester hat|||",
+          "name": "Jester Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Jester%20Hat",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|cookie heart|||",
+          "name": "Cookie Heart",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Cookie%20Heart",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|restless jar|||",
+          "name": "Restless Jar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Restless%20Jar",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|lol pop|||",
+          "name": "Lol Pop",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Lol%20Pop",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|winter wreath|||",
+          "name": "Winter Wreath",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Winter%20Wreath",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|mousse cake|||",
+          "name": "Mousse Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mousse%20Cake",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|snake box|||",
+          "name": "Snake Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Snake%20Box",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|liberty figure|||",
+          "name": "Liberty Figure",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Liberty%20Figure",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|santa hat|||",
+          "name": "Santa Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Santa%20Hat",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|pet snake|||",
+          "name": "Pet Snake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Pet%20Snake",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|snow globe|||",
+          "name": "Snow Globe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Snow%20Globe",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|b-day candle|||",
+          "name": "B-Day Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/B-Day%20Candle",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|bunny muffin|||",
+          "name": "Bunny Muffin",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Bunny%20Muffin",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|party sparkler|||",
+          "name": "Party Sparkler",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Party%20Sparkler",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|spring basket|||",
+          "name": "Spring Basket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Spring%20Basket",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|star notepad|||",
+          "name": "Star Notepad",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Star%20Notepad",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|bow tie|||",
+          "name": "Bow Tie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Bow%20Tie",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|homemade cake|||",
+          "name": "Homemade Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Homemade%20Cake",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|snow mittens|||",
+          "name": "Snow Mittens",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Snow%20Mittens",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|holiday drink|||",
+          "name": "Holiday Drink",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Holiday%20Drink",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|sleigh bell|||",
+          "name": "Sleigh Bell",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Sleigh%20Bell",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|light sword|||",
+          "name": "Light Sword",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Light%20Sword",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|input key|||",
+          "name": "Input Key",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Input%20Key",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|spiced wine|||",
+          "name": "Spiced Wine",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Spiced%20Wine",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|jack-in-the-box|||",
+          "name": "Jack-in-the-Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Jack-in-the-Box",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_0_1|stellar rocket|||",
+          "name": "Stellar Rocket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Stellar%20Rocket",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_0_1|mood pack|||",
+          "name": "Mood Pack",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "/api/gift-media/Mood%20Pack",
+          "rewardClass": "low"
+        }
+      ]
+    },
+    "box_2": {
+      "id": "box_2",
+      "name": "Arm",
+      "price": 2,
+      "entries": [
+        {
+          "catalogKey": "box_2|sleigh bell|stellar map||",
+          "name": "Sleigh Bell",
+          "modelName": "Stellar Map",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Stellar Map",
+          "image": "https://cdn.changes.tg/gifts/models/Sleigh%20Bell/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|light sword|darksaber||",
+          "name": "Light Sword",
+          "modelName": "Darksaber",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Darksaber",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|toy bear|teddy-800||",
+          "name": "Toy Bear",
+          "modelName": "Teddy-800",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Teddy-800",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|sleigh bell|darth vader||",
+          "name": "Sleigh Bell",
+          "modelName": "Darth Vader",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Darth Vader",
+          "image": "https://cdn.changes.tg/gifts/models/Sleigh%20Bell/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|light sword|||",
+          "name": "Light Sword",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|rare bird|||",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Rare%20Bird/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|bow tie|batwing||",
+          "name": "Bow Tie",
+          "modelName": "Batwing",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Batwing",
+          "image": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|light sword|fury of kylo||",
+          "name": "Light Sword",
+          "modelName": "Fury of Kylo",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Fury of Kylo",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|liberty figure|homeland||",
+          "name": "Liberty Figure",
+          "modelName": "Homeland",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Homeland",
+          "image": "https://cdn.changes.tg/gifts/models/Liberty%20Figure/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|valentine box|vampire||",
+          "name": "Valentine Box",
+          "modelName": "Vampire",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Vampire",
+          "image": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|timeless book|tom's diary||",
+          "name": "Timeless Book",
+          "modelName": "Tom's Diary",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Tom's Diary",
+          "image": "https://cdn.changes.tg/gifts/models/Timeless%20Book/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|jolly chimp|chimpool||",
+          "name": "Jolly Chimp",
+          "modelName": "Chimpool",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Chimpool",
+          "image": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|bow tie|dark lord||",
+          "name": "Bow Tie",
+          "modelName": "Dark Lord",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dark Lord",
+          "image": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|joyful bundle|spider-dog||",
+          "name": "Joyful Bundle",
+          "modelName": "Spider-Dog",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Spider-Dog",
+          "image": "https://cdn.changes.tg/gifts/models/Joyful%20Bundle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|cupid charm|cursed room||",
+          "name": "Cupid Charm",
+          "modelName": "Cursed Room",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Cursed Room",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|bow tie|baby yoda||",
+          "name": "Bow Tie",
+          "modelName": "Baby Yoda",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Baby Yoda",
+          "image": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|flying broom|||",
+          "name": "Flying Broom",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Flying%20Broom/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|bow tie|||",
+          "name": "Bow Tie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|stellar rocket|black wing||",
+          "name": "Stellar Rocket",
+          "modelName": "Black Wing",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Black Wing",
+          "image": "https://cdn.changes.tg/gifts/models/Stellar%20Rocket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|tama gadget|r2d2||",
+          "name": "Tama Gadget",
+          "modelName": "R2D2",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "R2D2",
+          "image": "https://cdn.changes.tg/gifts/models/Tama%20Gadget/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|hanging star|hollywood||",
+          "name": "Hanging Star",
+          "modelName": "Hollywood",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Hollywood",
+          "image": "https://cdn.changes.tg/gifts/models/Hanging%20Star/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|valentine box|molten core||",
+          "name": "Valentine Box",
+          "modelName": "Molten Core",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Molten Core",
+          "image": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|chill flame|eye of sauron||",
+          "name": "Chill Flame",
+          "modelName": "Eye of Sauron",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Eye of Sauron",
+          "image": "https://cdn.changes.tg/gifts/models/Chill%20Flame/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|snow globe|dracula||",
+          "name": "Snow Globe",
+          "modelName": "Dracula",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dracula",
+          "image": "https://cdn.changes.tg/gifts/models/Snow%20Globe/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2|snake box|popcorn||",
+          "name": "Snake Box",
+          "modelName": "Popcorn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Popcorn",
+          "image": "https://cdn.changes.tg/gifts/models/Snake%20Box/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|snake box|player 456||",
+          "name": "Snake Box",
+          "modelName": "Player 456",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Player 456",
+          "image": "https://cdn.changes.tg/gifts/models/Snake%20Box/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|zombie film||",
+          "name": "Big Year",
+          "modelName": "Zombie Film",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Zombie Film",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|matrix||",
+          "name": "Big Year",
+          "modelName": "Matrix",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Matrix",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|spider sense||",
+          "name": "Big Year",
+          "modelName": "Spider Sense",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Spider Sense",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|happy brownie|frankenstein||",
+          "name": "Happy Brownie",
+          "modelName": "Frankenstein",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Frankenstein",
+          "image": "https://cdn.changes.tg/gifts/models/Happy%20Brownie/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|lunar snake|snake game||",
+          "name": "Lunar Snake",
+          "modelName": "Snake Game",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Snake Game",
+          "image": "https://cdn.changes.tg/gifts/models/Lunar%20Snake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|candy cane|diggory||",
+          "name": "Candy Cane",
+          "modelName": "Diggory",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Diggory",
+          "image": "https://cdn.changes.tg/gifts/models/Candy%20Cane/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|frankenstein||",
+          "name": "Big Year",
+          "modelName": "Frankenstein",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Frankenstein",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|whip cupcake|bag end||",
+          "name": "Whip Cupcake",
+          "modelName": "Bag End",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Bag End",
+          "image": "https://cdn.changes.tg/gifts/models/Whip%20Cupcake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|night bat||",
+          "name": "Big Year",
+          "modelName": "Night Bat",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Night Bat",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|big year|walking dead||",
+          "name": "Big Year",
+          "modelName": "Walking Dead",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Walking Dead",
+          "image": "https://cdn.changes.tg/gifts/models/Big%20Year/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2|candy cane|joker||",
+          "name": "Candy Cane",
+          "modelName": "Joker",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Joker",
+          "image": "https://cdn.changes.tg/gifts/models/Candy%20Cane/png/Original.png",
+          "rewardClass": "low"
+        }
+      ]
+    },
+    "box_2_5": {
+      "id": "box_2_5",
+      "name": "Movie",
+      "price": 4.5,
+      "entries": [
+        {
+          "catalogKey": "box_2_5|mighty arm|infinity||",
+          "name": "Mighty Arm",
+          "modelName": "Infinity",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Infinity",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mighty arm|best muscles||",
+          "name": "Mighty Arm",
+          "modelName": "Best Muscles",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Best Muscles",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mighty arm|night bat||",
+          "name": "Mighty Arm",
+          "modelName": "Night Bat",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Night Bat",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|loot bag|night city||",
+          "name": "Loot Bag",
+          "modelName": "Night City",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Night City",
+          "image": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|durov's glasses|||",
+          "name": "Durov's Glasses",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|durov's glasses|project mayhem||",
+          "name": "Durov's Glasses",
+          "modelName": "Project Mayhem",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Project Mayhem",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|scared cat|puss in boots||",
+          "name": "Scared Cat",
+          "modelName": "Puss in Boots",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Puss in Boots",
+          "image": "https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|durov's glasses|the seeker||",
+          "name": "Durov's Glasses",
+          "modelName": "The Seeker",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "The Seeker",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|kissed frog|count croakula||",
+          "name": "Kissed Frog",
+          "modelName": "Count Croakula",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Count Croakula",
+          "image": "https://cdn.changes.tg/gifts/models/Kissed%20Frog/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|low rider|||",
+          "name": "Low Rider",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Low%20Rider/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|||",
+          "name": "Mini Oscar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|electric skull|terminator||",
+          "name": "Electric Skull",
+          "modelName": "Terminator",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Terminator",
+          "image": "https://cdn.changes.tg/gifts/models/Electric%20Skull/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|durov's glasses|speedster||",
+          "name": "Durov's Glasses",
+          "modelName": "Speedster",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Speedster",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|action film||",
+          "name": "Mini Oscar",
+          "modelName": "Action Film",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Action Film",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|astral shard|excalibrite||",
+          "name": "Astral Shard",
+          "modelName": "Excalibrite",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Excalibrite",
+          "image": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|astral shard|||",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mighty arm|||",
+          "name": "Mighty Arm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|light sword|wrath of vader||",
+          "name": "Light Sword",
+          "modelName": "Wrath of Vader",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Wrath of Vader",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|bling binky|star fighter||",
+          "name": "Bling Binky",
+          "modelName": "Star Fighter",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Star Fighter",
+          "image": "https://cdn.changes.tg/gifts/models/Bling%20Binky/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|durov's glasses|new dimension||",
+          "name": "Durov's Glasses",
+          "modelName": "New Dimension",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "New Dimension",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|catwoman||",
+          "name": "Mini Oscar",
+          "modelName": "Catwoman",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Catwoman",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|main villain||",
+          "name": "Mini Oscar",
+          "modelName": "Main Villain",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Main Villain",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|toy bear|deadpool||",
+          "name": "Toy Bear",
+          "modelName": "Deadpool",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Deadpool",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|gem signet|death star||",
+          "name": "Gem Signet",
+          "modelName": "Death Star",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Death Star",
+          "image": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|scream||",
+          "name": "Mini Oscar",
+          "modelName": "Scream",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Scream",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|best comedy||",
+          "name": "Mini Oscar",
+          "modelName": "Best Comedy",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Best Comedy",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|toy bear|matrix||",
+          "name": "Toy Bear",
+          "modelName": "Matrix",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Matrix",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|artisan brick|vhs tape||",
+          "name": "Artisan Brick",
+          "modelName": "VHS Tape",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "VHS Tape",
+          "image": "https://cdn.changes.tg/gifts/models/Artisan%20Brick/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|low rider|gigahorse||",
+          "name": "Low Rider",
+          "modelName": "Gigahorse",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Gigahorse",
+          "image": "https://cdn.changes.tg/gifts/models/Low%20Rider/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|swiss watch|||",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Swiss%20Watch/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|legionary||",
+          "name": "Mini Oscar",
+          "modelName": "Legionary",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Legionary",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|desk calendar|may the fourth||",
+          "name": "Desk Calendar",
+          "modelName": "May the Fourth",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "May the Fourth",
+          "image": "https://cdn.changes.tg/gifts/models/Desk%20Calendar/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|dracula||",
+          "name": "Mini Oscar",
+          "modelName": "Dracula",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dracula",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|mini oscar|dark knight||",
+          "name": "Mini Oscar",
+          "modelName": "Dark Knight",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dark Knight",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_2_5|gem signet|||",
+          "name": "Gem Signet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_5": {
+      "id": "box_5",
+      "name": "Autumn",
+      "price": 5,
+      "entries": [
+        {
+          "catalogKey": "box_5|durov's cap|autumn||",
+          "name": "Durov's Cap",
+          "modelName": "Autumn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Autumn",
+          "image": "https://tg.me/api/media/gift-art/durovscap/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|precious peach|mushroom||",
+          "name": "Precious Peach",
+          "modelName": "Mushroom",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Mushroom",
+          "image": "https://tg.me/api/media/gift-art/preciouspeach/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|loot bag|tangerine||",
+          "name": "Loot Bag",
+          "modelName": "Tangerine",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Tangerine",
+          "image": "https://tg.me/api/media/gift-art/lootbag/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|mini oscar|pumpkin||",
+          "name": "Mini Oscar",
+          "modelName": "Pumpkin",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin",
+          "image": "https://tg.me/api/media/gift-art/minioscar/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|crystal ball|the seeker||",
+          "name": "Crystal Ball",
+          "modelName": "The Seeker",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "The Seeker",
+          "image": "https://tg.me/api/media/gift-art/crystalball/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|candy cane|phoenix||",
+          "name": "Candy Cane",
+          "modelName": "Phoenix",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Phoenix",
+          "image": "https://tg.me/api/media/gift-art/candycane/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|vice cream|pumpkin spice||",
+          "name": "Vice Cream",
+          "modelName": "Pumpkin Spice",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin Spice",
+          "image": "https://tg.me/api/media/gift-art/vicecream/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|chill flame|oil lamp||",
+          "name": "Chill Flame",
+          "modelName": "Oil Lamp",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Oil Lamp",
+          "image": "https://tg.me/api/media/gift-art/chillflame/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|chill flame|lava lamp||",
+          "name": "Chill Flame",
+          "modelName": "Lava Lamp",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Lava Lamp",
+          "image": "https://tg.me/api/media/gift-art/chillflame/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|lush bouquet|harvest||",
+          "name": "Lush Bouquet",
+          "modelName": "Harvest",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Harvest",
+          "image": "https://tg.me/api/media/gift-art/lushbouquet/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|desk calendar|september||",
+          "name": "Desk Calendar",
+          "modelName": "September",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "September",
+          "image": "https://tg.me/api/media/gift-art/deskcalendar/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|money pot|porridge||",
+          "name": "Money Pot",
+          "modelName": "Porridge",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Porridge",
+          "image": "https://tg.me/api/media/gift-art/moneypot/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|jester hat|comeback||",
+          "name": "Jester Hat",
+          "modelName": "Comeback",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Comeback",
+          "image": "https://tg.me/api/media/gift-art/jesterhat/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|desk calendar|october||",
+          "name": "Desk Calendar",
+          "modelName": "October",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "October",
+          "image": "https://tg.me/api/media/gift-art/deskcalendar/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|cookie heart|late fall||",
+          "name": "Cookie Heart",
+          "modelName": "Late Fall",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Late Fall",
+          "image": "https://tg.me/api/media/gift-art/cookieheart/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|lush bouquet|mushrooms||",
+          "name": "Lush Bouquet",
+          "modelName": "Mushrooms",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Mushrooms",
+          "image": "https://tg.me/api/media/gift-art/lushbouquet/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|restless jar|autumn candle||",
+          "name": "Restless Jar",
+          "modelName": "Autumn Candle",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Autumn Candle",
+          "image": "https://tg.me/api/media/gift-art/restlessjar/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|lol pop|pumpkin||",
+          "name": "Lol Pop",
+          "modelName": "Pumpkin",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin",
+          "image": "https://tg.me/api/media/gift-art/lolpop/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|winter wreath|halloween||",
+          "name": "Winter Wreath",
+          "modelName": "Halloween",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Halloween",
+          "image": "https://tg.me/api/media/gift-art/winterwreath/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|mousse cake|harvest||",
+          "name": "Mousse Cake",
+          "modelName": "Harvest",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Harvest",
+          "image": "https://tg.me/api/media/gift-art/moussecake/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|snake box|honey bee||",
+          "name": "Snake Box",
+          "modelName": "Honey Bee",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Honey Bee",
+          "image": "https://tg.me/api/media/gift-art/snakebox/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|liberty figure|pumpkin||",
+          "name": "Liberty Figure",
+          "modelName": "Pumpkin",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin",
+          "image": "https://tg.me/api/media/gift-art/libertyfigure/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|lush bouquet|maple leaves||",
+          "name": "Lush Bouquet",
+          "modelName": "Maple Leaves",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Maple Leaves",
+          "image": "https://tg.me/api/media/gift-art/lushbouquet/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|santa hat|cold autumn||",
+          "name": "Santa Hat",
+          "modelName": "Cold Autumn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Cold Autumn",
+          "image": "https://tg.me/api/media/gift-art/santahat/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|restless jar|tricky treats||",
+          "name": "Restless Jar",
+          "modelName": "Tricky Treats",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Tricky Treats",
+          "image": "https://tg.me/api/media/gift-art/restlessjar/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|candy cane|weasley||",
+          "name": "Candy Cane",
+          "modelName": "Weasley",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Weasley",
+          "image": "https://tg.me/api/media/gift-art/candycane/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|pet snake|autumn||",
+          "name": "Pet Snake",
+          "modelName": "Autumn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Autumn",
+          "image": "https://tg.me/api/media/gift-art/petsnake/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|snow globe|autumn||",
+          "name": "Snow Globe",
+          "modelName": "Autumn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Autumn",
+          "image": "https://tg.me/api/media/gift-art/snowglobe/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|b-day candle|crunchy||",
+          "name": "B-Day Candle",
+          "modelName": "Crunchy",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Crunchy",
+          "image": "https://tg.me/api/media/gift-art/bdaycandle/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|money pot|pumpkin||",
+          "name": "Money Pot",
+          "modelName": "Pumpkin",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin",
+          "image": "https://tg.me/api/media/gift-art/moneypot/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|mad pumpkin|flat joke||",
+          "name": "Mad Pumpkin",
+          "modelName": "Flat Joke",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Flat Joke",
+          "image": "https://tg.me/api/media/gift-art/madpumpkin/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|bunny muffin|citrus||",
+          "name": "Bunny Muffin",
+          "modelName": "Citrus",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Citrus",
+          "image": "https://tg.me/api/media/gift-art/bunnymuffin/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|cookie heart|ma chérie||",
+          "name": "Cookie Heart",
+          "modelName": "Ma Chérie",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Ma Chérie",
+          "image": "https://tg.me/api/media/gift-art/cookieheart/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|party sparkler|star time||",
+          "name": "Party Sparkler",
+          "modelName": "Star Time",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Star Time",
+          "image": "https://tg.me/api/media/gift-art/partysparkler/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|magic potion|agent orange||",
+          "name": "Magic Potion",
+          "modelName": "Agent Orange",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Agent Orange",
+          "image": "https://tg.me/api/media/gift-art/magicpotion/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|jingle bells|hedgehogs||",
+          "name": "Jingle Bells",
+          "modelName": "Hedgehogs",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Hedgehogs",
+          "image": "https://tg.me/api/media/gift-art/jinglebells/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|sakura flower|carnation||",
+          "name": "Sakura Flower",
+          "modelName": "Carnation",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Carnation",
+          "image": "https://tg.me/api/media/gift-art/sakuraflower/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|voodoo doll|pumpkin||",
+          "name": "Voodoo Doll",
+          "modelName": "Pumpkin",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Pumpkin",
+          "image": "https://tg.me/api/media/gift-art/voodoodoll/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|khabib's papakha|autumn||",
+          "name": "Khabib's Papakha",
+          "modelName": "Autumn",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Autumn",
+          "image": "https://tg.me/api/media/gift-art/khabibspapakha/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|electric skull|tangerine||",
+          "name": "Electric Skull",
+          "modelName": "Tangerine",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Tangerine",
+          "image": "https://tg.me/api/media/gift-art/electricskull/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|pet snake|spooky||",
+          "name": "Pet Snake",
+          "modelName": "Spooky",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Spooky",
+          "image": "https://tg.me/api/media/gift-art/petsnake/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|love candle|harvest||",
+          "name": "Love Candle",
+          "modelName": "Harvest",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Harvest",
+          "image": "https://tg.me/api/media/gift-art/lovecandle/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|spring basket|fire fox||",
+          "name": "Spring Basket",
+          "modelName": "Fire Fox",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Fire Fox",
+          "image": "https://tg.me/api/media/gift-art/springbasket/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_5|mad pumpkin|dark ritual||",
+          "name": "Mad Pumpkin",
+          "modelName": "Dark Ritual",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dark Ritual",
+          "image": "https://tg.me/api/media/gift-art/madpumpkin/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|flying broom|gryffindor||",
+          "name": "Flying Broom",
+          "modelName": "Gryffindor",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Gryffindor",
+          "image": "https://tg.me/api/media/gift-art/flyingbroom/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|mad pumpkin|laugh potion||",
+          "name": "Mad Pumpkin",
+          "modelName": "Laugh Potion",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Laugh Potion",
+          "image": "https://tg.me/api/media/gift-art/madpumpkin/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_5|jingle bells|dark secret||",
+          "name": "Jingle Bells",
+          "modelName": "Dark Secret",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Dark Secret",
+          "image": "https://tg.me/api/media/gift-art/jinglebells/thumb.webp",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_8": {
+      "id": "box_8",
+      "name": "Nova",
+      "price": 8,
+      "entries": [
+        {
+          "catalogKey": "box_8|genie lamp|space travel||",
+          "name": "Genie Lamp",
+          "modelName": "Space Travel",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Space Travel",
+          "image": "https://tg.me/api/media/gift-art/genielamp/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|nail bracelet|interstellar||",
+          "name": "Nail Bracelet",
+          "modelName": "Interstellar",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Interstellar",
+          "image": "https://tg.me/api/media/gift-art/nailbracelet/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|bonded ring|asteroid||",
+          "name": "Bonded Ring",
+          "modelName": "Asteroid",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Asteroid",
+          "image": "https://tg.me/api/media/gift-art/bondedring/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|mighty arm|xeno grip||",
+          "name": "Mighty Arm",
+          "modelName": "Xeno Grip",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Xeno Grip",
+          "image": "https://tg.me/api/media/gift-art/mightyarm/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|swiss watch|outer space||",
+          "name": "Swiss Watch",
+          "modelName": "Outer Space",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Outer Space",
+          "image": "https://tg.me/api/media/gift-art/swisswatch/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|vintage cigar|saturn v||",
+          "name": "Vintage Cigar",
+          "modelName": "Saturn V",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Saturn V",
+          "image": "https://tg.me/api/media/gift-art/vintagecigar/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|top hat|alien invasion||",
+          "name": "Top Hat",
+          "modelName": "Alien Invasion",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Alien Invasion",
+          "image": "https://tg.me/api/media/gift-art/tophat/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|signet ring|saturn ring||",
+          "name": "Signet Ring",
+          "modelName": "Saturn Ring",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Saturn Ring",
+          "image": "https://tg.me/api/media/gift-art/signetring/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|mini oscar|mars attacks||",
+          "name": "Mini Oscar",
+          "modelName": "Mars Attacks",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Mars Attacks",
+          "image": "https://tg.me/api/media/gift-art/minioscar/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|swiss watch|asteroid||",
+          "name": "Swiss Watch",
+          "modelName": "Asteroid",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Asteroid",
+          "image": "https://tg.me/api/media/gift-art/swisswatch/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|neko helmet|astronaut||",
+          "name": "Neko Helmet",
+          "modelName": "Astronaut",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Astronaut",
+          "image": "https://tg.me/api/media/gift-art/nekohelmet/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|voodoo doll|far galaxy||",
+          "name": "Voodoo Doll",
+          "modelName": "Far Galaxy",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Far Galaxy",
+          "image": "https://tg.me/api/media/gift-art/voodoodoll/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|neko helmet|starry sky||",
+          "name": "Neko Helmet",
+          "modelName": "Starry Sky",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Starry Sky",
+          "image": "https://tg.me/api/media/gift-art/nekohelmet/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|bling binky|star fighter||",
+          "name": "Bling Binky",
+          "modelName": "Star Fighter",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Star Fighter",
+          "image": "https://tg.me/api/media/gift-art/blingbinky/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|star notepad|space notes||",
+          "name": "Star Notepad",
+          "modelName": "Space Notes",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Space Notes",
+          "image": "https://tg.me/api/media/gift-art/starnotepad/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|bow tie|singularity||",
+          "name": "Bow Tie",
+          "modelName": "Singularity",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Singularity",
+          "image": "https://tg.me/api/media/gift-art/bowtie/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|snoop cigar|space wrap||",
+          "name": "Snoop Cigar",
+          "modelName": "Space Wrap",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Space Wrap",
+          "image": "https://tg.me/api/media/gift-art/snoopcigar/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|homemade cake|galaxy||",
+          "name": "Homemade Cake",
+          "modelName": "Galaxy",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Galaxy",
+          "image": "https://tg.me/api/media/gift-art/homemadecake/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|mad pumpkin|solar flare||",
+          "name": "Mad Pumpkin",
+          "modelName": "Solar Flare",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Solar Flare",
+          "image": "https://tg.me/api/media/gift-art/madpumpkin/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|snow mittens|astronaut||",
+          "name": "Snow Mittens",
+          "modelName": "Astronaut",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Astronaut",
+          "image": "https://tg.me/api/media/gift-art/snowmittens/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|snoop cigar|stargazer||",
+          "name": "Snoop Cigar",
+          "modelName": "Stargazer",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Stargazer",
+          "image": "https://tg.me/api/media/gift-art/snoopcigar/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|holiday drink|winter glow||",
+          "name": "Holiday Drink",
+          "modelName": "Winter Glow",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Winter Glow",
+          "image": "https://tg.me/api/media/gift-art/holidaydrink/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|sleigh bell|winter bells||",
+          "name": "Sleigh Bell",
+          "modelName": "Winter Bells",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Winter Bells",
+          "image": "https://tg.me/api/media/gift-art/sleighbell/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|light sword|stargazer||",
+          "name": "Light Sword",
+          "modelName": "Stargazer",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Stargazer",
+          "image": "https://tg.me/api/media/gift-art/lightsword/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|input key|black hole||",
+          "name": "Input Key",
+          "modelName": "Black Hole",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Black Hole",
+          "image": "https://tg.me/api/media/gift-art/inputkey/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|spiced wine|galaxy||",
+          "name": "Spiced Wine",
+          "modelName": "Galaxy",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Galaxy",
+          "image": "https://tg.me/api/media/gift-art/spicedwine/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|spiced wine|black hole||",
+          "name": "Spiced Wine",
+          "modelName": "Black Hole",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Black Hole",
+          "image": "https://tg.me/api/media/gift-art/spicedwine/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|jack-in-the-box|spaceship||",
+          "name": "Jack-in-the-Box",
+          "modelName": "Spaceship",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Spaceship",
+          "image": "https://tg.me/api/media/gift-art/jackinthebox/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_8|stellar rocket|knowledge||",
+          "name": "Stellar Rocket",
+          "modelName": "Knowledge",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Knowledge",
+          "image": "https://tg.me/api/media/gift-art/stellarrocket/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|stellar rocket|alien pizza||",
+          "name": "Stellar Rocket",
+          "modelName": "Alien Pizza",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Alien Pizza",
+          "image": "https://tg.me/api/media/gift-art/stellarrocket/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_8|mood pack|space cat||",
+          "name": "Mood Pack",
+          "modelName": "Space Cat",
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Space Cat",
+          "image": "https://tg.me/api/media/gift-art/moodpack/thumb.webp",
+          "rewardClass": "low"
+        }
+      ]
+    },
+    "box_snoop": {
+      "id": "box_snoop",
+      "name": "Snoop",
+      "price": 8,
+      "entries": [
+        {
+          "catalogKey": "box_snoop|snoop cigar|||",
+          "name": "Snoop Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_snoop|swag bag|||",
+          "name": "Swag Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Swag%20Bag/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_snoop|snoop dogg|||",
+          "name": "Snoop Dogg",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Dogg/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_snoop|westside sign|||",
+          "name": "Westside Sign",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Westside%20Sign/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_snoop|low rider|||",
+          "name": "Low Rider",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Low%20Rider/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_12": {
+      "id": "box_12",
+      "name": "Pepe",
+      "price": 12,
+      "entries": [
+        {
+          "catalogKey": "box_12|plush pepe|||",
+          "name": "Plush Pepe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|kissed frog|||",
+          "name": "Kissed Frog",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Kissed%20Frog/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|loot bag|||",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|spring basket|||",
+          "name": "Spring Basket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|durov's glasses|||",
+          "name": "Durov's Glasses",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Glasses/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|neko helmet|||",
+          "name": "Neko Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Neko%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|scared cat|||",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|surge board|||",
+          "name": "Surge Board",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Surge%20Board/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|ice cream|||",
+          "name": "Ice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ice%20Cream/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|sharp tongue|||",
+          "name": "Sharp Tongue",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Sharp%20Tongue/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|mood pack|||",
+          "name": "Mood Pack",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mood%20Pack/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|bunny muffin|||",
+          "name": "Bunny Muffin",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bunny%20Muffin/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|star notepad|||",
+          "name": "Star Notepad",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Star%20Notepad/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|snow globe|||",
+          "name": "Snow Globe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snow%20Globe/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|tama gadget|||",
+          "name": "Tama Gadget",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Tama%20Gadget/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|restless jar|||",
+          "name": "Restless Jar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|pool float|||",
+          "name": "Pool Float",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Pool%20Float/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|timeless book|||",
+          "name": "Timeless Book",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Timeless%20Book/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|winter wreath|||",
+          "name": "Winter Wreath",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Winter%20Wreath/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|jester hat|||",
+          "name": "Jester Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jester%20Hat/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|desk calendar|||",
+          "name": "Desk Calendar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Desk%20Calendar/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|joyful bundle|||",
+          "name": "Joyful Bundle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Joyful%20Bundle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|spy agaric|||",
+          "name": "Spy Agaric",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Spy%20Agaric/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|jack-in-the-box|||",
+          "name": "Jack-in-the-Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jack-in-the-Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|ginger cookie|||",
+          "name": "Ginger Cookie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ginger%20Cookie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|valentine box|||",
+          "name": "Valentine Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|b-day candle|||",
+          "name": "B-Day Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/B-Day%20Candle/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|fresh socks|||",
+          "name": "Fresh Socks",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Fresh%20Socks/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|easter egg|||",
+          "name": "Easter Egg",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Easter%20Egg/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|hypno lollipop|||",
+          "name": "Hypno Lollipop",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Hypno%20Lollipop/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|party sparkler|||",
+          "name": "Party Sparkler",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Party%20Sparkler/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_12|stellar rocket|||",
+          "name": "Stellar Rocket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Stellar%20Rocket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_12|pet snake|||",
+          "name": "Pet Snake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Pet%20Snake/png/Original.png",
+          "rewardClass": "low"
+        }
+      ]
+    },
+    "box_15": {
+      "id": "box_15",
+      "name": "Ring",
+      "price": 15,
+      "entries": [
+        {
+          "catalogKey": "box_15|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|gem signet|||",
+          "name": "Gem Signet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|swiss watch|||",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Swiss%20Watch/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_15|bonded ring|||",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|voodoo doll|||",
+          "name": "Voodoo Doll",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Voodoo%20Doll/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_15|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|diamond ring|||",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|eternal rose|||",
+          "name": "Eternal Rose",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Eternal%20Rose/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|mad pumpkin|||",
+          "name": "Mad Pumpkin",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mad%20Pumpkin/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_15|skull flower|||",
+          "name": "Skull Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Skull%20Flower/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|valentine box|||",
+          "name": "Valentine Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|sakura flower|||",
+          "name": "Sakura Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Sakura%20Flower/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|hanging star|||",
+          "name": "Hanging Star",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Hanging%20Star/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|restless jar|||",
+          "name": "Restless Jar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_15|bow tie|||",
+          "name": "Bow Tie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_15|victory medal|||",
+          "name": "Victory Medal",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Victory%20Medal/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_15|ice cream|||",
+          "name": "Ice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ice%20Cream/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_20": {
+      "id": "box_20",
+      "name": "Black",
+      "price": 20,
+      "entries": [
+        {
+          "catalogKey": "box_20|scared cat||black|",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|durov's cap||black|",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Cap/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|mighty arm||black|",
+          "name": "Mighty Arm",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|nail bracelet||black|",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|ion gem||black|",
+          "name": "Ion Gem",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Ion%20Gem/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|genie lamp||black|",
+          "name": "Genie Lamp",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Genie%20Lamp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|swiss watch||black|",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Swiss%20Watch/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|bonded ring||black|",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|perfume bottle||black|",
+          "name": "Perfume Bottle",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Perfume%20Bottle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|magic potion||black|",
+          "name": "Magic Potion",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Magic%20Potion/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|mini oscar||black|",
+          "name": "Mini Oscar",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|artisan brick||black|",
+          "name": "Artisan Brick",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Artisan%20Brick/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|low rider||black|",
+          "name": "Low Rider",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Low%20Rider/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|kissed frog||black|",
+          "name": "Kissed Frog",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Kissed%20Frog/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|bling binky||black|",
+          "name": "Bling Binky",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Bling%20Binky/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|neko helmet||black|",
+          "name": "Neko Helmet",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Neko%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|khabib's papakha||black|",
+          "name": "Khabib's Papakha",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Khabib%27s%20Papakha/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|cupid charm||black|",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|snoop cigar||black|",
+          "name": "Snoop Cigar",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|ufc strike||black|",
+          "name": "UFC Strike",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/UFC%20Strike/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|hanging star||black|",
+          "name": "Hanging Star",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Hanging%20Star/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|sakura flower||black|",
+          "name": "Sakura Flower",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Sakura%20Flower/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|sky stilettos||black|",
+          "name": "Sky Stilettos",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Sky%20Stilettos/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|crystal ball||black|",
+          "name": "Crystal Ball",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Crystal%20Ball/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|record player||black|",
+          "name": "Record Player",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Record%20Player/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|mad pumpkin||black|",
+          "name": "Mad Pumpkin",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Mad%20Pumpkin/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|love potion||black|",
+          "name": "Love Potion",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Love%20Potion/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|flying broom||black|",
+          "name": "Flying Broom",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Flying%20Broom/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|evil eye||black|",
+          "name": "Evil Eye",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Evil%20Eye/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|valentine box||black|",
+          "name": "Valentine Box",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|sleigh bell||black|",
+          "name": "Sleigh Bell",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Sleigh%20Bell/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|berry box||black|",
+          "name": "Berry Box",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Berry%20Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|lunar snake||black|",
+          "name": "Lunar Snake",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Lunar%20Snake/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|instant ramen||black|",
+          "name": "Instant Ramen",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Instant%20Ramen/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|b-day candle||black|",
+          "name": "B-Day Candle",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/B-Day%20Candle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|precious peach||black|",
+          "name": "Precious Peach",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Precious%20Peach/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|astral shard||black|",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|heroic helmet||black|",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|heart locket||black|",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|gem signet||black|",
+          "name": "Gem Signet",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|westside sign||black|",
+          "name": "Westside Sign",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Westside%20Sign/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|sharp tongue||black|",
+          "name": "Sharp Tongue",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Sharp%20Tongue/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|loot bag||black|",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|voodoo doll||black|",
+          "name": "Voodoo Doll",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Voodoo%20Doll/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_20|vintage cigar||black|",
+          "name": "Vintage Cigar",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Vintage%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|signet ring||black|",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|electric skull||black|",
+          "name": "Electric Skull",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Electric%20Skull/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|rare bird||black|",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Rare%20Bird/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|toy bear||black|",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|eternal rose||black|",
+          "name": "Eternal Rose",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Eternal%20Rose/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|diamond ring||black|",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|top hat||black|",
+          "name": "Top Hat",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Top%20Hat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|ionic dryer||black|",
+          "name": "Ionic Dryer",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Ionic%20Dryer/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|trapped heart||black|",
+          "name": "Trapped Heart",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|skull flower||black|",
+          "name": "Skull Flower",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Skull%20Flower/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|jingle bells||black|",
+          "name": "Jingle Bells",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Jingle%20Bells/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|jolly chimp||black|",
+          "name": "Jolly Chimp",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_20|snake box||black|",
+          "name": "Snake Box",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Snake%20Box/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_20|xmas stocking||black|",
+          "name": "Xmas Stocking",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://cdn.changes.tg/gifts/models/Xmas%20Stocking/png/Original.png",
+          "rewardClass": "low"
+        }
+      ]
+    },
+    "box_25": {
+      "id": "box_25",
+      "name": "Cap",
+      "price": 25,
+      "entries": [
+        {
+          "catalogKey": "box_25|heart locket|||",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|durov's cap|||",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Cap/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|precious peach|||",
+          "name": "Precious Peach",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Precious%20Peach/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|scared cat|||",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|mighty arm|||",
+          "name": "Mighty Arm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|loot bag|||",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|astral shard|||",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|perfume bottle|||",
+          "name": "Perfume Bottle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Perfume%20Bottle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|ion gem|||",
+          "name": "Ion Gem",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ion%20Gem/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|artisan brick|||",
+          "name": "Artisan Brick",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Artisan%20Brick/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|magic potion|||",
+          "name": "Magic Potion",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Magic%20Potion/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|swiss watch|||",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Swiss%20Watch/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_25|sharp tongue|||",
+          "name": "Sharp Tongue",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Sharp%20Tongue/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|kissed frog|||",
+          "name": "Kissed Frog",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Kissed%20Frog/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|vintage cigar|||",
+          "name": "Vintage Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Vintage%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|genie lamp|||",
+          "name": "Genie Lamp",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Genie%20Lamp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|rare bird|||",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Rare%20Bird/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|electric skull|||",
+          "name": "Electric Skull",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Electric%20Skull/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|snoop cigar|||",
+          "name": "Snoop Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|ufc strike|||",
+          "name": "UFC Strike",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/UFC%20Strike/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|crystal ball|||",
+          "name": "Crystal Ball",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Crystal%20Ball/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|record player|||",
+          "name": "Record Player",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Record%20Player/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|skull flower|||",
+          "name": "Skull Flower",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Skull%20Flower/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|top hat|||",
+          "name": "Top Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Top%20Hat/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|jolly chimp|||",
+          "name": "Jolly Chimp",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_25|light sword|||",
+          "name": "Light Sword",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_50": {
+      "id": "box_50",
+      "name": "Crazy",
+      "price": 50,
+      "entries": [
+        {
+          "catalogKey": "box_50|plush pepe|||",
+          "name": "Plush Pepe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|heart locket|||",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|durov's cap|||",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Durov%27s%20Cap/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|precious peach|||",
+          "name": "Precious Peach",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Precious%20Peach/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|mighty arm|||",
+          "name": "Mighty Arm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|loot bag|||",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|astral shard|||",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|mini oscar|||",
+          "name": "Mini Oscar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|perfume bottle|||",
+          "name": "Perfume Bottle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Perfume%20Bottle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|ion gem|||",
+          "name": "Ion Gem",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ion%20Gem/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|artisan brick|||",
+          "name": "Artisan Brick",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Artisan%20Brick/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|gem signet|||",
+          "name": "Gem Signet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|bonded ring|||",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|vintage cigar|||",
+          "name": "Vintage Cigar",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Vintage%20Cigar/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|neko helmet|||",
+          "name": "Neko Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Neko%20Helmet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|rare bird|||",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Rare%20Bird/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|bling binky|||",
+          "name": "Bling Binky",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bling%20Binky/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|khabib's papakha|||",
+          "name": "Khabib's Papakha",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Khabib%27s%20Papakha/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|ufc strike|||",
+          "name": "UFC Strike",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/UFC%20Strike/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|love potion|||",
+          "name": "Love Potion",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Love%20Potion/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_50|top hat|||",
+          "name": "Top Hat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Top%20Hat/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "box_100": {
+      "id": "box_100",
+      "name": "VIP",
+      "price": 100,
+      "entries": [
+        {
+          "catalogKey": "box_100|plush pepe|||",
+          "name": "Plush Pepe",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/plushpepe/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|durov's cap||black|",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/durovscap/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_100|heart locket|||",
+          "name": "Heart Locket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/heartlocket/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|precious peach||black|",
+          "name": "Precious Peach",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/preciouspeach/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|scared cat|||",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/scaredcat/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|nail bracelet||black|",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/nailbracelet/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|heroic helmet|||",
+          "name": "Heroic Helmet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/mightyarm/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|swiss watch||black|",
+          "name": "Swiss Watch",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/swisswatch/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_100|loot bag|||",
+          "name": "Loot Bag",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/lootbag/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|bonded ring||black|",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/bondedring/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|rare bird|||",
+          "name": "Rare Bird",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/rarebird/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|astral shard|||",
+          "name": "Astral Shard",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/astralshard/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|westside sign|||",
+          "name": "Westside Sign",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/westsidesign/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|artisan brick||black|",
+          "name": "Artisan Brick",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/artisanbrick/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|durov's cap|||",
+          "name": "Durov's Cap",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/durovscap/thumb.webp",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "box_100|low rider||black|",
+          "name": "Low Rider",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/lowrider/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|diamond ring||black|",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/diamondring/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|toy bear||black|",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/toybear/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|plush pepe||onyx black|",
+          "name": "Plush Pepe",
+          "modelName": null,
+          "backdropName": "Onyx Black",
+          "patternName": null,
+          "displayLabel": "Onyx Black",
+          "image": "https://tg.me/api/media/gift-art/plushpepe/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|scared cat||black|",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": "Black",
+          "patternName": null,
+          "displayLabel": "Black",
+          "image": "https://tg.me/api/media/gift-art/scaredcat/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|scared cat||onyx black|",
+          "name": "Scared Cat",
+          "modelName": null,
+          "backdropName": "Onyx Black",
+          "patternName": null,
+          "displayLabel": "Onyx Black",
+          "image": "https://tg.me/api/media/gift-art/scaredcat/thumb.webp",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "box_100|toy bear|||",
+          "name": "Toy Bear",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://tg.me/api/media/gift-art/toybear/thumb.webp",
+          "rewardClass": "high"
+        }
+      ]
+    },
+    "free24": {
+      "id": "free24",
+      "name": "Daily Free Box",
+      "price": 0,
+      "entries": [
+        {
+          "catalogKey": "free24|nail bracelet|||",
+          "name": "Nail Bracelet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|bonded ring|||",
+          "name": "Bonded Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|signet ring|||",
+          "name": "Signet Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|diamond ring|||",
+          "name": "Diamond Ring",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|cupid charm|||",
+          "name": "Cupid Charm",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|crystal ball|||",
+          "name": "Crystal Ball",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Crystal%20Ball/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|love candle|||",
+          "name": "Love Candle",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|fine pen|||",
+          "name": "Fine Pen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Fine%20Pen/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|jolly chimp|||",
+          "name": "Jolly Chimp",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|light sword|||",
+          "name": "Light Sword",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|input key|||",
+          "name": "Input Key",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Input%20Key/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|lush bouquet|||",
+          "name": "Lush Bouquet",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Lush%20Bouquet/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|spring basket|||",
+          "name": "Spring Basket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|money pot|||",
+          "name": "Money Pot",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Money%20Pot/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|stellar rocket|||",
+          "name": "Stellar Rocket",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Stellar%20Rocket/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|snoop dogg|||",
+          "name": "Snoop Dogg",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Snoop%20Dogg/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|pretty posy|||",
+          "name": "Pretty Posy",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Pretty%20Posy/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|jack-in-the-box|||",
+          "name": "Jack-in-the-Box",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Jack-in-the-Box/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|mousse cake|||",
+          "name": "Mousse Cake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mousse%20Cake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|victory medal|||",
+          "name": "Victory Medal",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Victory%20Medal/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|fresh socks|||",
+          "name": "Fresh Socks",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Fresh%20Socks/png/Original.png",
+          "rewardClass": "high"
+        },
+        {
+          "catalogKey": "free24|mood pack|||",
+          "name": "Mood Pack",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Mood%20Pack/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|happy brownie|||",
+          "name": "Happy Brownie",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Happy%20Brownie/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|whip cupcake|||",
+          "name": "Whip Cupcake",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Whip%20Cupcake/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|chill flame|||",
+          "name": "Chill Flame",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Chill%20Flame/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|instant ramen|||",
+          "name": "Instant Ramen",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Instant%20Ramen/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|vice cream|||",
+          "name": "Vice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Vice%20Cream/png/Original.png",
+          "rewardClass": "low"
+        },
+        {
+          "catalogKey": "free24|ice cream|||",
+          "name": "Ice Cream",
+          "modelName": null,
+          "backdropName": null,
+          "patternName": null,
+          "displayLabel": "Random",
+          "image": "https://cdn.changes.tg/gifts/models/Ice%20Cream/png/Original.png",
+          "rewardClass": "high"
+        }
+      ]
+    }
+  }
+}

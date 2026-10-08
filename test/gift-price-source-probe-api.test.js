@@ -18,12 +18,12 @@ test('public fixed source check works without account login and cannot change fi
     let response=await fetch(url+'/api/gift-pricing/source-check?name=Ignored&amount=999999');
     assert.ok([200,202].includes(response.status));
     let body=await response.json();
-    for(let i=0;i<20&&body.phase!=='complete';i++){
+    for(let i=0;i<200&&body.phase!=='complete';i++){
         await new Promise(r=>setTimeout(r,5));response=await fetch(url+'/api/gift-pricing/source-check');body=await response.json();
     }
     assert.equal(response.status,200);assert.equal(body.phase,'complete');assert.equal(body.mode,'read-only-source-check');
-    assert.equal(body.financialPricingChanged,false);assert.equal(body.checks.length,4);
-    assert.ok(body.checks.every(q=>q.available===false&&q.marketValueTon===null&&q.specification.name==='Plush Pepe'));
+    assert.equal(body.financialPricingChanged,false);assert.equal(body.scope,'all-game-catalog');assert.equal(body.coverage.totalGiftTypes,111);assert.equal(body.coverage.totalBoxes,15);assert.equal(body.checks.length,306);
+    assert.ok(body.checks.every(q=>q.available===false&&q.marketValueTon===null));
     assert.equal(await database.getUserBalance(user.id),balance);
     assert.equal((await database.get('SELECT COUNT(*) AS count FROM user_gifts')).count,before.count);
     assert.equal((await database.get('SELECT COUNT(*) AS count FROM lootbox_history')).count,history.count);

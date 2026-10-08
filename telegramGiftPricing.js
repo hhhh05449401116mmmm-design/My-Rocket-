@@ -117,9 +117,19 @@ function resolveOfficialAttribute(attributes, kind, requestedName) {
     return identities.values().next().value;
 }
 
-const VERIFIED_BACKDROP_REFERENCES = Object.freeze({
-    'plush pepe': Object.freeze({black:'PlushPepe-1056','onyx black':'PlushPepe-1'})
-});
+function compactMarketGift(gift) {
+    return {
+        giftId: idString(gift?.giftId ?? gift?.gift_id),
+        slug: typeof gift?.slug === 'string' ? gift.slug : null,
+        attributes: (Array.isArray(gift?.attributes) ? gift.attributes : []).map(attribute => ({
+            className: className(attribute), name: attribute.name,
+            backdropId: attribute.backdropId ?? attribute.backdrop_id,
+            document: attribute.document?.id === undefined ? undefined : {id: attribute.document.id}
+        })),
+        resellAmount: (Array.isArray(gift?.resellAmount ?? gift?.resell_amount) ? gift.resellAmount ?? gift.resell_amount : [])
+            .map(amount => ({className: className(amount), amount: amount.amount}))
+    };
+}
 
 function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
     maxPages = 100, maxEntries = 1200, concurrency = 2, timeoutMs = 20000,
@@ -131,7 +141,9 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
     const cache = new Map();
     const inFlight = new Map();
     const attributeCache = new Map();
-    const referenceAttributeCache = new Map();
+    const marketScanCache = new Map();
+    const marketScanInFlight = new Map();
+    const marketFailureCache = new Map();
     const timedOutKeys = new Set();
     let catalog = null;
     let catalogUntil = 0;
@@ -176,111 +188,125 @@ function createTelegramGiftPricing({ getClient, now = Date.now, ttlMs = 60000,
         return promise;
     }
 
-    async function referenceBackdropFor(client, spec, baseId) {
-        const slug = VERIFIED_BACKDROP_REFERENCES[normalize(spec.name)]?.[normalize(spec.backdropName)];
-        if (!slug || typeof client.api.payments.getUniqueStarGift !== 'function') return { reason:'backdrop_not_found' };
-        const cacheKey = baseId + '|' + slug;
-        const cached = referenceAttributeCache.get(cacheKey);
-        if (cached && cached.until > now()) return cached.promise;
+    // One bounded, shared, unfiltered market scan per official collection.
+    // This is not a collection-price fallback: each quote below requires its
+    // own exact model/backdrop/pattern names AND IDs on the returned listings.
+    async function scanCollection(client, baseId, deadline) {
+        const cached = marketScanCache.get(baseId);
+        if (cached && cached.until > now()) return cached.result;
+        const failure = marketFailureCache.get(baseId);
+        if (failure && failure.until > now()) {
+            if (failure.error) throw failure.error;
+            return failure.result;
+        }
+        if (marketScanInFlight.has(baseId)) return marketScanInFlight.get(baseId);
         const promise = (async () => {
-            const result = await client.api.payments.getUniqueStarGift({slug});
-            const gift = result?.gift;
-            if (!className(gift).includes('stargiftunique') || gift.slug !== slug ||
-                idString(gift.giftId ?? gift.gift_id) !== baseId) return {reason:'backdrop_reference_mismatch'};
-            const resolved = resolveOfficialAttribute(Array.isArray(gift.attributes) ? gift.attributes : [],'backdrop',spec.backdropName);
-            if (resolved.reason) return resolved;
-            return {...resolved,discoverySource:'telegram-unique-gift',referenceSlug:slug};
-        })().catch(() => ({reason:'backdrop_reference_unavailable'}));
-        referenceAttributeCache.set(cacheKey,{promise,until:now()+300000});
+            const gifts = [];
+            const offsets = new Set();
+            const startedAt = now();
+            let offset = '';
+            for (let page = 0; page < maxPages; page++) {
+                if (now() >= deadline) return {reason:'scan_timeout'};
+                const result = await client.api.payments.getResaleStarGifts({
+                    giftId:BigInt(baseId),sortByPrice:true,starsOnly:false,offset,limit:100
+                });
+                if (!Array.isArray(result?.gifts)) return {reason:'invalid_market_response'};
+                if (result.gifts.length > 100) return {reason:'invalid_market_response'};
+                for (const gift of result.gifts) {
+                    if (idString(gift?.giftId ?? gift?.gift_id) === baseId) gifts.push(compactMarketGift(gift));
+                }
+                // The maximum number of entries is limited by page count and
+                // Telegram's requested page size; malformed oversized replies fail.
+                const next = String(result.nextOffset ?? result.next_offset ?? '');
+                if (!next) {
+                    const observedAt = now();
+                    const snapshot = {gifts,pagesScanned:page+1,scanStartedAt:startedAt,
+                        observedAt,expiresAt:observedAt+Math.min(ttlMs,60000)};
+                    if (now() < deadline) {
+                        marketScanCache.set(baseId,{until:snapshot.expiresAt,result:snapshot});
+                        let totalRows=[...marketScanCache.values()].reduce((sum,row)=>sum+row.result.gifts.length,0);
+                        while (marketScanCache.size>Math.min(maxEntries,24) || totalRows>30000) {
+                            const oldest=marketScanCache.keys().next().value;
+                            totalRows-=marketScanCache.get(oldest).result.gifts.length;
+                            marketScanCache.delete(oldest);
+                        }
+                    }
+                    return snapshot;
+                }
+                if (offsets.has(next)) return {reason:'pagination_loop'};
+                offsets.add(next);offset=next;
+            }
+            return {reason:'scan_limit_exceeded'};
+        })().then(result => {
+            if (result.reason) {
+                marketFailureCache.set(baseId,{until:now()+failureTtlMs,result:{reason:result.reason}});
+            } else marketFailureCache.delete(baseId);
+            return result;
+        }).catch(error => {
+            marketFailureCache.set(baseId,{until:now()+failureTtlMs,error});
+            throw error;
+        }).finally(() => {
+            while (marketFailureCache.size>maxEntries) marketFailureCache.delete(marketFailureCache.keys().next().value);
+            marketScanInFlight.delete(baseId);
+        });
+        marketScanInFlight.set(baseId,promise);
         return promise;
     }
 
     async function lookup(spec, deadline) {
-        if (!spec.name || spec.name.length > 120) return unavailable(spec, 'invalid_collection', now());
-        if (cooldownUntil > now()) return unavailable(spec, 'telegram_rate_limited', now());
+        if (!spec.name || spec.name.length > 120) return unavailable(spec,'invalid_collection',now());
+        if (cooldownUntil > now()) return unavailable(spec,'telegram_rate_limited',now());
         const client = await getClient();
-        // A user MTProto session is required by Telegram; the bot token is not a substitute.
-        const candidates = (await catalogFor(client)).filter(g => normalize(g.title) === normalize(spec.name));
-        if (candidates.length > 1) return unavailable(spec, 'ambiguous_collection', now());
-        const base = candidates[0];
-        const baseId = idString(base?.id);
-        if (!baseId) return unavailable(spec, 'collection_not_found', now());
-        const chosenIds = {};
-        const filters = [];
-        const resolvedSpecification = { ...spec };
-        const resolvedAttributes = {};
-        if (spec.modelName || spec.backdropName || spec.patternName) {
-            const attrs = await attributesFor(client, baseId);
-            for (const [kind, name] of [['model', spec.modelName], ['backdrop', spec.backdropName], ['pattern', spec.patternName]]) {
-                if (!name) continue;
-                let resolved = resolveOfficialAttribute(attrs, kind, name);
-                // Some backdrops may be absent from the market attribute metadata.
-                // A known public Telegram gift proves only its exact ID, not its floor.
-                // Prices still require fresh matching TON listings in this collection.
-                if (kind === 'backdrop' && resolved.reason === 'backdrop_not_found') {
-                    resolved = await referenceBackdropFor(client,spec,baseId);
-                }
-                if (resolved.reason) return unavailable(spec, resolved.reason, now());
-                const { attribute, id } = resolved;
-                resolvedSpecification[`${kind}Name`] = String(attribute.name).trim();
-                resolvedAttributes[kind] = {
-                    requestedName: name,
-                    officialName: String(attribute.name).trim(),
-                    officialId: kind === 'backdrop' ? String(id.backdropId) : String(id.documentId),
-                    match:'exact',
-                    discoverySource:resolved.discoverySource || 'telegram-resale-attributes',
-                    ...(resolved.referenceSlug ? {referenceSlug:resolved.referenceSlug} : {})
-                };
-                chosenIds[kind] = id;
-                filters.push(id);
+        const candidates = (await catalogFor(client)).filter(g=>normalize(g.title)===normalize(spec.name));
+        if (candidates.length > 1) return unavailable(spec,'ambiguous_collection',now());
+        const baseId = idString(candidates[0]?.id);
+        if (!baseId) return unavailable(spec,'collection_not_found',now());
+        // Attribute metadata alone may omit Black/Onyx Black. The actual market
+        // rows of THIS collection provide additional official trait identifiers.
+        const hasTraits = !!(spec.modelName || spec.backdropName || spec.patternName);
+        const attrs = hasTraits ? await attributesFor(client,baseId) : [];
+        const market = await scanCollection(client,baseId,deadline);
+        if (market.reason) return unavailable(spec,market.reason,now());
+        if (market.expiresAt <= now() || now() >= deadline) return unavailable(spec,'scan_timeout',now());
+        const chosenIds = {}, resolvedAttributes = {}, resolvedSpecification = {...spec};
+        for (const [kind,name] of [['model',spec.modelName],['backdrop',spec.backdropName],['pattern',spec.patternName]]) {
+            if (!name) continue;
+            let resolved = resolveOfficialAttribute(attrs,kind,name);
+            let discoverySource = 'telegram-resale-attributes';
+            if (resolved.reason === `${kind}_not_found`) {
+                const listingAttributes = market.gifts.flatMap(g=>Array.isArray(g.attributes)?g.attributes:[]);
+                resolved = resolveOfficialAttribute(listingAttributes,kind,name);
+                discoverySource = 'telegram-resale-listings';
             }
+            if (resolved.reason) return {
+                ...unavailable(spec,resolved.reason,now()),baseGiftId:baseId,
+                scanComplete:true,pagesScanned:market.pagesScanned,
+                observedAt:market.observedAt
+            };
+            const {attribute,id}=resolved;
+            chosenIds[kind]=id;
+            resolvedSpecification[`${kind}Name`]=String(attribute.name).trim();
+            resolvedAttributes[kind]={requestedName:name,officialName:String(attribute.name).trim(),
+                officialId:kind==='backdrop'?String(id.backdropId):String(id.documentId),
+                match:'exact',discoverySource};
         }
-        let offset = '';
-        let minimum = null;
-        let listingSlug = null;
-        let listingsMatched = 0;
-        const offsets = new Set();
-        const startedAt = now();
-        for (let page = 0; page < maxPages; page++) {
-            if (now() >= deadline) return unavailable(spec, 'scan_timeout', now());
-            const result = await client.api.payments.getResaleStarGifts({
-                giftId: BigInt(baseId), sortByPrice: true, starsOnly: false,
-                ...(filters.length ? { attributes: filters } : {}), offset, limit: 100
-            });
-            if (!Array.isArray(result?.gifts)) return unavailable(spec, 'invalid_market_response', now());
-            for (const gift of result.gifts) {
-                if (!matches(gift, resolvedSpecification, baseId, chosenIds)) continue;
-                const nano = tonNanograms(gift.resellAmount || gift.resell_amount);
-                if (nano === null) continue;
-                listingsMatched++;
-                if (minimum === null || nano < minimum) {
-                    minimum = nano;
-                    listingSlug = typeof gift.slug === 'string' ? gift.slug : null;
-                }
-            }
-            const next = String(result.nextOffset ?? result.next_offset ?? '');
-            if (!next) {
-                if (minimum === null) return {
-                    ...unavailable(spec, 'no_matching_ton_listings', now()),
-                    baseGiftId: baseId, resolvedSpecification, resolvedAttributes,
-                    scanComplete: true, pagesScanned: page + 1
-                };
-                const observedAt = now();
-                const value = Number(tonDecimal(minimum));
-                return { available: true, status: 'fresh', specification: spec, currency: 'TON',
-                    resolvedSpecification, resolvedAttributes,
-                    source: SOURCE, value, priceNano: minimum.toString(), baseGiftId: baseId, observedAt,
-                    scanStartedAt: startedAt, expiresAt: observedAt + ttlMs,
-                    scanComplete: true, listingsMatched, pagesScanned: page + 1,
-                    referenceSlug: listingSlug,
-                    referenceUrl: listingSlug ? `https://t.me/nft/${encodeURIComponent(listingSlug)}` : null,
-                    quoteId: crypto.randomUUID() };
-            }
-            if (offsets.has(next)) return unavailable(spec, 'pagination_loop', now());
-            offsets.add(next);
-            offset = next;
+        let minimum=null,listingSlug=null,listingsMatched=0;
+        for (const gift of market.gifts) {
+            if (!matches(gift,resolvedSpecification,baseId,chosenIds)) continue;
+            const nano=tonNanograms(gift.resellAmount||gift.resell_amount);
+            if (nano===null) continue;
+            listingsMatched++;
+            if (minimum===null || nano<minimum) {minimum=nano;listingSlug=typeof gift.slug==='string'?gift.slug:null;}
         }
-        return unavailable(spec, 'scan_limit_exceeded', now());
+        const evidence={baseGiftId:baseId,resolvedSpecification,resolvedAttributes,
+            scanComplete:true,pagesScanned:market.pagesScanned,scanStartedAt:market.scanStartedAt,
+            observedAt:market.observedAt,listingsMatched};
+        if (minimum===null) return {...unavailable(spec,'no_matching_ton_listings',now()),...evidence};
+        return {available:true,status:'fresh',specification:spec,currency:'TON',source:SOURCE,
+            value:Number(tonDecimal(minimum)),priceNano:minimum.toString(),...evidence,
+            expiresAt:Math.min(market.expiresAt,market.observedAt+ttlMs),
+            referenceSlug:listingSlug,referenceUrl:listingSlug?`https://t.me/nft/${encodeURIComponent(listingSlug)}`:null,
+            quoteId:crypto.randomUUID()};
     }
 
     function peek(input) {
