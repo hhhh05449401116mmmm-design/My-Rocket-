@@ -26,7 +26,7 @@ test('Image readiness cleans both listeners when image loads or fails',async()=>
 });
 test('Splash uses only Crazy Rocket identity, and first-screen buttons have same-video webp posters',()=>{
  const splash=html.slice(html.indexOf('<section id="rocket-startup"'),html.indexOf('<noscript>'));
- assert.match(splash,/Crazy Rocket/);assert.match(splash,/crazy-rocket-premium.webp/);assert.doesNotMatch(splash,/\/icon-180.png/);assert.doesNotMatch(splash,/Chance|ScreenRecording/);
+ assert.match(splash,/Crazy Rocket/);assert.match(splash,/crazy-rocket-pink-purple.webp/);assert.doesNotMatch(splash,/\/icon-180.png/);assert.doesNotMatch(splash,/Chance|ScreenRecording/);
  for(const name of ['ADJtCAFOdpAFHHbg','WddYFBEPUHJZYMlo','IlLXxhvJRWznUUZY']){
   assert.match(html,new RegExp('startup-posters/'+name+'\\.webp'));assert.ok(fs.statSync(path.join(root,'assets/startup-posters',name+'.webp')).size>5000);
  }
@@ -65,7 +65,15 @@ test('Full gift color settles before revealing the game and duplicate ready even
 
 test('Startup uses a lightweight transparent 3D rocket instead of the rejected outline symbol',()=>{
  const splash=html.slice(html.indexOf('<section id="rocket-startup"'),html.indexOf('<noscript>'));
- assert.match(splash,/crazy-rocket-premium.webp/);assert.doesNotMatch(splash,/startup-rocket-stroke|<svg class="rocket-startup-logo"/);
+ assert.match(splash,/crazy-rocket-pink-purple.webp/);assert.doesNotMatch(splash,/startup-rocket-stroke|<svg class="rocket-startup-logo"/);
  assert.match(html,/object-fit:contain; background:transparent/);assert.match(html,/if \(rocket\) images.push\(rocket\)/);
- assert.match(splash,/plush-pepe-pink-latex.png/);assert.ok(fs.statSync(path.join(root,'assets/startup/crazy-rocket-premium.webp')).size<100000);
+ assert.match(splash,/plush-pepe-pink-latex.png/);assert.ok(fs.statSync(path.join(root,'assets/startup/crazy-rocket-pink-purple.webp')).size<100000);
+});
+
+test('Startup shows only game name, rocket and Pepe with no status messages, while fill still updates',()=>{
+ const splash=html.slice(html.indexOf('<section id="rocket-startup"'),html.indexOf('<noscript>'));
+ assert.doesNotMatch(splash,/rocket-startup-status|جاهز للانطلاق|جارٍ تجهيز|جارٍ الاتصال/);
+ const c=controller(),props={},gift={setAttribute(){},style:{setProperty:(k,v)=>props[k]=v}};
+ c.context.document.getElementById=id=>id==='rocket-startup-progress'?gift:null;
+ c.context.rocketStartupState.mediaReady=true;c.context.updateRocketStartupStatus();assert.equal(props['--startup-completed'],'0.5');
 });
