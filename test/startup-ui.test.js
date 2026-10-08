@@ -26,7 +26,7 @@ test('Image readiness cleans both listeners when image loads or fails',async()=>
 });
 test('Splash uses only Crazy Rocket identity, and first-screen buttons have same-video webp posters',()=>{
  const splash=html.slice(html.indexOf('<section id="rocket-startup"'),html.indexOf('<noscript>'));
- assert.match(splash,/Crazy Rocket/);assert.match(splash,/\/icon-180.png/);assert.doesNotMatch(splash,/Chance|ScreenRecording/);
+ assert.match(splash,/Crazy Rocket/);assert.match(splash,/<svg class="rocket-startup-logo"/);assert.doesNotMatch(splash,/\/icon-180.png/);assert.doesNotMatch(splash,/Chance|ScreenRecording/);
  for(const name of ['ADJtCAFOdpAFHHbg','WddYFBEPUHJZYMlo','IlLXxhvJRWznUUZY']){
   assert.match(html,new RegExp('startup-posters/'+name+'\\.webp'));assert.ok(fs.statSync(path.join(root,'assets/startup-posters',name+'.webp')).size>5000);
  }
@@ -61,4 +61,11 @@ test('Full gift color settles before revealing the game and duplicate ready even
  assert.equal(c.context.rocketStartupState.completing,true);assert.equal(c.context.rocketStartupState.finished,false);assert.equal(c.isRemoved(),false);assert.equal(props['--startup-completed'],'1');
  c.context.maybeFinishRocketStartup();assert.equal(c.context.rocketStartupState.finished,false);
  const colorTimer=[...c.timers.values()].find(t=>t.ms===500);assert.ok(colorTimer);c.advance(500);colorTimer.fn();assert.equal(c.context.rocketStartupState.finished,true);assert.equal(c.isRemoved(),true);
+});
+
+test('Startup reuses the game rocket symbol on true transparent SVG with no squared image card',()=>{
+ const splash=html.slice(html.indexOf('<section id="rocket-startup"'),html.indexOf('<noscript>'));
+ assert.match(splash,/startup-rocket-stroke/);assert.match(html,/background:transparent; fill:none; stroke:url\(#startup-rocket-stroke\)/);
+ assert.doesNotMatch(splash,/<img[^>]+class="rocket-startup-logo"/);
+ assert.match(splash,/plush-pepe-pink-latex.png/);
 });
