@@ -5623,6 +5623,112 @@ video::-webkit-media-controls-enclosure {
  #pvp-game .pvp-participant-strip{height:128px}
  #pvp-game .pvp-participant{flex-basis:101px}
 }
+
+/* PvP visual rebuild v2 — scoped to PvP only */
+#pvp-game{
+  position:fixed!important;inset:0!important;z-index:5000!important;
+  height:100dvh!important;min-height:0!important;overflow:hidden!important;
+  background:#111214!important;color:#fff;
+}
+#pvp-game .pvp-shell{
+  width:min(520px,100%);height:100dvh;margin:0 auto;
+  padding:calc(env(safe-area-inset-top,0px) + 7px) 12px calc(env(safe-area-inset-bottom,0px) + 82px);
+  box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;
+}
+#pvp-game .pvp-topbar{
+  flex:0 0 34px;height:34px;margin:0 0 5px;display:flex;align-items:center;gap:8px;
+}
+#pvp-game .pvp-back,#pvp-game .pvp-history{
+  height:32px;border:0;border-radius:12px;background:#24262a;color:#fff;padding:0 11px;font-size:12px;font-weight:900;
+}
+#pvp-game .pvp-history{width:34px;padding:0;font-size:18px}
+#pvp-game .pvp-title{font-size:18px;font-weight:950;text-align:center;flex:1;white-space:nowrap}
+#pvp-game .pvp-stats{
+  flex:0 0 52px;height:52px;margin:0 0 6px;display:grid;grid-template-columns:1fr 1fr;gap:7px;
+}
+#pvp-game .pvp-stat{
+  background:#181a1e;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:6px 8px;text-align:left;
+}
+#pvp-game .pvp-stat-name{font-size:9px;color:#c8ccd3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pvp-game .pvp-stat-value{font-size:13px;color:#3f9bff;margin-top:2px;font-weight:950}
+#pvp-game .pvp-stat-sub{font-size:8px;color:#727985;margin-top:1px}
+#pvp-game .pvp-pot{
+  position:relative;flex:0 0 375px;height:375px;min-height:375px;margin:0 -12px;
+  overflow:hidden;background:#17191d;
+}
+#pvp-game .pvp-pointer{
+  position:absolute;z-index:50;top:4px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid #ffd24a;
+  filter:drop-shadow(0 2px 3px #000);
+}
+#pvp-game .pvp-wheel{
+  position:absolute;z-index:2;left:50%;top:50%;bottom:auto;
+  width:318px;height:318px;transform:translate(-50%,-50%);
+  border:0!important;border-radius:50%;background:transparent!important;box-shadow:none!important;
+}
+#pvp-game .pvp-wheel-segments{position:absolute;inset:0;z-index:3;border-radius:50%;overflow:visible}
+#pvp-game .pvp-wheel-segment{display:none!important}
+#pvp-game .pvp-wheel:after{display:none!important}
+#pvp-game .pvp-wheel-center{
+  position:absolute;z-index:12;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:132px;text-align:center;pointer-events:none;
+}
+#pvp-game .pvp-timer{
+  display:inline-flex;align-items:center;justify-content:center;min-width:62px;height:28px;padding:0 9px;
+  border-radius:16px;background:#5a5d62;border:1px solid #7b7e83;color:#fff;font-size:17px;font-weight:950;line-height:1;
+}
+#pvp-game .pvp-pool-label{font-size:8px;letter-spacing:1.5px;color:#a5a9b0;margin-top:5px;font-weight:900}
+#pvp-game .pvp-pool-total{font-size:20px;font-weight:950;margin-top:1px}
+#pvp-game .pvp-round-small{font-size:8px;color:#747982;margin-top:2px}
+#pvp-game .pvp-participant-strip-wrap{
+  position:absolute;z-index:30;left:0;right:0;bottom:0;height:78px;padding:5px 12px 0;
+  box-sizing:border-box;background:linear-gradient(180deg,rgba(23,25,29,.25),#17191d 30%);
+}
+#pvp-game .pvp-participant-strip{
+  height:100%;display:flex;align-items:flex-start;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 2px;direction:ltr;
+}
+#pvp-game .pvp-participant{flex:0 0 92px;height:65px;box-sizing:border-box;background:#22252b;border-radius:10px;
+  padding:4px 5px;text-align:center;border-top:3px solid #397cff;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+#pvp-game .pvp-participant img{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #aeb3bc;margin:auto;display:block}
+#pvp-game .pvp-participant-name{font-size:8px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#pvp-game .pvp-participant-bet{font-size:8px;color:#d2d5db;margin-top:1px}
+#pvp-game .pvp-participant-pct{color:#ffd24a;font-weight:950}
+#pvp-game .pvp-participant.winner{outline:2px solid #ffd24a}
+#pvp-game .pvp-winner-line{display:none!important}
+#pvp-game .pvp-join{flex:0 0 50px;height:50px;margin:7px 0 5px}
+#pvp-game .pvp-join-btn,#pvp-game .pvp-join-btn.ready{
+  width:100%;height:50px;border:0;border-radius:14px;padding:0;
+  background:linear-gradient(100deg,#ff9d00 0%,#ffb51b 50%,#ffd13f 100%)!important;
+  color:#111!important;font-size:17px;font-weight:950;box-shadow:0 7px 18px rgba(255,166,20,.18);
+}
+#pvp-game .pvp-players-title{
+  flex:0 0 24px;height:24px;display:flex;justify-content:space-between;align-items:center;
+  margin:0 0 4px;font-size:15px;font-weight:950;
+}
+#pvp-game .pvp-players{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:1px}
+#pvp-game .pvp-player{
+  min-height:43px;display:grid;grid-template-columns:4px 34px minmax(0,1fr) auto;gap:6px;align-items:center;
+  background:#1a1c21;border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:4px 7px 4px 0;overflow:hidden;
+}
+#pvp-game .pvp-player-bar{height:100%;min-height:33px;border-radius:0 3px 3px 0}
+#pvp-game .pvp-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:#333;border:2px solid #397cff}
+#pvp-game .pvp-player-name{font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pvp-game .pvp-player-bet{margin-top:2px;display:inline-flex;align-items:center;gap:3px;background:#202329;border:1px solid #39414d;border-radius:6px;padding:2px 5px;color:#d9dce2;font-size:8px;font-weight:800}
+#pvp-game .pvp-player-pct{text-align:right;font-size:13px;font-weight:950}
+#pvp-game .pvp-player-value{text-align:right;color:#7d8591;font-size:8px;font-weight:800;margin-top:1px}
+#pvp-game .pvp-result{display:none!important}
+#pvp-game .pvp-result.show{display:none!important}
+@media(max-width:390px){
+  #pvp-game .pvp-shell{padding-left:9px;padding-right:9px}
+  #pvp-game .pvp-pot{flex-basis:355px;height:355px;min-height:355px}
+  #pvp-game .pvp-wheel{width:300px;height:300px}
+  #pvp-game .pvp-wheel-center{width:126px}
+}
+@media(min-height:760px){
+  #pvp-game .pvp-pot{flex-basis:390px;height:390px;min-height:390px}
+  #pvp-game .pvp-wheel{width:330px;height:330px}
+}
+
 </style>
 <div class="pvp-shell">
   <div class="pvp-topbar">
@@ -12991,23 +13097,53 @@ function renderPvpWheel(ps){
   const wheel=document.getElementById('pvp-wheel'),el=document.getElementById('pvp-wheel-segments');
   if(!wheel||!el)return;
   el.innerHTML='';
-  const colors=['#397cff','#ff6687','#36d39f','#48db83','#ef3e46','#08a66f','#a7eb31','#9a62ff'];
-  let cursor=-90,stops=[],total=ps.reduce((s,p)=>s+Number(p.participationPercent||0),0)||100;
-  ps.forEach((p,i)=>{
-    const pct=Number(p.participationPercent||0),span=pct/total*360,mid=cursor+span/2,color=colors[i%colors.length];
-    stops.push(color+' '+cursor+'deg '+(cursor+span)+'deg');
-    const card=document.createElement('div');
-    card.className='pvp-wheel-segment';
-    card.style.borderTopColor=color;
-    card.style.transform='translate(-50%,-50%) rotate('+mid+'deg) translateY(-150px) rotate('+(-mid)+'deg)';
-    const img=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');
-    card.innerHTML=(img?'<img src="'+escapeHtmlAttribute(img)+'" alt="">':'<div style="width:30px;height:30px;border-radius:50%;margin:0 auto 3px;background:#444"></div>')+
-      '<div>'+escapeHtml(p.betCurrency==='GIFT'?(p.giftName||'Gift'):Number(p.betAmount||0).toFixed(2)+' TON')+'</div>'+
-      '<div class="pct">'+pct.toFixed(1)+'%</div>';
-    el.appendChild(card);
-    cursor+=span;
+  const colors=['#397cff','#ff6687','#36d39f','#efb52f','#a86cff','#26c6da','#ff7657','#76d64b','#ef64c4','#4bb8ff'];
+  const source=ps.length?ps:[
+    {id:'preview-1',name:'Player',username:'player',avatar:'',betCurrency:'TON',betAmount:7.9,participationPercent:79},
+    {id:'preview-2',name:'Player',username:'player2',avatar:'',betCurrency:'TON',betAmount:2.1,participationPercent:21}
+  ];
+  const size=1000,cx=500,cy=500,r=480,inner=150;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 1000 1000');svg.setAttribute('width','100%');svg.setAttribute('height','100%');
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');svg.appendChild(defs);
+  const total=source.reduce((sum,x)=>sum+Math.max(0,Number(x.participationPercent||0)),0)||1;
+  let angle=0;
+  source.forEach((p,i)=>{
+    const span=Math.max(3,Number(p.participationPercent||0)/total*360-2);
+    const start=angle+1,end=angle+span;
+    const rad=a=>(a-90)*Math.PI/180;
+    const P=(rr,a)=>({x:cx+rr*Math.cos(rad(a)),y:cy+rr*Math.sin(rad(a))});
+    const a=P(r,start),b=P(r,end),c=P(inner,end),d=P(inner,start);
+    const large=(end-start)>180?1:0;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M ${d.x} ${d.y} L ${a.x} ${a.y} A ${r} ${r} 0 ${large} 1 ${b.x} ${b.y} L ${c.x} ${c.y} A ${inner} ${inner} 0 ${large} 0 ${d.x} ${d.y} Z`);
+    path.setAttribute('fill',colors[i%colors.length]);path.setAttribute('fill-opacity','.92');
+    path.setAttribute('stroke','#101217');path.setAttribute('stroke-width','9');
+    svg.appendChild(path);
+    const mid=start+(end-start)/2, tp=P(350,mid);
+    const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',tp.x);label.setAttribute('y',tp.y);label.setAttribute('text-anchor','middle');
+    label.setAttribute('dominant-baseline','middle');label.setAttribute('fill','#fff');label.setAttribute('font-size',source.length>5?'24':'30');label.setAttribute('font-weight','900');
+    label.setAttribute('paint-order','stroke');label.setAttribute('stroke','#11151b');label.setAttribute('stroke-width','7');
+    label.textContent=Number(p.participationPercent||0).toFixed(1)+'%';svg.appendChild(label);
+    const av=p.avatar||(p.betCurrency==='GIFT'?pvpGiftImage(p):'');
+    const ap=P(420,mid);
+    if(av){
+      const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath'),cid='pvpclip'+i;
+      clip.setAttribute('id',cid);const cc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      cc.setAttribute('cx',ap.x);cc.setAttribute('cy',ap.y);cc.setAttribute('r','38');clip.appendChild(cc);defs.appendChild(clip);
+      const img=document.createElementNS('http://www.w3.org/2000/svg','image');img.setAttribute('href',av);
+      img.setAttribute('x',ap.x-38);img.setAttribute('y',ap.y-38);img.setAttribute('width','76');img.setAttribute('height','76');
+      img.setAttribute('preserveAspectRatio','xMidYMid slice');img.setAttribute('clip-path',`url(#${cid})`);svg.appendChild(img);
+    }else{
+      const cc=document.createElementNS('http://www.w3.org/2000/svg','circle');cc.setAttribute('cx',ap.x);cc.setAttribute('cy',ap.y);cc.setAttribute('r','38');cc.setAttribute('fill','#151920');cc.setAttribute('stroke','#d9dde4');cc.setAttribute('stroke-width','3');svg.appendChild(cc);
+      const tt=document.createElementNS('http://www.w3.org/2000/svg','text');tt.setAttribute('x',ap.x);tt.setAttribute('y',ap.y+9);tt.setAttribute('text-anchor','middle');tt.setAttribute('fill','#fff');tt.setAttribute('font-size','23');tt.setAttribute('font-weight','900');tt.textContent=(p.name||'P').slice(0,1).toUpperCase();svg.appendChild(tt);
+    }
+    angle+=Number(p.participationPercent||0)/total*360;
   });
-  wheel.style.background=stops.length?'conic-gradient(from -90deg,'+stops.join(',')+')':'#252525';
+  const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');ring.setAttribute('cx',cx);ring.setAttribute('cy',cy);ring.setAttribute('r',r-4);ring.setAttribute('fill','none');ring.setAttribute('stroke','#343942');ring.setAttribute('stroke-width','8');svg.appendChild(ring);
+  el.appendChild(svg);
+  wheel.classList.toggle('preview',!ps.length);
 }
 
 function renderPvpParticipants(ps){
@@ -13059,7 +13195,7 @@ function updatePvpUI(){
   if(el('pvp-player-count'))el('pvp-player-count').textContent=ps.length;
   if(el('pvp-round-small'))el('pvp-round-small').textContent='Game #'+(d.roundNumber||'—');
   if(el('pvp-pool-total'))el('pvp-pool-total').textContent='💎 '+Number(d.totalPool||0).toFixed(2);
-  if(el('pvp-countdown'))el('pvp-countdown').textContent=d.phase==='COUNTDOWN'?'00:'+String(Math.max(0,d.seconds||0)).padStart(2,'0'):d.phase==='WAITING'?'00:20':d.phase==='LIVE'?'00:00':'WIN';
+  if(el('pvp-countdown')){const sec=d.phase==='RESULT'?0:(d.phase==='WAITING'?20:Math.max(0,Number(d.seconds||0)));el('pvp-countdown').textContent='00:'+String(Math.floor(sec)).padStart(2,'0');}
   updatePvpHighlights(d);
   renderPvpWheel(ps);renderPvpParticipants(ps);renderPvpPlayers(ps);
   const j=el('pvp-join-main'),r=el('pvp-result');
@@ -13072,7 +13208,7 @@ function updatePvpUI(){
       if(el('pvp-result-pool'))el('pvp-result-pool').textContent=Number(d.totalPool||0).toFixed(2)+' TON';
     }else r.classList.remove('show');
   }
-  const wheel=el('pvp-wheel');if(wheel)wheel.classList.toggle('live',d.phase==='LIVE');
+  const wheel=el('pvp-wheel');if(wheel)wheel.classList.toggle('live',d.phase==='COUNTDOWN'||d.phase==='LIVE');
 }
 
 function openPvpBetModal(){
