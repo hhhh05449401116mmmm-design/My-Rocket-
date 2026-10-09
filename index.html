@@ -5176,7 +5176,7 @@ video::-webkit-media-controls-enclosure {
         .lottery-history-card{margin-top:12px}.lottery-history-title{font-size:13px;font-weight:900;margin-bottom:9px}.lottery-history-row{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid rgba(100,130,180,.1);font-size:9px;color:#91a4c0}.lottery-history-row b{color:#fff}.lottery-win{color:#53dfa2}.lottery-empty{font-size:10px;color:#657894}
         @media(max-width:520px){.lottery-game-tabs{gap:5px}.lottery-game-tab strong{font-size:15px}.lottery-game-tab span{font-size:8px}.lottery-number-grid{gap:4px}.lottery-number-btn{height:31px;font-size:11px}.lottery-bonus-grid{gap:4px}.lottery-bonus-btn{height:35px}}
 </style>
-    <link rel="stylesheet" href="/assets/game-backgrounds.css">
+    <link rel="stylesheet" href="/assets/game-backgrounds.css?v=telegram-refresh-20261009">
 </head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
@@ -14404,6 +14404,29 @@ function markRocketBootstrapReady(authenticated) {
             markRocketBootstrapReady(true);
             await rocketStartupState.finishPromise;
         }
+
+        // Keep game-specific visual themes compatible with Telegram WebViews without CSS :has().
+        (() => {
+            const gameIds = ["mines-game", "plinko-game", "dice-game", "crafts-game", "lottery-game"];
+            const syncGameBackground = () => {
+                const activeId = gameIds.find((id) => {
+                    const game = document.getElementById(id);
+                    return game && !game.classList.contains("hidden") && getComputedStyle(game).display !== "none";
+                });
+                const theme = activeId ? activeId.replace(/-game$/, "") : "";
+                [document.documentElement, document.body].forEach((element) => {
+                    if (!element) return;
+                    if (theme) element.setAttribute("data-active-game-bg", theme);
+                    else element.removeAttribute("data-active-game-bg");
+                });
+            };
+            const observer = new MutationObserver(syncGameBackground);
+            gameIds.forEach((id) => {
+                const game = document.getElementById(id);
+                if (game) observer.observe(game, { attributes: true, attributeFilter: ["class", "style"] });
+            });
+            syncGameBackground();
+        })();
 
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
