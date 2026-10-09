@@ -6068,7 +6068,7 @@ app.get('/api/telegram/launch-info', async (req, res) => {
 });
 
 async function sendTelegramMiniAppLaunchMessage(chatId) {
-    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
+    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/?v=5de42ef';
     await callTelegramBotApi('sendMessage', {
         chat_id: chatId,
         text: '🚀 افتح Rocket من الزر بالأسفل للدخول إلى اللعبة بحساب Telegram الخاص بك.',
@@ -6082,7 +6082,7 @@ async function sendTelegramMiniAppLaunchMessage(chatId) {
 }
 
 async function ensureTelegramMiniAppMenuButton() {
-    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/';
+    const webAppUrl = 'https://my-rocket-production-150d.up.railway.app/?v=5de42ef';
     try {
         await callTelegramBotApi('setChatMenuButton', {
             menu_button: {
