@@ -3923,18 +3923,53 @@ async function joinPvpRound(userId, betCurrency, betAmount, giftUniqueId) {
         if (playerCount.cnt >= MAX_PVP_PLAYERS) throw new Error('PvP round is full');
 
         const existing = await get('SELECT * FROM pvp_participants WHERE pvp_round_id = ? AND user_id = ?', [activeRound.id, userId]);
-        if (existing && existing.status === 'ACTIVE') throw new Error('You already joined this round');
-
         let actualBetAmount = betAmount;
         let giftToLock = null;
 
         if (betCurrency === 'TON') {
             if (!Number.isFinite(betAmount) || betAmount < 0.1) throw new Error('Invalid TON bet amount (min 0.1)');
+            // Before the round goes LIVE, allow the same player to top up their
+            // existing TON entry. The added amount is charged once and merged
+            // into the original participant row, never creating a second entry.
+            if (existing && existing.status === 'ACTIVE') {
+                if (existing.bet_currency !== 'TON') {
+                    throw new Error('You already joined this round with a gift; you cannot change its bet type');
+                }
+                const balance = await getUserBalance(userId);
+                if (balance < betAmount) throw new Error('Insufficient TON balance');
+                const debit = await run('UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?', [betAmount, userId, betAmount]);
+                if (debit.changes !== 1) throw new Error('Insufficient balance');
+                const newAmount = Number(existing.bet_amount || 0) + betAmount;
+                const { poolTon, poolGift } = await getLivePoolTotals(activeRound.id);
+                const totalPool = poolTon + poolGift + betAmount;
+                const percent = calculateParticipationPercent(newAmount, totalPool);
+                await run('UPDATE pvp_participants SET bet_amount = ?, participation_percent = ? WHERE id = ? AND status = ?', [newAmount, percent, existing.id, 'ACTIVE']);
+                await run(`
+                    UPDATE pvp_participants
+                    SET participation_percent = (bet_amount * 100.0) / NULLIF(?, 0)
+                    WHERE pvp_round_id = ? AND status = 'ACTIVE'
+                `, [totalPool, activeRound.id]);
+                const totalsAfter = await getLivePoolTotals(activeRound.id);
+                return {
+                    roundId: activeRound.id,
+                    roundNumber: activeRound.round_number,
+                    playerCount: playerCount.cnt,
+                    maxPlayers: MAX_PVP_PLAYERS,
+                    participationPercent: percent,
+                    betAmount: newAmount,
+                    addedBetAmount: betAmount,
+                    betCurrency: 'TON',
+                    poolTon: totalsAfter.poolTon,
+                    poolGift: totalsAfter.poolGift,
+                    toppedUp: true
+                };
+            }
             const balance = await getUserBalance(userId);
             if (balance < betAmount) throw new Error('Insufficient TON balance');
             const update = await run('UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?', [betAmount, userId, betAmount]);
             if (update.changes !== 1) throw new Error('Insufficient balance');
         } else if (betCurrency === 'GIFT') {
+            if (existing && existing.status === 'ACTIVE') throw new Error('You already joined this round');
             if (!giftUniqueId) throw new Error('Gift collectible ID required');
             const collectible = await getCollectibleByUniqueId(giftUniqueId);
             if (!collectible) throw new Error('Collectible not found');
