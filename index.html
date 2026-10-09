@@ -13590,8 +13590,10 @@ function updatePvpUI() {
   if (cardsKey !== pvpState.cardsKey) { renderPvpParticipants(ps); renderPvpPlayers(ps); pvpState.cardsKey = cardsKey; }
   const joined = ps.some(p => String(p.user_id) === String(typeof userId !== 'undefined' ? userId : localStorage.getItem('authToken')));
   const join = el('pvp-join-main');
-  join.disabled = !['WAITING', 'COUNTDOWN'].includes(d.phase) || joined;
-  join.textContent = joined ? 'You joined this battle' : d.phase === 'LIVE' ? 'Battle in progress' : d.phase === 'RESULT' ? 'Next battle soon' : 'Join the Battle';
+  // Let existing participants reopen the bet sheet to add more TON until LIVE.
+  join.disabled = !['WAITING', 'COUNTDOWN'].includes(d.phase);
+  join.textContent = joined && ['WAITING', 'COUNTDOWN'].includes(d.phase)
+    ? 'Increase your bet' : d.phase === 'LIVE' ? 'Battle in progress' : d.phase === 'RESULT' ? 'Next battle soon' : 'Join the Battle';
   const result = el('pvp-result'); result.classList.toggle('show', d.phase === 'RESULT' && !!d.winnerUserId);
   if (d.phase === 'RESULT' && d.winnerUserId) {
     const winner = ps.find(p => String(p.user_id) === String(d.winnerUserId));
@@ -13693,8 +13695,24 @@ function openPvpBetModal(){
   const modal=document.getElementById('pvp-bet-modal');
   if(!modal)return;
   if(!pvpState.data || !['WAITING','COUNTDOWN'].includes(pvpState.data.phase)){showToast('انتظر الجولة التالية');return;}
+  const participants = pvpState.data.players || pvpState.data.participants || [];
+  const joined = participants.some(p => String(p.user_id) === String(typeof userId !== 'undefined' ? userId : localStorage.getItem('authToken')));
+  const title = modal.querySelector('.pvp-bet-title');
+  const placeButton = document.getElementById('pvp-modal-place-btn');
+  const giftTab = document.getElementById('pvp-modal-gift-tab');
+  if (joined) {
+    pvpModalBetType = 'TON';
+    if (title) title.textContent = 'Increase TON Bet';
+    if (placeButton) placeButton.textContent = 'Add TON to Bet';
+    if (giftTab) { giftTab.disabled = true; giftTab.title = 'A joined bet can only be increased with TON'; }
+  } else {
+    if (title) title.textContent = 'Place Bet';
+    if (placeButton) placeButton.textContent = 'Place Bet';
+    if (giftTab) { giftTab.disabled = false; giftTab.title = ''; }
+  }
   loadPvpGifts();
   renderPvpBetModal();
+  selectPvpBetType(pvpModalBetType);
   modal.classList.add('show');modal.setAttribute('aria-hidden','false');
 }
 
