@@ -1,0 +1,510 @@
+{
+  "version": 1,
+  "source": "GENERAL_GIFT_PRICES",
+  "gifts": [
+    {
+      "id": "rocket_durov",
+      "name": "Durov",
+      "value": 380.24,
+      "image_url": "https://cdn.changes.tg/gifts/models/Durov/png/Original.png"
+    },
+    {
+      "id": "rocket_precious_peach",
+      "name": "Precious Peach",
+      "value": 247.42,
+      "image_url": "https://cdn.changes.tg/gifts/models/Precious%20Peach/png/Original.png"
+    },
+    {
+      "id": "rocket_scared_cat",
+      "name": "Scared Cat",
+      "value": 227.87,
+      "image_url": "https://cdn.changes.tg/gifts/models/Scared%20Cat/png/Original.png"
+    },
+    {
+      "id": "rocket_heroic_helmet",
+      "name": "Heroic Helmet",
+      "value": 174.59,
+      "image_url": "https://cdn.changes.tg/gifts/models/Heroic%20Helmet/png/Original.png"
+    },
+    {
+      "id": "rocket_loot_bag",
+      "name": "Loot Bag",
+      "value": 199.57,
+      "image_url": "https://cdn.changes.tg/gifts/models/Loot%20Bag/png/Original.png"
+    },
+    {
+      "id": "rocket_astral_shard",
+      "name": "Astral Shard",
+      "value": 110.57,
+      "image_url": "https://cdn.changes.tg/gifts/models/Astral%20Shard/png/Original.png"
+    },
+    {
+      "id": "rocket_nail_bracelet",
+      "name": "Nail Bracelet",
+      "value": 102.77,
+      "image_url": "https://cdn.changes.tg/gifts/models/Nail%20Bracelet/png/Original.png"
+    },
+    {
+      "id": "rocket_westside_sign",
+      "name": "Westside Sign",
+      "value": 97.92,
+      "image_url": "https://cdn.changes.tg/gifts/models/Westside%20Sign/png/Original.png"
+    },
+    {
+      "id": "rocket_mini_oscar",
+      "name": "Mini Oscar",
+      "value": 63.73,
+      "image_url": "https://cdn.changes.tg/gifts/models/Mini%20Oscar/png/Original.png"
+    },
+    {
+      "id": "rocket_artisan_brick",
+      "name": "Artisan Brick",
+      "value": 56.05,
+      "image_url": "https://cdn.changes.tg/gifts/models/Artisan%20Brick/png/Original.png"
+    },
+    {
+      "id": "rocket_gem_signet",
+      "name": "Gem Signet",
+      "value": 55.54,
+      "image_url": "https://cdn.changes.tg/gifts/models/Gem%20Signet/png/Original.png"
+    },
+    {
+      "id": "rocket_low_rider",
+      "name": "Low Rider",
+      "value": 53.42,
+      "image_url": "https://cdn.changes.tg/gifts/models/Low%20Rider/png/Original.png"
+    },
+    {
+      "id": "rocket_sharp_tongue",
+      "name": "Sharp Tongue",
+      "value": 44.47,
+      "image_url": "https://cdn.changes.tg/gifts/models/Sharp%20Tongue/png/Original.png"
+    },
+    {
+      "id": "rocket_kissed_frog",
+      "name": "Kissed Frog",
+      "value": 41.95,
+      "image_url": "https://cdn.changes.tg/gifts/models/Kissed%20Frog/png/Original.png"
+    },
+    {
+      "id": "rocket_bonded_ring",
+      "name": "Bonded Ring",
+      "value": 38.97,
+      "image_url": "https://cdn.changes.tg/gifts/models/Bonded%20Ring/png/Original.png"
+    },
+    {
+      "id": "rocket_vintage_cigar",
+      "name": "Vintage Cigar",
+      "value": 36.13,
+      "image_url": "https://cdn.changes.tg/gifts/models/Vintage%20Cigar/png/Original.png"
+    },
+    {
+      "id": "rocket_toy_bear",
+      "name": "Toy Bear",
+      "value": 32.34,
+      "image_url": "https://cdn.changes.tg/gifts/models/Toy%20Bear/png/Original.png"
+    },
+    {
+      "id": "rocket_genie_lamp",
+      "name": "Genie Lamp",
+      "value": 31.31,
+      "image_url": "https://cdn.changes.tg/gifts/models/Genie%20Lamp/png/Original.png"
+    },
+    {
+      "id": "rocket_signet_ring",
+      "name": "Signet Ring",
+      "value": 30.77,
+      "image_url": "https://cdn.changes.tg/gifts/models/Signet%20Ring/png/Original.png"
+    },
+    {
+      "id": "rocket_diamond_ring",
+      "name": "Diamond Ring",
+      "value": 28.42,
+      "image_url": "https://cdn.changes.tg/gifts/models/Diamond%20Ring/png/Original.png"
+    },
+    {
+      "id": "rocket_electric_skull",
+      "name": "Electric Skull",
+      "value": 23.4,
+      "image_url": "https://cdn.changes.tg/gifts/models/Electric%20Skull/png/Original.png"
+    },
+    {
+      "id": "rocket_khabib",
+      "name": "Khabib",
+      "value": 23.23,
+      "image_url": "https://cdn.changes.tg/gifts/models/Khabib/png/Original.png"
+    },
+    {
+      "id": "rocket_eternal_rose",
+      "name": "Eternal Rose",
+      "value": 23.06,
+      "image_url": "https://cdn.changes.tg/gifts/models/Eternal%20Rose/png/Original.png"
+    },
+    {
+      "id": "rocket_cupid_charm",
+      "name": "Cupid Charm",
+      "value": 20.09,
+      "image_url": "https://cdn.changes.tg/gifts/models/Cupid%20Charm/png/Original.png"
+    },
+    {
+      "id": "rocket_ionic_dryer",
+      "name": "Ionic Dryer",
+      "value": 14.59,
+      "image_url": "https://cdn.changes.tg/gifts/models/Ionic%20Dryer/png/Original.png"
+    },
+    {
+      "id": "rocket_ufc_strike",
+      "name": "UFC Strike",
+      "value": 14.49,
+      "image_url": "https://cdn.changes.tg/gifts/models/UFC%20Strike/png/Original.png"
+    },
+    {
+      "id": "rocket_snoop_cigar",
+      "name": "Snoop Cigar",
+      "value": 14.46,
+      "image_url": "https://cdn.changes.tg/gifts/models/Snoop%20Cigar/png/Original.png"
+    },
+    {
+      "id": "rocket_love_potion",
+      "name": "Love Potion",
+      "value": 14.02,
+      "image_url": "https://cdn.changes.tg/gifts/models/Love%20Potion/png/Original.png"
+    },
+    {
+      "id": "rocket_flying_broom",
+      "name": "Flying Broom",
+      "value": 11.81,
+      "image_url": "https://cdn.changes.tg/gifts/models/Flying%20Broom/png/Original.png"
+    },
+    {
+      "id": "rocket_record_player",
+      "name": "Record Player",
+      "value": 11.72,
+      "image_url": "https://cdn.changes.tg/gifts/models/Record%20Player/png/Original.png"
+    },
+    {
+      "id": "rocket_skull_flower",
+      "name": "Skull Flower",
+      "value": 11.27,
+      "image_url": "https://cdn.changes.tg/gifts/models/Skull%20Flower/png/Original.png"
+    },
+    {
+      "id": "rocket_valentine_box",
+      "name": "Valentine Box",
+      "value": 11.06,
+      "image_url": "https://cdn.changes.tg/gifts/models/Valentine%20Box/png/Original.png"
+    },
+    {
+      "id": "rocket_love_candle",
+      "name": "Love Candle",
+      "value": 10.13,
+      "image_url": "https://cdn.changes.tg/gifts/models/Love%20Candle/png/Original.png"
+    },
+    {
+      "id": "rocket_jingle_bells",
+      "name": "Jingle Bells",
+      "value": 9.68,
+      "image_url": "https://cdn.changes.tg/gifts/models/Jingle%20Bells/png/Original.png"
+    },
+    {
+      "id": "rocket_hanging_star",
+      "name": "Hanging Star",
+      "value": 9.31,
+      "image_url": "https://cdn.changes.tg/gifts/models/Hanging%20Star/png/Original.png"
+    },
+    {
+      "id": "rocket_fine_pen",
+      "name": "Fine Pen",
+      "value": 8.79,
+      "image_url": "https://cdn.changes.tg/gifts/models/Fine%20Pen/png/Original.png"
+    },
+    {
+      "id": "rocket_pool_float",
+      "name": "Pool Float",
+      "value": 3.99,
+      "image_url": "https://cdn.changes.tg/gifts/models/Pool%20Float/png/Original.png"
+    },
+    {
+      "id": "rocket_vice_cream",
+      "name": "Vice Cream",
+      "value": 3.98,
+      "image_url": "https://cdn.changes.tg/gifts/models/Vice%20Cream/png/Original.png"
+    },
+    {
+      "id": "rocket_trapped_heart",
+      "name": "Trapped Heart",
+      "value": 15.84,
+      "image_url": "https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png"
+    },
+    {
+      "id": "rocket_mousse_cake",
+      "name": "Mousse Cake",
+      "value": 5.06,
+      "image_url": "https://cdn.changes.tg/gifts/models/Mousse%20Cake/png/Original.png"
+    },
+    {
+      "id": "rocket_cookie_heart",
+      "name": "Cookie Heart",
+      "value": 5.01,
+      "image_url": "https://cdn.changes.tg/gifts/models/Cookie%20Heart/png/Original.png"
+    },
+    {
+      "id": "rocket_spiced_wine",
+      "name": "Spiced Wine",
+      "value": 4.67,
+      "image_url": "https://cdn.changes.tg/gifts/models/Spiced%20Wine/png/Original.png"
+    },
+    {
+      "id": "rocket_whip_cupcake",
+      "name": "Whip Cupcake",
+      "value": 4.01,
+      "image_url": "https://cdn.changes.tg/gifts/models/Whip%20Cupcake/png/Original.png"
+    },
+    {
+      "id": "rocket_input_key",
+      "name": "Input Key",
+      "value": 6.4,
+      "image_url": "https://cdn.changes.tg/gifts/models/Input%20Key/png/Original.png"
+    },
+    {
+      "id": "rocket_lush_bouquet",
+      "name": "Lush Bouquet",
+      "value": 6.37,
+      "image_url": "https://cdn.changes.tg/gifts/models/Lush%20Bouquet/png/Original.png"
+    },
+    {
+      "id": "rocket_spring_basket",
+      "name": "Spring Basket",
+      "value": 5.8,
+      "image_url": "https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Original.png"
+    },
+    {
+      "id": "rocket_restless_jar",
+      "name": "Restless Jar",
+      "value": 5.73,
+      "image_url": "https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Original.png"
+    },
+    {
+      "id": "rocket_homemade_cake",
+      "name": "Homemade Cake",
+      "value": 5.28,
+      "image_url": "https://cdn.changes.tg/gifts/models/Homemade%20Cake/png/Original.png"
+    },
+    {
+      "id": "rocket_pretty_posy",
+      "name": "Pretty Posy",
+      "value": 5.25,
+      "image_url": "https://cdn.changes.tg/gifts/models/Pretty%20Posy/png/Original.png"
+    },
+    {
+      "id": "rocket_berry_box",
+      "name": "Berry Box",
+      "value": 8.54,
+      "image_url": "https://cdn.changes.tg/gifts/models/Berry%20Box/png/Original.png"
+    },
+    {
+      "id": "rocket_bunny_muffin",
+      "name": "Bunny Muffin",
+      "value": 8.15,
+      "image_url": "https://cdn.changes.tg/gifts/models/Bunny%20Muffin/png/Original.png"
+    },
+    {
+      "id": "rocket_joyful_bundle",
+      "name": "Joyful Bundle",
+      "value": 7.65,
+      "image_url": "https://cdn.changes.tg/gifts/models/Joyful%20Bundle/png/Original.png"
+    },
+    {
+      "id": "rocket_sakura_flower",
+      "name": "Sakura Flower",
+      "value": 10.25,
+      "image_url": "https://cdn.changes.tg/gifts/models/Sakura%20Flower/png/Original.png"
+    },
+    {
+      "id": "rocket_light_sword",
+      "name": "Light Sword",
+      "value": 35.05,
+      "image_url": "https://cdn.changes.tg/gifts/models/Light%20Sword/png/Original.png"
+    },
+    {
+      "id": "rocket_rare_bird",
+      "name": "Rare Bird",
+      "value": 34.33,
+      "image_url": "https://cdn.changes.tg/gifts/models/Rare%20Bird/png/Original.png"
+    },
+    {
+      "id": "rocket_bow_tie",
+      "name": "Bow Tie",
+      "value": 20.36,
+      "image_url": "https://cdn.changes.tg/gifts/models/Bow%20Tie/png/Original.png"
+    },
+    {
+      "id": "rocket_swag_bag",
+      "name": "Swag Bag",
+      "value": 5.53,
+      "image_url": "https://cdn.changes.tg/gifts/models/Swag%20Bag/png/Original.png"
+    },
+    {
+      "id": "rocket_snoop_dogg",
+      "name": "Snoop Dogg",
+      "value": 5.5,
+      "image_url": "https://cdn.changes.tg/gifts/models/Snoop%20Dogg/png/Original.png"
+    },
+    {
+      "id": "rocket_surge_board",
+      "name": "Surge Board",
+      "value": 221.43,
+      "image_url": "https://cdn.changes.tg/gifts/models/Surge%20Board/png/Original.png"
+    },
+    {
+      "id": "rocket_ice_cream",
+      "name": "Ice Cream",
+      "value": 82.45,
+      "image_url": "https://cdn.changes.tg/gifts/models/Ice%20Cream/png/Original.png"
+    },
+    {
+      "id": "rocket_star_notepad",
+      "name": "Star Notepad",
+      "value": 38.69,
+      "image_url": "https://cdn.changes.tg/gifts/models/Star%20Notepad/png/Original.png"
+    },
+    {
+      "id": "rocket_snow_globe",
+      "name": "Snow Globe",
+      "value": 38.65,
+      "image_url": "https://cdn.changes.tg/gifts/models/Snow%20Globe/png/Original.png"
+    },
+    {
+      "id": "rocket_timeless_book",
+      "name": "Timeless Book",
+      "value": 29.84,
+      "image_url": "https://cdn.changes.tg/gifts/models/Timeless%20Book/png/Original.png"
+    },
+    {
+      "id": "rocket_winter_wreath",
+      "name": "Winter Wreath",
+      "value": 29.23,
+      "image_url": "https://cdn.changes.tg/gifts/models/Winter%20Wreath/png/Original.png"
+    },
+    {
+      "id": "rocket_jester_hat",
+      "name": "Jester Hat",
+      "value": 5.4,
+      "image_url": "https://cdn.changes.tg/gifts/models/Jester%20Hat/png/Original.png"
+    },
+    {
+      "id": "rocket_spy_agaric",
+      "name": "Spy Agaric",
+      "value": 17.5,
+      "image_url": "https://cdn.changes.tg/gifts/models/Spy%20Agaric/png/Original.png"
+    },
+    {
+      "id": "rocket_jack_in_the_box",
+      "name": "Jack-in-the-Box",
+      "value": 17.36,
+      "image_url": "https://cdn.changes.tg/gifts/models/Jack-in-the-Box/png/Original.png"
+    },
+    {
+      "id": "rocket_ginger_cookie",
+      "name": "Ginger Cookie",
+      "value": 16.37,
+      "image_url": "https://cdn.changes.tg/gifts/models/Ginger%20Cookie/png/Original.png"
+    },
+    {
+      "id": "rocket_fresh_socks",
+      "name": "Fresh Socks",
+      "value": 12.5,
+      "image_url": "https://cdn.changes.tg/gifts/models/Fresh%20Socks/png/Original.png"
+    },
+    {
+      "id": "rocket_easter_egg",
+      "name": "Easter Egg",
+      "value": 10.6,
+      "image_url": "https://cdn.changes.tg/gifts/models/Easter%20Egg/png/Original.png"
+    },
+    {
+      "id": "rocket_hypno_lollipop",
+      "name": "Hypno Lollipop",
+      "value": 10.6,
+      "image_url": "https://cdn.changes.tg/gifts/models/Hypno%20Lollipop/png/Original.png"
+    },
+    {
+      "id": "rocket_party_sparkler",
+      "name": "Party Sparkler",
+      "value": 9.8,
+      "image_url": "https://cdn.changes.tg/gifts/models/Party%20Sparkler/png/Original.png"
+    },
+    {
+      "id": "rocket_pet_snake",
+      "name": "Pet Snake",
+      "value": 4.75,
+      "image_url": "https://cdn.changes.tg/gifts/models/Pet%20Snake/png/Original.png"
+    },
+    {
+      "id": "rocket_heart_locket",
+      "name": "Heart Locket",
+      "value": 1096.44,
+      "image_url": "https://cdn.changes.tg/gifts/models/Heart%20Locket/png/Original.png"
+    },
+    {
+      "id": "rocket_mighty_arm",
+      "name": "Mighty Arm",
+      "value": 199.8,
+      "image_url": "https://cdn.changes.tg/gifts/models/Mighty%20Arm/png/Original.png"
+    },
+    {
+      "id": "rocket_perfume_bottle",
+      "name": "Perfume Bottle",
+      "value": 64.86,
+      "image_url": "https://cdn.changes.tg/gifts/models/Perfume%20Bottle/png/Original.png"
+    },
+    {
+      "id": "rocket_ion_gem",
+      "name": "Ion Gem",
+      "value": 62.93,
+      "image_url": "https://cdn.changes.tg/gifts/models/Ion%20Gem/png/Original.png"
+    },
+    {
+      "id": "rocket_magic_potion",
+      "name": "Magic Potion",
+      "value": 51.74,
+      "image_url": "https://cdn.changes.tg/gifts/models/Magic%20Potion/png/Original.png"
+    },
+    {
+      "id": "rocket_crystal_ball",
+      "name": "Crystal Ball",
+      "value": 12.33,
+      "image_url": "https://cdn.changes.tg/gifts/models/Crystal%20Ball/png/Original.png"
+    },
+    {
+      "id": "rocket_top_hat",
+      "name": "Top Hat",
+      "value": 10.36,
+      "image_url": "https://cdn.changes.tg/gifts/models/Top%20Hat/png/Original.png"
+    },
+    {
+      "id": "rocket_jolly_chimp",
+      "name": "Jolly Chimp",
+      "value": 7.38,
+      "image_url": "https://cdn.changes.tg/gifts/models/Jolly%20Chimp/png/Original.png"
+    },
+    {
+      "id": "rocket_plush_pepe",
+      "name": "Plush Pepe",
+      "value": 5637.27,
+      "image_url": "https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Original.png"
+    },
+    {
+      "id": "rocket_neko_helmet",
+      "name": "Neko Helmet",
+      "value": 35.64,
+      "image_url": "https://cdn.changes.tg/gifts/models/Neko%20Helmet/png/Original.png"
+    },
+    {
+      "id": "rocket_bling_binky",
+      "name": "Bling Binky",
+      "value": 24.12,
+      "image_url": "https://cdn.changes.tg/gifts/models/Bling%20Binky/png/Original.png"
+    }
+  ]
+}

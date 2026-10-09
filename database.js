@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { createFairRound, DEFAULT_CLIENT_SEED } = require('./crashFair');
+const rocketGiftCatalog = require('./rocketGiftCatalog.json');
 
 // =========================================================
 // 1. إنشاء اتصال قاعدة البيانات
@@ -914,6 +915,21 @@ function seedDatabase() {
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `, [g.id, g.name, g.emoji, g.rarity, g.value, g.collection || null, g.image_url || null]);
             });
+            // Keep every Telegram gift that can be shown in Rocket in one
+            // price-sorted catalog. Existing Rocket rows are refreshed so the
+            // preview, cashout reward, popup, Backpack, and sale use one value.
+            (rocketGiftCatalog.gifts || []).forEach(g => {
+                db.run(`
+                    UPDATE gifts
+                    SET value = ?, image_url = ?, collection = 'Telegram'
+                    WHERE name = ? AND collection = 'Telegram'
+                `, [g.value, g.image_url, g.name]);
+                db.run(`
+                    INSERT OR IGNORE INTO gifts
+                    (telegram_gift_id, name, emoji, rarity, value, collection, image_url)
+                    VALUES (?, ?, '🎁', 'common', ?, 'Telegram', ?)
+                `, [g.id, g.name, g.value, g.image_url]);
+            });
 
             // ===== 4.2 صناديق الحظ =====
             const lootboxes = [
@@ -954,8 +970,14 @@ function seedDatabase() {
                 `, [a.name, a.description, a.icon, a.requirement_type, a.requirement_value]);
             });
 
-            console.log('✅ Seed data inserted');
-            resolve();
+            db.run('SELECT 1', error => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                console.log('✅ Seed data inserted');
+                resolve();
+            });
         });
     });
 }
@@ -1129,7 +1151,7 @@ async function selectRocketRewardForPayout(payout) {
     return await get(`
         SELECT id, telegram_gift_id, name, emoji, image_url, value, rarity
         FROM gifts
-        WHERE value > 0 AND value <= ?
+        WHERE collection = 'Telegram' AND value > 0 AND value <= ?
           AND image_url IS NOT NULL AND TRIM(image_url) <> ''
         ORDER BY value DESC, id ASC
         LIMIT 1
@@ -1175,8 +1197,8 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
             : null;
     if (!config) throw new Error('Invalid bet type');
     const minimumCashoutMultiplier = type === 'TON' ? 1 : 1.01;
-    if (!Number.isFinite(multiplier) || multiplier < minimumCashoutMultiplier) {
-        throw new Error(`Cashout must be at least ${minimumCashoutMultiplier.toFixed(2)}x`);
+    if (!Number.isFinite(multiplier) || multiplier < minimumCashoutMultiplier || (type === 'TON' && multiplier <= 1)) {
+        throw new Error(type === 'TON' ? 'Cashout must be above 1.00x' : `Cashout must be at least ${minimumCashoutMultiplier.toFixed(2)}x`);
     }
 
     return await transaction(async () => {

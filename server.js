@@ -2167,7 +2167,7 @@ async function getRocketRewardPreview(value) {
     const gift = await get(`
         SELECT id, name, emoji, image_url, value, rarity
         FROM gifts
-        WHERE value > 0 AND value <= ?
+        WHERE collection = 'Telegram' AND value > 0 AND value <= ?
           AND image_url IS NOT NULL AND TRIM(image_url) <> ''
         ORDER BY value DESC, id ASC
         LIMIT 1
