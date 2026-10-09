@@ -5790,9 +5790,9 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
         <div class="pvp-bet-label">Your Gifts</div>
         <div id="pvp-modal-gift-grid" class="pvp-gift-grid"></div>
         <div id="pvp-modal-gift-empty" class="pvp-empty-gifts" style="display:none">
-          لا توجد هدايا متاحة للرهان.<br>
+          <span data-pvp-empty-message>No eligible gifts available to bet. Gifts must be verified, unlocked, and have a value above 0 TON.</span><br>
           <strong id="pvp-modal-gift-username">@crazy_rocket_bank</strong>
-          <button type="button" class="pvp-send-gifts" onclick="sendPvpGiftsToBackpack()">↗ إرسال هدية</button>
+          <button type="button" class="pvp-send-gifts" onclick="sendPvpGiftsToBackpack()">↗ Send Gift</button>
         </div>
       </div>
       <button id="pvp-modal-place-btn" class="pvp-place-bet" type="button" onclick="submitPvpBet()">Place Bet</button>
