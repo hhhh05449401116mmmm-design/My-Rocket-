@@ -1136,10 +1136,25 @@ async function selectRocketRewardForPayout(payout) {
     `, [numericPayout]);
 }
 
+async function addRocketRewardGiftToUser(userId, giftId, marketValue = null) {
+    const gift = await getGiftById(giftId);
+    if (!gift) throw new Error('Gift not found');
+    const requestedMarketValue = Number(marketValue);
+    const storedMarketValue = Number.isFinite(requestedMarketValue) && requestedMarketValue > 0
+        ? requestedMarketValue
+        : Number(gift.value || 0);
+    const result = await run(`
+        INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until, loot_box_reward)
+        VALUES (?, ?, 'WON', 0, ?, NULL, 1)
+    `, [userId, gift.id, storedMarketValue]);
+    return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
+}
+
 async function grantRocketRewardGift(userId, payout) {
     const gift = await selectRocketRewardForPayout(payout);
     if (!gift) return null;
-    const stored = await addLootBoxGiftToUser(userId, gift.id, gift.value);
+    // Rocket rewards are immediately actionable: Keep, Bet, or Sell.
+    const stored = await addRocketRewardGiftToUser(userId, gift.id, gift.value);
     return {
         userGiftId: stored?.id || stored?.user_gift_id || null,
         giftId: gift.id,
@@ -1177,6 +1192,13 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
         if (!bet) throw new Error('Bet not found or already settled');
 
         const payout = bet[config.amountColumn] * multiplier;
+        // A TON Rocket cashout is converted into a Telegram collectible.
+        // Do this inside the transaction so a payout without a valid gift cannot settle.
+        let rocketGift = null;
+        if (type === 'TON') {
+            rocketGift = await grantRocketRewardGift(userId, payout);
+            if (!rocketGift) throw new Error('No Telegram collectible is available for this payout');
+        }
         const update = await run(`
             UPDATE ${config.table}
             SET status = 'CASHED_OUT', cashout_multiplier = ?, ${config.payoutColumn} = ?, updated_at = CURRENT_TIMESTAMP
@@ -1185,14 +1207,13 @@ async function cashoutBet(type, betId, userId, roundNumber, multiplier) {
         if (update.changes !== 1) throw new Error('Bet was settled concurrently');
 
         if (type === 'TON') {
-            await run('UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [payout, userId]);
-            await updateUserStats(userId, 'win', payout);
-            const rocketGift = await grantRocketRewardGift(userId, payout);
+            // No TON is credited here. The player chooses Keep, Bet, or Sell in the UI.
+            await updateUserStats(userId, 'win', 0);
             return {
                 payout,
                 multiplier,
                 amount: bet[config.amountColumn],
-                giftValue: type === 'GIFT' ? bet.gift_value_at_bet : undefined,
+                giftValue: undefined,
                 rocketGift
             };
         } else {
@@ -4116,6 +4137,7 @@ module.exports = {
     promoteQueuedGiftBets,
     getQueuedGiftBetsForRound,
     cashoutBet,
+    addRocketRewardGiftToUser,
     crashRound,
     
     // إدارة الهدايا

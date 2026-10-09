@@ -2709,6 +2709,11 @@
         .rocket-reward-gift-name { margin: 8px 0 4px; color:#8cdaff; font-size:13px; font-weight:900; }
         .rocket-reward-icon > img { width:64px; height:64px; object-fit:contain; border-radius:14px; }
 
+        .rocket-reward-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; margin-top:14px; }
+        .rocket-reward-actions button { min-height:48px; border:0; border-radius:13px; color:#fff; font-size:15px; font-weight:900; cursor:pointer; }
+        .rocket-reward-keep { background:linear-gradient(135deg,#13a86b,#087c56); }
+        .rocket-reward-bet { background:linear-gradient(135deg,#168fde,#1161be); }
+        .rocket-reward-sell { background:linear-gradient(135deg,#8b5fe9,#5e35a6); }
         .rocket-reward-continue {
             width: 100%;
             height: 56px;
@@ -6217,7 +6222,11 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                     <span id="rocket-reward-amount">0.00</span>
                 </div>
                 <div id="rocket-reward-gift-name" class="rocket-reward-gift-name"></div>
-                <button type="button" class="rocket-reward-continue" onclick="closeModal('rocket-reward-modal')">Continue</button>
+                <div class="rocket-reward-actions">
+                    <button type="button" class="rocket-reward-keep" onclick="keepRocketReward()">Keep</button>
+                    <button type="button" class="rocket-reward-bet" onclick="betRocketReward()">Bet</button>
+                    <button type="button" class="rocket-reward-sell" onclick="sellRocketReward()">Sell</button>
+                </div>
             </div>
         </div>
 
@@ -13895,6 +13904,35 @@ async function submitPvpBet(){
             });
         }
 
+        let currentRocketReward = null;
+        function closeRocketRewardModal() {
+            currentRocketReward = null;
+            closeModal('rocket-reward-modal');
+        }
+        async function keepRocketReward() {
+            const reward = currentRocketReward;
+            if (!reward?.userGiftId) return;
+            try {
+                await fetchCollectibles();
+                closeRocketRewardModal();
+                showToast(currentLanguage === 'ar' ? '🎒 تم حفظ الهدية في حقيبتك' : '🎒 Gift saved in your backpack');
+            } catch (error) {
+                showToast(error.message || 'Unable to keep gift');
+            }
+        }
+        async function betRocketReward() {
+            const reward = currentRocketReward;
+            if (!reward?.userGiftId) return;
+            closeRocketRewardModal();
+            await betLootBoxReward(reward.userGiftId, reward.value);
+        }
+        async function sellRocketReward() {
+            const reward = currentRocketReward;
+            if (!reward?.userGiftId) return;
+            closeRocketRewardModal();
+            await sellLootBoxReward(reward.userGiftId);
+        }
+
         function showRocketReward(payout, rocketGift) {
             const amount = document.getElementById("rocket-reward-amount");
             if (amount) amount.textContent = Number(payout || 0).toFixed(2);
@@ -13910,6 +13948,9 @@ async function submitPvpBet(){
                 if (giftName) giftName.textContent = '';
                 if (subtitle) subtitle.textContent = 'Balance Reward';
             }
+            currentRocketReward = rocketGift ? { ...rocketGift, payout: Number(payout || 0) } : null;
+            const actions = document.querySelector('.rocket-reward-actions');
+            if (actions) actions.style.display = rocketGift ? 'grid' : 'none';
             const modal = document.getElementById("rocket-reward-modal");
             if (modal) modal.classList.add("show");
         }

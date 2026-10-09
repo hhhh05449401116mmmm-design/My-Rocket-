@@ -4640,8 +4640,10 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
         await createNotification(
             req.user.id,
             'BET_WON',
-            `💰 You cashed out! ${result.payout.toFixed(2)} TON`,
-            { betId, payout: result.payout, multiplier: result.multiplier }
+            result.rocketGift
+                ? `🎁 Rocket collectible earned: ${result.rocketGift.name}`
+                : `💰 You cashed out! ${result.payout.toFixed(2)} TON`,
+            { betId, payout: result.payout, multiplier: result.multiplier, rocketGift: result.rocketGift || null }
         );
         
         res.json({ 
@@ -4649,7 +4651,8 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
             payout: result.payout, 
             multiplier: result.multiplier,
             amount: result.amount,
-            balance: balance
+            balance: balance,
+            rocketGift: result.rocketGift || null
         });
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
