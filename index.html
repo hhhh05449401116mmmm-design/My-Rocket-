@@ -2076,6 +2076,20 @@
             inset: 0;
             pointer-events: none;
         }
+        .rocket-reward-center {
+            position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+            z-index:30; display:none; align-items:center; justify-content:center;
+            width:150px; height:150px; border-radius:30px;
+            background:radial-gradient(circle,rgba(18,42,78,.76),rgba(9,14,35,.25) 72%,transparent);
+            filter:drop-shadow(0 0 22px rgba(74,179,255,.62));
+        }
+        .rocket-reward-center.show { display:flex; }
+        .rocket-reward-center img { width:132px; height:132px; object-fit:contain; border-radius:24px; }
+        .rocket-area.has-central-reward #rocket,
+        .rocket-area.has-central-reward #telegram-rocket,
+        .rocket-area.has-central-reward #flame,
+        .rocket-area.has-central-reward #rocket-trail,
+        .rocket-area.has-central-reward #rocket-particles { visibility:hidden !important; }
 
         /* =========================================================
            FLIGHT LINE - PREMIUM GLOW
@@ -5360,6 +5374,7 @@ video::-webkit-media-controls-enclosure {
                          <div id="flame" class="flame"></div>
                          <div id="telegram-rocket" class="telegram-rocket hidden" aria-hidden="true"></div>
                          <div id="rocket" class="rocket"></div>
+                         <div id="rocket-reward-center" class="rocket-reward-center" aria-live="polite"></div>
                          <div id="rocket-particles" class="rocket-particles"></div>
                      </div>
                     <div id="status-message" class="status-message">الاتصال بالسيرفر...</div>
@@ -9659,6 +9674,10 @@ async function openLootBox(box) {
                 }
             }
             if (state.phase === "CRASH") {
+                // Crash is authoritative: never leave the visual number behind the server result.
+                displayMultiplier = currentStateMultiplier;
+                previousMultiplierSample = currentStateMultiplier;
+                multiplierSampledAt = performance.now();
                 gamePhase = "CRASH";
                 document.getElementById("multiplier").className = "multiplier crashed " + historyClass(currentStateMultiplier);
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
@@ -9780,7 +9799,23 @@ async function openLootBox(box) {
             }
         }
 
+        function showCentralRocketReward(reward) {
+            const refs = getRocketRenderRefs();
+            const center = document.getElementById('rocket-reward-center');
+            if (!center || !reward?.imageUrl) return;
+            center.innerHTML = '<img src="' + escapeHtmlAttribute(reward.imageUrl) + '" alt="Telegram collectible" onerror="this.remove()">';
+            center.classList.add('show');
+            refs.area?.classList.add('has-central-reward');
+        }
+        function hideCentralRocketReward() {
+            const center = document.getElementById('rocket-reward-center');
+            const area = document.querySelector('.rocket-area');
+            if (center) { center.classList.remove('show'); center.innerHTML = ''; }
+            if (area) area.classList.remove('has-central-reward');
+        }
+
         function resetRocketBackdrop() {
+            hideCentralRocketReward();
             const refs = getRocketRenderRefs();
             if (refs.flightLine) {
                 refs.flightLine.classList.remove("active", "crashed");
@@ -13943,6 +13978,7 @@ async function submitPvpBet(){
             const amountRow = document.getElementById('rocket-reward-amount-row');
             const continueButton = document.getElementById('rocket-reward-continue');
             if (rocketGift) {
+                showCentralRocketReward(rocketGift);
                 if (giftIcon) giftIcon.innerHTML = '<img src="' + escapeHtmlAttribute(rocketGift.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">';
                 if (giftName) giftName.textContent = `${rocketGift.name || 'Telegram collectible'} · ${Number(rocketGift.value || 0).toFixed(2)} TON`;
                 if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'اختر: احتفظ أو راهن أو بِع الهدية' : 'Choose Keep, Bet, or Sell';

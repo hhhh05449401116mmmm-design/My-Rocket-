@@ -1145,7 +1145,7 @@ async function addRocketRewardGiftToUser(userId, giftId, marketValue = null) {
         : Number(gift.value || 0);
     const result = await run(`
         INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until, loot_box_reward)
-        VALUES (?, ?, 'WON', 0, ?, NULL, 1)
+        VALUES (?, ?, 'WON', 0, ?, NULL, 2)
     `, [userId, gift.id, storedMarketValue]);
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
 }
@@ -1393,7 +1393,8 @@ async function crashRound(roundNumber, multiplier) {
 // ===== 5.2 إدارة هدايا المستخدم =====
 async function getUserGifts(userId, status = null) {
     let sql = `
-        SELECT g.*, ug.id as user_gift_id, ug.status as ownership_status, ug.received_at
+        SELECT g.*, ug.id as user_gift_id, ug.status as ownership_status, ug.received_at,
+               ug.market_value AS user_market_value
         FROM user_gifts ug
         JOIN gifts g ON ug.gift_id = g.id
         WHERE ug.user_id = ?

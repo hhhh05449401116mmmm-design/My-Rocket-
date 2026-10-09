@@ -3037,6 +3037,7 @@ function buildCollectibleApiRow(row, req) {
     const genericGiftImage = row.name
         ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(row.name)) + '/png/Original.png'
         : null;
+    const isRocketReward = Number(row.loot_box_reward) === 2;
     const imageUrl = isPendingGiftReward
         ? (genericGiftImage || row.image_url || null)
         : (row.unique_collectible_id && hasMedia
@@ -3080,8 +3081,13 @@ function buildCollectibleApiRow(row, req) {
         stickerIsVideo: isPendingGiftReward ? false : !!model.stickerIsVideo,
         imageUrl,
         rarity: row.rarity || model.rarity || 'common',
-        value: getGeneralGiftPrice(row.name, row.value),
-        sellValue: Number((getGeneralGiftPrice(row.name, row.value) * Number(process.env.COLLECTIBLE_SELL_RATE || '0.89')).toFixed(2)),
+        value: isPendingGiftReward
+            ? Number(row.user_market_value ?? row.value ?? 0)
+            : getGeneralGiftPrice(row.name, row.value),
+        sellValue: Number(((isPendingGiftReward
+            ? Number(row.user_market_value ?? row.value ?? 0)
+            : getGeneralGiftPrice(row.name, row.value)) * (isRocketReward ? 1 : Number(process.env.COLLECTIBLE_SELL_RATE || '0.89'))).toFixed(2)),
+        rocketReward: isRocketReward,
         status: row.ownership_status,
         verifiedMetadata: isPendingGiftReward ? null : row.verified_metadata,
         receivedAt: row.received_at
@@ -3942,13 +3948,14 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
         const reward = await get("SELECT ug.*, g.name, g.value AS value FROM user_gifts ug JOIN gifts g ON ug.gift_id = g.id WHERE ug.id = ? AND ug.user_id = ? AND ug.status = 'WON' LIMIT 1", [userGiftId, req.user.id]);
         if (!reward) return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
 
-        const baseValue = getGeneralGiftPrice(reward.name, reward.value);
+        // Sell the same stored value that the player saw, never a stale catalog value.
+        const baseValue = Number(reward.market_value ?? reward.value ?? 0);
         const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
         if (!Number.isFinite(baseValue) || baseValue <= 0 || !Number.isFinite(sellRate) || sellRate <= 0 || sellRate > 1) {
             return res.status(409).json({ ok: false, error: 'No valid market value is available for this gift' });
         }
 
-        const saleValue = Number((baseValue * sellRate).toFixed(9));
+        const saleValue = Number(((Number(reward.loot_box_reward) === 2 ? baseValue : baseValue * sellRate)).toFixed(9));
         const result = await sellLootBoxGiftForBalance(req.user.id, userGiftId, saleValue);
         await createNotification(
             req.user.id,
