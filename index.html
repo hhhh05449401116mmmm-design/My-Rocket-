@@ -10059,10 +10059,14 @@ async function openLootBox(box) {
                     Math.max(Number(previousMultiplierSample) || 1, 1),
                     targetMultiplier
                 );
-                const interpolationProgress = Math.min(
+                const rawInterpolationProgress = Math.min(
                     Math.max((performance.now() - multiplierSampledAt) / 1000, 0),
                     1
                 );
+                // A slightly longer eased transition removes visible stepping
+                // while still never exceeding the latest server-confirmed value.
+                const interpolationProgress = rawInterpolationProgress * rawInterpolationProgress
+                    * (3 - 2 * rawInterpolationProgress);
                 displayMultiplier = Math.min(
                     targetMultiplier,
                     startMultiplier + (targetMultiplier - startMultiplier) * interpolationProgress
@@ -10402,7 +10406,7 @@ async function openLootBox(box) {
                 const target = Math.max(Number(displayMultiplier) || Number(currentMultiplier) || 1, 1);
                 let value = Number(playerDisplayMultipliers.get(playerKey));
                 if (!Number.isFinite(value)) value = target;
-                const smoothing = 1 - Math.exp(-dt / 0.14);
+                const smoothing = 1 - Math.exp(-dt / 0.20);
                 value += (target - value) * smoothing;
                 if (value > target) value = target;
                 playerDisplayMultipliers.set(playerKey, value);
