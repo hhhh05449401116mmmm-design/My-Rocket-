@@ -229,6 +229,130 @@
     z-index: 2;
 }
 
+/* Full-screen game atmospheres. The page-wide themes make the change visible
+   beyond the narrow game card while keeping every control above the ambience. */
+html:has(#mines-game:not(.hidden)),
+body:has(#mines-game:not(.hidden)) {
+    background:
+        radial-gradient(ellipse 78% 55% at 52% 32%, rgba(0, 174, 239, .34), transparent 72%),
+        radial-gradient(ellipse 52% 48% at 12% 82%, rgba(16, 190, 168, .26), transparent 72%),
+        linear-gradient(154deg, #061b2c 0%, #050d1a 58%, #04191d 100%) !important;
+    background-color: #061321 !important;
+    background-attachment: fixed !important;
+}
+html:has(#plinko-game:not(.hidden)),
+body:has(#plinko-game:not(.hidden)) {
+    background:
+        radial-gradient(ellipse 78% 58% at 50% 27%, rgba(151, 75, 255, .39), transparent 70%),
+        radial-gradient(ellipse 50% 48% at 87% 78%, rgba(46, 111, 255, .26), transparent 72%),
+        linear-gradient(155deg, #1a1032 0%, #0d0b20 56%, #091224 100%) !important;
+    background-color: #100d24 !important;
+    background-attachment: fixed !important;
+}
+html:has(#dice-game:not(.hidden)),
+body:has(#dice-game:not(.hidden)) {
+    background:
+        radial-gradient(ellipse 76% 55% at 50% 30%, rgba(26, 205, 158, .31), transparent 72%),
+        radial-gradient(ellipse 48% 46% at 88% 82%, rgba(121, 84, 235, .24), transparent 70%),
+        linear-gradient(150deg, #071b1b 0%, #09121a 58%, #101022 100%) !important;
+    background-color: #081719 !important;
+    background-attachment: fixed !important;
+}
+html:has(#crafts-game:not(.hidden)),
+body:has(#crafts-game:not(.hidden)) {
+    background:
+        radial-gradient(ellipse 76% 56% at 22% 28%, rgba(255, 154, 69, .34), transparent 72%),
+        radial-gradient(ellipse 54% 48% at 84% 76%, rgba(177, 83, 228, .29), transparent 72%),
+        linear-gradient(150deg, #26151e 0%, #15101c 58%, #0d101a 100%) !important;
+    background-color: #1b121b !important;
+    background-attachment: fixed !important;
+}
+html:has(#lottery-game:not(.hidden)),
+body:has(#lottery-game:not(.hidden)) {
+    background:
+        radial-gradient(ellipse 76% 54% at 50% 24%, rgba(169, 91, 255, .37), transparent 70%),
+        radial-gradient(ellipse 46% 45% at 16% 82%, rgba(255, 193, 81, .25), transparent 72%),
+        radial-gradient(ellipse 42% 42% at 91% 78%, rgba(124, 71, 223, .29), transparent 72%),
+        linear-gradient(155deg, #24143b 0%, #160f2a 57%, #0b101d 100%) !important;
+    background-color: #170f2a !important;
+    background-attachment: fixed !important;
+}
+
+/* Replace the generic warm particle field with a game-specific animated field. */
+body:has(#mines-game:not(.hidden)) .app {
+    background: radial-gradient(ellipse 90% 48% at 50% 32%, rgba(0, 179, 226, .20), transparent 76%) !important;
+}
+body:has(#plinko-game:not(.hidden)) .app {
+    background: radial-gradient(ellipse 90% 50% at 50% 28%, rgba(143, 74, 255, .23), transparent 75%) !important;
+}
+body:has(#dice-game:not(.hidden)) .app {
+    background: radial-gradient(ellipse 90% 48% at 50% 32%, rgba(31, 196, 147, .19), transparent 76%) !important;
+}
+body:has(#crafts-game:not(.hidden)) .app {
+    background: radial-gradient(ellipse 90% 48% at 26% 28%, rgba(239, 133, 66, .22), transparent 76%) !important;
+}
+body:has(#lottery-game:not(.hidden)) .app {
+    background: radial-gradient(ellipse 90% 50% at 50% 26%, rgba(163, 94, 252, .22), transparent 75%) !important;
+}
+
+body:has(#mines-game:not(.hidden))::before,
+body:has(#plinko-game:not(.hidden))::before,
+body:has(#dice-game:not(.hidden))::before,
+body:has(#crafts-game:not(.hidden))::before,
+body:has(#lottery-game:not(.hidden))::before {
+    animation: gameFullScreenDrift 28s ease-in-out infinite alternate !important;
+    will-change: transform, opacity;
+}
+body:has(#mines-game:not(.hidden))::before {
+    background-image:
+        radial-gradient(circle at 17% 24%, rgba(79, 220, 255, .62) 0 1.5px, transparent 3px),
+        radial-gradient(circle at 82% 72%, rgba(67, 255, 213, .50) 0 1.5px, transparent 3px),
+        radial-gradient(ellipse at 25% 35%, rgba(14, 188, 239, .22), transparent 56%),
+        linear-gradient(rgba(92, 205, 240, .16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 205, 240, .16) 1px, transparent 1px) !important;
+    background-size: 240px 210px, 320px 270px, 100% 100%, 72px 72px, 72px 72px !important;
+    opacity: .86 !important;
+}
+body:has(#plinko-game:not(.hidden))::before {
+    background-image:
+        radial-gradient(circle, rgba(226, 197, 255, .67) 1.5px, transparent 2.8px),
+        radial-gradient(ellipse at 72% 26%, rgba(183, 107, 255, .25), transparent 54%),
+        radial-gradient(ellipse at 25% 80%, rgba(59, 128, 255, .20), transparent 50%) !important;
+    background-size: 42px 38px, 100% 100%, 100% 100% !important;
+    opacity: .72 !important;
+}
+body:has(#dice-game:not(.hidden))::before {
+    background-image:
+        radial-gradient(circle, rgba(127, 255, 211, .54) 1.5px, transparent 2.8px),
+        radial-gradient(ellipse at 20% 30%, rgba(33, 211, 159, .24), transparent 53%),
+        radial-gradient(ellipse at 80% 74%, rgba(163, 102, 255, .18), transparent 54%) !important;
+    background-size: 76px 76px, 100% 100%, 100% 100% !important;
+    opacity: .75 !important;
+}
+body:has(#crafts-game:not(.hidden))::before {
+    background-image:
+        repeating-linear-gradient(135deg, transparent 0 34px, rgba(255, 189, 115, .24) 35px, transparent 37px 78px),
+        radial-gradient(ellipse at 20% 28%, rgba(255, 161, 74, .25), transparent 55%),
+        radial-gradient(ellipse at 84% 72%, rgba(205, 111, 255, .22), transparent 54%) !important;
+    background-size: 190px 190px, 100% 100%, 100% 100% !important;
+    opacity: .76 !important;
+}
+body:has(#lottery-game:not(.hidden))::before {
+    background-image:
+        radial-gradient(circle at 14% 22%, rgba(255, 218, 133, .78) 0 2px, transparent 4px),
+        radial-gradient(circle at 82% 27%, rgba(234, 205, 255, .72) 0 2px, transparent 4px),
+        radial-gradient(circle at 24% 74%, rgba(255, 200, 94, .64) 0 2px, transparent 4px),
+        radial-gradient(circle at 91% 78%, rgba(222, 179, 255, .66) 0 2px, transparent 4px),
+        radial-gradient(ellipse at 52% 30%, rgba(183, 117, 255, .24), transparent 58%) !important;
+    background-size: 100% 100% !important;
+    opacity: .88 !important;
+}
+
+@keyframes gameFullScreenDrift {
+    0% { transform: translate3d(-.4%, .25%, 0) scale(1.02); opacity: .70; }
+    100% { transform: translate3d(.45%, -.3%, 0) scale(1.06); opacity: .96; }
+}
+
 @keyframes gameAmbientDrift {
     0% { transform: translate3d(-.5%, -.25%, 0) scale(1.03); opacity: .72; }
     100% { transform: translate3d(.6%, .35%, 0) scale(1.06); opacity: .96; }
@@ -243,6 +367,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    body:has(#mines-game:not(.hidden))::before,
+    body:has(#plinko-game:not(.hidden))::before,
+    body:has(#dice-game:not(.hidden))::before,
+    body:has(#crafts-game:not(.hidden))::before,
+    body:has(#lottery-game:not(.hidden))::before {
+        animation: none !important;
+        will-change: auto;
+    }
     #mines-game::before, #mines-game::after,
     #plinko-game::before, #plinko-game::after,
     #dice-game::before, #dice-game::after,
