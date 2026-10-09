@@ -2168,6 +2168,7 @@ async function getRocketRewardPreview(value) {
         SELECT id, name, emoji, image_url, value, rarity
         FROM gifts
         WHERE value > 0 AND value <= ?
+          AND image_url IS NOT NULL AND TRIM(image_url) <> ''
         ORDER BY value DESC, id ASC
         LIMIT 1
     `, [numericValue]);
@@ -2176,9 +2177,7 @@ async function getRocketRewardPreview(value) {
         giftId: gift.id,
         name: gift.name,
         emoji: gift.emoji || '🎁',
-        imageUrl: gift.image_url || (gift.name
-            ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(gift.name)) + '/png/Original.png'
-            : null),
+        imageUrl: gift.image_url,
         isTelegramCollectible: true,
         value: Number(gift.value),
         payoutValue: numericValue

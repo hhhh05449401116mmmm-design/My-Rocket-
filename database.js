@@ -893,15 +893,26 @@ function seedDatabase() {
                 { id: 'telegram', name: 'TELEGRAM', emoji: '✈️', rarity: 'common', value: 1.07, collection: 'Brand' },
                 { id: 'invite', name: 'INVITE', emoji: '📨', rarity: 'common', value: 2.01, collection: 'Social' },
                 { id: 'space_nft', name: 'SPACE NFT', emoji: '🌌', rarity: 'legendary', value: 1.72, collection: 'NFT' },
-                { id: 'hot', name: 'HOT', emoji: '🔥', rarity: 'rare', value: 1.98, collection: 'Trending' }
+                { id: 'hot', name: 'HOT', emoji: '🔥', rarity: 'rare', value: 1.98, collection: 'Trending' },
+                // Rocket rewards: deterministic Telegram collectibles with verified art.
+                { id: 'mousse_cake', name: 'Mousse Cake', emoji: '🍰', rarity: 'rare', value: 5.06, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Mousse%20Cake/png/Original.png' },
+                { id: 'jester_hat', name: 'Jester Hat', emoji: '🎩', rarity: 'rare', value: 5.40, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Jester%20Hat/png/Original.png' },
+                { id: 'swag_bag', name: 'Swag Bag', emoji: '👜', rarity: 'rare', value: 5.53, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Swag%20Bag/png/Original.png' },
+                { id: 'winter_wreath', name: 'Winter Wreath', emoji: '🎄', rarity: 'rare', value: 5.60, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Winter%20Wreath/png/Original.png' },
+                { id: 'restless_jar', name: 'Restless Jar', emoji: '🫙', rarity: 'epic', value: 6.94, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Original.png' },
+                { id: 'love_potion', name: 'Love Potion', emoji: '🧪', rarity: 'epic', value: 14.02, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Love%20Potion/png/Original.png' },
+                { id: 'trapped_heart', name: 'Trapped Heart', emoji: '💜', rarity: 'epic', value: 15.84, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Trapped%20Heart/png/Original.png' },
+                { id: 'electric_skull', name: 'Electric Skull', emoji: '💀', rarity: 'legendary', value: 25.75, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Electric%20Skull/png/Original.png' },
+                { id: 'sakura_flower', name: 'Sakura Flower', emoji: '🌸', rarity: 'legendary', value: 32.69, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Sakura%20Flower/png/Original.png' },
+                { id: 'magic_potion', name: 'Magic Potion', emoji: '🧪', rarity: 'legendary', value: 60.33, collection: 'Telegram', image_url: 'https://cdn.changes.tg/gifts/models/Magic%20Potion/png/Original.png' }
             ];
 
             gifts.forEach(g => {
                 db.run(`
                     INSERT OR IGNORE INTO gifts 
-                    (telegram_gift_id, name, emoji, rarity, value, collection)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                `, [g.id, g.name, g.emoji, g.rarity, g.value, g.collection || null]);
+                    (telegram_gift_id, name, emoji, rarity, value, collection, image_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `, [g.id, g.name, g.emoji, g.rarity, g.value, g.collection || null, g.image_url || null]);
             });
 
             // ===== 4.2 صناديق الحظ =====
@@ -1119,6 +1130,7 @@ async function selectRocketRewardForPayout(payout) {
         SELECT id, telegram_gift_id, name, emoji, image_url, value, rarity
         FROM gifts
         WHERE value > 0 AND value <= ?
+          AND image_url IS NOT NULL AND TRIM(image_url) <> ''
         ORDER BY value DESC, id ASC
         LIMIT 1
     `, [numericPayout]);
@@ -1133,9 +1145,7 @@ async function grantRocketRewardGift(userId, payout) {
         giftId: gift.id,
         name: gift.name,
         emoji: gift.emoji || '🎁',
-        imageUrl: gift.image_url || (gift.name
-            ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(gift.name)) + '/png/Original.png'
-            : null),
+        imageUrl: gift.image_url,
         isTelegramCollectible: true,
         value: Number(gift.value),
         rewardType: 'ROCKET_PAYOUT_GIFT'
