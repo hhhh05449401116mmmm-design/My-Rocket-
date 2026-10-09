@@ -6217,7 +6217,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                 <h2 class="rocket-reward-title">Rocket Reward!</h2>
                 <div class="rocket-reward-subtitle" id="rocket-reward-subtitle">Gift added to your Backpack</div>
                 <div class="rocket-reward-label" id="rocket-reward-label">You received</div>
-                <div class="rocket-reward-amount">
+                <div id="rocket-reward-amount-row" class="rocket-reward-amount">
                     <img src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">
                     <span id="rocket-reward-amount">0.00</span>
                 </div>
@@ -6227,6 +6227,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                     <button type="button" class="rocket-reward-bet" onclick="betRocketReward()">Bet</button>
                     <button type="button" class="rocket-reward-sell" onclick="sellRocketReward()">Sell</button>
                 </div>
+                <button id="rocket-reward-continue" type="button" class="rocket-reward-continue" onclick="closeModal('rocket-reward-modal')">Continue</button>
             </div>
         </div>
 
@@ -13939,14 +13940,20 @@ async function submitPvpBet(){
             const giftIcon = document.getElementById("rocket-reward-gift-icon");
             const giftName = document.getElementById("rocket-reward-gift-name");
             const subtitle = document.getElementById("rocket-reward-subtitle");
+            const amountRow = document.getElementById('rocket-reward-amount-row');
+            const continueButton = document.getElementById('rocket-reward-continue');
             if (rocketGift) {
                 if (giftIcon) giftIcon.innerHTML = '<img src="' + escapeHtmlAttribute(rocketGift.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">';
                 if (giftName) giftName.textContent = `${rocketGift.name || 'Telegram collectible'} · ${Number(rocketGift.value || 0).toFixed(2)} TON`;
-                if (subtitle) subtitle.textContent = 'Gift added to your in-game Backpack';
+                if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'اختر: احتفظ أو راهن أو بِع الهدية' : 'Choose Keep, Bet, or Sell';
+                if (amountRow) amountRow.style.display = 'none';
+                if (continueButton) continueButton.style.display = 'none';
             } else {
                 if (giftIcon) giftIcon.innerHTML = '<img src="/assets/ton-icon.svg" alt="TON">';
                 if (giftName) giftName.textContent = '';
                 if (subtitle) subtitle.textContent = 'Balance Reward';
+                if (amountRow) amountRow.style.display = 'flex';
+                if (continueButton) continueButton.style.display = 'block';
             }
             currentRocketReward = rocketGift ? { ...rocketGift, payout: Number(payout || 0) } : null;
             const actions = document.querySelector('.rocket-reward-actions');
