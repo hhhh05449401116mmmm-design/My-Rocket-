@@ -2434,25 +2434,9 @@
             box-shadow: none;
         }
 
-        .personal-rocket-reward {
-            margin: -2px 14px 10px;
-            padding: 10px 12px;
-            border-radius: 15px;
-            background: linear-gradient(135deg, rgba(0,152,234,.18), rgba(35,82,153,.16));
-            border: 1px solid rgba(0,152,234,.38);
-            box-shadow: 0 0 24px rgba(0,152,234,.14), inset 0 0 18px rgba(255,255,255,.025);
-            color: #eaf7ff;
-        }
-        .personal-rocket-reward-kicker { color:#70cfff; text-transform:uppercase; letter-spacing:.08em; font-size:9px; font-weight:900; }
-        .personal-rocket-reward-main { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:13px; font-weight:900; }
-        .personal-rocket-reward-image { width:42px; height:42px; object-fit:contain; border-radius:10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); padding:3px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.3)); }
-        .personal-rocket-reward-value { margin-left:auto; display:inline-flex; align-items:center; gap:4px; color:#8cdaff; }
-        .personal-rocket-reward-value img { width:18px; height:18px; }
-        .personal-rocket-reward-hint { margin-top:5px; color:#8caeca; font-size:10px; }
-        .player-reward-chip { display:inline-flex; align-items:center; gap:3px; margin-top:4px; color:#8cdaff; font-size:9px; font-weight:900; }
-        .player-reward-chip img { width:22px; height:22px; object-fit:contain; border-radius:6px; background:rgba(255,255,255,.05); }
-        .player-rocket-gift-art { width:40px; height:40px; object-fit:contain; border-radius:10px; background:rgba(255,255,255,.06); border:1px solid rgba(0,152,234,.28); padding:2px; }
-        .amount-ton-icon { width:18px; height:18px; vertical-align:middle; object-fit:contain; }
+        .player-rocket-gift-art { width:48px; height:48px; object-fit:contain; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(100,200,255,.22); padding:3px; filter:drop-shadow(0 3px 8px rgba(0,0,0,.32)); }
+        .player-current-value.gift-value.has-rocket-gift { min-width:122px; gap:7px; }
+
 
         /* =========================================================
            PLAYERS PANEL - PREMIUM
@@ -5359,16 +5343,6 @@ video::-webkit-media-controls-enclosure {
 
                     <!-- رقم المضاعف الكبير -->
                     <div id="multiplier" class="multiplier waiting">1.00x</div>
-                    <div id="personal-rocket-reward" class="personal-rocket-reward hidden" aria-live="polite">
-                        <div class="personal-rocket-reward-kicker">Rocket reward</div>
-                        <div class="personal-rocket-reward-main">
-                            <img id="personal-rocket-reward-image" class="personal-rocket-reward-image" src="/assets/gift-icon.svg" alt="Telegram collectible">
-                            <span id="personal-rocket-reward-name">—</span>
-                            <span class="personal-rocket-reward-value"><img src="/assets/ton-icon.svg" alt="TON"><span id="personal-rocket-reward-value">0.00</span></span>
-                        </div>
-                        <div class="personal-rocket-reward-hint">Cash out to add this gift to your in-game Backpack</div>
-                    </div>
-
                     <div class="rocket-area">
                         <div id="flight-line" class="flight-line" aria-hidden="true">
     <svg class="flight-path-svg" preserveAspectRatio="none" aria-hidden="true">
@@ -10329,11 +10303,15 @@ async function openLootBox(box) {
                     ? '<img class="player-gift-art" src="' + safeGiftImageUrl + '" alt="' + escapeHtmlAttribute(player.giftName || "Telegram Gift") + '" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
                     : "";
                 const tonIconHtml = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
-                const rewardChip = !isGiftBet && player.rocketReward && !isLoser && !isQueued
-                    ? '<span class="player-reward-chip"><img src="' + escapeHtmlAttribute(player.rocketReward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'"> ' + escapeHtml(player.rocketReward.name || 'Telegram collectible') + ' · ' + tonIconHtml + Number(player.rocketReward.value || 0).toFixed(2) + '</span>'
+                const hasRocketGift = !isGiftBet && !!player.rocketReward && !isLoser && !isQueued;
+                const rocketGiftImageHtml = hasRocketGift
+                    ? '<img class="player-rocket-gift-art" src="' + escapeHtmlAttribute(player.rocketReward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" title="' + escapeHtmlAttribute(player.rocketReward.name || 'Telegram collectible') + '" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">'
                     : '';
+                const currentValueHtml = isLoser ? statusText : isQueued ? "Waiting..."
+                    : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2)
+                    : tonIconHtml + currentValue.toFixed(2) + rocketGiftImageHtml);
                 row.innerHTML =
-                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">' + (isQueued ? "Waiting..." : "×" + displayMultiplier.toFixed(2)) + '</span></div>' + rewardChip + '</div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : isQueued ? "Waiting..." : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2) : tonIconHtml + currentValue.toFixed(2))) + '</div>';
+                    '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">' + (isQueued ? "Waiting..." : "×" + displayMultiplier.toFixed(2)) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet || hasRocketGift ? ' gift-value has-rocket-gift' : '') + '">' + currentValueHtml + '</div>';
                 list.appendChild(row);
             });
             playerDisplayMultipliers.forEach(function(_, key) {
@@ -10377,9 +10355,14 @@ async function openLootBox(box) {
                     const isGiftBet = player.betType === "GIFT";
                     const giftImage = isGiftBet ? row.querySelector(".player-gift-art") : null;
                     const tonIcon = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
+                    const reward = !isGiftBet && player.rocketReward ? player.rocketReward : null;
+                    const rewardImage = reward
+                        ? '<img class="player-rocket-gift-art" src="' + escapeHtmlAttribute(reward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" title="' + escapeHtmlAttribute(reward.name || 'Telegram collectible') + '" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">'
+                        : '';
+                    valueEl.classList.toggle('has-rocket-gift', !!reward);
                     valueEl.innerHTML = isGiftBet
                         ? (giftImage ? giftImage.outerHTML : "") + tonIcon + (amount * value).toFixed(2)
-                        : tonIcon + (amount * value).toFixed(2);
+                        : tonIcon + (amount * value).toFixed(2) + rewardImage;
                 }
             });
         }
