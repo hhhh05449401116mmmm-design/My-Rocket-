@@ -10364,13 +10364,11 @@ async function openLootBox(box) {
                 const rocketGiftImageHtml = hasRocketGift
                     ? '<img class="player-rocket-gift-art" src="' + escapeHtmlAttribute(player.rocketReward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" title="' + escapeHtmlAttribute(player.rocketReward.name || 'Telegram collectible') + '" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">'
                     : '';
-                // For TON bets, the number beside the collectible is the
-                // collectible's own price, not the live payout. Showing the
-                // live payout here made a 5 TON gift look like a 40 TON gift.
-                const rocketGiftValue = hasRocketGift ? Number(player.rocketReward.value || 0) : 0;
+                // Keep the TON amount beside a Rocket gift tied to the live
+                // payout, so it rises with the same smoothly animated multiplier.
                 const currentValueHtml = isLoser ? statusText : isQueued ? "Waiting..."
                     : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2)
-                    : tonIconHtml + (hasRocketGift ? rocketGiftValue.toFixed(2) : currentValue.toFixed(2)) + rocketGiftImageHtml);
+                    : tonIconHtml + currentValue.toFixed(2) + rocketGiftImageHtml);
                 row.innerHTML =
                     '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">' + (isQueued ? "Waiting..." : "×" + displayMultiplier.toFixed(2)) + '</span></div></div></div><div class="player-current-value ' + valueClass + (isGiftBet || hasRocketGift ? ' gift-value has-rocket-gift' : '') + '">' + currentValueHtml + '</div>';
                 list.appendChild(row);
@@ -10421,10 +10419,10 @@ async function openLootBox(box) {
                         ? '<img class="player-rocket-gift-art" src="' + escapeHtmlAttribute(reward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" title="' + escapeHtmlAttribute(reward.name || 'Telegram collectible') + '" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">'
                         : '';
                     valueEl.classList.toggle('has-rocket-gift', !!reward);
-                    const rewardValue = reward ? Number(reward.value || 0) : 0;
+                    const livePayoutText = (amount * value).toFixed(2);
                     valueEl.innerHTML = isGiftBet
-                        ? (giftImage ? giftImage.outerHTML : "") + tonIcon + (amount * value).toFixed(2)
-                        : tonIcon + (reward ? rewardValue.toFixed(2) : (amount * value).toFixed(2)) + rewardImage;
+                        ? (giftImage ? giftImage.outerHTML : "") + tonIcon + livePayoutText
+                        : tonIcon + livePayoutText + rewardImage;
                 }
             });
         }
