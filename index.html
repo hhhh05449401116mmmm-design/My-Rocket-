@@ -2445,12 +2445,13 @@
         }
         .personal-rocket-reward-kicker { color:#70cfff; text-transform:uppercase; letter-spacing:.08em; font-size:9px; font-weight:900; }
         .personal-rocket-reward-main { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:13px; font-weight:900; }
-        .personal-rocket-reward-emoji { font-size:25px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.3)); }
+        .personal-rocket-reward-image { width:42px; height:42px; object-fit:contain; border-radius:10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); padding:3px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.3)); }
         .personal-rocket-reward-value { margin-left:auto; display:inline-flex; align-items:center; gap:4px; color:#8cdaff; }
         .personal-rocket-reward-value img { width:18px; height:18px; }
         .personal-rocket-reward-hint { margin-top:5px; color:#8caeca; font-size:10px; }
         .player-reward-chip { display:inline-flex; align-items:center; gap:3px; margin-top:4px; color:#8cdaff; font-size:9px; font-weight:900; }
-        .player-reward-chip img { width:14px; height:14px; object-fit:contain; }
+        .player-reward-chip img { width:22px; height:22px; object-fit:contain; border-radius:6px; background:rgba(255,255,255,.05); }
+        .player-rocket-gift-art { width:40px; height:40px; object-fit:contain; border-radius:10px; background:rgba(255,255,255,.06); border:1px solid rgba(0,152,234,.28); padding:2px; }
         .amount-ton-icon { width:18px; height:18px; vertical-align:middle; object-fit:contain; }
 
         /* =========================================================
@@ -2722,7 +2723,7 @@
         }
         .rocket-reward-amount img { width: 29px; height: 29px; }
         .rocket-reward-gift-name { margin: 8px 0 4px; color:#8cdaff; font-size:13px; font-weight:900; }
-        .rocket-reward-icon > img { width:44px; height:44px; }
+        .rocket-reward-icon > img { width:64px; height:64px; object-fit:contain; border-radius:14px; }
 
         .rocket-reward-continue {
             width: 100%;
@@ -5361,7 +5362,7 @@ video::-webkit-media-controls-enclosure {
                     <div id="personal-rocket-reward" class="personal-rocket-reward hidden" aria-live="polite">
                         <div class="personal-rocket-reward-kicker">Rocket reward</div>
                         <div class="personal-rocket-reward-main">
-                            <span id="personal-rocket-reward-emoji" class="personal-rocket-reward-emoji">🎁</span>
+                            <img id="personal-rocket-reward-image" class="personal-rocket-reward-image" src="/assets/gift-icon.svg" alt="Telegram collectible">
                             <span id="personal-rocket-reward-name">—</span>
                             <span class="personal-rocket-reward-value"><img src="/assets/ton-icon.svg" alt="TON"><span id="personal-rocket-reward-value">0.00</span></span>
                         </div>
@@ -10245,11 +10246,15 @@ async function openLootBox(box) {
             const visible = !!reward && (own.status === 'ACTIVE' || own.status === 'CASHED_OUT');
             panel.classList.toggle('hidden', !visible);
             if (!visible) return;
-            const emoji = document.getElementById('personal-rocket-reward-emoji');
+            const image = document.getElementById('personal-rocket-reward-image');
             const name = document.getElementById('personal-rocket-reward-name');
             const value = document.getElementById('personal-rocket-reward-value');
-            if (emoji) emoji.textContent = reward.emoji || '🎁';
-            if (name) name.textContent = reward.name || 'Gift';
+            if (image) {
+                image.src = reward.imageUrl || '/assets/gift-icon.svg';
+                image.alt = reward.name || 'Telegram collectible';
+                image.onerror = function() { this.onerror = null; this.src = '/assets/gift-icon.svg'; };
+            }
+            if (name) name.textContent = reward.name || 'Telegram collectible';
             if (value) value.textContent = Number(reward.value || 0).toFixed(2);
             if (own.status === 'CASHED_OUT' && lastRocketRewardShownRound !== currentRoundId) {
                 lastRocketRewardShownRound = currentRoundId;
@@ -10325,7 +10330,7 @@ async function openLootBox(box) {
                     : "";
                 const tonIconHtml = '<img class="player-ton-icon" src="/assets/ton-icon.svg" alt="TON" aria-hidden="true">';
                 const rewardChip = !isGiftBet && player.rocketReward && !isLoser && !isQueued
-                    ? '<span class="player-reward-chip">' + escapeHtml(player.rocketReward.emoji || '🎁') + ' ' + escapeHtml(player.rocketReward.name || 'Gift') + ' · ' + tonIconHtml + Number(player.rocketReward.value || 0).toFixed(2) + '</span>'
+                    ? '<span class="player-reward-chip"><img src="' + escapeHtmlAttribute(player.rocketReward.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'"> ' + escapeHtml(player.rocketReward.name || 'Telegram collectible') + ' · ' + tonIconHtml + Number(player.rocketReward.value || 0).toFixed(2) + '</span>'
                     : '';
                 row.innerHTML =
                     '<div class="player-left"><img class="player-avatar ' + avatarClass + '" src="' + escapeHtmlAttribute(avatar) + '" alt=""><div class="player-info"><div class="player-name ' + nameClass + '">' + escapeHtml(displayName) + '</div><div class="player-status">' + statusText + '</div><div class="player-bet-line"><span class="player-bet-amount ' + valueClass + '">' + (isGiftBet ? "🎁 " : tonIconHtml) + amount.toFixed(2) + '</span><span class="player-live-multiplier ' + valueClass + '">' + (isQueued ? "Waiting..." : "×" + displayMultiplier.toFixed(2)) + '</span></div>' + rewardChip + '</div></div><div class="player-current-value ' + valueClass + (isGiftBet ? ' gift-value' : '') + '">' + (isLoser ? statusText : isQueued ? "Waiting..." : (isGiftBet ? giftImageHtml + tonIconHtml + currentValue.toFixed(2) : tonIconHtml + currentValue.toFixed(2))) + '</div>';
@@ -13914,8 +13919,8 @@ async function submitPvpBet(){
             const giftName = document.getElementById("rocket-reward-gift-name");
             const subtitle = document.getElementById("rocket-reward-subtitle");
             if (rocketGift) {
-                if (giftIcon) giftIcon.textContent = rocketGift.emoji || '🎁';
-                if (giftName) giftName.textContent = `${rocketGift.name || 'Gift'} · ${Number(rocketGift.value || 0).toFixed(2)} TON`;
+                if (giftIcon) giftIcon.innerHTML = '<img src="' + escapeHtmlAttribute(rocketGift.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">';
+                if (giftName) giftName.textContent = `${rocketGift.name || 'Telegram collectible'} · ${Number(rocketGift.value || 0).toFixed(2)} TON`;
                 if (subtitle) subtitle.textContent = 'Gift added to your in-game Backpack';
             } else {
                 if (giftIcon) giftIcon.innerHTML = '<img src="/assets/ton-icon.svg" alt="TON">';

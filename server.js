@@ -2172,7 +2172,17 @@ async function getRocketRewardPreview(value) {
         LIMIT 1
     `, [numericValue]);
     if (!gift) return null;
-    return { giftId: gift.id, name: gift.name, emoji: gift.emoji || '🎁', imageUrl: gift.image_url || null, value: Number(gift.value), payoutValue: numericValue };
+    return {
+        giftId: gift.id,
+        name: gift.name,
+        emoji: gift.emoji || '🎁',
+        imageUrl: gift.image_url || (gift.name
+            ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(gift.name)) + '/png/Original.png'
+            : null),
+        isTelegramCollectible: true,
+        value: Number(gift.value),
+        payoutValue: numericValue
+    };
 }
 
 async function refreshRoundPlayers() {

@@ -1133,7 +1133,10 @@ async function grantRocketRewardGift(userId, payout) {
         giftId: gift.id,
         name: gift.name,
         emoji: gift.emoji || '🎁',
-        imageUrl: gift.image_url || null,
+        imageUrl: gift.image_url || (gift.name
+            ? 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(String(gift.name)) + '/png/Original.png'
+            : null),
+        isTelegramCollectible: true,
         value: Number(gift.value),
         rewardType: 'ROCKET_PAYOUT_GIFT'
     };
