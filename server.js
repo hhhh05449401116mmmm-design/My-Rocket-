@@ -1230,26 +1230,23 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             try {
                 const giftModelName = String(identity.telegramGiftModel.name || 'Telegram Gift').trim();
                 const giftNumber = String(identity.collectibleNumber || '').trim();
-                // Telegram's collectible URL uses the model slug plus the unique number once.
-                // Some source names already include that number (for example, LibertyFigure-219243).
-                const giftBaseName = giftNumber
-                    ? giftModelName.replace(new RegExp('[-_ #]*' + giftNumber.replace(/[.*+?^$^{ }()|[\]\\]/g, '\\                const giftModelName = String(identity.telegramGiftModel.name || 'Telegram Gift').trim();
-                const giftNumber = String(identity.collectibleNumber || '').trim();
-                // Telegram collectible deep links open the exact gift in Telegram.
-                // Remove spaces/punctuation from the model name for its URL slug.
-                const giftModelSlug = giftModelName
-                    .replace(/[-_ ]*#?\\d+$/, '')
-                    .replace(/[^a-zA-Z0-9]/g, '');
+                // The source model name may already contain the collectible number.
+                // Remove that suffix before building a clean label and Telegram slug.
+                let giftBaseName = giftModelName;
+                if (giftNumber && giftBaseName.endsWith(giftNumber)) {
+                    giftBaseName = giftBaseName.slice(0, -giftNumber.length).replace(/[-_ #]+$/, '').trim();
+                }
+                const giftModelSlug = giftBaseName.replace(/[^a-zA-Z0-9]/g, '');
                 const giftDeepLink = giftNumber && giftModelSlug
                     ? 'https://t.me/nft/' + giftModelSlug + '-' + encodeURIComponent(giftNumber)
                     : '';
                 const escapeTelegramHtml = (value) => String(value)
                     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const giftLabel = giftModelName + (giftNumber ? ' #' + giftNumber : '');
+                const giftLabel = giftBaseName + (giftNumber ? ' #' + giftNumber : '');
                 const linkedGiftLabel = giftDeepLink
                     ? '<a href="' + escapeTelegramHtml(giftDeepLink) + '">' + escapeTelegramHtml(giftLabel) + '</a>'
-                    : escapeTelegramHtml(giftLabel);') + '
+                    : escapeTelegramHtml(giftLabel);
                 await callTelegramBotApi('sendMessage', {
                     chat_id: String(senderTelegramId),
                     parse_mode: 'HTML',
