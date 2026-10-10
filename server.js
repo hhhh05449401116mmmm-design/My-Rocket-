@@ -1228,15 +1228,26 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             // Confirmation goes to the real sender/player. Failure here must never undo
             // the already-committed collectible ownership in the Backpack.
             try {
-                const giftModelName = String(identity.telegramGiftModel.name || 'Telegram Gift').trim();
-                const giftNumber = String(identity.collectibleNumber || '').trim();
-                // Telegram collectible deep links open the exact gift in Telegram.
-                // Remove spaces/punctuation from the model name for its URL slug.
-                const giftModelSlug = giftModelName
-                    .replace(/[-_ ]*#?\\d+$/, '')
-                    .replace(/[^a-zA-Z0-9]/g, '');
-                const giftDeepLink = giftNumber && giftModelSlug
-                    ? 'https://t.me/nft/' + giftModelSlug + '-' + encodeURIComponent(giftNumber)
+                const uniqueGiftName = String(identity.telegramGiftModel.name || '').trim();
+                const giftNumber = String(identity.collectibleNumber ?? '').trim();
+
+                let modelName = '';
+                try {
+                    const metadata = typeof identity.verifiedMetadata === 'string'
+                        ? JSON.parse(identity.verifiedMetadata || '{}')
+                        : (identity.verifiedMetadata || {});
+                    modelName = String(metadata?.model?.name || '').trim();
+                } catch {}
+
+                const rawModelName = modelName || uniqueGiftName || 'Telegram Gift';
+                const giftModelName = giftNumber && /^\d+$/.test(giftNumber)
+                    ? rawModelName.replace(new RegExp(`[-_ ]*#?${giftNumber}$`), '').trim() || rawModelName
+                    : rawModelName;
+
+                // Use Telegram's original unique gift name for the collectible deep link.
+                // Do not reconstruct the slug from the display/model name.
+                const giftDeepLink = uniqueGiftName
+                    ? 'https://t.me/nft/' + encodeURIComponent(uniqueGiftName)
                     : '';
                 const escapeTelegramHtml = (value) => String(value)
                     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
