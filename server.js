@@ -1019,6 +1019,27 @@ function notifyCollectibleClients(userId, payload) {
     return sent;
 }
 
+
+const unmatchedCollectibleNoticesSent = new Set();
+async function notifyUnmatchedCollectibleSender(identity) {
+    const id = String(identity && identity.senderTelegramId || '').trim();
+    if (!/^\d+$/.test(id)) return;
+    const key = String(identity && (identity.telegramGiftInstanceId || identity.uniqueCollectibleId) || '');
+    if (!key || unmatchedCollectibleNoticesSent.has(key)) return;
+    const uniqueName = String(identity && identity.telegramGiftModel && identity.telegramGiftModel.name || '').trim();
+    let modelName = '';
+    try { const meta = typeof identity.verifiedMetadata === 'string' ? JSON.parse(identity.verifiedMetadata || '{}') : (identity.verifiedMetadata || {}); modelName = String(meta && meta.model && meta.model.name || '').trim(); } catch {}
+    const number = String(identity && identity.collectibleNumber != null ? identity.collectibleNumber : '').trim();
+    const raw = modelName || uniqueName || 'Telegram Gift';
+    const base = number && /^\d+$/.test(number) ? (raw.replace(new RegExp('[-_ ]*#?' + number + '$'), '').trim() || raw) : raw;
+    const label = base + (number ? ' #' + number : '');
+    const esc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');
+    const url = uniqueName ? 'https://t.me/nft/' + encodeURIComponent(uniqueName) : '';
+    const linked = url ? '<a href="' + esc(url) + '">' + esc(label) + '</a>' : esc(label);
+    await callTelegramBotApi('sendMessage', { chat_id: id, parse_mode: 'HTML', text: '🎁 Telegram collectible detected: ' + linked + '.\nThis gift was not added to a Rocket Backpack because its sender has no matching Rocket account. Contact support to review it.' });
+    unmatchedCollectibleNoticesSent.add(key);
+}
+
 // مسح دوري للهدايا المملوكة لحساب Telegram Business.
 // الملكية داخل اللعبة تُسند إلى sender_user.id: هذا هو مُرسل الهدية، وليس مالك حساب Business.
 // لا نطلب من مالك حساب Business تسجيل الدخول للعبة، ولا نُسند المقتنى إليه.
@@ -1179,6 +1200,7 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
                 senderTelegramId: String(senderTelegramId),
                 senderUsername: identity.senderUsername || null
             }));
+            try { await notifyUnmatchedCollectibleSender(identity); } catch (e) { console.error('Unmatched collectible notice failed:', e.message); }
             continue;
         }
         if (matchedByUsername) {
