@@ -1228,9 +1228,27 @@ async function runCollectibleVerificationSweep(fetchGiftsFn = fetchBusinessAccou
             // Confirmation goes to the real sender/player. Failure here must never undo
             // the already-committed collectible ownership in the Backpack.
             try {
+                const giftModelName = String(identity.telegramGiftModel.name || 'Telegram Gift').trim();
+                const giftNumber = String(identity.collectibleNumber || '').trim();
+                // Telegram collectible deep links open the exact gift in Telegram.
+                // Remove spaces/punctuation from the model name for its URL slug.
+                const giftModelSlug = giftModelName
+                    .replace(/[-_ ]*#?\\d+$/, '')
+                    .replace(/[^a-zA-Z0-9]/g, '');
+                const giftDeepLink = giftNumber && giftModelSlug
+                    ? 'https://t.me/nft/' + giftModelSlug + '-' + encodeURIComponent(giftNumber)
+                    : '';
+                const escapeTelegramHtml = (value) => String(value)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const giftLabel = giftModelName + (giftNumber ? ' #' + giftNumber : '');
+                const linkedGiftLabel = giftDeepLink
+                    ? '<a href="' + escapeTelegramHtml(giftDeepLink) + '">' + escapeTelegramHtml(giftLabel) + '</a>'
+                    : escapeTelegramHtml(giftLabel);
                 await callTelegramBotApi('sendMessage', {
                     chat_id: String(senderTelegramId),
-                    text: `🎁 ${identity.telegramGiftModel.name} #${identity.collectibleNumber} just arrived.
+                    parse_mode: 'HTML',
+                    text: `🎁 ${linkedGiftLabel} just arrived.
 It’s in your Backpack: upgrade it, use it in a contract, or quick-sell it.`
                 });
             } catch (notifyError) {
