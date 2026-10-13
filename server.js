@@ -5523,35 +5523,10 @@ app.post('/api/loot-box/draw', authenticate, async (req, res) => {
 // ===== Isolated FREE / FREE24 reward claim =====
 // This path is independent from Crash, rounds, betting, cashout, deposits,
 // withdrawals, MTProto, and the paid 100 TON loot-box path.
+// Base Telegram gift types only, using the same media proxy as paid boxes.
+const FREE_BOX_ALL_GIFT_NAMES = Object.keys(GENERAL_GIFT_PRICES).filter(name => String(name || '').trim()).sort((a, b) => a.localeCompare(b));
 const FREE_BOX_REWARDS = [
-    { name: 'Nail Bracelet', image: 'https://tg.me/api/media/gift-art/nailbracelet/thumb.webp', value: 0 },
-    { name: 'Bonded Ring', image: 'https://tg.me/api/media/gift-art/bondedring/thumb.webp', value: 0 },
-    { name: 'Signet Ring', image: 'https://tg.me/api/media/gift-art/signetring/thumb.webp', value: 0 },
-    { name: 'Diamond Ring', image: 'https://tg.me/api/media/gift-art/diamondring/thumb.webp', value: 0 },
-    { name: 'Cupid Charm', image: 'https://tg.me/api/media/gift-art/cupidcharm/thumb.webp', value: 0 },
-    { name: 'Crystal Ball', image: 'https://tg.me/api/media/gift-art/crystalball/thumb.webp', value: 0 },
-    { name: 'Love Candle', image: 'https://tg.me/api/media/gift-art/lovecandle/thumb.webp', value: 0 },
-    { name: 'Fine Pen', image: 'https://tg.me/api/media/gift-art/finepen/thumb.webp', value: 0 },
-    { name: 'Jolly Chimp', image: 'https://tg.me/api/media/gift-art/jollychimp/thumb.webp', value: 0 },
-    { name: 'Light Sword', image: 'https://tg.me/api/media/gift-art/lightsword/thumb.webp', value: 0 },
-    { name: 'Input Key', image: 'https://tg.me/api/media/gift-art/inputkey/thumb.webp', value: 0 },
-    { name: 'Lush Bouquet', image: 'https://tg.me/api/media/gift-art/lushbouquet/thumb.webp', value: 0 },
-    { name: 'Spring Basket', image: 'https://tg.me/api/media/gift-art/springbasket/thumb.webp', value: 0 },
-    { name: 'Money Pot', image: 'https://tg.me/api/media/gift-art/moneypot/thumb.webp', value: 0 },
-    { name: 'Stellar Rocket', image: 'https://tg.me/api/media/gift-art/stellarrocket/thumb.webp', value: 0 },
-    { name: 'Snoop Dogg', image: 'https://tg.me/api/media/gift-art/snoopdogg/thumb.webp', value: 0 },
-    { name: 'Pretty Posy', image: 'https://tg.me/api/media/gift-art/prettyposey/thumb.webp', value: 0 },
-    { name: 'Jack-in-the-Box', image: 'https://tg.me/api/media/gift-art/jackinthebox/thumb.webp', value: 0 },
-    { name: 'Mousse Cake', image: 'https://tg.me/api/media/gift-art/moussecake/thumb.webp', value: 0 },
-    { name: 'Victory Medal', image: 'https://tg.me/api/media/gift-art/victorymedal/thumb.webp', value: 0 },
-    { name: 'Fresh Socks', image: 'https://tg.me/api/media/gift-art/freshsocks/thumb.webp', value: 0 },
-    { name: 'Mood Pack', image: 'https://tg.me/api/media/gift-art/moodpack/thumb.webp', value: 0 },
-    { name: 'Happy Brownie', image: 'https://tg.me/api/media/gift-art/happybrownie/thumb.webp', value: 0 },
-    { name: 'Whip Cupcake', image: 'https://tg.me/api/media/gift-art/whipcupcake/thumb.webp', value: 0 },
-    { name: 'Chill Flame', image: 'https://tg.me/api/media/gift-art/chillflame/thumb.webp', value: 0 },
-    { name: 'Instant Ramen', image: 'https://tg.me/api/media/gift-art/instantramen/thumb.webp', value: 0 },
-    { name: 'Vice Cream', image: 'https://tg.me/api/media/gift-art/vicecream/thumb.webp', value: 0 },
-    { name: 'Ice Cream', image: 'https://tg.me/api/media/gift-art/icecream/thumb.webp', value: 0 },
+    ...FREE_BOX_ALL_GIFT_NAMES.map(name => ({ name, image: paidBoxGiftImage(name), value: getGeneralGiftPrice(name, 0), rewardType: 'collectible' })),
     { name: '0.01 TON Balance', image: '/assets/ton-icon.svg', value: 0.01, rewardType: 'ton' },
     { name: '0.02 TON Balance', image: '/assets/ton-icon.svg', value: 0.02, rewardType: 'ton' },
     { name: '0.03 TON Balance', image: '/assets/ton-icon.svg', value: 0.03, rewardType: 'ton' },
@@ -5632,11 +5607,11 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
             // FREE / FREE24 odds are server-authoritative:
             // 90% gift and 10% TON. The FREE gift catalog contains the low-value
             // rewards for this box (under 6 TON); other boxes keep their own odds.
-            const giftRewards = FREE_BOX_REWARDS.filter(item => item.rewardType !== 'ton');
-            const tonRewards = FREE_BOX_REWARDS.filter(item => item.rewardType === 'ton');
+            const lowValueGiftRewards = FREE_BOX_REWARDS.filter(item => item.rewardType !== 'ton' && Number(item.value || 0) < 6);
+            const otherRewards = FREE_BOX_REWARDS.filter(item => item.rewardType === 'ton' || Number(item.value || 0) >= 6);
             const reward = Math.random() < 0.90
-                ? giftRewards[Math.floor(Math.random() * giftRewards.length)]
-                : tonRewards[Math.floor(Math.random() * tonRewards.length)];
+                ? lowValueGiftRewards[Math.floor(Math.random() * lowValueGiftRewards.length)]
+                : otherRewards[Math.floor(Math.random() * otherRewards.length)];
             let gift = null;
             let userGift = null;
 
@@ -5708,15 +5683,12 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                 [req.user.id, lootboxId, userGift?.gift_id || gift?.id || null, 'OPENED']
             );
 
-            return {
-                rewardType: reward.rewardType || 'collectible',
-                name: reward.rewardType === 'ton' ? reward.name : gift.name,
-                value: reward.rewardType === 'ton' ? reward.value : Number(gift.value || 0),
-                image: reward.rewardType === 'ton' ? reward.image : (gift.image_url || reward.image),
-                userGiftId: userGift?.id || null,
-                lootBoxLockedUntil: userGift?.loot_box_locked_until || null,
-                balance: Number(await getUserBalance(req.user.id) || 0)
-            };
+            const actualGiftValue = reward.rewardType === 'ton' ? Number(reward.value || 0) : Number(getGeneralGiftPrice(gift?.name || reward.name, gift?.value || reward.value || 0) || 0);
+            const winningGiftName = reward.rewardType === 'ton' ? reward.name : String(gift?.name || reward.name || '');
+            const winningGiftImage = reward.rewardType === 'ton' ? reward.image : paidBoxGiftImage(winningGiftName);
+            const reelItems = FREE_BOX_REWARDS.map(item => ({ name: item.name, image: item.rewardType === 'ton' ? '/assets/ton-icon.svg' : paidBoxGiftImage(item.name), value: Number(item.value || 0), marketValue: Number(item.value || 0), rewardType: item.rewardType === 'ton' ? 'ton' : 'gift' }));
+            if (!reelItems.some(item => item.rewardType === (reward.rewardType === 'ton' ? 'ton' : 'gift') && item.name === winningGiftName)) reelItems.push({ name: winningGiftName, image: winningGiftImage, value: actualGiftValue, marketValue: actualGiftValue, rewardType: reward.rewardType === 'ton' ? 'ton' : 'gift' });
+            return { rewardType: reward.rewardType === 'ton' ? 'ton' : 'collectible', name: winningGiftName, value: actualGiftValue, marketValue: actualGiftValue, sellValue: actualGiftValue, image: winningGiftImage, image_url: winningGiftImage, userGiftId: userGift?.id || null, lootBoxLockedUntil: userGift?.loot_box_locked_until || null, spinItems: reelItems, balance: Number(await getUserBalance(req.user.id) || 0) };
         });
 
         await createNotification(
