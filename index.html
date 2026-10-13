@@ -8009,21 +8009,15 @@ async function openLootBox(box) {
 
                     const gift = data.gift || {};
                     const previewItems = Array.isArray(box.collectibles) ? box.collectibles.filter(Boolean) : [];
-                    const spinItems = previewItems.map(function(item) {
-                        return {
-                            name: item.name,
-                            image: item.image,
-                            rewardType: item.rewardType === 'ton' ? 'ton' : 'gift',
-                            value: item.value,
-                            marketValue: item.marketValue
-                        };
-                    });
+                    const spinItems = Array.isArray(gift.spinItems) && gift.spinItems.length ? gift.spinItems.map(function(item) { return { name: item.name, image: item.image, rewardType: item.rewardType === 'ton' ? 'ton' : 'gift', value: Number(item.value || 0), marketValue: Number(item.marketValue || item.value || 0) }; }) : previewItems.map(function(item) { return { name: item.name, image: item.image, rewardType: item.rewardType === 'ton' ? 'ton' : 'gift', value: item.value, marketValue: item.marketValue }; });
 
                     // Use the exact server-selected gift as the reel winner.
+                    const freeRewardIsTon = gift.rewardType === 'ton';
                     const reelData = {
-                        winnerType: 'gift',
+                        winnerType: freeRewardIsTon ? 'ton' : 'gift',
+                        tonReward: freeRewardIsTon ? Number(gift.value || 0) : 0,
                         gift: {
-                            name: gift.name || 'Telegram Gift',
+                            name: gift.name || 'Unknown Gift',
                             image_url: gift.image_url || gift.image || '',
                             value: Number(gift.value || 0),
                             marketValue: Number(gift.marketValue || gift.value || 0),
