@@ -1019,7 +1019,20 @@ async function attachReferralToUser(userId, referralCode) {
 }
 
 async function getReferralOverview(userId) {
-    const user = await get('SELECT referral_code, referral_earned FROM users WHERE id = ?', [userId]);
+    let user = await get('SELECT referral_code, referral_earned FROM users WHERE id = ?', [userId]);
+    if (!user) throw new Error('Referral user not found');
+
+    // Older accounts may have no persisted referral_code. Persist their deterministic
+    // per-user code so the displayed invite link and attachReferralToUser lookup agree.
+    if (!String(user.referral_code || '').trim()) {
+        const personalCode = 'r' + String(userId);
+        await run(
+            "UPDATE users SET referral_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND (referral_code IS NULL OR TRIM(referral_code) = '')",
+            [personalCode, userId]
+        );
+        user = await get('SELECT referral_code, referral_earned FROM users WHERE id = ?', [userId]);
+    }
+
     const invitees = await get('SELECT COUNT(*) AS count FROM users WHERE referred_by_user_id = ?', [userId]);
     const today = await get(`
         SELECT COALESCE(SUM(amount), 0) AS amount
@@ -1027,8 +1040,8 @@ async function getReferralOverview(userId) {
         WHERE inviter_user_id = ? AND created_at >= date('now')
     `, [userId]);
     return {
-        referralCode: user?.referral_code || ('r' + userId),
-        totalEarned: Number(user?.referral_earned || 0),
+        referralCode: user.referral_code,
+        totalEarned: Number(user.referral_earned || 0),
         earnedToday: Number(today?.amount || 0),
         inviteCount: Number(invitees?.count || 0)
     };
