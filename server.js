@@ -2789,10 +2789,13 @@ app.post('/api/auth', async (req, res) => {
         const params = new URLSearchParams(initData);
         const userData = JSON.parse(params.get('user'));
         const startParam = params.get('start_param') || params.get('startapp') || '';
+        const legacyReferralMatch = startParam.match(/^ref_r(\d+)$/);
+        const namedReferralMatch = startParam.match(/^invite_[A-Za-z0-9_]{1,32}_(\d{1,20})$/);
+        const referralTelegramId = namedReferralMatch ? namedReferralMatch[1] : (legacyReferralMatch ? legacyReferralMatch[1] : null);
         console.log('🔐 Telegram player authenticated', {
             telegramId: String(userData.id),
             username: userData.username || null,
-            hasReferralStartParam: /^ref_r\d+$/.test(startParam)
+            hasReferralStartParam: Boolean(referralTelegramId)
         });
         
         const user = await findOrCreateUser(userData.id, {
@@ -2802,12 +2805,15 @@ app.post('/api/auth', async (req, res) => {
             avatar_url: userData.photo_url
         });
 
-        if (/^ref_r\d+$/.test(startParam)) {
+        if (referralTelegramId) {
             try {
-                const referralResult = await attachReferralToUser(user.id, startParam.slice(4));
+                // New links show the inviter's Telegram username, while attribution
+                // remains bound to their immutable Telegram ID.
+                const referralCode = 'r' + referralTelegramId;
+                const referralResult = await attachReferralToUser(user.id, referralCode);
                 console.log('Referral attribution result', {
                     invitedUserId: user.id,
-                    referralCode: startParam.slice(4),
+                    referralCode,
                     attached: Boolean(referralResult?.attached),
                     reason: referralResult?.reason || null,
                     inviterUserId: referralResult?.inviterUserId || null
@@ -2815,7 +2821,7 @@ app.post('/api/auth', async (req, res) => {
             } catch (referralError) {
                 console.error('Referral attach failed:', {
                     invitedUserId: user.id,
-                    referralCode: startParam.slice(4),
+                    startParam,
                     message: referralError.message
                 });
             }
@@ -6008,9 +6014,14 @@ app.get('/api/referral', authenticate, async (req, res) => {
     try {
         const overview = await getReferralOverview(req.user.id);
         const info = await getTelegramBotLaunchInfo();
-        // Build from the authenticated Telegram account ID, not a shared/static code.
-        const personalReferralCode = 'r' + String(req.user.telegram_id);
-        const link = info.username ? `https://t.me/${info.username}?startapp=ref_${personalReferralCode}` : null;
+        // Show the player's Telegram username in the invite URL when available,
+        // but always include the immutable Telegram ID for reliable attribution.
+        const telegramId = String(req.user.telegram_id || '');
+        const username = String(req.user.username || '').replace(/^@/, '');
+        const startPayload = username && /^[A-Za-z0-9_]{1,32}$/.test(username)
+            ? `invite_${username}_${telegramId}`
+            : `ref_r${telegramId}`;
+        const link = info.username ? `https://t.me/${info.username}?startapp=${startPayload}` : null;
         res.json({ ok: true, ...overview, inviteLink: link, commissionPercent: 10 });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
