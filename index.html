@@ -7796,7 +7796,6 @@ document.getElementById('channel-subscription-link')?.addEventListener('click',o
 document.getElementById('channel-check-btn')?.addEventListener('click',checkChannelSubscription);
 
 async function openLootBox(box) {
-            if (box && box.id === 'free') await loadFreeBoxTelegramCatalog();
             const t = translations[currentLanguage] || translations.ar;
             if (lootBoxMarketRefreshTimer) {
                 clearTimeout(lootBoxMarketRefreshTimer);
