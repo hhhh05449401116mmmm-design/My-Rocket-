@@ -5537,6 +5537,28 @@ function freeBoxRewardKey(name) {
     return 'free-box-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+app.get('/api/loot-box/free/catalog', async (req, res) => {
+    try {
+        const gifts = await getTelegramStarGiftCatalog();
+        const items = [...new Map(gifts
+            .filter(item => item && item.title && item.sticker)
+            .map(item => {
+                const name = String(item.title).trim();
+                return [normalizeTelegramGiftName(name), {
+                    name,
+                    image: paidBoxGiftImage(name),
+                    value: getGeneralGiftPrice(name, 0),
+                    rewardType: 'gift'
+                }];
+            })).values()].sort((a, b) => a.name.localeCompare(b.name));
+        res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+        res.json({ ok: true, items, count: items.length, source: 'telegram-live-base-gifts' });
+    } catch (error) {
+        console.error('Free box Telegram catalog failed:', error.message);
+        res.status(503).json({ ok: false, error: 'Telegram gift catalog unavailable' });
+    }
+});
+
 app.get('/api/loot-box/free/status', authenticate, async (req, res) => {
     try {
         const row = await get(
