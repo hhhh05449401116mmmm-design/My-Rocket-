@@ -4047,6 +4047,38 @@ app.post('/api/loot-box/gift/sell', authenticate, async (req, res) => {
     }
 });
 
+// Free-box withdrawal eligibility: at least three directly referred accounts,
+// each with Telegram Premium recorded in their signed Telegram initData and at least
+// one gift in their Rocket inventory.
+async function getFreeBoxWithdrawalEligibility(inviterUserId) {
+    const invitees = await get(
+        'SELECT id, init_data FROM users WHERE referred_by_user_id = ?',
+        [inviterUserId]
+    );
+    let qualifiedInvitees = 0;
+    for (const invitee of invitees || []) {
+        let isPremium = false;
+        try {
+            const params = new URLSearchParams(String(invitee.init_data || ''));
+            const telegramUser = JSON.parse(params.get('user') || '{}');
+            isPremium = telegramUser.is_premium === true;
+        } catch (_) {
+            isPremium = false;
+        }
+        if (!isPremium) continue;
+        const gifts = await get(
+            "SELECT COUNT(*) AS count FROM user_gifts WHERE user_id = ? AND status IN ('OWNED','LOCKED','WON','IN_BET')",
+            [invitee.id]
+        );
+        if (Number(gifts?.count || 0) >= 1) qualifiedInvitees++;
+    }
+    return {
+        eligible: qualifiedInvitees >= 3,
+        qualifiedInvitees,
+        requiredInvitees: 3
+    };
+}
+
 // ===== 5.6.3 سحب هدية =====
 app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
     try {
@@ -4070,9 +4102,28 @@ app.post('/api/collectibles/withdraw', authenticate, async (req, res) => {
                 return res.status(400).json({ ok: false, error: 'Invalid pending gift reward' });
             }
 
-            const pendingReward = await get('SELECT * FROM user_gifts WHERE id = ? AND user_id = ? LIMIT 1', [userGiftId, req.user.id]);
+            const pendingReward = await get(
+                'SELECT ug.*, g.collection AS gift_collection FROM user_gifts ug JOIN gifts g ON g.id = ug.gift_id WHERE ug.id = ? AND ug.user_id = ? LIMIT 1',
+                [userGiftId, req.user.id]
+            );
             if (!pendingReward) return res.status(404).json({ ok: false, error: 'Gift reward not found' });
-            if (isLootBoxGiftLocked(pendingReward)) return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: pendingReward.loot_box_locked_until });
+
+            const isFreeBoxReward = String(pendingReward.gift_collection || '').toUpperCase() === 'FREE';
+            if (isFreeBoxReward) {
+                const eligibility = await getFreeBoxWithdrawalEligibility(req.user.id);
+                if (!eligibility.eligible) {
+                    return res.status(403).json({
+                        ok: false,
+                        code: 'FREE_BOX_REFERRAL_REQUIREMENTS',
+                        error: 'To withdraw a free-box gift, invite 3 people who have Telegram Premium and at least one gift in their account.',
+                        qualifiedInvitees: eligibility.qualifiedInvitees,
+                        requiredInvitees: eligibility.requiredInvitees
+                    });
+                }
+                // Free-box gifts are governed by referral eligibility, not the old seven-day lock.
+            } else if (isLootBoxGiftLocked(pendingReward)) {
+                return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: pendingReward.loot_box_locked_until });
+            }
 
             const reserved = await reservePendingGiftForWithdrawal(req.user.id, userGiftId);
             let selectedUniqueId = null;
