@@ -593,16 +593,15 @@ function initDatabase() {
             // Referral migrations.
             db.run(`ALTER TABLE users ADD COLUMN referral_code TEXT`, error => {
                 if (error && !error.message.includes('duplicate column name')) console.error('Failed to add users.referral_code:', error.message);
-                // Normalize every account (including old accounts) to a deterministic,
-                // unique per-user referral code. Two phases avoid collisions with the
-                // existing UNIQUE index while replacing any stale/shared legacy values.
+                // Use each Telegram account's unique Telegram ID, not an internal
+                // database ID, so links remain personal across legacy accounts.
                 db.run(`UPDATE users SET referral_code = '__referral_migration_' || id`, tempError => {
                     if (tempError) {
                         console.error('Failed to stage referral code migration:', tempError.message);
                         return;
                     }
-                    db.run(`UPDATE users SET referral_code = 'r' || id`, updateError => {
-                        if (updateError) console.error('Failed to normalize users.referral_code:', updateError.message);
+                    db.run(`UPDATE users SET referral_code = 'r' || telegram_id`, updateError => {
+                        if (updateError) console.error('Failed to normalize Telegram referral codes:', updateError.message);
                         db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)`, indexError => {
                             if (indexError) console.error('Failed to index users.referral_code:', indexError.message);
                         });
@@ -1028,12 +1027,11 @@ async function attachReferralToUser(userId, referralCode) {
 }
 
 async function getReferralOverview(userId) {
-    const user = await get('SELECT referral_earned FROM users WHERE id = ?', [userId]);
+    const user = await get('SELECT telegram_id, referral_earned FROM users WHERE id = ?', [userId]);
     if (!user) throw new Error('Referral user not found');
 
-    // The numeric database user ID is the source of truth. Repair this user's code
-    // on read as a safety net for existing accounts after migration/deploy delays.
-    const personalCode = 'r' + String(userId);
+    // Telegram IDs are globally unique per account and avoid stale/shared legacy codes.
+    const personalCode = 'r' + String(user.telegram_id);
     await run(
         'UPDATE users SET referral_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND referral_code != ?',
         [personalCode, userId, personalCode]
