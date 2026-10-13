@@ -1512,22 +1512,22 @@ function isLootBoxGiftLocked(row) {
     return Number.isFinite(until) && until > Date.now();
 }
 
-async function addLootBoxGiftToUser(userId, giftId, marketValue = null) {
+async function addLootBoxGiftToUser(userId, giftId, marketValue = null, options = {}) {
     const gift = await getGiftById(giftId);
     if (!gift) throw new Error('Gift not found');
 
     // Loot-box rewards are pending generic gift types until the player
-    // chooses Sell, Bet, or Withdraw. Keep them in WON so the existing
-    // pending-withdrawal flow can resolve a concrete Telegram collectible.
-    // An isolated loot-box market snapshot may override the catalog value.
+    // chooses Sell, Bet, or Withdraw. The free box can explicitly opt out
+    // of the legacy seven-day lock; other boxes retain their existing lock.
     const requestedMarketValue = Number(marketValue);
     const storedMarketValue = Number.isFinite(requestedMarketValue) && requestedMarketValue > 0
         ? requestedMarketValue
         : Number(gift.value || 0);
+    const lockedUntil = options.noWithdrawalLock === true ? null : getLootBoxLockedUntil();
     const result = await run(`
         INSERT INTO user_gifts (user_id, gift_id, status, ownership_verified, market_value, loot_box_locked_until, loot_box_reward)
         VALUES (?, ?, 'WON', 0, ?, ?, 1)
-    `, [userId, gift.id, storedMarketValue, getLootBoxLockedUntil()]);
+    `, [userId, gift.id, storedMarketValue, lockedUntil]);
 
     return await get('SELECT * FROM user_gifts WHERE id = ?', [result.lastID]);
 }
