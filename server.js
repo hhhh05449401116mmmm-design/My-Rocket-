@@ -5570,6 +5570,24 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
     }
     try {
         const boxId = req.body?.boxId === 'free24' ? 'free24' : 'free';
+        // Build this box from Telegram's live base StarGift catalog: one entry per
+        // general gift type, never model/pattern/backdrop variants.
+        const liveTelegramGifts = await getTelegramStarGiftCatalog();
+        const liveGeneralRewards = liveTelegramGifts
+            .filter(item => item && item.title && item.sticker)
+            .map(item => {
+                const name = String(item.title).trim();
+                return { name, image: paidBoxGiftImage(name), value: getGeneralGiftPrice(name, 0), rewardType: 'collectible' };
+            });
+        const uniqueGeneralRewards = [...new Map(liveGeneralRewards.map(item => [normalizeTelegramGiftName(item.name), item])).values()];
+        if (!uniqueGeneralRewards.length) throw new Error('Telegram general gift catalog is empty');
+        const freeBoxRewards = [
+            ...uniqueGeneralRewards,
+            { name: '0.01 TON Balance', image: '/assets/ton-icon.svg', value: 0.01, rewardType: 'ton' },
+            { name: '0.02 TON Balance', image: '/assets/ton-icon.svg', value: 0.02, rewardType: 'ton' },
+            { name: '0.03 TON Balance', image: '/assets/ton-icon.svg', value: 0.03, rewardType: 'ton' },
+            { name: '0.05 TON Balance', image: '/assets/ton-icon.svg', value: 0.05, rewardType: 'ton' }
+        ];
         const result = await transaction(async () => {
             const latestOpen = await get(
                 `SELECT lh.created_at
@@ -5592,7 +5610,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
 
             // Provision the isolated FREE catalog lazily on first claim so the 28
             // collectible rewards are all real inventory records without touching global seeds.
-            for (const catalogReward of FREE_BOX_REWARDS) {
+            for (const catalogReward of freeBoxRewards) {
                 if (catalogReward.rewardType === 'ton') continue;
                 const rewardKey = freeBoxRewardKey(catalogReward.name);
                 const existing = await get('SELECT id FROM gifts WHERE telegram_gift_id = ? LIMIT 1', [rewardKey]);
@@ -5607,8 +5625,8 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
             // FREE / FREE24 odds are server-authoritative:
             // 90% gift and 10% TON. The FREE gift catalog contains the low-value
             // rewards for this box (under 6 TON); other boxes keep their own odds.
-            const lowValueGiftRewards = FREE_BOX_REWARDS.filter(item => item.rewardType !== 'ton' && Number(item.value || 0) < 6);
-            const otherRewards = FREE_BOX_REWARDS.filter(item => item.rewardType === 'ton' || Number(item.value || 0) >= 6);
+            const lowValueGiftRewards = freeBoxRewards.filter(item => item.rewardType !== 'ton' && Number(item.value || 0) < 6);
+            const otherRewards = freeBoxRewards.filter(item => item.rewardType === 'ton' || Number(item.value || 0) >= 6);
             const reward = Math.random() < 0.90
                 ? lowValueGiftRewards[Math.floor(Math.random() * lowValueGiftRewards.length)]
                 : otherRewards[Math.floor(Math.random() * otherRewards.length)];
@@ -5640,7 +5658,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                 );
                 if (owned) {
                     const available = [];
-                    for (const candidate of FREE_BOX_REWARDS.filter(item => !item.rewardType)) {
+                    for (const candidate of freeBoxRewards.filter(item => !item.rewardType)) {
                         const key = freeBoxRewardKey(candidate.name);
                         const candidateGift = await get('SELECT id FROM gifts WHERE telegram_gift_id = ? LIMIT 1', [key]);
                         if (!candidateGift) continue;
@@ -5686,7 +5704,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
             const actualGiftValue = reward.rewardType === 'ton' ? Number(reward.value || 0) : Number(getGeneralGiftPrice(gift?.name || reward.name, gift?.value || reward.value || 0) || 0);
             const winningGiftName = reward.rewardType === 'ton' ? reward.name : String(gift?.name || reward.name || '');
             const winningGiftImage = reward.rewardType === 'ton' ? reward.image : paidBoxGiftImage(winningGiftName);
-            const reelItems = FREE_BOX_REWARDS.map(item => ({ name: item.name, image: item.rewardType === 'ton' ? '/assets/ton-icon.svg' : paidBoxGiftImage(item.name), value: Number(item.value || 0), marketValue: Number(item.value || 0), rewardType: item.rewardType === 'ton' ? 'ton' : 'gift' }));
+            const reelItems = freeBoxRewards.map(item => ({ name: item.name, image: item.rewardType === 'ton' ? '/assets/ton-icon.svg' : paidBoxGiftImage(item.name), value: Number(item.value || 0), marketValue: Number(item.value || 0), rewardType: item.rewardType === 'ton' ? 'ton' : 'gift' }));
             if (!reelItems.some(item => item.rewardType === (reward.rewardType === 'ton' ? 'ton' : 'gift') && item.name === winningGiftName)) reelItems.push({ name: winningGiftName, image: winningGiftImage, value: actualGiftValue, marketValue: actualGiftValue, rewardType: reward.rewardType === 'ton' ? 'ton' : 'gift' });
             return { rewardType: reward.rewardType === 'ton' ? 'ton' : 'collectible', name: winningGiftName, value: actualGiftValue, marketValue: actualGiftValue, sellValue: actualGiftValue, image: winningGiftImage, image_url: winningGiftImage, userGiftId: userGift?.id || null, lootBoxLockedUntil: userGift?.loot_box_locked_until || null, spinItems: reelItems, balance: Number(await getUserBalance(req.user.id) || 0) };
         });
