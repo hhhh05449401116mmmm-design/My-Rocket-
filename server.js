@@ -2803,8 +2803,27 @@ app.post('/api/auth', async (req, res) => {
         });
 
         if (/^ref_r\d+$/.test(startParam)) {
-            try { await attachReferralToUser(user.id, startParam.slice(4)); }
-            catch (referralError) { console.error('Referral attach failed:', referralError.message); }
+            try {
+                const referralResult = await attachReferralToUser(user.id, startParam.slice(4));
+                console.log('Referral attribution result', {
+                    invitedUserId: user.id,
+                    referralCode: startParam.slice(4),
+                    attached: Boolean(referralResult?.attached),
+                    reason: referralResult?.reason || null,
+                    inviterUserId: referralResult?.inviterUserId || null
+                });
+            } catch (referralError) {
+                console.error('Referral attach failed:', {
+                    invitedUserId: user.id,
+                    referralCode: startParam.slice(4),
+                    message: referralError.message
+                });
+            }
+        } else {
+            console.log('No valid signed referral start_param on Telegram auth', {
+                invitedUserId: user.id,
+                hasStartParam: Boolean(startParam)
+            });
         }
 
         // Keep the Telegram identity metadata current for identity reconciliation.
