@@ -5715,6 +5715,82 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
 #pvp-game .pvp-history-empty button, #pvp-game .pvp-history-more { background:#2a2a2a; color:#ffce38; border:1px solid #51462a; padding:10px 18px; border-radius:10px; cursor:pointer; }
 #pvp-game .pvp-history-more { flex-shrink:0; margin-top:5px; }
 #pvp-game .pvp-history-more[hidden] { display:none; }
+
+        /* Shared result layout fix for every loot box (free and paid).
+           Keep the reward panel purple and let the card scroll instead of clipping actions. */
+        #loot-box-modal {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            padding-top: calc(var(--tg-content-safe-area-inset-top, 0px) + var(--tg-native-controls-reserve-top, 0px) + 10px) !important;
+            padding-bottom: calc(var(--tg-content-safe-area-inset-bottom, 0px) + 14px) !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        #loot-box-modal .loot-box-modal-card {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: calc(100dvh - var(--tg-content-safe-area-inset-top, 0px) - var(--tg-native-controls-reserve-top, 0px) - var(--tg-content-safe-area-inset-bottom, 0px) - 28px) !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            flex: 0 0 auto !important;
+            background:
+                radial-gradient(circle at 50% 8%, rgba(190, 111, 255, .25), transparent 44%),
+                linear-gradient(180deg, #321052 0%, #211039 55%, #170b29 100%) !important;
+            border: 1px solid rgba(190, 120, 255, .38) !important;
+            box-shadow: 0 18px 60px rgba(107, 37, 173, .30), inset 0 0 36px rgba(158, 66, 255, .10) !important;
+        }
+        #loot-box-modal .loot-box-result-stage {
+            display: none;
+            flex: 0 0 auto !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            padding: 12px 8px 14px !important;
+            background:
+                radial-gradient(circle at 50% 15%, rgba(177, 91, 255, .22), transparent 60%),
+                linear-gradient(180deg, #2b1247 0%, #24103c 100%) !important;
+            border: 1px solid rgba(177, 91, 255, .12);
+            border-radius: 18px;
+        }
+        #loot-box-modal .loot-box-result-stage.show { display: flex !important; }
+        #loot-box-modal .loot-box-result-stage .loot-box-result {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            padding: 10px 10px 14px !important;
+            gap: 12px;
+        }
+        #loot-box-modal .loot-box-result-stage .loot-box-result-actions {
+            max-height: none !important;
+            overflow: visible !important;
+            padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+        }
+        #loot-box-modal .loot-box-result-stage .loot-box-result-actions button {
+            min-height: 50px;
+            white-space: normal;
+        }
+        #loot-box-modal .loot-box-result-stage .loot-box-result-image-wrap {
+            width: min(190px, 42vw);
+            height: min(190px, 42vw);
+            flex: 0 0 auto;
+        }
+        #loot-box-modal .loot-box-result-stage .loot-box-result-icon,
+        #loot-box-modal .loot-box-result-stage .loot-box-result-ton {
+            width: min(132px, 30vw) !important;
+            height: min(132px, 30vw) !important;
+            max-width: 132px;
+            max-height: 132px;
+            flex: 0 0 auto;
+        }
+        @media (max-height: 740px) {
+            #loot-box-modal .loot-box-modal-card { padding: 12px 14px 16px !important; }
+            #loot-box-modal .loot-box-result-stage .loot-box-result { gap: 8px; }
+            #loot-box-modal .loot-box-result-title { font-size: 23px; }
+            #loot-box-modal .loot-box-result-value { font-size: 19px; }
+            #loot-box-modal .loot-box-result-stage .loot-box-result-actions { gap: 8px; }
+            #loot-box-modal .loot-box-result-stage .loot-box-result-actions button { min-height: 46px; }
+        }
 </style>
 <div class="pvp-shell">
   <div class="pvp-topbar">
