@@ -1018,11 +1018,27 @@ async function findOrCreateUser(telegramId, userData = {}) {
 async function attachReferralToUser(userId, referralCode) {
     const code = String(referralCode || '').trim().slice(0, 100);
     if (!code || !/^r\d+$/.test(code)) return { attached: false, reason: 'invalid_code' };
+
     const user = await get('SELECT id, referred_by_user_id FROM users WHERE id = ?', [userId]);
-    if (!user || user.referred_by_user_id) return { attached: false, reason: 'already_attached' };
-    const inviter = await get('SELECT id FROM users WHERE referral_code = ?', [code]);
+    if (!user) return { attached: false, reason: 'user_not_found' };
+    if (user.referred_by_user_id) return { attached: false, reason: 'already_attached' };
+
+    // Resolve both the persisted code and the canonical code derived from Telegram ID.
+    // This makes referral attribution resilient if a legacy account's migration is delayed.
+    const inviter = await get(
+        "SELECT id FROM users WHERE referral_code = ? OR ('r' || telegram_id) = ? LIMIT 1",
+        [code, code]
+    );
     if (!inviter || inviter.id === userId) return { attached: false, reason: 'invalid_inviter' };
-    await run('UPDATE users SET referred_by_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND referred_by_user_id IS NULL', [inviter.id, userId]);
+
+    const result = await run(
+        'UPDATE users SET referred_by_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND referred_by_user_id IS NULL',
+        [inviter.id, userId]
+    );
+    const confirmed = await get('SELECT referred_by_user_id FROM users WHERE id = ?', [userId]);
+    if (Number(confirmed?.referred_by_user_id) !== Number(inviter.id)) {
+        return { attached: false, reason: 'attach_race_or_conflict' };
+    }
     return { attached: true, inviterUserId: inviter.id };
 }
 
