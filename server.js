@@ -5579,10 +5579,11 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
             }
 
             // FREE / FREE24 odds are server-authoritative:
-            // 35% collectible gift, 65% TON reward from the TON rewards in this box.
+            // 90% gift and 10% TON. The FREE gift catalog contains the low-value
+            // rewards for this box (under 6 TON); other boxes keep their own odds.
             const giftRewards = FREE_BOX_REWARDS.filter(item => item.rewardType !== 'ton');
             const tonRewards = FREE_BOX_REWARDS.filter(item => item.rewardType === 'ton');
-            const reward = Math.random() < 0.35
+            const reward = Math.random() < 0.90
                 ? giftRewards[Math.floor(Math.random() * giftRewards.length)]
                 : tonRewards[Math.floor(Math.random() * tonRewards.length)];
             let gift = null;
@@ -5638,7 +5639,7 @@ app.post('/api/loot-box/free/claim', authenticate, async (req, res) => {
                     }
                 }
 
-                userGift = await addLootBoxGiftToUser(req.user.id, gift.id, Number(gift.value || 0));
+                userGift = await addLootBoxGiftToUser(req.user.id, gift.id, Number(gift.value || 0), { noWithdrawalLock: true });
             }
 
             const lootbox = await get('SELECT id FROM lootboxes WHERE name = ? LIMIT 1', [boxId === 'free24' ? 'FREE24' : 'FREE']);
