@@ -5989,7 +5989,9 @@ app.get('/api/referral', authenticate, async (req, res) => {
     try {
         const overview = await getReferralOverview(req.user.id);
         const info = await getTelegramBotLaunchInfo();
-        const link = info.username ? `https://t.me/${info.username}?startapp=ref_${overview.referralCode}` : null;
+        // Build from the authenticated user's database ID, never a shared/static code.
+        const personalReferralCode = 'r' + String(req.user.id);
+        const link = info.username ? `https://t.me/${info.username}?startapp=ref_${personalReferralCode}` : null;
         res.json({ ok: true, ...overview, inviteLink: link, commissionPercent: 10 });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
