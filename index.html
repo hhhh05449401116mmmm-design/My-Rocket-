@@ -9081,6 +9081,9 @@ async function openLootBox(box) {
             if (!el) console.warn(`⚠️ Element not found: #${id}`);
             return el;
         }
+        function renderTonLabel(value) {
+            return String(value || '').replaceAll('💎', '<img class="ton-real-icon" src="/assets/ton-icon.svg" alt="TON">');
+        }
 
         function applyLanguage() {
             if (!document.getElementById('game-hub')) {
@@ -9114,8 +9117,7 @@ async function openLootBox(box) {
             if (balanceLabel) balanceLabel.textContent = t.balance;
             const depositBtn = safeGetElement('profile-deposit-btn');
             if (depositBtn) depositBtn.textContent = t.deposit;
-            function renderTonLabel(value) { return String(value || '').replaceAll('💎', '<img class="ton-real-icon" src="/assets/ton-icon.svg" alt="TON">'); }
-const vipTitle = safeGetElement('vip-title-text');
+            const vipTitle = safeGetElement('vip-title-text');
             if (vipTitle) vipTitle.innerHTML = renderTonLabel(t.vipLevels);
             const roundsStat = safeGetElement('profile-stat-rounds');
             if (roundsStat) roundsStat.textContent = t.rounds;
