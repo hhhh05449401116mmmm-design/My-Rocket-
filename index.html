@@ -3590,6 +3590,15 @@ video::-webkit-media-controls-enclosure {
         .vip-item-status.locked { color: #ff6b7f; }
         .vip-item-status.current { color: #ffd700; }
 
+        .vip-gem-icon { width: 22px; height: 22px; display: inline-block; vertical-align: -6px; margin-inline-end: 5px; object-fit: contain; filter: drop-shadow(0 0 5px var(--vip-gem-glow, rgba(255,255,255,.35))); }
+        .profile-page-vip .vip-gem-icon { width: 19px; height: 19px; vertical-align: -5px; }
+        .vip-current-name .vip-gem-icon { width: 23px; height: 23px; }
+        .vip-item-name .vip-gem-icon { width: 20px; height: 20px; }
+        .vip-item { position: relative; }
+        .vip-item-gem { flex: 0 0 24px; order: 4; display: flex; align-items: center; justify-content: center; margin-inline-start: 8px; }
+        .vip-item-gem .vip-gem-icon { width: 20px; height: 20px; margin: 0; vertical-align: middle; }
+        .vip-current-name, .profile-page-vip, .vip-current-name > span, .profile-page-vip > span { display: inline-flex; align-items: center; direction: ltr; gap: 5px; }
+
         /* =========================================================
            LANGUAGE SELECTOR
         ========================================================= */
@@ -8623,14 +8632,20 @@ async function openLootBox(box) {
            VIP SYSTEM
         ========================================================= */
         const VIP_LEVELS = [
-            { id: 'iron', name: 'Iron', icon: '⚙️', requirement: 0 },
-            { id: 'bronze', name: 'Bronze', icon: '🥉', requirement: 5000 },
-            { id: 'silver', name: 'Silver', icon: '🥈', requirement: 10000 },
-            { id: 'gold', name: 'Gold', icon: '🥇', requirement: 25000 },
-            { id: 'platinum', name: 'Platinum', icon: '💎', requirement: 50000 },
-            { id: 'diamond', name: 'Diamond', icon: '💠', requirement: 250000 },
-            { id: 'obsidian', name: 'Obsidian', icon: '🪐', requirement: 1000000 }
+            { id: 'iron', name: 'Iron', requirement: 0 },
+            { id: 'bronze', name: 'Bronze', requirement: 5000 },
+            { id: 'silver', name: 'Silver', requirement: 10000 },
+            { id: 'gold', name: 'Gold', requirement: 25000 },
+            { id: 'platinum', name: 'Platinum', requirement: 50000 },
+            { id: 'diamond', name: 'Diamond', requirement: 250000 },
+            { id: 'obsidian', name: 'Obsidian', requirement: 1000000 }
         ];
+        function vipGemSvg(id) {
+            const colors = { iron:['#ffffff','#9fb5d0','#536983'], bronze:['#ffe8b0','#dd7b2f','#7a3212'], silver:['#ffffff','#c8d9ed','#71839d'], gold:['#fff8b1','#ffd23e','#b56500'], platinum:['#f2ffff','#66e5e8','#14788b'], diamond:['#efffff','#71e4ff','#172a9b'], obsidian:['#f3c8ff','#a34ce5','#0b0314'] }[id] || ['#fff','#aaa','#333'];
+            const gid = 'vip-gem-' + id;
+            return `<svg class="vip-gem-icon" viewBox="0 0 100 100" role="img" aria-label="${id} gem" style="--vip-gem-glow:${colors[1]}"><defs><linearGradient id="${gid}" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset=".42" stop-color="${colors[1]}"/><stop offset="1" stop-color="${colors[2]}"/></linearGradient></defs><path d="M50 7 84 27 74 69 50 94 26 69 16 27z" fill="url(#${gid})" stroke="${colors[0]}" stroke-width="4"/><path d="m16 27 34 18 34-18M50 45v49M26 69l24-24 24 24" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/><path d="M27 28h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M73 22l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff" opacity=".95"/></svg>`;
+        }
+        function vipLabel(level) { return `${vipGemSvg(level.id)}<span>${level.name}</span>`; }
 
         let userTurnover = 0;
         let currentVipLevel = 0;
@@ -11384,9 +11399,9 @@ async function openLootBox(box) {
             const nextLevel = VIP_LEVELS[Math.min(currentLevelIndex + 1, VIP_LEVELS.length - 1)];
             const t = translations[currentLanguage] || translations.ar;
             const badge = document.getElementById("profile-page-vip-badge");
-            if (badge) badge.textContent = `${currentLevel.icon} ${currentLevel.name}`;
+            if (badge) badge.innerHTML = vipLabel(currentLevel);
             const nameEl = document.getElementById("vip-current-name");
-            if (nameEl) nameEl.textContent = `${currentLevel.icon} ${currentLevel.name}`;
+            if (nameEl) nameEl.innerHTML = vipLabel(currentLevel);
             const progressEl = document.getElementById("vip-current-progress");
             const progressFill = document.getElementById("vip-progress-fill");
             const progressText = document.getElementById("vip-progress-text");
@@ -11402,7 +11417,7 @@ async function openLootBox(box) {
                 const progress = Math.min(((userTurnover - prevReq) / (nextReq - prevReq)) * 100, 100);
                 if (progressEl) progressEl.textContent = `${userTurnover.toLocaleString()} / ${nextReq.toLocaleString()} TON`;
                 if (progressFill) progressFill.style.width = `${Math.max(0, progress)}%`;
-                if (progressText) progressText.textContent = `${t.next}: ${nextLevel.icon} ${nextLevel.name} ${t.at} ${nextReq.toLocaleString()} TON`;
+                if (progressText) progressText.innerHTML = `${t.next}: ${vipLabel(nextLevel)} ${t.at} ${nextReq.toLocaleString()} TON`;
             }
             const listEl = document.getElementById("vip-list");
             if (listEl) {
@@ -11416,7 +11431,7 @@ async function openLootBox(box) {
                     if (!isUnlocked && index > currentLevelIndex) item.classList.add("locked");
                     const statusText = isCurrent ? "📍" : (isUnlocked ? "✅" : "🔒");
                     const statusClass = isCurrent ? "current" : (isUnlocked ? "unlocked" : "locked");
-                    item.innerHTML = `<div class="vip-item-name"><span class="icon">${level.icon}</span>${level.name}</div><div class="vip-item-requirement">${level.requirement > 0 ? level.requirement.toLocaleString() + " TON" : t.vipStart}</div><div class="vip-item-status ${statusClass}">${statusText}</div>`;
+                    item.innerHTML = `<div class="vip-item-name"><span>${level.name}</span></div><div class="vip-item-requirement">${level.requirement > 0 ? level.requirement.toLocaleString() + " TON" : t.vipStart}</div><div class="vip-item-status ${statusClass}">${statusText}</div><div class="vip-item-gem">${vipGemSvg(level.id)}</div>`;
                     listEl.appendChild(item);
                 });
             }
