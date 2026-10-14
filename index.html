@@ -5175,9 +5175,30 @@ video::-webkit-media-controls-enclosure {
         .lottery-odds-note{text-align:center;color:#667a99;font-size:9px;margin-top:8px}
         .lottery-history-card{margin-top:12px}.lottery-history-title{font-size:13px;font-weight:900;margin-bottom:9px}.lottery-history-row{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid rgba(100,130,180,.1);font-size:9px;color:#91a4c0}.lottery-history-row b{color:#fff}.lottery-win{color:#53dfa2}.lottery-empty{font-size:10px;color:#657894}
         @media(max-width:520px){.lottery-game-tabs{gap:5px}.lottery-game-tab strong{font-size:15px}.lottery-game-tab span{font-size:8px}.lottery-number-grid{gap:4px}.lottery-number-btn{height:31px;font-size:11px}.lottery-bonus-grid{gap:4px}.lottery-bonus-btn{height:35px}}
+
+/* Play Hub card redesign: scoped, lightweight CSS-only motion. */
+#playhub-screen #playhub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+#playhub-screen .game-card-hub{position:relative;display:block;min-height:174px;padding:10px;border-radius:22px;overflow:hidden;isolation:isolate;background:#14233f;border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.24);cursor:pointer}
+#playhub-screen .game-card-hub:nth-child(1){background:linear-gradient(145deg,#087ce9,#23bde9)}
+#playhub-screen .game-card-hub:nth-child(2){background:linear-gradient(145deg,#7200e6,#5b12bc)}
+#playhub-screen .game-card-hub:nth-child(3){background:linear-gradient(145deg,#ed1b3d,#fa720a)}
+#playhub-screen .game-card-hub:nth-child(4){background:linear-gradient(145deg,#1670e7,#1b4ac3)}
+#playhub-screen .game-card-hub:nth-child(5){background:linear-gradient(145deg,#5e2d18,#bd7521 42%,#3b1b44)}
+#playhub-screen .game-card-hub:nth-child(6){grid-column:1/-1;min-height:150px;background:linear-gradient(130deg,#8e5a09,#d6a629 42%,#ffe28a 70%,#a96b0b)}
+#playhub-screen .game-card-hub-icon{position:relative;display:grid;place-items:center;width:100%;height:108px;margin:0 0 5px;border-radius:15px;background:rgba(0,0,0,.12);font-size:0}
+#playhub-screen .game-card-hub-info{position:absolute;left:13px;right:10px;bottom:10px;z-index:4}
+#playhub-screen .game-card-hub-info h3{margin:0;color:#fff;font-size:22px;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+#playhub-screen .game-card-hub-info p{margin:2px 0 0;color:rgba(255,255,255,.8);font-size:11px;font-weight:700}
+#playhub-screen .game-card-hub-badge{position:absolute;top:10px;left:10px;z-index:5;padding:4px 7px;border-radius:8px;background:rgba(255,255,255,.88);color:#bd663e;font-size:9px;font-weight:900}
+.hub-mines-grid{display:grid;grid-template-columns:repeat(3,30px);gap:5px}.hub-mines-grid i{width:30px;height:26px;border-radius:7px;background:linear-gradient(#eef3fb,#a8bfdc);box-shadow:0 2px 7px #256b9d88}.hub-mines-grid i.safe{background:linear-gradient(#47e59a,#10a866)}.hub-mines-grid i img{width:24px;height:24px;object-fit:contain}
+.hub-pegrows{display:flex;flex-direction:column;align-items:center;gap:7px}.hub-pegrow{display:flex;gap:13px}.hub-pegrow i{width:8px;height:8px;border-radius:50%;background:#f5dcff;box-shadow:0 0 8px #fff}
+.hub-crafts{position:relative;display:flex;align-items:center;gap:6px}.hub-crafts img{width:48px;height:48px;object-fit:contain;background:#ffd7cd;border-radius:12px;padding:4px}.hub-crafts b{color:#fff;font-size:15px}.hub-crafts .craft-result{position:absolute;left:50%;top:28px;transform:translateX(-50%) scale(.15);opacity:0;background:transparent;animation:hubCraftResult 4.8s ease-in-out infinite;z-index:2}.hub-crafts .craft-side{animation:hubCraftSide 4.8s ease-in-out infinite}.hub-crafts .craft-side.right{animation-delay:0s}@keyframes hubCraftSide{0%,27%{transform:translateX(0) scale(1);opacity:1}52%,62%{transform:translateX(24px) scale(1.02);opacity:1}68%,100%{transform:translateX(24px) scale(.2);opacity:0}}@keyframes hubCraftResult{0%,63%{opacity:0;transform:translateX(-50%) scale(.15)}68%,84%{opacity:1;transform:translateX(-50%) scale(1)}96%,100%{opacity:0}}
+.hub-dice{width:62px;height:62px;position:relative;transform-style:preserve-3d;animation:hubDice 5s linear infinite}.hub-dice-face{position:absolute;inset:0;display:grid;place-items:center;border-radius:11px;background:#222b3b;border:1px solid #ffffff44}.hub-dice-face img{width:47px;height:47px;object-fit:contain}.hub-dice-face.front{transform:translateZ(31px)}.hub-dice-face.right{transform:rotateY(90deg) translateZ(31px)}.hub-dice-face.top{transform:rotateX(90deg) translateZ(31px)}.hub-dice-face.back{transform:rotateY(180deg) translateZ(31px)}.hub-dice-face.left{transform:rotateY(-90deg) translateZ(31px)}.hub-dice-face.bottom{transform:rotateX(-90deg) translateZ(31px)}@keyframes hubDice{0%{transform:rotateX(-8deg) rotateY(0)}50%{transform:rotateX(18deg) rotateY(180deg)}100%{transform:rotateX(-8deg) rotateY(360deg)}}
+.hub-lottery-ticket{width:118px;height:58px;border-radius:9px;background:linear-gradient(135deg,#fff7cc,#f0bd4b);color:#7f3d12;display:grid;place-items:center;font-size:16px;font-weight:900;box-shadow:0 7px 14px #1a0b0588;animation:hubTicket 4.5s ease-in-out infinite}.hub-lottery-ticket small{display:block;font-size:7px;text-align:center}.hub-upgrade-copy{position:absolute;left:16px;top:50%;transform:translateY(-50%);z-index:3}.hub-upgrade-copy strong{display:block;font-size:24px}.hub-upgrade-copy span{font-size:11px;color:#fff0b0}.hub-upgrade-ring{position:absolute;right:17%;top:50%;transform:translateY(-50%);width:90px;height:90px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#fff 0 18%,#f5d86b 18% 100%);box-shadow:0 0 20px #fff4a855}.hub-upgrade-ring:before{content:"";position:absolute;inset:11px;border-radius:50%;background:#d5a526}.hub-upgrade-ring img{width:50px;height:50px;object-fit:contain;z-index:1}.hub-upgrade-arrow{position:absolute;right:calc(17% + 36px);top:calc(50% - 49px);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:16px solid #ff8a2b;transform-origin:7px 49px;animation:hubArrow 5s ease-in-out infinite;z-index:3}@keyframes hubArrow{0%,8%{transform:rotate(0)}34%{transform:rotate(360deg)}42%,100%{transform:rotate(360deg)}}@keyframes hubTicket{0%,18%{transform:translateY(-22px) rotate(-6deg);opacity:0}30%,68%{transform:translateY(0) rotate(0);opacity:1}82%,100%{transform:translateY(22px) rotate(6deg);opacity:0}}
+@media(max-width:520px){#playhub-screen .game-card-hub{min-height:160px;padding:8px}#playhub-screen .game-card-hub:nth-child(6){min-height:138px}#playhub-screen .game-card-hub-icon{height:96px}.hub-mines-grid{grid-template-columns:repeat(3,27px);gap:4px}.hub-mines-grid i{width:27px;height:24px}.hub-upgrade-ring{right:15%;width:82px;height:82px}.hub-upgrade-ring img{width:46px;height:46px}}
 </style>
     <link rel="stylesheet" href="/assets/game-backgrounds.css?v=telegram-refresh-20261009">
-</head>
+<style id="playhub-card-order-fix">#playhub-screen #playhub-grid{direction:ltr}#playhub-screen .game-card-hub{direction:rtl}#playhub-screen .game-card-hub:nth-child(1){grid-column:1/-1;min-height:150px;background:linear-gradient(130deg,#8e5a09,#d6a629 42%,#ffe28a 70%,#a96b0b)}#playhub-screen .game-card-hub:nth-child(2){background:linear-gradient(145deg,#087ce9,#23bde9)}#playhub-screen .game-card-hub:nth-child(3){background:linear-gradient(145deg,#7200e6,#5b12bc)}#playhub-screen .game-card-hub:nth-child(4){background:linear-gradient(145deg,#ed1b3d,#fa720a)}#playhub-screen .game-card-hub:nth-child(5){background:linear-gradient(145deg,#1670e7,#1b4ac3)}#playhub-screen .game-card-hub:nth-child(6){grid-column:1/-1;min-height:150px;background:linear-gradient(135deg,#5e2d18,#bd7521 42%,#3b1b44)}#playhub-screen .game-card-hub:nth-child(1) .game-card-hub-info{display:none}</style></head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
       <div class="rocket-startup-content"><img id="rocket-startup-logo" class="rocket-startup-logo" src="/assets/startup/crazy-rocket-pink-purple.webp" alt="" width="124" height="124" fetchpriority="high" decoding="async"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><div id="rocket-startup-gift-reveal" class="rocket-startup-gift-reveal"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div></div></div>
@@ -5271,59 +5292,17 @@ video::-webkit-media-controls-enclosure {
                   <h2 class="playhub-screen-title" data-key="playhub-title">PLAY HUB</h2>
               </div>
               <div id="playhub-grid" class="game-grid">
-                  <div class="game-card-hub" onclick="openMinesGame()">
-                      <div class="game-card-hub-icon">💣</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="mines-title">Mines</h3>
-                          <p data-key="mines-desc">Clear tiles without hitting mines</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openUpgradeGame()"><div class="game-card-hub-icon"><span class="hub-upgrade-arrow"></span><div class="hub-upgrade-ring"><img src="/assets/playhub-gifts/durovs-cap.png"></div><div class="hub-upgrade-copy"><strong>Upgrade</strong><span>Choose a dream gift</span></div></div><div class="game-card-hub-info"><h3 data-key="upgrade-title">Upgrade</h3><p data-key="upgrade-desc">Upgrade your collectibles</p></div><div class="game-card-hub-badge" data-key="live">HOT</div></div>
 
-                  <div class="game-card-hub" onclick="openPlinkoGame()">
-                      <div class="game-card-hub-icon">🔷</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="plinko-title">Plinko</h3>
-                          <p data-key="plinko-desc">Drop the chip and win multipliers</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openMinesGame()"><div class="game-card-hub-icon"><div class="hub-mines-grid"><i></i><i></i><i></i><i></i><i class="safe"><img src="/assets/playhub-gifts/plush-pepe.png"></i><i></i><i></i><i></i><i></i></div></div><div class="game-card-hub-info"><h3 data-key="mines-title">Mines</h3><p data-key="mines-desc">Clear tiles without hitting mines</p></div><div class="game-card-hub-badge" data-key="live">NEW</div></div>
 
-                  <div class="game-card-hub" onclick="openCraftsGame()">
-                      <div class="game-card-hub-icon">🔨</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="crafts-title">Crafts</h3>
-                          <p data-key="crafts-desc">Craft collectibles and combine rarity</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openPlinkoGame()"><div class="game-card-hub-icon"><div class="hub-pegrows"><span class="hub-pegrow"><i></i></span><span class="hub-pegrow"><i></i><i></i></span><span class="hub-pegrow"><i></i><i></i><i></i></span><span class="hub-pegrow"><i></i><i></i><i></i><i></i></span><span class="hub-pegrow"><i></i><i></i><i></i><i></i><i></i></span></div></div><div class="game-card-hub-info"><h3 data-key="plinko-title">Plinko</h3><p data-key="plinko-desc">Drop the chip and win multipliers</p></div><div class="game-card-hub-badge" data-key="live">LIVE</div></div>
 
-                  <div class="game-card-hub" onclick="openDiceGame()">
-                      <div class="game-card-hub-icon">🎲</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="dice-title">Dice</h3>
-                          <p data-key="dice-desc">Roll the dice for instant wins</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openCraftsGame()"><div class="game-card-hub-icon"><div class="hub-crafts"><img class="craft-side" src="/assets/playhub-gifts/spiced-wine.png"><b>+</b><img class="craft-side" src="/assets/playhub-gifts/plush-pepe.png"><b>+</b><img class="craft-side right" src="/assets/playhub-gifts/spiced-wine.png"><img class="craft-result" src="/assets/playhub-gifts/durovs-cap.png"></div></div><div class="game-card-hub-info"><h3 data-key="crafts-title">Crafts</h3><p data-key="crafts-desc">Craft collectibles and combine rarity</p></div><div class="game-card-hub-badge" data-key="live">LIVE</div></div>
 
-                  <div class="game-card-hub" onclick="openLotteryGame()">
-                      <div class="game-card-hub-icon">🎰</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="lottery-title">Lottery</h3>
-                          <p data-key="lottery-desc">Pick the numbers &amp; Win</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openDiceGame()"><div class="game-card-hub-icon"><div class="hub-dice"><span class="hub-dice-face front"><img src="/assets/playhub-gifts/plush-pepe.png"></span><span class="hub-dice-face right"><img src="/assets/playhub-gifts/spiced-wine.png"></span><span class="hub-dice-face top"><img src="/assets/playhub-gifts/durovs-cap.png"></span><span class="hub-dice-face back"><img src="/assets/playhub-gifts/electric-skull.png"></span><span class="hub-dice-face left"><img src="/assets/playhub-gifts/snoop-dogg.png"></span><span class="hub-dice-face bottom"><img src="/assets/playhub-gifts/plush-pepe.png"></span></div></div><div class="game-card-hub-info"><h3 data-key="dice-title">Dice</h3><p data-key="dice-desc">Roll the dice for instant wins</p></div><div class="game-card-hub-badge" data-key="live">LIVE</div></div>
 
-                  <div class="game-card-hub" onclick="openUpgradeGame()">
-                      <div class="game-card-hub-icon">🔧</div>
-                      <div class="game-card-hub-info">
-                          <h3 data-key="upgrade-title">Upgrade</h3>
-                          <p data-key="upgrade-desc">Upgrade your collectibles</p>
-                      </div>
-                      <div class="game-card-hub-badge" data-key="live">❄️ Live</div>
-                  </div>
+<div class="game-card-hub" onclick="openLotteryGame()"><div class="game-card-hub-icon"><div class="hub-lottery-ticket">LOTTERY<small>SCRATCH &amp; WIN</small></div></div><div class="game-card-hub-info"><h3 data-key="lottery-title">Lottery</h3><p data-key="lottery-desc">Pick the numbers &amp; Win</p></div><div class="game-card-hub-badge" data-key="live">LIVE</div></div>
               </div>
           </div>
 
