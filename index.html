@@ -3598,6 +3598,10 @@ video::-webkit-media-controls-enclosure {
         .vip-item-gem { flex: 0 0 24px; order: 4; display: flex; align-items: center; justify-content: center; margin-inline-start: 8px; }
         .vip-item-gem .vip-gem-icon { width: 20px; height: 20px; margin: 0; vertical-align: middle; }
         .vip-current-name, .profile-page-vip, .vip-current-name > span, .profile-page-vip > span { display: inline-flex; align-items: center; direction: ltr; gap: 5px; }
+        .vip-status-icon { width: 22px; height: 22px; display: inline-block; vertical-align: middle; filter: drop-shadow(0 0 5px currentColor); }
+        .vip-item-status.current .vip-status-icon { color: #ffd45a; }
+        .vip-item-status.unlocked .vip-status-icon { color: #65f0ae; }
+        .vip-item-status.locked .vip-status-icon { color: #b9c7df; }
 
         /* =========================================================
            LANGUAGE SELECTOR
@@ -8646,6 +8650,11 @@ async function openLootBox(box) {
             return `<svg class="vip-gem-icon" viewBox="0 0 100 100" role="img" aria-label="${id} gem" style="--vip-gem-glow:${colors[1]}"><defs><linearGradient id="${gid}" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset=".42" stop-color="${colors[1]}"/><stop offset="1" stop-color="${colors[2]}"/></linearGradient></defs><path d="M50 7 84 27 74 69 50 94 26 69 16 27z" fill="url(#${gid})" stroke="${colors[0]}" stroke-width="4"/><path d="m16 27 34 18 34-18M50 45v49M26 69l24-24 24 24" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/><path d="M27 28h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M73 22l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff" opacity=".95"/></svg>`;
         }
         function vipLabel(level) { return `${vipGemSvg(level.id)}<span>${level.name}</span>`; }
+        function vipStatusSvg(type) {
+            if (type === 'current') return '<svg class="vip-status-icon vip-status-crown" viewBox="0 0 32 32" role="img" aria-label="current level"><defs><linearGradient id="vipCrownGold" x2="1" y2="1"><stop stop-color="#fff6a4"/><stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#9b5700"/></linearGradient></defs><circle cx="16" cy="16" r="14" fill="#4b2b00" stroke="#ffe38a" stroke-width="1.5"/><path d="m7 11 4 4 5-8 5 8 4-4-2 11H9z" fill="url(#vipCrownGold)" stroke="#fff1a0" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 24h12" stroke="#fff4a6" stroke-width="1.8" stroke-linecap="round"/><circle cx="11" cy="11" r="1" fill="#fff"/><circle cx="21" cy="10" r="1" fill="#fff"/></svg>';
+            if (type === 'unlocked') return '<svg class="vip-status-icon vip-status-seal" viewBox="0 0 32 32" role="img" aria-label="unlocked"><defs><linearGradient id="vipSealGold" x2="1" y2="1"><stop stop-color="#fffbc4"/><stop offset=".45" stop-color="#69f0b0"/><stop offset="1" stop-color="#118a67"/></linearGradient></defs><circle cx="16" cy="16" r="13" fill="#072d2a" stroke="url(#vipSealGold)" stroke-width="2"/><circle cx="16" cy="16" r="9" fill="none" stroke="#b8ffe0" stroke-width="1" stroke-dasharray="2 2"/><path d="m10 16 4 4 8-9" fill="none" stroke="#d8ffe8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m16 2 1.2 2.5 2.7.4-2 1.9.5 2.7L16 8.2l-2.4 1.3.5-2.7-2-1.9 2.7-.4z" fill="#fff6a0"/></svg>';
+            return '<svg class="vip-status-icon vip-status-shield" viewBox="0 0 32 32" role="img" aria-label="locked"><defs><linearGradient id="vipShieldCrystal" x2="1" y2="1"><stop stop-color="#edf8ff"/><stop offset=".45" stop-color="#8ea8c9"/><stop offset="1" stop-color="#344967"/></linearGradient></defs><path d="M16 3 27 7v8c0 7-4 11-11 14C10 26 5 22 5 15V7z" fill="url(#vipShieldCrystal)" stroke="#e7f4ff" stroke-width="1.5"/><path d="m16 4 11 6-11 6L5 10zM16 16v13M5 15l11 1 11-1" fill="none" stroke="#fff" stroke-width="1" opacity=".8"/><path d="M11 15v-2.3a5 5 0 0 1 10 0V15" fill="none" stroke="#233853" stroke-width="2"/><rect x="9.5" y="14" width="13" height="9" rx="2" fill="#233853" stroke="#e5f5ff" stroke-width="1"/><circle cx="16" cy="18" r="1.2" fill="#fff"/><path d="M16 19v2" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>';
+        }
 
         let userTurnover = 0;
         let currentVipLevel = 0;
@@ -11429,7 +11438,8 @@ async function openLootBox(box) {
                     const isCurrent = index === currentLevelIndex;
                     if (isCurrent) item.classList.add("current");
                     if (!isUnlocked && index > currentLevelIndex) item.classList.add("locked");
-                    const statusText = isCurrent ? "📍" : (isUnlocked ? "✅" : "🔒");
+                    const statusType = isCurrent ? "current" : (isUnlocked ? "unlocked" : "locked");
+                    const statusText = vipStatusSvg(statusType);
                     const statusClass = isCurrent ? "current" : (isUnlocked ? "unlocked" : "locked");
                     item.innerHTML = `<div class="vip-item-name"><span>${level.name}</span></div><div class="vip-item-requirement">${level.requirement > 0 ? level.requirement.toLocaleString() + " TON" : t.vipStart}</div><div class="vip-item-status ${statusClass}">${statusText}</div><div class="vip-item-gem">${vipGemSvg(level.id)}</div>`;
                     listEl.appendChild(item);
