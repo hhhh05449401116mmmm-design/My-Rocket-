@@ -8111,18 +8111,33 @@ async function openLootBox(box) {
             if (!rewardId || lootBoxKeepRequestInFlight) return false;
             lootBoxKeepRequestInFlight = true;
             pendingLootBoxRewardId = null;
+            const keepButton = document.querySelector('.loot-box-result-keep');
+            if (keepButton) {
+                keepButton.disabled = true;
+                keepButton.textContent = currentLanguage === 'ar' ? 'جارٍ الحفظ…' : 'Saving…';
+            }
             try {
-                // Loot-box rewards are persisted immediately when the draw succeeds.
-                // Keep is now only a UI confirmation; it must not change the reward status
-                // or bypass the 7-day lock.
-                await fetchCollectibles();
+                const response = await fetch(BACKEND_URL + '/api/loot-box/gift/keep', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    cache: 'no-store',
+                    body: JSON.stringify({ userGiftId: rewardId })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) throw new Error(data.error || 'Unable to save gift');
                 closeLootBoxResult();
                 if (!silent) {
                     showToast(currentLanguage === 'ar' ? '🎒 الهدية محفوظة في حقيبتك' : '🎒 Gift saved in your backpack');
                 }
+                // Do not make the user wait for the backpack repaint.
+                fetchCollectibles().catch(error => console.error('LOOT BOX BACKPACK REFRESH ERROR:', error));
                 return true;
             } catch (error) {
                 console.error('LOOT BOX GIFT KEEP ERROR:', error);
+                if (keepButton) {
+                    keepButton.disabled = false;
+                    keepButton.textContent = currentLanguage === 'ar' ? '✓ احتفظ' : '✓ Keep';
+                }
                 if (!silent) showToast(error.message || 'Unable to refresh backpack');
                 return false;
             } finally {

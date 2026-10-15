@@ -3994,10 +3994,6 @@ app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
         if (!reward) {
             return res.status(404).json({ ok: false, error: 'Loot-box gift not found or already used' });
         }
-        if (isLootBoxGiftLocked(reward)) {
-            return res.status(423).json({ ok: false, error: 'This loot-box gift is locked for 7 days', lockedUntil: reward.loot_box_locked_until });
-        }
-
         const gift = await get(
             `SELECT ug.id AS user_gift_id, g.name, COALESCE(ug.market_value, g.value) AS market_value
              FROM user_gifts ug
@@ -4007,10 +4003,23 @@ app.post('/api/loot-box/gift/keep', authenticate, async (req, res) => {
             [userGiftId, req.user.id]
         );
 
+        // Keep means saving the reward in the backpack. The seven-day lock
+        // applies to withdrawal only, not to keeping, selling, or betting.
+        const kept = await run(
+            `UPDATE user_gifts
+             SET status = 'OWNED', updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ? AND status = 'WON'`,
+            [userGiftId, req.user.id]
+        );
+        if (kept.changes !== 1) {
+            return res.status(409).json({ ok: false, error: 'Loot-box gift was already processed' });
+        }
+
         res.json({
             ok: true,
             userGiftId,
-            gift: gift || null
+            gift: gift || null,
+            lockedUntil: reward.loot_box_locked_until || null
         });
     } catch (error) {
         console.error('Loot-box gift keep failed:', { userId: req.user?.id, userGiftId: req.body?.userGiftId, error: error.message });
