@@ -13794,9 +13794,10 @@ async function loadPvpGifts() {
   try {
     const response = await fetch(BACKEND_URL + '/api/collectibles', { headers: getAuthHeaders(), cache: 'no-store' });
     const data = await response.json();
+    if (!response.ok || data.ok === false) throw new Error(data.error || 'Unable to load gifts');
     const gifts = Array.isArray(data.collectibles) ? data.collectibles : [];
     pvpGiftsLoaded = true;
-    window.__pvpGifts = gifts.filter(g => g && g.pvpEligible === true);
+    window.__pvpGifts = gifts.filter(g => g && g.pvpEligible === true && String(g.pvpGiftUniqueId || g.id || '').trim() && Number(g.pvpBetValue) > 0);
   } catch (e) { window.__pvpGifts = []; console.error('PvP gift load error:', e); }
   if (document.getElementById('pvp-bet-modal')?.classList.contains('show')) renderPvpBetModal();
 }

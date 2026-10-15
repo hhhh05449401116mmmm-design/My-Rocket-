@@ -2964,7 +2964,7 @@ app.post('/api/pvp/join', authenticate, async (req, res) => {
         const { betCurrency, betAmount, giftUniqueId } = req.body;
         if (betCurrency === 'GIFT') {
             const collectible = await getCollectibleByUniqueId(giftUniqueId || '');
-            if (!collectible || collectible.user_id !== req.user.id || collectible.ownership_verified !== 1) {
+            if (!collectible || String(collectible.user_id) !== String(req.user.id) || Number(collectible.ownership_verified) !== 1 || collectible.ownership_status !== 'OWNED') {
                 throw new Error('Verified owned collectible required for PvP');
             }
         }
@@ -3119,14 +3119,20 @@ function buildCollectibleApiRow(row, req) {
         : (row.unique_collectible_id && hasMedia
             ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
             : null);
+    const collectibleMarketValue = Number(row.collectible_market_value);
+    const pvpBetValue = collectibleMarketValue > 0
+        ? collectibleMarketValue
+        : getGeneralGiftPrice(row.name, row.value);
+    const pvpEligible = Number(row.ownership_verified) === 1 &&
+        String(row.ownership_status || '').toUpperCase() === 'OWNED' &&
+        !!row.unique_collectible_id && pvpBetValue > 0;
     return {
         id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
         // PvP-only metadata: retain the existing general value used by other games.
         pvpGiftUniqueId: row.unique_collectible_id || null,
-        pvpBetValue: Number(row.collectible_market_value ?? row.value ?? 0),
-        pvpEligible: row.ownership_verified === 1 && row.ownership_status === 'OWNED' &&
-            !!row.unique_collectible_id && Number(row.collectible_market_value ?? row.value ?? 0) > 0,
+        pvpBetValue,
+        pvpEligible,
         pendingWithdrawal: isPendingGiftReward,
         lootBoxReward: isPendingGiftReward,
         lootBoxLocked: isLootBoxGiftLocked(row),

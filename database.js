@@ -4008,7 +4008,9 @@ async function joinPvpRound(userId, betCurrency, betAmount, giftUniqueId) {
             if (!collectible) throw new Error('Collectible not found');
             if (collectible.user_id !== userId) throw new Error('Not your collectible');
             if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible not available');
-            actualBetAmount = Number(collectible.collectible_market_value ?? collectible.value ?? 0);
+            const collectibleMarketValue = Number(collectible.collectible_market_value);
+            const collectibleBaseValue = Number(collectible.value);
+            actualBetAmount = collectibleMarketValue > 0 ? collectibleMarketValue : collectibleBaseValue;
             if (actualBetAmount <= 0) throw new Error('Collectible has no value');
             const update = await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', ['IN_BET', giftUniqueId, 'OWNED']);
             if (update.changes !== 1) throw new Error('Could not lock collectible');
