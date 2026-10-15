@@ -2963,9 +2963,12 @@ app.post('/api/pvp/join', authenticate, async (req, res) => {
     try {
         const { betCurrency, betAmount, giftUniqueId } = req.body;
         if (betCurrency === 'GIFT') {
-            const collectible = await getCollectibleByUniqueId(giftUniqueId || '');
-            if (!collectible || String(collectible.user_id) !== String(req.user.id) || Number(collectible.ownership_verified) !== 1 || collectible.ownership_status !== 'OWNED') {
-                throw new Error('Verified owned collectible required for PvP');
+            const legacyGift = /^usergift:(\d+)$/.exec(String(giftUniqueId || ''));
+            if (!legacyGift) {
+                const collectible = await getCollectibleByUniqueId(giftUniqueId || '');
+                if (!collectible || String(collectible.user_id) !== String(req.user.id) || Number(collectible.ownership_verified) !== 1 || collectible.ownership_status !== 'OWNED') {
+                    throw new Error('Owned gift required for PvP');
+                }
             }
         }
         const result = await joinPvpRound(req.user.id, betCurrency || 'TON', betAmount, giftUniqueId || null);
@@ -3118,19 +3121,18 @@ function buildCollectibleApiRow(row, req) {
         ? (genericGiftImage || row.image_url || null)
         : (row.unique_collectible_id && hasMedia
             ? `/api/collectible-media/${encodeURIComponent(row.unique_collectible_id)}`
-            : null);
+            : (row.image_url || genericGiftImage || null));
     const collectibleMarketValue = Number(row.collectible_market_value);
     const pvpBetValue = collectibleMarketValue > 0
         ? collectibleMarketValue
         : getGeneralGiftPrice(row.name, row.value);
-    const pvpEligible = Number(row.ownership_verified) === 1 &&
-        String(row.ownership_status || '').toUpperCase() === 'OWNED' &&
-        !!row.unique_collectible_id && pvpBetValue > 0;
+    const pvpEligible = String(row.ownership_status || '').toUpperCase() === 'OWNED' &&
+        !!(row.unique_collectible_id || row.user_gift_id) && pvpBetValue > 0;
     return {
         id: row.unique_collectible_id || `pending:${row.user_gift_id}`,
         userGiftId: row.user_gift_id,
         // PvP-only metadata: retain the existing general value used by other games.
-        pvpGiftUniqueId: row.unique_collectible_id || null,
+        pvpGiftUniqueId: row.unique_collectible_id || (row.user_gift_id ? `usergift:${row.user_gift_id}` : null),
         pvpBetValue,
         pvpEligible,
         pendingWithdrawal: isPendingGiftReward,
@@ -3191,10 +3193,7 @@ app.get('/api/collectibles', authenticate, async (req, res) => {
 
         const rows = await getUserCollectibles(req.user.id);
         const collectibles = rows
-            .filter(row =>
-                (row.ownership_verified === 1 && row.unique_collectible_id) ||
-                ((row.loot_box_reward === 1) && (row.ownership_status === 'WON' || row.ownership_status === 'OWNED') && !row.unique_collectible_id)
-            )
+            .filter(row => ['OWNED', 'IN_BET', 'LOCKED'].includes(String(row.ownership_status || '').toUpperCase()))
             .map(row => buildCollectibleApiRow(row, req));
         res.json({ ok: true, collectibles });
     } catch (error) {

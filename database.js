@@ -4004,18 +4004,23 @@ async function joinPvpRound(userId, betCurrency, betAmount, giftUniqueId) {
         } else if (betCurrency === 'GIFT') {
             if (existing && existing.status === 'ACTIVE') throw new Error('You already joined this round');
             if (!giftUniqueId) throw new Error('Gift collectible ID required');
-            const collectible = await getCollectibleByUniqueId(giftUniqueId);
-            if (!collectible) throw new Error('Collectible not found');
-            if (collectible.user_id !== userId) throw new Error('Not your collectible');
-            if (collectible.ownership_status !== 'OWNED') throw new Error('Collectible not available');
-            const collectibleMarketValue = Number(collectible.collectible_market_value);
-            const collectibleBaseValue = Number(collectible.value);
-            actualBetAmount = collectibleMarketValue > 0 ? collectibleMarketValue : collectibleBaseValue;
-            if (actualBetAmount <= 0) throw new Error('Collectible has no value');
-            const update = await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', ['IN_BET', giftUniqueId, 'OWNED']);
-            if (update.changes !== 1) throw new Error('Could not lock collectible');
-            const verifyLock = await get('SELECT status FROM user_gifts WHERE unique_collectible_id = ?', [giftUniqueId]);
-            if (verifyLock.status !== 'IN_BET') throw new Error('Could not lock collectible');
+            const legacyMatch = /^usergift:(\d+)$/.exec(String(giftUniqueId));
+            const gift = legacyMatch
+                ? await get(`SELECT ug.*, g.value AS gift_value
+                             FROM user_gifts ug JOIN gifts g ON g.id = ug.gift_id
+                             WHERE ug.id = ?`, [Number(legacyMatch[1])])
+                : await getCollectibleByUniqueId(giftUniqueId);
+            if (!gift) throw new Error('Gift not found');
+            if (String(gift.user_id) !== String(userId)) throw new Error('Not your gift');
+            if (gift.ownership_status !== 'OWNED') throw new Error('Gift not available');
+            const collectibleMarketValue = Number(gift.collectible_market_value);
+            const giftBaseValue = Number(gift.value ?? gift.gift_value);
+            actualBetAmount = collectibleMarketValue > 0 ? collectibleMarketValue : giftBaseValue;
+            if (actualBetAmount <= 0) throw new Error('Gift has no value');
+            const update = legacyMatch
+                ? await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ?', ['IN_BET', Number(legacyMatch[1]), 'OWNED'])
+                : await run('UPDATE user_gifts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', ['IN_BET', giftUniqueId, 'OWNED']);
+            if (update.changes !== 1) throw new Error('Could not lock gift');
             giftToLock = giftUniqueId;
         } else {
             throw new Error('Invalid bet currency');
@@ -4084,7 +4089,7 @@ async function settlePvpRound(roundId) {
                    g.name AS gift_name, g.image_url AS gift_image_url
             FROM pvp_participants p
             JOIN users u ON u.id = p.user_id
-            LEFT JOIN user_gifts ug ON ug.unique_collectible_id = p.gift_unique_id
+            LEFT JOIN user_gifts ug ON (ug.unique_collectible_id = p.gift_unique_id OR ('usergift:' || ug.id) = p.gift_unique_id)
             LEFT JOIN gifts g ON g.id = ug.gift_id
             WHERE p.pvp_round_id = ? AND p.status = 'ACTIVE'
             ORDER BY p.id ASC
@@ -4125,16 +4130,17 @@ async function settlePvpRound(roundId) {
 
         const giftParticipants = participants.filter(p => p.bet_currency === 'GIFT' && p.gift_unique_id);
         for (const participant of giftParticipants) {
-            const gift = await get(
-                'SELECT * FROM user_gifts WHERE unique_collectible_id = ? AND status = ?',
-                [participant.gift_unique_id, 'IN_BET']
-            );
+            const legacyMatch = /^usergift:(\d+)$/.exec(String(participant.gift_unique_id));
+            const gift = legacyMatch
+                ? await get('SELECT * FROM user_gifts WHERE id = ? AND status = ?', [Number(legacyMatch[1]), 'IN_BET'])
+                : await get('SELECT * FROM user_gifts WHERE unique_collectible_id = ? AND status = ?', [participant.gift_unique_id, 'IN_BET']);
             if (!gift) continue;
 
-            await run(
-                'UPDATE user_gifts SET user_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?',
-                [winner.user_id, 'OWNED', participant.gift_unique_id, 'IN_BET']
-            );
+            if (legacyMatch) {
+                await run('UPDATE user_gifts SET user_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ?', [winner.user_id, 'OWNED', gift.id, 'IN_BET']);
+            } else {
+                await run('UPDATE user_gifts SET user_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE unique_collectible_id = ? AND status = ?', [winner.user_id, 'OWNED', participant.gift_unique_id, 'IN_BET']);
+            }
 
             await run(
                 `INSERT INTO pvp_rewards
@@ -4179,7 +4185,7 @@ async function getPvpRoundWithParticipants(roundId) {
                g.name AS gift_name, g.image_url AS gift_image_url
         FROM pvp_participants p
         JOIN users u ON u.id = p.user_id
-        LEFT JOIN user_gifts ug ON ug.unique_collectible_id = p.gift_unique_id
+        LEFT JOIN user_gifts ug ON (ug.unique_collectible_id = p.gift_unique_id OR ('usergift:' || ug.id) = p.gift_unique_id)
         LEFT JOIN gifts g ON g.id = ug.gift_id
         WHERE p.pvp_round_id = ?
         ORDER BY p.bet_amount DESC, p.id ASC
