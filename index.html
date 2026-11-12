@@ -5236,7 +5236,7 @@ video::-webkit-media-controls-enclosure {
 @media(max-width:520px){#playhub-screen .game-card-hub{min-height:160px;padding:8px}#playhub-screen .game-card-hub:nth-child(6){min-height:138px}#playhub-screen .game-card-hub-icon{height:96px}.hub-mines-grid{grid-template-columns:repeat(3,27px);gap:4px}.hub-mines-grid i{width:27px;height:24px}.hub-upgrade-ring{right:15%;width:82px;height:82px}.hub-upgrade-ring img{width:46px;height:46px}}
 </style>
     <link rel="stylesheet" href="/assets/game-backgrounds.css?v=telegram-refresh-20261009">
-<style id="playhub-card-order-fix">#playhub-screen #playhub-grid{direction:ltr}#playhub-screen .game-card-hub{direction:rtl}#playhub-screen .game-card-hub:nth-child(1){grid-column:1/-1;min-height:150px;background:linear-gradient(130deg,#8e5a09,#d6a629 42%,#ffe28a 70%,#a96b0b)}#playhub-screen .game-card-hub:nth-child(2){background:linear-gradient(145deg,#087ce9,#23bde9)}#playhub-screen .game-card-hub:nth-child(3){background:linear-gradient(145deg,#7200e6,#5b12bc)}#playhub-screen .game-card-hub:nth-child(4){background:linear-gradient(145deg,#ed1b3d,#fa720a)}#playhub-screen .game-card-hub:nth-child(5){background:linear-gradient(145deg,#1670e7,#1b4ac3)}#playhub-screen .game-card-hub:nth-child(6){grid-column:1/-1;min-height:150px;background:linear-gradient(135deg,#5e2d18,#bd7521 42%,#3b1b44)}#playhub-screen .game-card-hub:nth-child(1) .game-card-hub-info{display:none}</style><style id="ton-real-icon-style">.ton-real-icon{width:18px;height:18px;display:inline-block;object-fit:contain;vertical-align:-4px}.ton-symbol .ton-real-icon{width:24px;height:24px;vertical-align:middle}.amount-ton-icon,.ton-icon img{object-fit:contain}</style><link rel="stylesheet" href="/assets/marketplace.css?v=nft-filters-20261112"></head>
+<style id="playhub-card-order-fix">#playhub-screen #playhub-grid{direction:ltr}#playhub-screen .game-card-hub{direction:rtl}#playhub-screen .game-card-hub:nth-child(1){grid-column:1/-1;min-height:150px;background:linear-gradient(130deg,#8e5a09,#d6a629 42%,#ffe28a 70%,#a96b0b)}#playhub-screen .game-card-hub:nth-child(2){background:linear-gradient(145deg,#087ce9,#23bde9)}#playhub-screen .game-card-hub:nth-child(3){background:linear-gradient(145deg,#7200e6,#5b12bc)}#playhub-screen .game-card-hub:nth-child(4){background:linear-gradient(145deg,#ed1b3d,#fa720a)}#playhub-screen .game-card-hub:nth-child(5){background:linear-gradient(145deg,#1670e7,#1b4ac3)}#playhub-screen .game-card-hub:nth-child(6){grid-column:1/-1;min-height:150px;background:linear-gradient(135deg,#5e2d18,#bd7521 42%,#3b1b44)}#playhub-screen .game-card-hub:nth-child(1) .game-card-hub-info{display:none}</style><style id="ton-real-icon-style">.ton-real-icon{width:18px;height:18px;display:inline-block;object-fit:contain;vertical-align:-4px}.ton-symbol .ton-real-icon{width:24px;height:24px;vertical-align:middle}.amount-ton-icon,.ton-icon img{object-fit:contain}</style><link rel="stylesheet" href="/assets/marketplace.css?v=collections-i18n-20261112"></head>
 <body class="rocket-starting">
     <section id="rocket-startup" role="status" aria-live="polite" aria-label="تجهيز Crazy Rocket">
       <div class="rocket-startup-content"><img id="rocket-startup-logo" class="rocket-startup-logo" src="/assets/startup/crazy-rocket-pink-purple.webp" alt="" width="124" height="124" fetchpriority="high" decoding="async"><h1 class="rocket-startup-name">Crazy Rocket</h1><div id="rocket-startup-progress" class="rocket-startup-gift" role="progressbar" aria-label="تلوين Plush Pepe Pink Latex أثناء تجهيز اللعبة" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0"><img class="rocket-startup-gift-base" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"><div id="rocket-startup-gift-reveal" class="rocket-startup-gift-reveal"><img id="rocket-startup-gift-color" class="rocket-startup-gift-color" src="/assets/startup/plush-pepe-pink-latex.png" alt="" width="156" height="156" fetchpriority="high"></div></div></div>
@@ -6029,7 +6029,7 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
                     <button id="market-filter-symbol" type="button" class="market-filter" onclick="openMarketFilter('symbol')">الرمز ▾</button>
                     <button id="market-filter-maxPrice" type="button" class="market-filter" onclick="openMarketFilter('maxPrice')">أقصى سعر ▾</button>
                     <button id="market-filter-number" type="button" class="market-filter" onclick="openMarketFilter('number')">رقم الهدية ▾</button>
-                    <button type="button" class="market-filter market-filter-clear" onclick="clearMarketFilters()">مسح الفلاتر</button>
+                    <button type="button" id="market-filter-clear" class="market-filter market-filter-clear" onclick="clearMarketFilters()">مسح الفلاتر</button>
                 </div>
                 <div class="market-selection"><span id="market-selection-text">اختر نوع الهدية من NFT، أو تصفّح جميع العروض.</span></div>
             </div>
@@ -9323,6 +9323,8 @@ async function openLootBox(box) {
             renderCollectibles();
             renderLootBoxes();
             updateGiftSelectionInModal();
+            if (window.GameI18n) window.GameI18n.refresh(currentLanguage);
+            if (typeof updateMarketLanguage === 'function') updateMarketLanguage();
         }
 
         /* =========================================================
@@ -11324,7 +11326,7 @@ async function openLootBox(box) {
                 tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
                     manifestUrl: "https://my-rocket.vercel.app/tonconnect-manifest.json",
                     restoreConnection: true,
-                    language: "en"
+                    language: currentLanguage === "ru" ? "ru" : "en"
                 });
                 tonConnectUI.onStatusChange(async function(wallet) {
                     if (wallet) {
@@ -11545,6 +11547,7 @@ async function openLootBox(box) {
         }
 
         function setLanguage(lang) {
+            if (!['ar','en','ru'].includes(lang)) lang = 'ar';
             currentLanguage = lang;
             localStorage.setItem('rocketLanguage', lang);
             document.querySelectorAll(".language-menu-item").forEach(function(btn) {
@@ -11562,6 +11565,9 @@ async function openLootBox(box) {
             updateModalBetButton();
             renderPlayers();
             renderTopList();
+            if (window.GameI18n) window.GameI18n.refresh(lang);
+            if (typeof updateMarketLanguage === 'function') updateMarketLanguage();
+            try { if (tonConnectUI) tonConnectUI.uiOptions = { language: lang === 'ru' ? 'ru' : 'en' }; } catch (e) {}
         }
 
         function toggleLanguageMenu() {
@@ -12031,7 +12037,7 @@ async function openLootBox(box) {
         async function shareReferralLink() {
             if (!referralInviteLink) await loadReferralPage();
             if (!referralInviteLink) return showToast('تعذر إنشاء رابط الدعوة');
-            const text='🚀 ادخل Crazy Rocket من رابط دعوتي!';
+            const text=window.GameI18n ? window.GameI18n.text('🚀 ادخل Crazy Rocket من رابط دعوتي!') : '🚀 ادخل Crazy Rocket من رابط دعوتي!';
             if (navigator.share) { try { await navigator.share({title:'Crazy Rocket',text,url:referralInviteLink}); return; } catch(e) {} }
             await copyReferralLink();
         }
@@ -13841,7 +13847,7 @@ function renderPvpHistory() {
     const card = document.createElement('article'); card.className = 'pvp-history-card';
     card.dataset.roundNumber = r.roundNumber;
     const date = r.endedAt ? new Date(String(r.endedAt).includes('T') ? r.endedAt : r.endedAt.replace(' ', 'T') + 'Z') : null;
-    const stamp = date && Number.isFinite(date.getTime()) ? date.toLocaleString(undefined, { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const stamp = date && Number.isFinite(date.getTime()) ? date.toLocaleString(({ar:'ar',en:'en-GB',ru:'ru-RU'})[currentLanguage] || 'en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
     const w = r.winner || {}, name = pvpName(w);
     let gifts = '';
     for (const g of r.gifts || []) gifts += '<span class="pvp-history-gift" title="' + escapeHtmlAttribute(g.name || 'Gift') + '"><img src="' + escapeHtmlAttribute(pvpSafeImage(g.image, '/assets/gift-icon.svg')) + '" alt="' + escapeHtmlAttribute(g.name || 'Gift') + '"></span>';
@@ -14650,6 +14656,9 @@ function markRocketBootstrapReady(authenticated) {
              if (collectiblesEventSource) { try { collectiblesEventSource.close(); } catch {} }
          });
     </script>
-    <script src="/assets/marketplace.js?v=nft-filters-20261112-r2"></script>
+    <script src="/assets/ui-languages.js?v=20261112"></script>
+    <script src="/assets/ui-localization.js?v=20261112"></script>
+    <script src="/assets/marketplace-languages.js?v=20261112"></script>
+    <script src="/assets/marketplace.js?v=collections-i18n-20261112"></script>
 </body>
     </html>

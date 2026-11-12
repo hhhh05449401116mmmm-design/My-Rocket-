@@ -220,3 +220,33 @@ test('catalog refresh is in-flight deduplicated, bounded and negative cached, re
     const timed = view.createMarketplaceCatalogCache(() => new Promise(() => {}), { timeoutMs: 5 });
     assert.deepEqual(await timed.get(), []);
 });
+
+
+test('multiple collection filters are exact, parameterized and applied before pagination', async () => {
+    const plan = view.buildMarketplaceQuery({ collections: JSON.stringify(['Plush Pepe', 'Ice Cream']), number: 17, maxPrice: 7.25 });
+    assert.deepEqual(plan.filters.collections, ['plushpepe', 'icecream']);
+    assert.ok(plan.listingsSql.includes(' IN (?,?)'));
+    assert.ok(!plan.listingsSql.includes('Plush Pepe'));
+    const page = await database.getMarketplaceListings({ collections: ['Plush Pepe', 'Ice Cream'], number: 17, maxPrice: 7.25, limit: 1 });
+    assert.equal(page.count, 1); assert.equal(page.listings[0].collectibleId, 'PlushPepe-17');
+    assert.ok(view.normalizeMarketplaceFilters({ collections: '[not JSON]' }).invalid);
+    assert.ok(view.normalizeMarketplaceFilters({ collections: [null] }).invalid);
+    assert.ok(view.normalizeMarketplaceFilters({ collections: Array(151).fill('Ice Cream') }).invalid);
+    const malicious = "' OR 1=1 --";
+    const invalid = await database.getMarketplaceListings({ collections: [malicious] });
+    assert.equal(invalid.count, 0);
+    const api = await request('/api/market/items?collections=' + encodeURIComponent(JSON.stringify(['Plush Pepe', 'Ice Cream'])) + '&number=17');
+    assert.equal(api.status, 200); assert.equal(api.data.count, 1); assertPublic(api.data);
+});
+
+test('collection volume is an explicit aggregate of real in-game orders, not stock or valuation', () => {
+    const catalog = view.normalizeMarketplaceCatalog([], {
+        stats: [{ base_name:'Ice Cream', count:2, min_price_ton:4.2 }],
+        volumes:[{ base_name:'IceCream', volume_ton:12.5, trade_count:3 }]
+    });
+    const ice=catalog.find(row=>row.key==='icecream');
+    assert.equal(ice.minPriceTon,4.2); assert.equal(ice.volumeTon,12.5); assert.equal(ice.tradeCount,3);
+    assert.equal(ice.volumeSource,'in-game-completed-orders');
+    const empty=catalog.find(row=>row.key==='plushpepe');assert.equal(empty.volumeTon,0);assert.equal(empty.minPriceTon,null);
+    assertPublic(catalog);
+});

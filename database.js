@@ -4235,11 +4235,26 @@ async function getLastPvpRoundNumber() {
 // =========================================================
 // Isolated collectible marketplace
 // =========================================================
+let marketplaceTradingCache = { until: 0, rows: [], pending: null };
+async function getMarketplaceTradingVolume() {
+    if (Date.now() < marketplaceTradingCache.until) return marketplaceTradingCache.rows;
+    if (marketplaceTradingCache.pending) return marketplaceTradingCache.pending;
+    marketplaceTradingCache.pending = query(`SELECT base_name, SUM(price_ton) AS volume_ton, COUNT(*) AS trade_count FROM (
+        SELECT mo.price_ton,
+            (SELECT COALESCE(json_extract(CASE WHEN json_valid(ug.verified_metadata) THEN ug.verified_metadata ELSE '{}' END, '$.baseName'), g.name)
+             FROM user_gifts ug JOIN gifts g ON g.id = ug.gift_id
+             WHERE ug.unique_collectible_id = mo.collectible_id ORDER BY ug.id DESC LIMIT 1) AS base_name
+        FROM market_orders mo WHERE mo.price_ton > 0
+    ) WHERE base_name IS NOT NULL GROUP BY base_name`).then(rows => {
+        marketplaceTradingCache.rows = rows; marketplaceTradingCache.until = Date.now() + 30000; return rows;
+    }).finally(() => { marketplaceTradingCache.pending = null; });
+    return marketplaceTradingCache.pending;
+}
 async function getMarketplaceCatalog(options = {}) {
     const {
         normalizeMarketplaceCatalog, MARKETPLACE_FROM_SQL, MARKETPLACE_ACTIVE_SQL, BASE_SQL
     } = require('./marketplaceView');
-    const [rows, stats] = await Promise.all([
+    const [rows, stats, volumes] = await Promise.all([
         query(`SELECT g.id, g.name, g.collection, g.rarity, g.value, g.total_supply,
             COALESCE((SELECT json_extract(CASE WHEN json_valid(ug.verified_metadata) THEN ug.verified_metadata ELSE '{}' END, '$.baseName')
                 FROM user_gifts ug WHERE ug.gift_id = g.id AND ug.ownership_verified = 1
@@ -4248,9 +4263,10 @@ async function getMarketplaceCatalog(options = {}) {
                 AND ug.unique_collectible_id IS NOT NULL) AS has_verified_collectible
             FROM gifts g ORDER BY g.name ASC, g.id ASC`),
         query(`SELECT ${BASE_SQL} AS base_name, COUNT(*) AS count, MIN(ml.price_ton) AS min_price_ton
-            ${MARKETPLACE_FROM_SQL} WHERE ${MARKETPLACE_ACTIVE_SQL} GROUP BY ${BASE_SQL}`)
+            ${MARKETPLACE_FROM_SQL} WHERE ${MARKETPLACE_ACTIVE_SQL} GROUP BY ${BASE_SQL}`),
+        getMarketplaceTradingVolume()
     ]);
-    return normalizeMarketplaceCatalog(rows, { officialCatalog: options.officialCatalog || [], stats });
+    return normalizeMarketplaceCatalog(rows, { officialCatalog: options.officialCatalog || [], stats, volumes });
 }
 async function getMarketplaceListings(limit = 60) {
     const { buildMarketplaceQuery, buildMarketplacePage } = require('./marketplaceView');

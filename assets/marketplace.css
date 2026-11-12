@@ -70,3 +70,39 @@
 #market-page .market-card h3 { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #market-page .market-action { width:100%; border:0; border-radius:10px; padding:9px 6px; font-weight:700; }
 #market-page .market-empty { grid-column:1/-1; text-align:center; }
+
+/* Collection selector: real collection rows, not gift-card tiles. */
+.app > .market-page { direction:inherit; }
+#market-page .market-card-body { direction:inherit; text-align:start; }
+#market-page .market-card h3,#market-page .market-attributes { direction:ltr; text-align:left; }
+#market-page #market-status { text-align:start; }
+#market-page .market-option { text-align:start; }
+#market-page .market-sheet-panel { direction:inherit; }
+html[dir="ltr"] #market-page .market-search-wrap svg { right:auto; left:12px; }
+html[dir="ltr"] #market-page input.market-search { padding-inline-start:36px; padding-inline-end:10px; }
+#market-page .market-sheet[data-kind="collection"] .market-sheet-panel { height:min(88dvh,860px); max-height:88dvh; min-height:0; padding:20px 14px max(16px,env(safe-area-inset-bottom,0px)); border-color:#ffffff16; background:#141416; }
+#market-page .market-sheet[data-kind="collection"] .market-sheet-head h3 { font-size:21px; font-weight:500; }
+#market-page .market-sheet[data-kind="collection"] .market-sheet-close { background:transparent; color:#939396; border-radius:8px; }
+#market-page .market-sheet[data-kind="collection"] input.market-search { height:46px; border-radius:9px; background:#232326; border-color:#ffffff12; font-size:14px; padding-inline:13px; }
+#market-page .market-sheet[data-kind="collection"] .market-sheet-content { flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden; margin-top:12px; }
+#market-page .market-collection-header { display:grid; grid-template-columns:minmax(0,1fr) 62px 68px; align-items:center; column-gap:8px; direction:ltr; flex:0 0 auto; min-height:42px; border-bottom:1px solid #ffffff12; padding-bottom:10px; margin-bottom:4px; }
+#market-page .market-select-all { display:flex; align-items:center; gap:9px; color:#aaa9b0; font-size:12px; cursor:pointer; }
+#market-page .market-select-all input,#market-page .market-collection-checkbox { appearance:none; -webkit-appearance:none; width:20px; height:20px; flex:0 0 20px; border:1.5px solid #9b9ba1; border-radius:5px; background:transparent; cursor:pointer; position:relative; }
+#market-page .market-select-all input:checked,#market-page .market-collection-checkbox:checked { background:#ffdb27; border-color:#ffdb27; }
+#market-page .market-select-all input:checked::after,#market-page .market-collection-checkbox:checked::after { content:'✓'; position:absolute; inset:0; display:grid; place-items:center; color:#181811; font:700 14px Arial; }
+#market-page .market-select-all input:indeterminate { border-color:#ffdb27; }
+#market-page .market-select-all input:indeterminate::after { content:''; position:absolute; top:8px; left:4px; right:4px; height:2px; background:#ffdb27; }
+#market-page .market-sort { min-height:32px; border:0; background:transparent; color:#aaa9b0; font-size:12px; padding:0; text-align:right; cursor:pointer; }
+#market-page .market-collection-list { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#3b3b40 transparent; -webkit-overflow-scrolling:touch; }
+#market-page .market-collection-row { display:grid; grid-template-columns:20px 42px minmax(0,1fr) 138px; align-items:center; gap:8px; min-height:69px; padding:8px 0; direction:ltr; color:#e5e4e8; cursor:pointer; }
+#market-page .market-collection-row:hover { background:#ffffff04; }
+#market-page .market-collection-row .market-art { width:42px; height:46px; aspect-ratio:auto; border-radius:7px; background:#232326; overflow:hidden; }
+#market-page .market-collection-row .market-art img { width:100%; height:100%; object-fit:contain; }
+#market-page .market-collection-name { font-size:13px; line-height:1.3; font-weight:400; direction:ltr; text-align:left; overflow-wrap:anywhere; }
+#market-page .market-collection-metrics { display:grid; grid-template-columns:62px 68px; gap:8px; align-items:center; direction:ltr; text-align:right; font-size:11px; }
+#market-page .market-metric-value { display:flex; justify-content:flex-end; align-items:center; gap:4px; font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#market-page .market-metric-value img { width:12px; height:12px; flex:0 0 12px; }
+#market-page .market-collection-footer { display:flex; gap:9px; flex:0 0 auto; padding-top:12px; background:#141416; direction:ltr; }
+#market-page .market-collection-reset { flex:0 0 auto; min-width:72px; min-height:46px; padding:10px; background:#232326; color:#bbb9c0; border:1px solid #ffffff12; border-radius:9px; cursor:pointer; font-size:13px; }
+#market-page .market-collection-apply { flex:1; min-height:46px; padding:10px 8px; background:#ffda16; color:#17170f; border:0; border-radius:9px; font-size:14px; font-weight:600; cursor:pointer; }
+@media(max-width:360px){ #market-page .market-collection-row { grid-template-columns:20px 36px minmax(0,1fr) 110px; gap:6px; } #market-page .market-collection-row .market-art { width:36px; height:40px; } #market-page .market-collection-name { font-size:11px; } #market-page .market-collection-metrics,#market-page .market-collection-header { grid-template-columns:50px 54px; gap:6px; } #market-page .market-collection-header { grid-template-columns:minmax(0,1fr) 50px 54px; } #market-page .market-metric-value { font-size:10px; gap:2px; } #market-page .market-collection-reset { min-width:60px; font-size:11px; } }

@@ -110,7 +110,7 @@ function projectOwnedMarketplaceCollectible(row, apiRow = {}) {
     };
 }
 
-function normalizeMarketplaceCatalog(rows = [], { officialCatalog = [], stats = [] } = {}) {
+function normalizeMarketplaceCatalog(rows = [], { officialCatalog = [], stats = [], volumes = [] } = {}) {
     const names = new Map(localNames);
     // Official titles can improve spelling without ever exposing Telegram IDs/documents.
     for (const gift of officialCatalog) {
@@ -134,7 +134,8 @@ function normalizeMarketplaceCatalog(rows = [], { officialCatalog = [], stats = 
                 giftIds: [], rarity: text(row.rarity) || 'common',
                 value: Number.isFinite(Number(row.value)) ? Number(row.value) : 0,
                 total_supply: Math.max(0, Number(row.total_supply) || 0),
-                available: false, count: 0, listingCount: 0, minPriceTon: null
+                available: false, count: 0, listingCount: 0, minPriceTon: null,
+                volumeTon: 0, tradeCount: 0, volumeSource: 'in-game-completed-orders'
             };
             catalog.set(key, entry);
         }
@@ -155,17 +156,32 @@ function normalizeMarketplaceCatalog(rows = [], { officialCatalog = [], stats = 
         entry.available = entry.count > 0;
         if (count && Number.isFinite(min) && min > 0) entry.minPriceTon = entry.minPriceTon == null ? min : Math.min(entry.minPriceTon, min);
     }
+    for (const row of volumes) {
+        const entry = catalog.get(collectionKey(canonicalBaseName(row.base_name || row.name)));
+        if (!entry) continue;
+        const volume = Number(row.volume_ton), trades = Number(row.trade_count);
+        if (Number.isFinite(volume) && volume >= 0) entry.volumeTon += volume;
+        if (Number.isSafeInteger(trades) && trades >= 0) entry.tradeCount += trades;
+    }
     return [...catalog.values()].sort((a, b) => a.name.localeCompare(b.name, 'en'));
 }
 
 function normalizeMarketplaceFilters(input = {}) {
-    const result = { collection: '', model: '', backdrop: '', symbol: '', search: '', maxPrice: null, number: null, invalid: false };
+    const result = { collection: '', collections: [], model: '', backdrop: '', symbol: '', search: '', maxPrice: null, number: null, invalid: false };
     for (const field of ['collection', 'model', 'backdrop', 'symbol', 'search']) {
         const value = input[field];
         if (value == null || value === '') continue;
         if (typeof value !== 'string' || value.length > 160) { result.invalid = true; continue; }
         result[field] = field === 'collection' ? collectionKey(canonicalBaseName(value)) : text(value);
         if (!result[field]) result.invalid = true;
+    }
+    if (input.collections != null && input.collections !== '') {
+        let values = input.collections;
+        if (typeof values === 'string' && values.length <= 24000) {
+            try { values = JSON.parse(values); } catch { values = null; }
+        }
+        if (!Array.isArray(values) || values.length > 150 || values.some(value => typeof value !== 'string' || !value.trim() || value.length > 160)) result.invalid = true;
+        else result.collections = [...new Set(values.map(value => collectionKey(canonicalBaseName(value))))];
     }
     if (input.maxPrice != null && input.maxPrice !== '') {
         const value = typeof input.maxPrice === 'number' ? String(input.maxPrice) : input.maxPrice;
@@ -215,7 +231,10 @@ function buildMarketplaceQuery(input = {}) {
     const scopeParams = [];
     const baseKeySql = collectionSql(BASE_SQL);
     const canonicalKeySql = `CASE ${baseKeySql} WHEN 'durov' THEN 'durovscap' WHEN 'khabib' THEN 'khabibspapakha' ELSE ${baseKeySql} END`;
-    if (filters.collection) { scope.push(`${canonicalKeySql} = ?`); scopeParams.push(filters.collection); }
+    if (filters.collections.length) {
+        scope.push(`${canonicalKeySql} IN (${filters.collections.map(() => '?').join(',')})`);
+        scopeParams.push(...filters.collections);
+    } else if (filters.collection) { scope.push(`${canonicalKeySql} = ?`); scopeParams.push(filters.collection); }
     const where = [...scope], params = [...scopeParams];
     if (filters.invalid) where.push('0 = 1');
     for (const field of ['model', 'backdrop', 'symbol']) {

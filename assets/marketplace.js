@@ -1,11 +1,13 @@
 'use strict';
 // Existing marketplace only: no game loops, fake listings or external purchases.
 let marketplaceState = {
-    tab: 'shop', catalog: [], listings: [], collectibles: [],
+    tab: 'shop', catalog: [], listings: [], collectibles: [], selectedCollections:[], draftCollections:[], collectionSort:{key:'name',direction:1},
     filters: { collection:'', model:'', backdrop:'', symbol:'', maxPrice:'', number:'', search:'' },
     options: { models:[], backdrops:[], symbols:[] }, nextOffset:0, hasMore:false,
     sheet:null, catalogLoadedAt:0, imageMap:{}, loading:false, error:'', request:0, controller:null, debounce:null
 };
+function marketLanguage(){ try { if(typeof currentLanguage!=='undefined'&&['ar','en','ru'].includes(currentLanguage))return currentLanguage; } catch {} return localStorage.getItem('rocketLanguage')||'ar'; }
+function mt(key,args={}) { const dict=window.MARKET_TEXT||{};return String(dict[marketLanguage()]?.[key]||dict.ar?.[key]||key).replace(/\{(\w+)\}/g,(all,k)=>args[k]??all); }
 function marketElement(tag, className, text) {
     const element=document.createElement(tag);
     if(className) element.className=className;
@@ -45,7 +47,7 @@ function marketArtwork(item) {
     let next=0;
     const advance=()=>{
         if(next<sources.length) img.src=sources[next++];
-        else { img.remove(); wrap.appendChild(marketElement('span','market-picture-missing','الصورة غير متاحة')); }
+        else { img.remove(); wrap.appendChild(marketElement('span','market-picture-missing',mt('imageMissing'))); }
     };
     img.addEventListener('error',advance); wrap.appendChild(img); advance(); return wrap;
 }
@@ -67,7 +69,7 @@ async function loadMarketCatalog() {
         ]);
         marketplaceState.imageMap=images||{};
         const data=await response.json();
-        if(!response.ok||!data.ok) throw new Error(data.error||'تعذر تحميل قائمة الهدايا');
+        if(!response.ok||!data.ok) throw new Error(data.error||mt('catalogFailed'));
         marketplaceState.catalog=data.catalog||[]; marketplaceState.catalogLoadedAt=Date.now();
     } catch(error) { if(!marketplaceState.catalog.length) throw error; }
 }
@@ -83,10 +85,12 @@ async function loadMarketplace(append=false) {
     try {
         const params=new URLSearchParams({limit:'40',offset:String(append?marketplaceState.nextOffset:0)});
         Object.entries(marketplaceState.filters).forEach(([key,value])=>{if(value!=='') params.set(key,String(value));});
+        const selected=marketplaceState.selectedCollections;
+        if(selected.length>1&&selected.length<marketplaceState.catalog.length){params.delete('collection');params.set('collections',JSON.stringify(selected));}
         const response=await fetch(marketApiUrl('/api/market/items?'+params),{headers:marketAuthHeaders(),cache:'no-store',signal:controller.signal});
         const data=await response.json();
         if(seq!==marketplaceState.request) return;
-        if(!response.ok||!data.ok) throw new Error(response.status===401?'افتح اللعبة من Telegram لعرض المقتنيات والشراء.':data.error||'تعذر تحميل المتجر');
+        if(!response.ok||!data.ok) throw new Error(response.status===401?mt('login'):data.error||mt('loadFailed'));
         marketplaceState.listings=append?marketplaceState.listings.concat(data.listings||[]):(data.listings||[]);
         marketplaceState.collectibles=data.myCollectibles||data.collectibles||[];
         if(data.catalog?.length&&!marketplaceState.catalog.length) marketplaceState.catalog=data.catalog;
@@ -96,26 +100,23 @@ async function loadMarketplace(append=false) {
         marketplaceState.nextOffset=pagination.nextOffset??marketplaceState.listings.length;
     } catch(error) {
         if(error.name==='AbortError'||seq!==marketplaceState.request) return;
-        marketplaceState.error=error.message||'تعذر تحميل المتجر';
+        marketplaceState.error=error.message||mt('loadFailed');
         if(!append) marketplaceState.listings=[];
     } finally {
         await catalogPromise;
         if(seq===marketplaceState.request) { marketplaceState.loading=false; renderMarketplace(); }
     }
 }
-function marketFilterLabel(key) {
-    return {collection:'NFT',model:'النموذج',backdrop:'الخلفية',symbol:'الرمز',maxPrice:'أقصى سعر',number:'رقم الهدية'}[key];
-}
+function marketFilterLabel(key) { return key==='collection'?'NFT':mt(key); }
 function updateMarketFilterButtons() {
     Object.entries(marketplaceState.filters).forEach(([key,value])=>{
         const button=document.getElementById('market-filter-'+key); if(!button) return;
-        button.textContent=value!=='' ? (key==='maxPrice'?'≤ '+value+' TON':key==='number'?'#'+value:value) : marketFilterLabel(key)+' ▾';
-        button.dataset.active=String(value!=='');
+        button.textContent=key==='collection'&&marketplaceState.selectedCollections.length>1?'NFT · '+marketplaceState.selectedCollections.length:value!=='' ? (key==='maxPrice'?'≤ '+value+' TON':key==='number'?'#'+value:value) : marketFilterLabel(key)+' ▾';
+        button.dataset.active=String(value!==''||key==='collection'&&marketplaceState.selectedCollections.length>0);
         button.title=marketFilterLabel(key)+(value!==''?' — '+value:'');
     });
     const summary=document.getElementById('market-selection-text');
-    if(summary) summary.textContent=marketplaceState.filters.collection
-        ? 'الهدايا المختارة: '+marketplaceState.filters.collection : 'اختر نوع الهدية من NFT، أو تصفّح جميع العروض.';
+    if(summary) summary.textContent=marketplaceState.selectedCollections.length?mt('selected',{count:marketplaceState.selectedCollections.length}):mt('hint');
 }
 function marketNumber(item) { return item.collectibleNumber??item.collectible_number??null; }
 function marketPrice(item) { const price=Number(item.priceTon??item.price_ton??item.marketValue??item.value??0); return Number.isFinite(price)?price:0; }
@@ -124,31 +125,31 @@ function renderMarketplace() {
     updateMarketFilterButtons(); grid.replaceChildren();
     const owned=marketplaceState.collectibles.filter(item=>String(item.status||item.ownershipStatus||'').toUpperCase()==='OWNED'&&!!(item.collectibleId||item.uniqueCollectibleId||item.unique_collectible_id||(!String(item.id||'').startsWith('pending:')&&item.id)));
     const mine=marketplaceState.tab==='mine'; const items=mine?owned:marketplaceState.listings;
-    status.textContent=marketplaceState.loading?'جارٍ تحميل الهدايا...':marketplaceState.error||
-        (mine?'مقتنياتك الموثّقة داخل اللعبة':(items.length?'العروض المتاحة: '+items.length+(marketplaceState.hasMore?' +':''):'لا توجد عروض مطابقة'));
+    status.textContent=marketplaceState.loading?mt('loading'):marketplaceState.error||
+        (mine?mt('owned'):(items.length?mt('available',{count:items.length})+(marketplaceState.hasMore?' +':''):mt('none')));
     if(!items.length&&!marketplaceState.loading) {
         const empty=marketElement('div','market-empty');
-        empty.appendChild(marketElement('strong','',marketplaceState.error?'تعذر تحميل العروض':mine?'لا توجد مقتنيات متاحة للبيع':'هذه الهدية غير متوفرة حاليًا'));
-        empty.appendChild(marketElement('span','',marketplaceState.error?'يمكنك إعادة المحاولة بزر التحديث.':mine?'ستظهر مقتنياتك الموثّقة هنا عندما تكون متاحة.':marketplaceState.filters.collection
-            ? 'لا توجد عروض لـ '+marketplaceState.filters.collection+' بهذه الخيارات. جرّب هدية أخرى أو امسح الفلاتر.'
-            : 'يمكنك اختيار هدية من زر NFT أو العودة لاحقًا.'));
+        empty.appendChild(marketElement('strong','',marketplaceState.error?mt('errorTitle'):mine?mt('emptyMine'):mt('unavailable')));
+        empty.appendChild(marketElement('span','',marketplaceState.error?mt('retry'):mine?mt('mineHint'):marketplaceState.selectedCollections.length
+            ? mt('noMatch')
+            : mt('noGift')));
         grid.appendChild(empty);
     }
     items.forEach(item=>{
         const card=marketElement('article','market-card'); card.appendChild(marketArtwork(item));
         const body=marketElement('div','market-card-body');
-        body.appendChild(marketElement('h3','',item.baseName||item.name||'Telegram collectible'));
-        const number=marketNumber(item); body.appendChild(marketElement('p','',number!==null?'#'+number:'مقتنى موثّق'));
+        body.appendChild(marketElement('h3','',item.baseName||item.name||mt('genericGift')));
+        const number=marketNumber(item); body.appendChild(marketElement('p','',number!==null?'#'+number:mt('verified')));
         const traits=[item.model,item.backdrop,item.symbol].map(value=>typeof value==='object'?value?.name:value).filter(Boolean);
-        body.appendChild(marketElement('p','market-attributes',traits.join(' · ')||'Telegram collectible'));
+        body.appendChild(marketElement('p','market-attributes',traits.join(' · ')||mt('genericGift')));
         const price=marketElement('div','market-price'); const ton=marketElement('img'); ton.src='/assets/ton-icon.svg';ton.alt='TON';
         price.append(ton,marketElement('span','',marketPrice(item).toLocaleString('en-US',{maximumFractionDigits:4})+' TON')); body.appendChild(price);
         const id=item.collectibleId||item.uniqueCollectibleId||item.unique_collectible_id||item.id;
         if(mine) {
-            const list=marketElement('button','market-action','عرض للبيع'); list.type='button';list.onclick=()=>marketList(id);body.appendChild(list);
-            const sell=marketElement('button','market-action secondary','بيع فوري بالتقييم');sell.type='button';sell.onclick=()=>marketInstantSell(id);body.appendChild(sell);
+            const list=marketElement('button','market-action',mt('list')); list.type='button';list.onclick=()=>marketList(id);body.appendChild(list);
+            const sell=marketElement('button','market-action secondary',mt('instant'));sell.type='button';sell.onclick=()=>marketInstantSell(id);body.appendChild(sell);
         } else {
-            const buy=marketElement('button','market-action','شراء');buy.type='button';buy.disabled=marketplaceState.loading||marketplaceState.error!=='';buy.onclick=()=>marketBuy(item.id,marketPrice(item));body.appendChild(buy);
+            const buy=marketElement('button','market-action',mt('buy'));buy.type='button';buy.disabled=marketplaceState.loading||marketplaceState.error!=='';buy.onclick=()=>marketBuy(item.id,marketPrice(item));body.appendChild(buy);
         }
         card.appendChild(body);grid.appendChild(card);
     });
@@ -156,10 +157,10 @@ function renderMarketplace() {
 }
 function setMarketFilter(key,value) {
     if(!(key in marketplaceState.filters)) return;
-    marketplaceState.filters[key]=String(value??'').trim();closeMarketSheet();loadMarketplace();
+    marketplaceState.filters[key]=String(value??'').trim();if(key==='collection')marketplaceState.selectedCollections=value?[String(value)]:[];closeMarketSheet();loadMarketplace();
 }
 function clearMarketFilters() {
-    Object.keys(marketplaceState.filters).forEach(key=>marketplaceState.filters[key]='');
+    Object.keys(marketplaceState.filters).forEach(key=>marketplaceState.filters[key]='');marketplaceState.selectedCollections=[];
     const search=document.getElementById('market-search');if(search)search.value='';
     closeMarketSheet();loadMarketplace();
 }
@@ -176,12 +177,13 @@ async function openMarketFilter(key) {
     if(!['collection','model','backdrop','symbol','maxPrice','number'].includes(key)) return;
     const sheet=document.getElementById('market-sheet'),content=document.getElementById('market-sheet-content'),search=document.getElementById('market-sheet-search');
     if(!sheet||!content||!search) return;
-    marketplaceState.sheet=key;marketplaceState.lastFilter=key;sheet.hidden=false;
-    document.getElementById('market-sheet-title').textContent=key==='collection'?'اختر الهدية — NFT':marketFilterLabel(key);
+    marketplaceState.sheet=key;marketplaceState.lastFilter=key;sheet.hidden=false;sheet.dataset.kind=key;
+    if(key==='collection')marketplaceState.draftCollections=[...marketplaceState.selectedCollections];
+    document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);
     search.value='';search.hidden=['maxPrice','number'].includes(key);
-    search.placeholder=key==='collection'?'ابحث عن الهدية':'ابحث عن '+marketFilterLabel(key);
+    search.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});
     renderMarketPicker();
-    if(key==='collection'&&!marketplaceState.catalog.length) { content.textContent='جارٍ تحميل قائمة الهدايا...';try {await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{content.textContent='تعذر تحميل صور الهدايا. أغلق النافذة وأعد المحاولة.';} }
+    if(key==='collection'&&!marketplaceState.catalog.length) { content.textContent=mt('catalogLoading');try {await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{content.textContent=mt('picturesFailed');} }
     search.focus({preventScroll:true});
 }
 function marketPickerSearch() { renderMarketPicker(); }
@@ -189,51 +191,102 @@ function renderMarketPicker() {
     const key=marketplaceState.sheet,content=document.getElementById('market-sheet-content'),search=document.getElementById('market-sheet-search');if(!key||!content) return;
     content.replaceChildren();const query=(search?.value||'').trim().toLowerCase();
     if(key==='maxPrice'||key==='number') {
-        content.appendChild(marketElement('p','market-sheet-note',key==='maxPrice'?'اعرض الهدايا التي لا تتجاوز هذا السعر بـ TON.':'ابحث عن الرقم المحدد للمقتنى، وليس رقم نوع الهدية.'));
-        const label=marketElement('label','market-field-label',key==='maxPrice'?'الحد الأقصى للسعر (TON)':'رقم الهدية');label.htmlFor='market-value-input';
-        const input=marketElement('input','market-sheet-input');input.id='market-value-input';input.type='number';input.min=key==='number'?'1':'0';input.step=key==='number'?'1':'any';input.inputMode=key==='number'?'numeric':'decimal';input.value=marketplaceState.filters[key];input.placeholder=key==='number'?'مثال: 312628':'مثال: 5';
-        const apply=marketElement('button','market-sheet-apply','تطبيق');apply.type='button';apply.onclick=()=>{
+        content.appendChild(marketElement('p','market-sheet-note',key==='maxPrice'?mt('priceNote'):mt('numberNote')));
+        const label=marketElement('label','market-field-label',key==='maxPrice'?mt('maxPriceLabel'):mt('number'));label.htmlFor='market-value-input';
+        const input=marketElement('input','market-sheet-input');input.id='market-value-input';input.type='number';input.min=key==='number'?'1':'0';input.step=key==='number'?'1':'any';input.inputMode=key==='number'?'numeric':'decimal';input.value=marketplaceState.filters[key];input.placeholder=key==='number'?mt('exampleNumber'):mt('examplePrice');
+        const apply=marketElement('button','market-sheet-apply',mt('apply'));apply.type='button';apply.onclick=()=>{
             const val=input.value.trim();const n=Number(val);
-            if(val&&(!Number.isFinite(n)||n<(key==='number'?1:0)||(key==='number'&&!Number.isSafeInteger(n)))) { input.setCustomValidity('أدخل قيمة صحيحة');input.reportValidity();return; }
+            if(val&&(!Number.isFinite(n)||n<(key==='number'?1:0)||(key==='number'&&!Number.isSafeInteger(n)))) { input.setCustomValidity(mt('validValue'));input.reportValidity();return; }
             setMarketFilter(key,val);
         };
-        const reset=marketElement('button','market-option','إلغاء هذا الفلتر');reset.type='button';reset.onclick=()=>setMarketFilter(key,'');content.append(label,input,apply,reset);return;
+        const reset=marketElement('button','market-option',mt('removeFilter'));reset.type='button';reset.onclick=()=>setMarketFilter(key,'');content.append(label,input,apply,reset);return;
     }
-    if(key==='collection') {
-        const grid=marketElement('div','market-picker-grid');const all=marketElement('button','market-picker market-picker-all','كل الهدايا');all.type='button';all.onclick=()=>setMarketFilter('collection','');grid.appendChild(all);
-        const items=marketplaceState.catalog.filter(item=>String(item.baseName||item.name||'').toLowerCase().includes(query));
-        items.forEach(item=>{const button=marketElement('button','market-picker');button.type='button';const name=item.baseName||item.name;button.append(marketArtwork(item),marketElement('span','',name));button.onclick=()=>{
-            marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';
-            setMarketFilter('collection',name);
-        };grid.appendChild(button);});
-        if(!items.length) grid.appendChild(marketElement('p','market-sheet-note','لم يتم العثور على هدية بهذا الاسم.'));content.appendChild(grid);
-        return;
-    }
+    if(key==='collection') { renderMarketCollections(content,query); return; }
     const optionKey={model:'models',backdrop:'backdrops',symbol:'symbols'}[key];
     const options=(marketplaceState.options[optionKey]||[]).map(value=>typeof value==='object'?value.name:value).filter(Boolean);
-    content.appendChild(marketElement('p','market-sheet-note','الخيارات أدناه مأخوذة من العروض الحقيقية. يمكنك أيضًا البحث عن اسم محدد.'));
-    const all=marketElement('button','market-option','الكل');all.type='button';all.onclick=()=>setMarketFilter(key,'');content.appendChild(all);
+    content.appendChild(marketElement('p','market-sheet-note',mt('traitsNote')));
+    const all=marketElement('button','market-option',mt('allOptions'));all.type='button';all.onclick=()=>setMarketFilter(key,'');content.appendChild(all);
     options.filter(value=>String(value).toLowerCase().includes(query)).forEach(value=>{const button=marketElement('button','market-option',value);button.type='button';button.onclick=()=>setMarketFilter(key,value);content.appendChild(button);});
-    if(query) {const exact=marketElement('button','market-sheet-apply','البحث عن: '+search.value.trim());exact.type='button';exact.onclick=()=>setMarketFilter(key,search.value);content.appendChild(exact);}
-    if(!options.length) content.appendChild(marketElement('p','market-sheet-note','لا توجد خصائص متاحة في العروض الحالية. اكتب اسم الخيار للبحث عنه.'));
+    if(query) {const exact=marketElement('button','market-sheet-apply',mt('searchExact',{name:search.value.trim()}));exact.type='button';exact.onclick=()=>setMarketFilter(key,search.value);content.appendChild(exact);}
+    if(!options.length) content.appendChild(marketElement('p','market-sheet-note',mt('noTraits')));
 }
 async function marketList(id) {
-    const price=prompt('أدخل سعر العرض بـ TON:');if(!price||!Number.isFinite(Number(price))||Number(price)<=0)return;
-    await marketAction('/api/market/list',{collectibleId:id,priceTon:Number(price)},'تم عرض المقتنى للبيع');
+    const price=prompt(mt('listPrice'));if(!price||!Number.isFinite(Number(price))||Number(price)<=0)return;
+    await marketAction('/api/market/list',{collectibleId:id,priceTon:Number(price)},mt('listed'));
 }
 async function marketBuy(id,price) {
-    if(!confirm('تأكيد شراء المقتنى مقابل '+price+' TON؟'))return;
-    await marketAction('/api/market/buy',{listingId:id},'تم الشراء وإضافة المقتنى إلى حقيبتك');
+    if(!confirm(mt('buyConfirm',{amount:price})))return;
+    await marketAction('/api/market/buy',{listingId:id},mt('bought'));
 }
 async function marketInstantSell(id) {
-    if(!confirm('سيتم بيع الهدية وإضافة قيمتها حسب تقييم اللعبة إلى رصيدك. متابعة؟'))return;
-    await marketAction('/api/market/instant-sell',{collectibleId:id},'تم البيع الفوري وإضافة TON إلى رصيدك');
+    if(!confirm(mt('instantConfirm')))return;
+    await marketAction('/api/market/instant-sell',{collectibleId:id},mt('sold'));
 }
 async function marketAction(path,body,success) {
     try {
         const response=await fetch(marketApiUrl(path),{method:'POST',headers:marketAuthHeaders(),body:JSON.stringify(body)}),data=await response.json();
-        if(!response.ok||!data.ok)throw new Error(data.error||'فشلت العملية');
+        if(!response.ok||!data.ok)throw new Error(data.error||mt('failed'));
         showToast(success);await loadMarketplace();if(typeof fetchBalance==='function')await fetchBalance();
-    } catch(error) {showToast(error.message||'فشلت العملية');}
+    } catch(error) {showToast(error.message||mt('failed'));}
 }
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&marketplaceState.sheet){event.preventDefault();closeMarketSheet();}});
+
+function marketMetric(value,kind){
+    if(value==null||!Number.isFinite(Number(value)))return '—';
+    const result=marketElement('span','market-metric-value');
+    const ton=marketElement('img');ton.src='/assets/ton-icon.svg';ton.alt='TON';
+    result.append(ton,marketElement('span','',Number(value).toLocaleString('en-US',{maximumFractionDigits:2})));
+    return result;
+}
+function renderMarketCollections(content,query){
+    const selected=new Set(marketplaceState.draftCollections);
+    const names=marketplaceState.catalog.map(item=>item.baseName||item.name);
+    const controls=marketElement('div','market-collection-header');
+    const allLabel=marketElement('label','market-select-all');const all=marketElement('input');all.type='checkbox';all.id='market-select-all';all.checked=names.length>0&&names.every(name=>selected.has(name));all.indeterminate=selected.size>0&&!all.checked;
+    all.onchange=()=>{marketplaceState.draftCollections=all.checked?[...names]:[];renderMarketPicker();};
+    allLabel.append(all,marketElement('span','',mt('all')));controls.appendChild(allLabel);
+    for(const key of ['floor','volume']){
+        const sort=marketElement('button','market-sort',mt(key)+' ↕');sort.type='button';sort.dataset.sort=key;
+        sort.title=mt(key==='floor'?'sortFloor':'sortVolume');sort.onclick=()=>{const state=marketplaceState.collectionSort;marketplaceState.collectionSort={key,direction:state.key===key?-state.direction:1};renderMarketPicker();};controls.appendChild(sort);
+    }
+    content.appendChild(controls);
+    const list=marketElement('div','market-collection-list');
+    const items=marketplaceState.catalog.filter(item=>String(item.baseName||item.name||'').toLowerCase().includes(query));
+    const sort=marketplaceState.collectionSort;
+    items.sort((a,b)=>{
+        if(sort.key==='name')return String(a.baseName||a.name).localeCompare(String(b.baseName||b.name),'en');
+        const field=sort.key==='floor'?'minPriceTon':'volumeTon';const av=a[field],bv=b[field];
+        if(av==null&&bv!=null)return 1;if(bv==null&&av!=null)return -1;
+        return ((Number(av)||0)-(Number(bv)||0))*sort.direction;
+    });
+    items.forEach(item=>{
+        const name=item.baseName||item.name;const row=marketElement('label','market-collection-row');row.dataset.collection=name;
+        const checkbox=marketElement('input','market-collection-checkbox');checkbox.type='checkbox';checkbox.checked=selected.has(name);checkbox.setAttribute('aria-label',mt('selectGift',{name}));
+        checkbox.onchange=()=>{const values=new Set(marketplaceState.draftCollections);if(checkbox.checked)values.add(name);else values.delete(name);marketplaceState.draftCollections=[...values];const all=document.getElementById('market-select-all');all.checked=names.every(n=>values.has(n));all.indeterminate=values.size>0&&!all.checked;row.dataset.selected=String(checkbox.checked);};
+        row.dataset.selected=String(checkbox.checked);row.append(checkbox,marketArtwork(item),marketElement('span','market-collection-name',name));
+        const metrics=marketElement('div','market-collection-metrics');
+        const floor=marketElement('div','market-collection-floor');floor.title=mt('floor')+' · '+mt('shop');const floorMetric=marketMetric(item.minPriceTon,'floor');floor.append(floorMetric);
+        const volume=marketElement('div','market-collection-volume');volume.title=mt('volume')+' · '+mt('shop');const volumeMetric=marketMetric(item.volumeTon,'volume');volume.append(volumeMetric);
+        metrics.append(floor,volume);row.appendChild(metrics);list.appendChild(row);
+    });
+    if(!items.length)list.appendChild(marketElement('p','market-sheet-note',mt('notFound')));
+    content.appendChild(list);
+    const footer=marketElement('div','market-collection-footer');const reset=marketElement('button','market-collection-reset',mt('reset'));reset.type='button';reset.onclick=()=>{marketplaceState.draftCollections=[];marketplaceState.collectionSort={key:'name',direction:1};document.getElementById('market-sheet-search').value='';renderMarketPicker();};
+    const apply=marketElement('button','market-collection-apply',mt('show'));apply.type='button';apply.onclick=()=>{
+        const names=[...marketplaceState.draftCollections];marketplaceState.selectedCollections=names;
+        marketplaceState.filters.collection=names.length===1?names[0]:'';
+        marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';
+        closeMarketSheet();loadMarketplace();
+    };footer.append(reset,apply);content.appendChild(footer);
+}
+function updateMarketLanguage(){
+    const pairs={'.market-hero h2':'title','.market-hero p':'subtitle','#market-tab-shop':'shop','#market-tab-mine':'mine','#market-filter-clear':'clear','#market-more':'more','#nav-market-text':'store'};
+    Object.entries(pairs).forEach(([selector,key])=>{const element=document.querySelector(selector);if(element)element.textContent=mt(key);});
+    const search=document.getElementById('market-search');if(search){search.placeholder=mt('search');search.setAttribute('aria-label',mt('search'));}
+    const refresh=document.querySelector('#market-page .market-refresh');if(refresh)refresh.setAttribute('aria-label',mt('refresh'));
+    const close=document.querySelector('#market-page .market-sheet-close');if(close)close.setAttribute('aria-label',mt('close'));
+    const sheetSearch=document.getElementById('market-sheet-search');if(sheetSearch)sheetSearch.setAttribute('aria-label',mt('searchCollection'));
+    renderMarketplace();
+    if(marketplaceState.sheet){const key=marketplaceState.sheet;document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);sheetSearch.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});renderMarketPicker();}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateMarketLanguage,{once:true});else updateMarketLanguage();
