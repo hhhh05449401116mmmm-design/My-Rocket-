@@ -10,7 +10,7 @@ const zlib = require('zlib');
 const https = require('https');
 const http = require('http');
 const path = require('path');
-
+const { createMarketplaceCatalogCache, projectOwnedMarketplaceCollectible } = require('./marketplaceView');
 // Collectible-only renderer. Lazy loading keeps renderer failures isolated from the game loop.
 let sharpRenderer = undefined;
 function getSharpRenderer() {
@@ -3968,12 +3968,35 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
 });
 
 // ===== Isolated collectible marketplace =====
+// This wrapper shares the existing official catalog loader, bounds HTTP wait time,
+// and negative-caches failures. Item/filter requests never initiate a Telegram refresh.
+const marketplaceOfficialCatalog = createMarketplaceCatalogCache(getTelegramStarGiftCatalog);
 function marketplaceGuard(req, res, next) {
     if (!MARKETPLACE_ENABLED) return res.status(503).json({ ok: false, code: 'MARKETPLACE_DISABLED', error: 'Marketplace is temporarily unavailable' });
     next();
 }
+app.get('/api/market/catalog', marketplaceGuard, async (req, res) => {
+    try {
+        const officialCatalog = await marketplaceOfficialCatalog.get();
+        const catalog = await getMarketplaceCatalog({ officialCatalog });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ ok: true, catalog, available: catalog.some(row => row.available), count: catalog.length });
+    } catch (error) { res.status(500).json({ ok: false, error: error.message }); }
+});
 app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) => {
-    try { res.json({ ok: true, catalog: await getMarketplaceCatalog(), listings: await getMarketplaceListings(req.query.limit) }); }
+    try {
+        const [catalog, page, ownedRows] = await Promise.all([
+            getMarketplaceCatalog({ officialCatalog: marketplaceOfficialCatalog.peek() }),
+            getMarketplaceListings({ ...req.query, viewerUserId: req.user.id }),
+            getUserCollectibles(req.user.id, 'OWNED')
+        ]);
+        const myCollectibles = ownedRows
+            .filter(row => row.ownership_verified === 1 && row.unique_collectible_id && row.ownership_status === 'OWNED')
+            .map(row => projectOwnedMarketplaceCollectible(row, buildCollectibleApiRow(row, req)))
+            .filter(Boolean);
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ ok: true, catalog, ...page, myCollectibles });
+    }
     catch (error) { res.status(500).json({ ok: false, error: error.message }); }
 });
 app.post('/api/market/list', authenticate, marketplaceGuard, async (req, res) => {

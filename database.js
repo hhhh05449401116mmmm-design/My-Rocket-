@@ -4235,15 +4235,37 @@ async function getLastPvpRoundNumber() {
 // =========================================================
 // Isolated collectible marketplace
 // =========================================================
-async function getMarketplaceCatalog() {
-    return await query(`SELECT id, telegram_gift_id, name, image_url, collection, rarity, value, total_supply FROM gifts ORDER BY value DESC, name ASC`);
+async function getMarketplaceCatalog(options = {}) {
+    const {
+        normalizeMarketplaceCatalog, MARKETPLACE_FROM_SQL, MARKETPLACE_ACTIVE_SQL, BASE_SQL
+    } = require('./marketplaceView');
+    const [rows, stats] = await Promise.all([
+        query(`SELECT g.id, g.name, g.collection, g.rarity, g.value, g.total_supply,
+            COALESCE((SELECT json_extract(CASE WHEN json_valid(ug.verified_metadata) THEN ug.verified_metadata ELSE '{}' END, '$.baseName')
+                FROM user_gifts ug WHERE ug.gift_id = g.id AND ug.ownership_verified = 1
+                AND ug.unique_collectible_id IS NOT NULL ORDER BY ug.id DESC LIMIT 1), g.name) AS base_name,
+            EXISTS(SELECT 1 FROM user_gifts ug WHERE ug.gift_id = g.id AND ug.ownership_verified = 1
+                AND ug.unique_collectible_id IS NOT NULL) AS has_verified_collectible
+            FROM gifts g ORDER BY g.name ASC, g.id ASC`),
+        query(`SELECT ${BASE_SQL} AS base_name, COUNT(*) AS count, MIN(ml.price_ton) AS min_price_ton
+            ${MARKETPLACE_FROM_SQL} WHERE ${MARKETPLACE_ACTIVE_SQL} GROUP BY ${BASE_SQL}`)
+    ]);
+    return normalizeMarketplaceCatalog(rows, { officialCatalog: options.officialCatalog || [], stats });
 }
 async function getMarketplaceListings(limit = 60) {
-    return await query(`SELECT ml.id, ml.collectible_id, ml.seller_user_id, ml.price_ton, ml.created_at,
-        g.name, g.image_url, g.collection, g.rarity, COALESCE(ug.market_value, g.value) AS market_value
-        FROM market_listings ml JOIN user_gifts ug ON ug.unique_collectible_id = ml.collectible_id
-        JOIN gifts g ON g.id = ug.gift_id WHERE ml.status = 'ACTIVE' AND ug.status = 'OWNED' AND ug.ownership_verified = 1
-        ORDER BY ml.created_at DESC LIMIT ?`, [Math.min(Math.max(Number(limit) || 60, 1), 100)]);
+    const { buildMarketplaceQuery, buildMarketplacePage } = require('./marketplaceView');
+    // Numeric/string legacy callers still receive an array; the API requests the richer page shape.
+    const paged = limit !== null && typeof limit === 'object';
+    const plan = buildMarketplaceQuery(paged ? limit : { limit });
+    const [rows, count, traits, numbers, prices] = await Promise.all([
+        query(plan.listingsSql, plan.listingParams),
+        get(plan.countSql, plan.params),
+        query(plan.traitsSql, plan.scopeParams),
+        query(plan.numbersSql, plan.scopeParams),
+        get(plan.priceRangeSql, plan.scopeParams)
+    ]);
+    const page = buildMarketplacePage(plan, rows, count?.count, traits, numbers, prices);
+    return paged ? page : page.listings;
 }
 async function createMarketplaceListing(userId, collectibleId, priceTon) {
     const price = Number(priceTon);
