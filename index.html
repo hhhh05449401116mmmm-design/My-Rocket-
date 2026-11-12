@@ -10448,9 +10448,11 @@ async function openLootBox(box) {
             if (name) name.textContent = reward.name || 'Telegram collectible';
             if (value) value.textContent = Number(reward.value || 0).toFixed(2);
             if (own.status === 'ACTIVE' && gamePhase === 'FLIGHT') {
-                // This is intentionally per-session/per-player: another
-                // player's eligible reward is only rendered in their row.
+                // Keep the rocket artwork synced to the live multiplier preview.
+                // The cashout reward modal must never replace the in-flight gift.
                 showCentralRocketReward(reward);
+            } else {
+                hideCentralRocketReward();
             }
             if (own.status === 'CASHED_OUT' && lastRocketRewardShownRound !== currentRoundId) {
                 lastRocketRewardShownRound = currentRoundId;
@@ -14193,7 +14195,7 @@ async function submitPvpBet(){
             const amountRow = document.getElementById('rocket-reward-amount-row');
             const continueButton = document.getElementById('rocket-reward-continue');
             if (rocketGift) {
-                showCentralRocketReward(rocketGift);
+                // Cashout reward belongs only in this modal, not in the live rocket artwork.
                 if (giftIcon) giftIcon.innerHTML = '<img src="' + escapeHtmlAttribute(rocketGift.imageUrl || '/assets/gift-icon.svg') + '" alt="Telegram collectible" onerror="this.onerror=null;this.src=\'/assets/gift-icon.svg\'">';
                 if (giftName) giftName.textContent = `${rocketGift.name || 'Telegram collectible'} · ${Number(rocketGift.value || 0).toFixed(2)} TON`;
                 if (subtitle) subtitle.textContent = currentLanguage === 'ar' ? 'اختر: احتفظ أو راهن أو بِع الهدية' : 'Choose Keep, Bet, or Sell';
