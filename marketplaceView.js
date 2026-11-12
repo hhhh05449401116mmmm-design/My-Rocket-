@@ -167,7 +167,7 @@ function normalizeMarketplaceCatalog(rows = [], { officialCatalog = [], stats = 
 }
 
 function normalizeMarketplaceFilters(input = {}) {
-    const result = { collection: '', collections: [], model: '', backdrop: '', symbol: '', search: '', maxPrice: null, number: null, invalid: false };
+    const result = { collection: '', collections: [], model: '', backdrop: '', backdrops:[], symbol: '', search: '', maxPrice: null, number: null, invalid: false };
     for (const field of ['collection', 'model', 'backdrop', 'symbol', 'search']) {
         const value = input[field];
         if (value == null || value === '') continue;
@@ -182,6 +182,12 @@ function normalizeMarketplaceFilters(input = {}) {
         }
         if (!Array.isArray(values) || values.length > 150 || values.some(value => typeof value !== 'string' || !value.trim() || value.length > 160)) result.invalid = true;
         else result.collections = [...new Set(values.map(value => collectionKey(canonicalBaseName(value))))];
+    }
+    if(input.backdrops!=null&&input.backdrops!==''){
+        let values=input.backdrops;
+        if(typeof values==='string'&&values.length<=24000){try{values=JSON.parse(values);}catch{values=null;}}
+        if(!Array.isArray(values)||values.length>150||values.some(value=>typeof value!=='string'||!value.trim()||value.length>160))result.invalid=true;
+        else result.backdrops=[...new Set(values.map(value=>text(value).toLowerCase()))];
     }
     if (input.maxPrice != null && input.maxPrice !== '') {
         const value = typeof input.maxPrice === 'number' ? String(input.maxPrice) : input.maxPrice;
@@ -238,6 +244,7 @@ function buildMarketplaceQuery(input = {}) {
     const where = [...scope], params = [...scopeParams];
     if (filters.invalid) where.push('0 = 1');
     for (const field of ['model', 'backdrop', 'symbol']) {
+        if(field==='backdrop'&&filters.backdrops.length){where.push(`lower(trim(${traitSql(field)})) IN (${filters.backdrops.map(()=>'?').join(',')})`);params.push(...filters.backdrops);continue;}
         if (filters[field]) { where.push(`lower(trim(${traitSql(field)})) = lower(?)`); params.push(filters[field]); }
     }
     if (filters.maxPrice != null) { where.push('ml.price_ton <= ?'); params.push(filters.maxPrice); }

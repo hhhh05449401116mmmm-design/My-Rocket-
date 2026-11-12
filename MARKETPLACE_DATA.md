@@ -18,10 +18,19 @@ Model-specific images use separately encoded source collection and model names o
 
 ## Availability and filtering
 
-`GET /api/market/traits?collection=...&kind=model` left-merges model metadata with actual eligible ACTIVE, verified, owned, unburned local listing counts. Zero means no matching offer in this game's marketplace. Counts are not total Telegram issued supply and are not manufactured from rarity percentages. Unknown global issued counts remain null. Backdrop/symbol options in this release remain derived from local offers and are explicitly identified as local-only when a complete external catalog is unavailable.
+`GET /api/market/traits?collection=...&kind=model` left-merges model metadata with actual eligible ACTIVE, verified, owned, unburned local listing counts. Zero means no matching offer in this game's marketplace. Counts are not total Telegram issued supply and are not manufactured from rarity percentages. Unknown global issued counts remain null. Symbol options remain derived from local offers. Backdrops use the public registry and collection-specific metadata described below.
 
 No selected NFT means the shop remains unfiltered across collections. The model picker presents all collections first; choosing a collection shows its models. Selecting a model also selects that exact collection, and zero-stock selections produce the existing unavailable-gift message. Arabic, English and Russian labels are supported without translating collection/model/player names.
 
 ## Verification
 
 67 targeted marketplace, pricing, metadata and collectibles tests passed. Mobile tests passed in Arabic, English and Russian at 320/390/520px, including modal hit-testing above the account header/navigation, price change colors, all-gift defaults, exact model filtering and zero/positive local counts. The previous 5 unrelated PvP assertion failures were reproduced in the unmodified baseline; no new game regression was observed. Existing game tests were not changed to suppress those failures.
+
+
+## Backdrops and Play Hub update
+
+The backdrop picker uses 80 canonical colors from https://cdn.changes.tg/gifts/backdrops.json. This global file provides no universal rarity. A selected gift's percentages come from its own https://cdn.changes.tg/gifts/backdrops/{collection}/backdrops.json metadata, and `rarityPermille / 10` is displayed. Missing rarity stays explicitly unknown. Black and Onyx Black are different traits, never aliases. Multiple backdrop selections are exact parameterized SQL filters and are applied before pagination.
+
+The normal application bootstrap now selects the marketplace after the existing authentication/startup flow. The existing Home navigation button is labeled Play Hub and still opens the original game dashboard; all game screen and game-button markup was compared against the previous release and is unchanged. The dark/yellow market shell applies only while the store is active. Leaving it restores the original game styling.
+
+Backdrops support search, select all, reset and Show Results in Arabic, English and Russian. Their process-wide metadata cache is in-flight deduplicated, uses a bundled genuine global registry, and limits gift-specific source downloads to two concurrent requests with five-second budgets. No rare percentages are copied from a reference screenshot.

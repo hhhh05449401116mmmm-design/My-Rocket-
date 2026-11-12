@@ -274,3 +274,18 @@ test('model API merges full external metadata with actual eligible local offer c
         assert.equal((await request('/api/market/traits?collection=NotARealGift',false)).status,404);
     }finally{market.getSnapshot=originals.snapshot;market.enrichCatalog=originals.enrich;model.getMetadataCatalog=originals.metadata;model.getModels=originals.models;}
 });
+
+
+test('multiple backdrop filters are exact and parameterized, including Black versus Onyx Black',async()=>{
+    const plan=view.buildMarketplaceQuery({backdrops:JSON.stringify(['Black','Onyx Black']),model:'Golden'});
+    assert.deepEqual(plan.filters.backdrops,['black','onyx black']);assert.ok(plan.listingsSql.includes(' IN (?,?)'));assert.ok(!plan.listingsSql.includes('Onyx Black'));
+    assert.ok(view.normalizeMarketplaceFilters({backdrops:'[bad]'}).invalid);
+    assert.ok(view.normalizeMarketplaceFilters({backdrops:[null]}).invalid);
+    const page=await database.getMarketplaceListings({collection:'Plush Pepe',backdrops:['Blue','Black']});assert.equal(page.count,126);
+    const onyx=await database.getMarketplaceListings({backdrops:['Onyx Black',"' OR 1=1 --"]});assert.equal(onyx.count,1);assert.equal(onyx.listings[0].collectibleId,'PlushPepe-117');
+});
+test('global backdrop endpoint exposes all true swatches without inventing universal rarity',async()=>{
+    const response=await request('/api/market/traits?kind=backdrop',false);assert.equal(response.status,200);assert.equal(response.data.complete,true);assert.equal(response.data.rarityScope,'global');
+    assert.equal(response.data.traits.length,80);assert.ok(response.data.traits.every(row=>row.rarityPermille===null));
+    assert.ok(response.data.traits.some(row=>row.name==='Black'));assert.ok(response.data.traits.some(row=>row.name==='Onyx Black'));assertPublic(response.data);
+});

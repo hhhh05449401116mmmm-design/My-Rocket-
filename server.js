@@ -13,6 +13,7 @@ const path = require('path');
 const { createMarketplaceCatalogCache, projectOwnedMarketplaceCollectible, collectionKey } = require('./marketplaceView');
 const { marketplaceMarketData } = require('./marketplaceMarketData');
 const { marketplaceModelCatalog } = require('./marketplaceModelCatalog');
+const { marketplaceBackdropCatalog } = require('./marketplaceBackdropCatalog');
 // Collectible-only renderer. Lazy loading keeps renderer failures isolated from the game loop.
 let sharpRenderer = undefined;
 function getSharpRenderer() {
@@ -4010,19 +4011,26 @@ app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) =>
 });
 app.get('/api/market/traits', marketplaceGuard, async (req,res)=>{
     const name=req.query.collection,kind=req.query.kind||'model';
-    if(typeof name!=='string'||!name.trim()||name.length>160||!['model','backdrop','symbol'].includes(kind))return res.status(400).json({ok:false,code:'INVALID_MARKET_TRAIT_FILTER'});
+    const hasName=name!=null&&name!=='';
+    if(!['model','backdrop','symbol'].includes(kind)||hasName&&(typeof name!=='string'||!name.trim()||name.length>160)||!hasName&&kind!=='backdrop')return res.status(400).json({ok:false,code:'INVALID_MARKET_TRAIT_FILTER'});
     try{
         const display=await loadMarketplaceDisplayCatalog();
-        const collection=display.catalog.find(row=>row.key===collectionKey(name));
-        if(!collection)return res.status(404).json({ok:false,code:'MARKET_COLLECTION_NOT_FOUND'});
-        const [page,models]=await Promise.all([getMarketplaceListings({collection:collection.baseName,limit:1}),kind==='model'?marketplaceModelCatalog.getModels(collection.baseName,{officialCatalog:display.bindings}):Promise.resolve(null)]);
+        const collection=hasName?display.catalog.find(row=>row.key===collectionKey(name)):null;
+        if(hasName&&!collection)return res.status(404).json({ok:false,code:'MARKET_COLLECTION_NOT_FOUND'});
+        const [page,models,backdrops]=await Promise.all([
+            getMarketplaceListings({...(collection?{collection:collection.baseName}:{}),limit:1}),
+            kind==='model'?marketplaceModelCatalog.getModels(collection.baseName,{officialCatalog:display.bindings}):Promise.resolve(null),
+            kind==='backdrop'?marketplaceBackdropCatalog.getBackdrops({collection:collection?.baseName||null,officialCatalog:display.bindings}):Promise.resolve(null)
+        ]);
         const counts=page.filters[{model:'modelCounts',backdrop:'backdropCounts',symbol:'symbolCounts'}[kind]]||[];
         const countMap=new Map(counts.map(row=>[row.name.toLowerCase(),row.count]));
         const traits=new Map();
         for(const row of models?.models||[])traits.set(row.name.toLowerCase(),{name:row.name,imageUrl:row.imageUrl,totalIssued:null,count:countMap.get(row.name.toLowerCase())||0});
-        for(const row of counts){if(!traits.has(row.name.toLowerCase()))traits.set(row.name.toLowerCase(),{name:row.name,imageUrl:null,totalIssued:null,count:row.count});}
+        for(const row of backdrops?.backdrops||[])traits.set(row.name.toLowerCase(),{...row,count:countMap.get(row.name.toLowerCase())||0,totalIssued:null});
+        for(const row of counts){if(!traits.has(row.name.toLowerCase()))traits.set(row.name.toLowerCase(),{name:row.name,imageUrl:null,totalIssued:null,count:row.count,rarityPermille:null});}
+        const metadata=models||backdrops;
         res.setHeader('Cache-Control','no-store');
-        res.json({ok:true,collection:collection.baseName,kind,traits:[...traits.values()].sort((a,b)=>a.name.localeCompare(b.name,'en')),complete:kind==='model'?!!models?.complete:false,source:models?.source||'in-game-active-listings',status:models?.status||'local-only',sourceUpdatedAt:models?.sourceUpdatedAt||null,availabilitySource:'in-game-active-listings'});
+        res.json({ok:true,collection:collection?.baseName||null,kind,traits:[...traits.values()].sort((a,b)=>a.name.localeCompare(b.name,'en')),complete:!!metadata?.complete,source:metadata?.source||'in-game-active-listings',status:metadata?.status||'local-only',sourceUpdatedAt:metadata?.sourceUpdatedAt||null,rarityScope:backdrops?.scope||null,rarityStatus:backdrops?.rarityStatus||null,availabilitySource:'in-game-active-listings'});
     }catch(error){res.status(503).json({ok:false,code:'MARKET_TRAITS_UNAVAILABLE'});}
 });
 app.post('/api/market/list', authenticate, marketplaceGuard, async (req, res) => {

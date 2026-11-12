@@ -1,7 +1,7 @@
 'use strict';
 // Existing marketplace only: no game loops, fake listings or external purchases.
 let marketplaceState = {
-    tab: 'shop', catalog: [], listings: [], collectibles: [], selectedCollections:[], draftCollections:[], collectionSort:{key:'name',direction:1},
+    tab: 'shop', catalog: [], listings: [], collectibles: [], selectedCollections:[], draftCollections:[], selectedBackdrops:[], draftBackdrops:[], backdropData:null, backdropLoading:false, backdropRequest:0, backdropError:'', collectionSort:{key:'name',direction:1},
     filters: { collection:'', model:'', backdrop:'', symbol:'', maxPrice:'', number:'', search:'' },
     options: { models:[], backdrops:[], symbols:[] }, nextOffset:0, hasMore:false,
     sheet:null, traitCollection:'', traitView:'collections', traitData:null, traitLoading:false, traitError:'', traitRequest:0, traitCache:new Map(), marketInfo:{}, catalogLoadedAt:0, imageMap:{}, loading:false, error:'', request:0, controller:null, debounce:null
@@ -62,16 +62,17 @@ function selectMarketTab(tab) {
 }
 async function loadMarketCatalog(force=false) {
     if(!force&&marketplaceState.catalog.length&&Date.now()-marketplaceState.catalogLoadedAt<60*1000) return;
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
     try {
         const [response,images]=await Promise.all([
-            fetch(marketApiUrl('/api/market/catalog'),{cache:'no-store'}),
-            fetch('/assets/market-gifts/catalog-images.json?v=20261112').then(r=>r.ok?r.json():{}).catch(()=>({}))
+            fetch(marketApiUrl('/api/market/catalog'),{cache:'no-store',signal:controller.signal}),
+            fetch('/assets/market-gifts/catalog-images.json?v=20261112',{signal:controller.signal}).then(r=>r.ok?r.json():{}).catch(()=>({}))
         ]);
         marketplaceState.imageMap=images||{};
         const data=await response.json();
         if(!response.ok||!data.ok) throw new Error(data.error||mt('catalogFailed'));
         marketplaceState.catalog=data.catalog||[]; marketplaceState.marketInfo=data.market||{};marketplaceState.catalogLoadedAt=Date.now();
-    } catch(error) { if(!marketplaceState.catalog.length) throw error; }
+    } catch(error) { if(!marketplaceState.catalog.length) throw error; } finally{clearTimeout(timer);}
 }
 async function loadMarketplace(append=false) {
     const seq=++marketplaceState.request;
@@ -87,6 +88,7 @@ async function loadMarketplace(append=false) {
         Object.entries(marketplaceState.filters).forEach(([key,value])=>{if(value!=='') params.set(key,String(value));});
         const selected=marketplaceState.selectedCollections;
         if(selected.length>1&&selected.length<marketplaceState.catalog.length){params.delete('collection');params.set('collections',JSON.stringify(selected));}
+        if(marketplaceState.selectedBackdrops.length>1){params.delete('backdrop');params.set('backdrops',JSON.stringify(marketplaceState.selectedBackdrops));}
         const response=await fetch(marketApiUrl('/api/market/items?'+params),{headers:marketAuthHeaders(),cache:'no-store',signal:controller.signal});
         const data=await response.json();
         if(seq!==marketplaceState.request) return;
@@ -113,6 +115,7 @@ function updateMarketFilterButtons() {
         const button=document.getElementById('market-filter-'+key); if(!button) return;
         button.textContent=key==='collection'&&marketplaceState.selectedCollections.length>1?'NFT · '+marketplaceState.selectedCollections.length:value!=='' ? (key==='maxPrice'?'≤ '+value+' TON':key==='number'?'#'+value:value) : marketFilterLabel(key)+' ▾';
         button.dataset.active=String(value!==''||key==='collection'&&marketplaceState.selectedCollections.length>0);
+        if(key==='backdrop'&&marketplaceState.selectedBackdrops.length>1){button.textContent=mt('backdrop')+' · '+marketplaceState.selectedBackdrops.length;button.dataset.active='true';}
         button.title=marketFilterLabel(key)+(value!==''?' — '+value:'');
     });
     const summary=document.getElementById('market-selection-text');
@@ -160,7 +163,7 @@ function setMarketFilter(key,value) {
     marketplaceState.filters[key]=String(value??'').trim();if(key==='collection')marketplaceState.selectedCollections=value?[String(value)]:[];closeMarketSheet();loadMarketplace();
 }
 function clearMarketFilters() {
-    Object.keys(marketplaceState.filters).forEach(key=>marketplaceState.filters[key]='');marketplaceState.selectedCollections=[];
+    Object.keys(marketplaceState.filters).forEach(key=>marketplaceState.filters[key]='');marketplaceState.selectedCollections=[];marketplaceState.selectedBackdrops=[];
     const search=document.getElementById('market-search');if(search)search.value='';
     closeMarketSheet();loadMarketplace();
 }
@@ -184,15 +187,17 @@ async function openMarketFilter(key) {
     const sheet=document.getElementById('market-sheet'),content=document.getElementById('market-sheet-content'),search=document.getElementById('market-sheet-search');
     if(!sheet||!content||!search) return;
     marketplaceState.sheet=key;marketplaceState.lastFilter=key;sheet.hidden=false;sheet.dataset.kind=key;
-    if(['model','backdrop','symbol'].includes(key)){const selected=marketplaceState.selectedCollections;marketplaceState.traitCollection=selected.length===1?selected[0]:selected.length===0?marketplaceState.filters.collection:'';marketplaceState.traitView=marketplaceState.traitCollection?'traits':'collections';marketplaceState.traitData=null;marketplaceState.traitError='';}
+    if(['model','symbol'].includes(key)){const selected=marketplaceState.selectedCollections;marketplaceState.traitCollection=selected.length===1?selected[0]:selected.length===0?marketplaceState.filters.collection:'';marketplaceState.traitView=marketplaceState.traitCollection?'traits':'collections';marketplaceState.traitData=null;marketplaceState.traitError='';}
     if(key==='collection')marketplaceState.draftCollections=[...marketplaceState.selectedCollections];
+    if(key==='backdrop'){marketplaceState.draftBackdrops=[...marketplaceState.selectedBackdrops];marketplaceState.backdropData=null;marketplaceState.backdropLoading=true;marketplaceState.backdropError='';}
     document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);
     search.value='';search.hidden=['maxPrice','number'].includes(key);
     search.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});
     renderMarketPicker();
     if(key==='collection'&&!marketplaceState.catalog.length) { content.textContent=mt('catalogLoading');try {await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{content.textContent=mt('picturesFailed');} }
-    if(['model','backdrop','symbol'].includes(key)&&marketplaceState.traitCollection)await loadMarketTraits(marketplaceState.traitCollection,key);
-    if(['model','backdrop','symbol'].includes(key)&&!marketplaceState.catalog.length){try{await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{}}
+    if(['model','symbol'].includes(key)&&marketplaceState.traitCollection)await loadMarketTraits(marketplaceState.traitCollection,key);
+    if(['model','symbol'].includes(key)&&!marketplaceState.catalog.length){try{await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{}}
+    if(key==='backdrop')await loadMarketBackdrops();
     search.focus({preventScroll:true});
 }
 function marketPickerSearch() { renderMarketPicker(); }
@@ -211,6 +216,7 @@ function renderMarketPicker() {
         const reset=marketElement('button','market-option',mt('removeFilter'));reset.type='button';reset.onclick=()=>setMarketFilter(key,'');content.append(label,input,apply,reset);return;
     }
     if(key==='collection') { renderMarketCollections(content,query); return; }
+    if(key==='backdrop'){renderMarketBackdrops(content,query);return;}
     renderMarketTraits(content,query);
 }
 async function marketList(id) {
@@ -279,17 +285,18 @@ function renderMarketCollections(content,query){
     const apply=marketElement('button','market-collection-apply',mt('show'));apply.type='button';apply.onclick=()=>{
         const names=[...marketplaceState.draftCollections];marketplaceState.selectedCollections=names;
         marketplaceState.filters.collection=names.length===1?names[0]:'';
-        marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';
+        marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';marketplaceState.selectedBackdrops=[];
         closeMarketSheet();loadMarketplace();
     };footer.append(reset,apply);content.appendChild(footer);
 }
 function updateMarketLanguage(){
-    const pairs={'.market-hero h2':'title','.market-hero p':'subtitle','#market-tab-shop':'shop','#market-tab-mine':'mine','#market-filter-clear':'clear','#market-more':'more','#nav-market-text':'store'};
+    const pairs={'.market-hero h2':'title','.market-hero p':'subtitle','#market-tab-shop':'shop','#market-tab-mine':'mine','#market-filter-clear':'clear','#market-more':'more','#nav-market-text':'store','#nav-home-text':'playHub'};
     Object.entries(pairs).forEach(([selector,key])=>{const element=document.querySelector(selector);if(element)element.textContent=mt(key);});
     const search=document.getElementById('market-search');if(search){search.placeholder=mt('search');search.setAttribute('aria-label',mt('search'));}
     const refresh=document.querySelector('#market-page .market-refresh');if(refresh)refresh.setAttribute('aria-label',mt('refresh'));
     const close=document.querySelector('#market-sheet .market-sheet-close');if(close)close.setAttribute('aria-label',mt('close'));
     const sheetSearch=document.getElementById('market-sheet-search');if(sheetSearch)sheetSearch.setAttribute('aria-label',mt('searchCollection'));
+    const play=document.getElementById('nav-home');if(play)play.setAttribute('aria-label',mt('playHub'));
     renderMarketplace();
     if(marketplaceState.sheet){const key=marketplaceState.sheet;document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);sheetSearch.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});renderMarketPicker();}
 }
@@ -372,6 +379,48 @@ function renderMarketTraits(content,query){
 function applyMarketTrait(key,value,collection){
     const existing=marketplaceState.filters.collection;
     marketplaceState.selectedCollections=[collection];marketplaceState.filters.collection=collection;
-    if(existing!==collection){marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';}
+    if(existing!==collection){marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';marketplaceState.selectedBackdrops=[];}
     setMarketFilter(key,value);
 }
+
+async function loadMarketBackdrops(){
+    const seq=++marketplaceState.backdropRequest;marketplaceState.backdropLoading=true;marketplaceState.backdropError='';renderMarketPicker();
+    const selected=marketplaceState.selectedCollections;
+    const collection=selected.length===1?selected[0]:selected.length===0?marketplaceState.filters.collection:'';
+    const params=new URLSearchParams({kind:'backdrop'});if(collection)params.set('collection',collection);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+    try{const response=await fetch(marketApiUrl('/api/market/traits?'+params),{cache:'no-store',signal:controller.signal});const data=await response.json();if(!response.ok||!data.ok)throw new Error(mt('backdropsUnavailable'));if(seq===marketplaceState.backdropRequest)marketplaceState.backdropData=data;}
+    catch{if(seq===marketplaceState.backdropRequest)marketplaceState.backdropError=mt('backdropsUnavailable');}
+    finally{clearTimeout(timer);if(seq===marketplaceState.backdropRequest){marketplaceState.backdropLoading=false;if(marketplaceState.sheet==='backdrop')renderMarketPicker();}}
+}
+function renderMarketBackdrops(content,query){
+    if(marketplaceState.backdropLoading){content.appendChild(marketElement('p','market-sheet-note',mt('backdropsLoading')));return;}
+    if(marketplaceState.backdropError){content.appendChild(marketElement('p','market-sheet-note',marketplaceState.backdropError));const retry=marketElement('button','market-option',mt('retryModels'));retry.type='button';retry.onclick=loadMarketBackdrops;content.appendChild(retry);return;}
+    const data=marketplaceState.backdropData||{},options=[...(data.traits||[])].sort((a,b)=>a.name==='Black'?-1:b.name==='Black'?1:a.name.localeCompare(b.name,'en'));const selected=new Set(marketplaceState.draftBackdrops),names=options.map(item=>item.name);
+    const header=marketElement('div','market-backdrop-header'),label=marketElement('label','market-select-all'),all=marketElement('input');all.type='checkbox';all.id='market-backdrop-select-all';all.checked=names.length>0&&names.every(name=>selected.has(name));all.indeterminate=selected.size>0&&!all.checked;
+    all.onchange=()=>{marketplaceState.draftBackdrops=all.checked?[...names]:[];renderMarketPicker();};label.append(all,marketElement('span','',mt('all')));header.appendChild(label);content.appendChild(header);
+    const list=marketElement('div','market-backdrop-list');
+    options.filter(item=>String(item.name).toLowerCase().includes(query)).forEach(item=>{
+        const row=marketElement('label','market-backdrop-row');row.dataset.backdrop=item.name;
+        const checkbox=marketElement('input','market-collection-checkbox');checkbox.type='checkbox';checkbox.checked=selected.has(item.name);checkbox.setAttribute('aria-label',mt('selectBackdrop',{name:item.name}));
+        checkbox.onchange=()=>{const values=new Set(marketplaceState.draftBackdrops);if(checkbox.checked)values.add(item.name);else values.delete(item.name);marketplaceState.draftBackdrops=[...values];all.checked=names.every(name=>values.has(name));all.indeterminate=values.size>0&&!all.checked;};
+        const swatch=marketElement('span','market-backdrop-swatch');const color=value=>typeof value==='string'&&/^#[0-9a-fA-F]{6}$/.test(value)?value:null;
+        const center=color(item.centerColor),edge=color(item.edgeColor);if(center&&edge)swatch.style.background='radial-gradient(ellipse at center,'+center+','+edge+')';else swatch.textContent='?';
+        const body=marketElement('span','market-backdrop-name-wrap'),name=marketElement('span','market-trait-name',item.name);name.dataset.i18nPreserve='';body.appendChild(name);
+        const rarity=marketElement('small','market-backdrop-rarity');const r=item.rarityPermille;
+        if(r!=null&&Number.isFinite(Number(r))&&Number(r)>=0&&Number(r)<=1000){rarity.textContent=(Number(r)/10).toLocaleString('en-US',{maximumFractionDigits:2})+'%';rarity.title=mt('rarity');}else{rarity.textContent=mt('rarityUnknown');rarity.dataset.unknown='true';}
+        body.appendChild(rarity);row.append(checkbox,swatch,body);list.appendChild(row);
+    });
+    if(!list.children.length)list.appendChild(marketElement('p','market-sheet-note',mt('notFound')));content.appendChild(list);
+    if(data.rarityScope!=='collection')content.appendChild(marketElement('p','market-price-source',mt(data.collection?'rarityFetchFailed':'rarityScopeNote')));
+    const footer=marketElement('div','market-collection-footer'),reset=marketElement('button','market-collection-reset',mt('reset')),apply=marketElement('button','market-collection-apply',mt('show'));
+    reset.type='button';reset.onclick=()=>{marketplaceState.draftBackdrops=[];document.getElementById('market-sheet-search').value='';renderMarketPicker();};apply.type='button';apply.onclick=()=>{marketplaceState.selectedBackdrops=[...marketplaceState.draftBackdrops];marketplaceState.filters.backdrop=marketplaceState.selectedBackdrops.length===1?marketplaceState.selectedBackdrops[0]:'';closeMarketSheet();loadMarketplace();};footer.append(reset,apply);content.appendChild(footer);
+}
+function initializeMarketplaceShell(){
+    const page=document.getElementById('market-page');if(!page)return;
+    const sync=()=>document.body.classList.toggle('market-mode',page.classList.contains('show'));
+    new MutationObserver(sync).observe(page,{attributes:true,attributeFilter:['class']});sync();
+    if(page.classList.contains('show')&&!marketplaceState.loading)loadMarketplace();
+    const button=document.getElementById('nav-home');if(button)button.setAttribute('aria-label',mt('playHub'));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initializeMarketplaceShell,{once:true});else initializeMarketplaceShell();
