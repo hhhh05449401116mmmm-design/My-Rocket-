@@ -3995,6 +3995,16 @@ app.get('/api/market/catalog', marketplaceGuard, async (req, res) => {
 });
 app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) => {
     try {
+        // Keep the Marketplace inventory in sync with the verified Telegram Business
+        // inbox, just like the Backpack endpoint. Ownership is still assigned only
+        // to the immutable Telegram sender identity by runCollectibleVerificationSweep.
+        // A Telegram outage must not hide collectibles that are already in the database.
+        try {
+            await runCollectibleVerificationSweep();
+        } catch (sweepError) {
+            console.error('Collectible sync error on GET /api/market/items:', sweepError.message);
+        }
+
         const [display, page, ownedRows] = await Promise.all([
             loadMarketplaceDisplayCatalog(),
             getMarketplaceListings({ ...req.query, viewerUserId: req.user.id }),
