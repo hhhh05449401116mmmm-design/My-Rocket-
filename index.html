@@ -8628,9 +8628,7 @@ async function openLootBox(box) {
         let currentRoundId = 0;
         let currentMultiplier = 1.00;
         let displayMultiplier = 1.00; // الرقم الذي يظهر فعلياً على الشاشة (يتحرك بسلاسة)
-        const multiplierRate = 1 / 2.7;
-        let multiplierSampledAt = 0;
-        let previousMultiplierSample = 1.00;
+        let multiplierRate = 1 / 2.7;
         let serverTimeOffset = 0;
         let flightStartedAt = null;
         let crashDisplayUntil = 0;
@@ -9769,26 +9767,13 @@ async function openLootBox(box) {
             const previousPhase = gamePhase;
             flightStartedAt = state.flightStartedAt || null;
             const currentStateMultiplier = Number(state.multiplier) || 1;
-            const sampledAt = performance.now();
-            const multiplierChanged = currentStateMultiplier !== previousMultiplierSample;
-            if (state.phase === "FLIGHT" && (previousPhase !== "FLIGHT" || multiplierChanged)) {
-                // Start each visual interpolation from the value currently shown.
-                // This keeps the number moving forward without ever jumping backward
-                // when a new authoritative server tick arrives.
-                previousMultiplierSample = Math.min(
-                    Math.max(Number(displayMultiplier) || 1, 1),
-                    currentStateMultiplier
-                );
-                multiplierSampledAt = sampledAt;
-            }
+            multiplierRate = Number(state.multiplierRate) > 0 ? Number(state.multiplierRate) : multiplierRate;
             currentMultiplier = currentStateMultiplier;
             if (state.phase === "COUNTDOWN") {
                 if (gamePhase !== "COUNTDOWN") {
                     countdownStartTime = Date.now();
                     countdownDuration = state.seconds * 1000;
                     displayMultiplier = 1.00;
-                    multiplierSampledAt = 0;
-                    previousMultiplierSample = 1.00;
                     document.getElementById("countdown-container").classList.remove("show");
                     document.getElementById("multiplier").classList.remove("flying");
                     document.getElementById("multiplier").classList.remove("crashed");
@@ -9838,8 +9823,6 @@ async function openLootBox(box) {
             if (state.phase === "CRASH") {
                 // Crash is authoritative: never leave the visual number behind the server result.
                 displayMultiplier = currentStateMultiplier;
-                previousMultiplierSample = currentStateMultiplier;
-                multiplierSampledAt = performance.now();
                 gamePhase = "CRASH";
                 document.getElementById("multiplier").className = "multiplier crashed " + historyClass(currentStateMultiplier);
                 document.getElementById("multiplier").textContent = currentStateMultiplier.toFixed(2) + "x";
@@ -10167,7 +10150,7 @@ async function openLootBox(box) {
         function renderFlightMultiplier(timestamp) {
             const refs = getRocketRenderRefs();
             if (!refs.multiplier || !refs.liveSlot) return;
-            if (timestamp - rocketLastUiPaint < 33) return;
+            if (timestamp - rocketLastUiPaint < 16) return;
             rocketLastUiPaint = timestamp;
 
             const colorClass = historyClass(displayMultiplier);
@@ -10213,24 +10196,12 @@ async function openLootBox(box) {
                     ? Math.max((serverNow - flightStartedAt) / 1000, 0)
                     : 0;
 
-                // Smoothly interpolate only toward the latest multiplier confirmed
-                // by the server. Never extrapolate beyond that confirmed value.
-                const targetMultiplier = Math.max(Number(currentMultiplier) || 1, 1);
-                const startMultiplier = Math.min(
-                    Math.max(Number(previousMultiplierSample) || 1, 1),
-                    targetMultiplier
-                );
-                const rawInterpolationProgress = Math.min(
-                    Math.max((performance.now() - multiplierSampledAt) / 1000, 0),
-                    1
-                );
-                // A slightly longer eased transition removes visible stepping
-                // while still never exceeding the latest server-confirmed value.
-                const interpolationProgress = rawInterpolationProgress * rawInterpolationProgress
-                    * (3 - 2 * rawInterpolationProgress);
-                displayMultiplier = Math.min(
-                    targetMultiplier,
-                    startMultiplier + (targetMultiplier - startMultiplier) * interpolationProgress
+                // Keep the visible multiplier on the same server clock and formula
+                // used by Cash Out, instead of pausing between one-second game ticks.
+                const timeMultiplier = Math.round((1 + elapsedSeconds * multiplierRate) * 100) / 100;
+                displayMultiplier = Math.max(
+                    Number(displayMultiplier) || 1,
+                    timeMultiplier
                 );
 
                 renderFlightMultiplier(timestamp);

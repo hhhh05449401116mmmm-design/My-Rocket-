@@ -57,6 +57,14 @@ function calculateCrashAtFromSeed(serverSeed, clientSeed, nonce) {
     return calculateCrashAt(deriveUniform(serverSeed, clientSeed, nonce));
 }
 
+function calculateMultiplierAt(flightStartedAt, now = Date.now(), increasePerSecond = 1 / 2.7) {
+    if (!Number.isFinite(flightStartedAt) || !Number.isFinite(now) || !Number.isFinite(increasePerSecond) || increasePerSecond <= 0) {
+        throw new RangeError('Multiplier timing values must be finite and increasePerSecond must be positive');
+    }
+    const elapsedSeconds = Math.max((now - flightStartedAt) / 1000, 0);
+    return Math.round((1 + elapsedSeconds * increasePerSecond) * 100) / 100;
+}
+
 function shouldAutoCashout(target, multiplier, crashAt) {
     return Number.isFinite(target)
         && Number.isFinite(multiplier)
@@ -91,6 +99,7 @@ module.exports = {
     deriveUniform,
     calculateCrashAt,
     calculateCrashAtFromSeed,
+    calculateMultiplierAt,
     shouldAutoCashout,
     createFairRound,
     verifyFairRound

@@ -29,10 +29,10 @@ async function request(pathname, options = {}) {
     return { response, body: await response.json() };
 }
 
-async function startHighRound() {
+async function startHighRound(minimumCrashAt = 1.01) {
     let state = serverModule.getGameStateSnapshot();
     let round = await database.getRoundByNumber(state.roundId);
-    while (state.phase !== 'COUNTDOWN' || round.crash_at <= 1.01) {
+    while (state.phase !== 'COUNTDOWN' || round.crash_at <= minimumCrashAt) {
         await serverModule.startRound(state.roundId + 1);
         state = serverModule.getGameStateSnapshot();
         round = await database.getRoundByNumber(state.roundId);
@@ -93,6 +93,15 @@ test('HTTP, SSE, fair reveal, auto cashout, and cashout/crash race', async () =>
     await serverModule.launchRound();
     const flight = await request('/api/game/state');
     assert.equal(flight.body.state.phase, 'FLIGHT');
+    assert.equal(flight.body.state.multiplierRate, 1 / 2.7);
+    assert.equal(
+        flight.body.state.multiplier,
+        fair.calculateMultiplierAt(
+            flight.body.state.flightStartedAt,
+            flight.body.state.serverTime,
+            flight.body.state.multiplierRate
+        )
+    );
     assert.equal(flight.body.state.serverSeed, null);
 
     const earlyCashout = await request('/api/cashout/ton', {
@@ -130,13 +139,13 @@ test('HTTP, SSE, fair reveal, auto cashout, and cashout/crash race', async () =>
     assert.equal(autoStored.cashout_multiplier, 1.01);
     await serverModule.crashCurrentRound();
 
-    const raceState = await startHighRound();
+    const raceState = await startHighRound(1.5);
     const raceBet = await request('/api/bet/ton', {
         method: 'POST',
         body: JSON.stringify({ amount: 10 })
     });
     await serverModule.launchRound();
-    serverModule.updateGameState({ multiplier: 1.01 });
+    serverModule.updateGameState({ multiplier: 1.01, flightStartedAt: Date.now() - 1000 });
     const raceResults = await Promise.allSettled([
         request('/api/cashout/ton', {
             method: 'POST',

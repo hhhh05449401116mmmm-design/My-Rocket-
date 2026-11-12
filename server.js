@@ -30,6 +30,7 @@ require('dotenv').config();
 const {
     DEFAULT_CLIENT_SEED,
     createFairRound,
+    calculateMultiplierAt,
     shouldAutoCashout,
     MAX_CRASH_MULTIPLIER
 } = require('./crashFair');
@@ -2182,13 +2183,15 @@ let gameLoopTimer = null;
 let roundTransitionTimer = null;
 
 function getGameStateSnapshot() {
+    const serverTime = Date.now();
     return {
         roundId: currentGameState.roundId,
         phase: currentGameState.phase,
-        multiplier: currentGameState.multiplier,
+        multiplier: getCurrentMultiplier(serverTime),
+        multiplierRate: MULTIPLIER_INCREASE_PER_SECOND,
         seconds: currentGameState.seconds,
         flightStartedAt: currentGameState.flightStartedAt,
-        serverTime: Date.now(),
+        serverTime,
         history: currentGameState.history,
         serverSeedHash: currentGameState.serverSeedHash,
         clientSeed: currentGameState.clientSeed,
@@ -2204,8 +2207,11 @@ function getCurrentRoundId() {
     return currentGameState.roundId;
 }
 
-function getCurrentMultiplier() {
-    return currentGameState.multiplier;
+function getCurrentMultiplier(now = Date.now()) {
+    if (currentGameState.phase !== 'FLIGHT' || !Number.isFinite(currentGameState.flightStartedAt)) {
+        return currentGameState.multiplier;
+    }
+    return calculateMultiplierAt(currentGameState.flightStartedAt, now, MULTIPLIER_INCREASE_PER_SECOND);
 }
 
 function getGamePhase() {
@@ -2378,10 +2384,7 @@ function startGameLoop() {
         gameLoopBusy = true;
         try {
             if (currentGameState.phase === 'FLIGHT') {
-                const flightElapsedSeconds = currentGameState.flightStartedAt
-                    ? (Date.now() - currentGameState.flightStartedAt) / 1000
-                    : 0;
-                const nextMultiplier = Math.round((1 + flightElapsedSeconds * MULTIPLIER_INCREASE_PER_SECOND) * 100) / 100;
+                const nextMultiplier = getCurrentMultiplier();
 
                 if (nextMultiplier >= currentGameState.crashAt) {
                     await processAutoCashouts(currentGameState.crashAt);
@@ -3749,7 +3752,7 @@ app.post('/api/cashout/gift', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Cashout only allowed during FLIGHT' });
         }
 
-        const multiplier = currentGameState.multiplier;
+        const multiplier = getCurrentMultiplier();
         const result = await cashoutBet('GIFT', betId, req.user.id, currentGameState.roundId, multiplier);
         const balance = await getUserBalance(req.user.id);
         await refreshRoundPlayers();
@@ -4892,7 +4895,7 @@ app.post('/api/cashout/ton', authenticate, async (req, res) => {
             return res.status(400).json({ ok: false, error: 'Cashout only allowed during FLIGHT' });
         }
 
-        const multiplier = currentGameState.multiplier;
+        const multiplier = getCurrentMultiplier();
         const result = await cashoutBet('TON', betId, req.user.id, currentGameState.roundId, multiplier);
         const balance = await getUserBalance(req.user.id);
         await refreshRoundPlayers();
