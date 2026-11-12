@@ -10,7 +10,9 @@ const zlib = require('zlib');
 const https = require('https');
 const http = require('http');
 const path = require('path');
-const { createMarketplaceCatalogCache, projectOwnedMarketplaceCollectible } = require('./marketplaceView');
+const { createMarketplaceCatalogCache, projectOwnedMarketplaceCollectible, collectionKey } = require('./marketplaceView');
+const { marketplaceMarketData } = require('./marketplaceMarketData');
+const { marketplaceModelCatalog } = require('./marketplaceModelCatalog');
 // Collectible-only renderer. Lazy loading keeps renderer failures isolated from the game loop.
 let sharpRenderer = undefined;
 function getSharpRenderer() {
@@ -3969,24 +3971,31 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
 
 // ===== Isolated collectible marketplace =====
 // This wrapper shares the existing official catalog loader, bounds HTTP wait time,
-// and negative-caches failures. Item/filter requests never initiate a Telegram refresh.
-const marketplaceOfficialCatalog = createMarketplaceCatalogCache(getTelegramStarGiftCatalog);
+// and negative-caches failures. No per-item verification sweeps or external trades are run.
+const marketplaceOfficialCatalog = createMarketplaceCatalogCache(getTelegramStarGiftCatalog, {includePublicGiftIds:true});
+async function loadMarketplaceDisplayCatalog(){
+    const [official,metadata]=await Promise.all([marketplaceOfficialCatalog.get(),marketplaceModelCatalog.getMetadataCatalog(),marketplaceMarketData.getSnapshot()]);
+    const bindings=[...official,...metadata];
+    const raw=await getMarketplaceCatalog({officialCatalog:bindings});
+    const catalog=await marketplaceMarketData.enrichCatalog(raw,{officialCatalog:bindings});
+    const snapshot=await marketplaceMarketData.getSnapshot();
+    return {catalog,bindings,market:{source:snapshot.source,status:snapshot.status,currentUpdatedAt:snapshot.currentUpdatedAt,previousUpdatedAt:snapshot.previousUpdatedAt,historyStatus:snapshot.historyStatus}};
+}
 function marketplaceGuard(req, res, next) {
     if (!MARKETPLACE_ENABLED) return res.status(503).json({ ok: false, code: 'MARKETPLACE_DISABLED', error: 'Marketplace is temporarily unavailable' });
     next();
 }
 app.get('/api/market/catalog', marketplaceGuard, async (req, res) => {
     try {
-        const officialCatalog = await marketplaceOfficialCatalog.get();
-        const catalog = await getMarketplaceCatalog({ officialCatalog });
+        const {catalog,market}=await loadMarketplaceDisplayCatalog();
         res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, catalog, available: catalog.some(row => row.available), count: catalog.length });
+        res.json({ ok: true, catalog, market, available: catalog.some(row => row.available), count: catalog.length });
     } catch (error) { res.status(500).json({ ok: false, error: error.message }); }
 });
 app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) => {
     try {
-        const [catalog, page, ownedRows] = await Promise.all([
-            getMarketplaceCatalog({ officialCatalog: marketplaceOfficialCatalog.peek() }),
+        const [display, page, ownedRows] = await Promise.all([
+            loadMarketplaceDisplayCatalog(),
             getMarketplaceListings({ ...req.query, viewerUserId: req.user.id }),
             getUserCollectibles(req.user.id, 'OWNED')
         ]);
@@ -3995,9 +4004,26 @@ app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) =>
             .map(row => projectOwnedMarketplaceCollectible(row, buildCollectibleApiRow(row, req)))
             .filter(Boolean);
         res.setHeader('Cache-Control', 'no-store');
-        res.json({ ok: true, catalog, ...page, myCollectibles });
+        res.json({ ok: true, catalog:display.catalog, market:display.market, ...page, myCollectibles });
     }
     catch (error) { res.status(500).json({ ok: false, error: error.message }); }
+});
+app.get('/api/market/traits', marketplaceGuard, async (req,res)=>{
+    const name=req.query.collection,kind=req.query.kind||'model';
+    if(typeof name!=='string'||!name.trim()||name.length>160||!['model','backdrop','symbol'].includes(kind))return res.status(400).json({ok:false,code:'INVALID_MARKET_TRAIT_FILTER'});
+    try{
+        const display=await loadMarketplaceDisplayCatalog();
+        const collection=display.catalog.find(row=>row.key===collectionKey(name));
+        if(!collection)return res.status(404).json({ok:false,code:'MARKET_COLLECTION_NOT_FOUND'});
+        const [page,models]=await Promise.all([getMarketplaceListings({collection:collection.baseName,limit:1}),kind==='model'?marketplaceModelCatalog.getModels(collection.baseName,{officialCatalog:display.bindings}):Promise.resolve(null)]);
+        const counts=page.filters[{model:'modelCounts',backdrop:'backdropCounts',symbol:'symbolCounts'}[kind]]||[];
+        const countMap=new Map(counts.map(row=>[row.name.toLowerCase(),row.count]));
+        const traits=new Map();
+        for(const row of models?.models||[])traits.set(row.name.toLowerCase(),{name:row.name,imageUrl:row.imageUrl,totalIssued:null,count:countMap.get(row.name.toLowerCase())||0});
+        for(const row of counts){if(!traits.has(row.name.toLowerCase()))traits.set(row.name.toLowerCase(),{name:row.name,imageUrl:null,totalIssued:null,count:row.count});}
+        res.setHeader('Cache-Control','no-store');
+        res.json({ok:true,collection:collection.baseName,kind,traits:[...traits.values()].sort((a,b)=>a.name.localeCompare(b.name,'en')),complete:kind==='model'?!!models?.complete:false,source:models?.source||'in-game-active-listings',status:models?.status||'local-only',sourceUpdatedAt:models?.sourceUpdatedAt||null,availabilitySource:'in-game-active-listings'});
+    }catch(error){res.status(503).json({ok:false,code:'MARKET_TRAITS_UNAVAILABLE'});}
 });
 app.post('/api/market/list', authenticate, marketplaceGuard, async (req, res) => {
     try { res.json({ ok: true, listing: await createMarketplaceListing(req.user.id, req.body?.collectibleId, req.body?.priceTon) }); }

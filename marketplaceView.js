@@ -258,7 +258,8 @@ function buildMarketplaceQuery(input = {}) {
             CASE WHEN ug.user_id = ? THEN 1 ELSE 0 END AS is_mine
             ${fromWhere} ORDER BY ml.created_at DESC, ml.id DESC LIMIT ? OFFSET ?`,
         listingParams: [viewerId, ...params, pagination.limit + 1, pagination.offset],
-        traitsSql: `SELECT DISTINCT ${traitSql('model')} AS model, ${traitSql('backdrop')} AS backdrop, ${traitSql('symbol')} AS symbol ${facetFromWhere}`,
+        traitsSql: `SELECT ${BASE_SQL} AS base_name, ${traitSql('model')} AS model, ${traitSql('backdrop')} AS backdrop, ${traitSql('symbol')} AS symbol,
+            COUNT(*) AS count ${facetFromWhere} GROUP BY ${BASE_SQL}, ${traitSql('model')}, ${traitSql('backdrop')}, ${traitSql('symbol')}`,
         numbersSql: `SELECT DISTINCT ${NUMBER_SQL} AS number ${facetFromWhere} AND ${NUMBER_SQL} > 0 ORDER BY number ASC LIMIT 1001`,
         priceRangeSql: `SELECT MIN(ml.price_ton) AS min_price, MAX(ml.price_ton) AS max_price ${facetFromWhere}`
     };
@@ -267,6 +268,14 @@ function buildMarketplacePage(plan, rows, count, traitRows = [], numberRows = []
     const listings = rows.slice(0, plan.pagination.limit).map(projectMarketplaceListing).filter(Boolean);
     const hasMore = rows.length > plan.pagination.limit;
     const facets = field => [...new Set(traitRows.map(row => traitName(row[field])).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en'));
+    const countedFacets = field => {
+        const values = new Map();
+        for (const row of traitRows) {
+            const name=traitName(row[field]);if(!name)continue;
+            values.set(name,(values.get(name)||0)+Math.max(0,Number(row.count)||1));
+        }
+        return [...values].map(([name,count])=>({name,count})).sort((a,b)=>a.name.localeCompare(b.name,'en'));
+    };
     return {
         listings,
         count: Math.max(0, Number(count) || 0),
@@ -274,6 +283,7 @@ function buildMarketplacePage(plan, rows, count, traitRows = [], numberRows = []
         message: Number(count) > 0 ? null : UNAVAILABLE_MESSAGE,
         filters: {
             models: facets('model'), backdrops: facets('backdrop'), symbols: facets('symbol'),
+            modelCounts:countedFacets('model'), backdropCounts:countedFacets('backdrop'), symbolCounts:countedFacets('symbol'),
             numbers: numberRows.slice(0, 1000).map(row => collectibleNumber(row.number)).filter(Boolean),
             numbersHasMore: numberRows.length > 1000,
             minPrice: priceRange.min_price ?? null, maxPrice: priceRange.max_price ?? null
@@ -284,7 +294,7 @@ function buildMarketplacePage(plan, rows, count, traitRows = [], numberRows = []
     };
 }
 
-function createMarketplaceCatalogCache(load, { now = Date.now, timeoutMs = 4000, ttlMs = 15 * 60 * 1000, failureTtlMs = 5 * 60 * 1000 } = {}) {
+function createMarketplaceCatalogCache(load, { now = Date.now, timeoutMs = 4000, ttlMs = 15 * 60 * 1000, failureTtlMs = 5 * 60 * 1000, includePublicGiftIds = false } = {}) {
     let cached = [], retryAt = 0, pending = null;
     return {
         peek: () => cached,
@@ -299,7 +309,11 @@ function createMarketplaceCatalogCache(load, { now = Date.now, timeoutMs = 4000,
                         new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Marketplace catalog timeout')), timeoutMs); })
                     ]);
                     if (!Array.isArray(gifts) || !gifts.length) throw new Error('Empty marketplace catalog');
-                    cached = gifts.map(gift => ({ title: text(gift.title || gift.name) })).filter(gift => gift.title);
+                    cached = gifts.map(gift => {
+                        const entry={title:text(gift.title||gift.name)},id=String(gift.giftId??gift.id??'');
+                        if(includePublicGiftIds&&/^\d{1,25}$/.test(id))entry.giftId=id;
+                        return entry;
+                    }).filter(gift => gift.title);
                     if (!cached.length) throw new Error('No marketplace gift titles');
                     retryAt = now() + ttlMs;
                 } catch {

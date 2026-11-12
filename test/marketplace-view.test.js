@@ -250,3 +250,27 @@ test('collection volume is an explicit aggregate of real in-game orders, not sto
     const empty=catalog.find(row=>row.key==='plushpepe');assert.equal(empty.volumeTon,0);assert.equal(empty.minPriceTon,null);
     assertPublic(catalog);
 });
+
+
+test('model API merges full external metadata with actual eligible local offer counts including zero',async()=>{
+    const market=require('../marketplaceMarketData').marketplaceMarketData;
+    const model=require('../marketplaceModelCatalog').marketplaceModelCatalog;
+    const originals={snapshot:market.getSnapshot,enrich:market.enrichCatalog,metadata:model.getMetadataCatalog,models:model.getModels};
+    const balance=await database.getUserBalance(viewer.id);
+    try{
+        market.getSnapshot=async()=>({source:'test-external-market',status:'fresh',currentUpdatedAt:'2026-11-12T10:00:00.000Z',previousUpdatedAt:'2026-11-11T10:00:00.000Z',historyStatus:'ready'});
+        market.enrichCatalog=async catalog=>catalog.map(row=>({...row,marketFloorTon:row.key==='plushpepe'?10:null,marketChange24hPct:row.key==='plushpepe'?2:null}));
+        model.getMetadataCatalog=async()=>[{title:'Plush Pepe',giftId:'5936013938331222567'}];
+        model.getModels=async()=>({complete:true,source:'test-full-catalog',status:'available',models:[{name:'Golden',imageUrl:'https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Golden.png'},{name:'Midas Pepe',imageUrl:'https://cdn.changes.tg/gifts/models/Plush%20Pepe/png/Midas%20Pepe.png'}]});
+        const result=await request('/api/market/traits?collection=Plush%20Pepe&kind=model',false);
+        assert.equal(result.status,200);assert.equal(result.data.complete,true);
+        assert.equal(result.data.traits.find(row=>row.name==='Golden').count,126);
+        assert.equal(result.data.traits.find(row=>row.name==='Midas Pepe').count,0);
+        assert.equal(result.data.traits.find(row=>row.name==='Silver').count,1);
+        assert.ok(result.data.traits.every(row=>row.totalIssued===null));assertPublic(result.data);
+        const catalog=await request('/api/market/catalog',false);assert.equal(catalog.data.catalog.find(row=>row.key==='plushpepe').marketFloorTon,10);
+        assert.equal(await database.getUserBalance(viewer.id),balance);
+        assert.equal((await request('/api/market/traits?collection[]=PlushPepe',false)).status,400);
+        assert.equal((await request('/api/market/traits?collection=NotARealGift',false)).status,404);
+    }finally{market.getSnapshot=originals.snapshot;market.enrichCatalog=originals.enrich;model.getMetadataCatalog=originals.metadata;model.getModels=originals.models;}
+});

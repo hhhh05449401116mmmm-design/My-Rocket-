@@ -4,7 +4,7 @@ let marketplaceState = {
     tab: 'shop', catalog: [], listings: [], collectibles: [], selectedCollections:[], draftCollections:[], collectionSort:{key:'name',direction:1},
     filters: { collection:'', model:'', backdrop:'', symbol:'', maxPrice:'', number:'', search:'' },
     options: { models:[], backdrops:[], symbols:[] }, nextOffset:0, hasMore:false,
-    sheet:null, catalogLoadedAt:0, imageMap:{}, loading:false, error:'', request:0, controller:null, debounce:null
+    sheet:null, traitCollection:'', traitView:'collections', traitData:null, traitLoading:false, traitError:'', traitRequest:0, traitCache:new Map(), marketInfo:{}, catalogLoadedAt:0, imageMap:{}, loading:false, error:'', request:0, controller:null, debounce:null
 };
 function marketLanguage(){ try { if(typeof currentLanguage!=='undefined'&&['ar','en','ru'].includes(currentLanguage))return currentLanguage; } catch {} return localStorage.getItem('rocketLanguage')||'ar'; }
 function mt(key,args={}) { const dict=window.MARKET_TEXT||{};return String(dict[marketLanguage()]?.[key]||dict.ar?.[key]||key).replace(/\{(\w+)\}/g,(all,k)=>args[k]??all); }
@@ -60,8 +60,8 @@ function selectMarketTab(tab) {
     const tools=document.getElementById('market-tools'); if(tools) tools.hidden=marketplaceState.tab==='mine';
     closeMarketSheet(); renderMarketplace();
 }
-async function loadMarketCatalog() {
-    if(marketplaceState.catalog.length&&Date.now()-marketplaceState.catalogLoadedAt<15*60*1000) return;
+async function loadMarketCatalog(force=false) {
+    if(!force&&marketplaceState.catalog.length&&Date.now()-marketplaceState.catalogLoadedAt<60*1000) return;
     try {
         const [response,images]=await Promise.all([
             fetch(marketApiUrl('/api/market/catalog'),{cache:'no-store'}),
@@ -70,7 +70,7 @@ async function loadMarketCatalog() {
         marketplaceState.imageMap=images||{};
         const data=await response.json();
         if(!response.ok||!data.ok) throw new Error(data.error||mt('catalogFailed'));
-        marketplaceState.catalog=data.catalog||[]; marketplaceState.catalogLoadedAt=Date.now();
+        marketplaceState.catalog=data.catalog||[]; marketplaceState.marketInfo=data.market||{};marketplaceState.catalogLoadedAt=Date.now();
     } catch(error) { if(!marketplaceState.catalog.length) throw error; }
 }
 async function loadMarketplace(append=false) {
@@ -173,17 +173,26 @@ function closeMarketSheet() {
     marketplaceState.sheet=null;
     const button=document.getElementById('market-filter-'+marketplaceState.lastFilter);if(button)button.focus({preventScroll:true});
 }
+function ensureMarketPortal(){
+    const sheet=document.getElementById('market-sheet');if(!sheet)return;
+    let root=document.getElementById('market-modal-root');if(!root){root=marketElement('div');root.id='market-modal-root';document.body.appendChild(root);}
+    if(sheet.parentElement!==root)root.appendChild(sheet);
+}
 async function openMarketFilter(key) {
     if(!['collection','model','backdrop','symbol','maxPrice','number'].includes(key)) return;
+    ensureMarketPortal();
     const sheet=document.getElementById('market-sheet'),content=document.getElementById('market-sheet-content'),search=document.getElementById('market-sheet-search');
     if(!sheet||!content||!search) return;
     marketplaceState.sheet=key;marketplaceState.lastFilter=key;sheet.hidden=false;sheet.dataset.kind=key;
+    if(['model','backdrop','symbol'].includes(key)){const selected=marketplaceState.selectedCollections;marketplaceState.traitCollection=selected.length===1?selected[0]:selected.length===0?marketplaceState.filters.collection:'';marketplaceState.traitView=marketplaceState.traitCollection?'traits':'collections';marketplaceState.traitData=null;marketplaceState.traitError='';}
     if(key==='collection')marketplaceState.draftCollections=[...marketplaceState.selectedCollections];
     document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);
     search.value='';search.hidden=['maxPrice','number'].includes(key);
     search.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});
     renderMarketPicker();
     if(key==='collection'&&!marketplaceState.catalog.length) { content.textContent=mt('catalogLoading');try {await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{content.textContent=mt('picturesFailed');} }
+    if(['model','backdrop','symbol'].includes(key)&&marketplaceState.traitCollection)await loadMarketTraits(marketplaceState.traitCollection,key);
+    if(['model','backdrop','symbol'].includes(key)&&!marketplaceState.catalog.length){try{await loadMarketCatalog();if(marketplaceState.sheet===key)renderMarketPicker();}catch{}}
     search.focus({preventScroll:true});
 }
 function marketPickerSearch() { renderMarketPicker(); }
@@ -202,13 +211,7 @@ function renderMarketPicker() {
         const reset=marketElement('button','market-option',mt('removeFilter'));reset.type='button';reset.onclick=()=>setMarketFilter(key,'');content.append(label,input,apply,reset);return;
     }
     if(key==='collection') { renderMarketCollections(content,query); return; }
-    const optionKey={model:'models',backdrop:'backdrops',symbol:'symbols'}[key];
-    const options=(marketplaceState.options[optionKey]||[]).map(value=>typeof value==='object'?value.name:value).filter(Boolean);
-    content.appendChild(marketElement('p','market-sheet-note',mt('traitsNote')));
-    const all=marketElement('button','market-option',mt('allOptions'));all.type='button';all.onclick=()=>setMarketFilter(key,'');content.appendChild(all);
-    options.filter(value=>String(value).toLowerCase().includes(query)).forEach(value=>{const button=marketElement('button','market-option',value);button.type='button';button.onclick=()=>setMarketFilter(key,value);content.appendChild(button);});
-    if(query) {const exact=marketElement('button','market-sheet-apply',mt('searchExact',{name:search.value.trim()}));exact.type='button';exact.onclick=()=>setMarketFilter(key,search.value);content.appendChild(exact);}
-    if(!options.length) content.appendChild(marketElement('p','market-sheet-note',mt('noTraits')));
+    renderMarketTraits(content,query);
 }
 async function marketList(id) {
     const price=prompt(mt('listPrice'));if(!price||!Number.isFinite(Number(price))||Number(price)<=0)return;
@@ -255,7 +258,7 @@ function renderMarketCollections(content,query){
     const sort=marketplaceState.collectionSort;
     items.sort((a,b)=>{
         if(sort.key==='name')return String(a.baseName||a.name).localeCompare(String(b.baseName||b.name),'en');
-        const field=sort.key==='floor'?'minPriceTon':'volumeTon';const av=a[field],bv=b[field];
+        const field=sort.key==='floor'?'marketFloorTon':'volumeTon';const av=a[field],bv=b[field];
         if(av==null&&bv!=null)return 1;if(bv==null&&av!=null)return -1;
         return ((Number(av)||0)-(Number(bv)||0))*sort.direction;
     });
@@ -265,12 +268,13 @@ function renderMarketCollections(content,query){
         checkbox.onchange=()=>{const values=new Set(marketplaceState.draftCollections);if(checkbox.checked)values.add(name);else values.delete(name);marketplaceState.draftCollections=[...values];const all=document.getElementById('market-select-all');all.checked=names.every(n=>values.has(n));all.indeterminate=values.size>0&&!all.checked;row.dataset.selected=String(checkbox.checked);};
         row.dataset.selected=String(checkbox.checked);row.append(checkbox,marketArtwork(item),marketElement('span','market-collection-name',name));
         const metrics=marketElement('div','market-collection-metrics');
-        const floor=marketElement('div','market-collection-floor');floor.title=mt('floor')+' · '+mt('shop');const floorMetric=marketMetric(item.minPriceTon,'floor');floor.append(floorMetric);
+        const floor=marketElement('div','market-collection-floor');floor.title=marketPriceTitle(item);const floorMetric=marketMetric(item.marketFloorTon,'floor');floor.append(floorMetric);const change=marketElement('small','market-price-change');const pct=item.marketChange24hPct;if(pct!=null&&Number.isFinite(Number(pct))){change.textContent=(Number(pct)>0?'+':'')+Number(pct).toFixed(2)+'%';change.dataset.trend=Number(pct)>0?'up':Number(pct)<0?'down':'flat';change.title=mt('change24h');}else{change.textContent='—';change.title=mt('changeMissing');}floor.appendChild(change);
         const volume=marketElement('div','market-collection-volume');volume.title=mt('volume')+' · '+mt('shop');const volumeMetric=marketMetric(item.volumeTon,'volume');volume.append(volumeMetric);
         metrics.append(floor,volume);row.appendChild(metrics);list.appendChild(row);
     });
     if(!items.length)list.appendChild(marketElement('p','market-sheet-note',mt('notFound')));
     content.appendChild(list);
+    const source=marketElement('p','market-price-source',marketSummary());content.appendChild(source);
     const footer=marketElement('div','market-collection-footer');const reset=marketElement('button','market-collection-reset',mt('reset'));reset.type='button';reset.onclick=()=>{marketplaceState.draftCollections=[];marketplaceState.collectionSort={key:'name',direction:1};document.getElementById('market-sheet-search').value='';renderMarketPicker();};
     const apply=marketElement('button','market-collection-apply',mt('show'));apply.type='button';apply.onclick=()=>{
         const names=[...marketplaceState.draftCollections];marketplaceState.selectedCollections=names;
@@ -284,9 +288,90 @@ function updateMarketLanguage(){
     Object.entries(pairs).forEach(([selector,key])=>{const element=document.querySelector(selector);if(element)element.textContent=mt(key);});
     const search=document.getElementById('market-search');if(search){search.placeholder=mt('search');search.setAttribute('aria-label',mt('search'));}
     const refresh=document.querySelector('#market-page .market-refresh');if(refresh)refresh.setAttribute('aria-label',mt('refresh'));
-    const close=document.querySelector('#market-page .market-sheet-close');if(close)close.setAttribute('aria-label',mt('close'));
+    const close=document.querySelector('#market-sheet .market-sheet-close');if(close)close.setAttribute('aria-label',mt('close'));
     const sheetSearch=document.getElementById('market-sheet-search');if(sheetSearch)sheetSearch.setAttribute('aria-label',mt('searchCollection'));
     renderMarketplace();
     if(marketplaceState.sheet){const key=marketplaceState.sheet;document.getElementById('market-sheet-title').textContent=key==='collection'?mt('collection'):marketFilterLabel(key);sheetSearch.placeholder=key==='collection'?mt('searchCollection'):mt('searchOptions',{name:marketFilterLabel(key)});renderMarketPicker();}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateMarketLanguage,{once:true});else updateMarketLanguage();
+
+function marketPriceTitle(item){
+    const time=item.marketUpdatedAt?new Date(item.marketUpdatedAt):null;
+    const updated=time&&Number.isFinite(time.getTime())?time.toLocaleString(marketLanguage()==='ar'?'ar':marketLanguage()==='ru'?'ru-RU':'en-GB'):mt('notAvailable');
+    return mt('externalFloor')+' · '+mt('updated',{time:updated})+(item.marketPriceStatus==='stale'?' · '+mt('stalePrice'):'');
+}
+function marketSummary(){
+    const latest=marketplaceState.catalog.find(item=>item.marketUpdatedAt);
+    if(!latest)return mt('marketUnavailable');
+    const time=new Date(latest.marketUpdatedAt);
+    const text=mt('priceSource')+' · '+mt('updated',{time:time.toLocaleTimeString(marketLanguage()==='ar'?'ar':marketLanguage()==='ru'?'ru-RU':'en-GB',{hour:'2-digit',minute:'2-digit'})})+' · '+mt('change24h');
+    return text+(latest.marketPriceStatus==='stale'?' · '+mt('stalePrice'):'');
+}
+function refreshMarketCollectionSheet(){
+    if(marketplaceState.sheet!=='collection')return;
+    const scroll=document.querySelector('#market-sheet .market-collection-list')?.scrollTop||0;
+    renderMarketPicker();const list=document.querySelector('#market-sheet .market-collection-list');if(list)list.scrollTop=scroll;
+}
+setInterval(()=>{
+    if(document.hidden)return;
+    const visible=marketplaceState.sheet==='collection'||document.getElementById('market-page')?.classList.contains('show');
+    if(visible)loadMarketCatalog().then(refreshMarketCollectionSheet).catch(()=>{});
+},60000);
+
+async function loadMarketTraits(collection,kind,force=false){
+    const seq=++marketplaceState.traitRequest,key=kind+'|'+collection;
+    marketplaceState.traitCollection=collection;marketplaceState.traitView='traits';marketplaceState.traitLoading=true;marketplaceState.traitError='';
+    marketplaceState.traitData=null;document.getElementById('market-sheet-search').value='';renderMarketPicker();
+    try{
+        const cache=marketplaceState.traitCache.get(key);
+        let data=cache&&Date.now()-cache.loadedAt<60000&&!force?cache.data:null;
+        if(!data){const params=new URLSearchParams({collection,kind});const response=await fetch(marketApiUrl('/api/market/traits?'+params),{cache:'no-store'});data=await response.json();if(!response.ok||!data.ok)throw new Error(mt('modelsUnavailable'));marketplaceState.traitCache.set(key,{data,loadedAt:Date.now()});}
+        if(seq!==marketplaceState.traitRequest||marketplaceState.sheet!==kind)return;
+        marketplaceState.traitData=data;
+    }catch(error){if(seq===marketplaceState.traitRequest)marketplaceState.traitError=mt('modelsUnavailable');}
+    finally{if(seq===marketplaceState.traitRequest){marketplaceState.traitLoading=false;if(marketplaceState.sheet===kind)renderMarketPicker();}}
+}
+function renderMarketTraits(content,query){
+    const key=marketplaceState.sheet,search=document.getElementById('market-sheet-search');
+    if(marketplaceState.traitView==='collections'){
+        if(search)search.placeholder=mt('searchCollection');
+        content.appendChild(marketElement('p','market-sheet-note',mt(key==='model'?'chooseModelCollection':'chooseTraitCollection')));
+        const selected=marketplaceState.selectedCollections;
+        const scope=selected.length&&selected.length<marketplaceState.catalog.length?marketplaceState.catalog.filter(item=>selected.includes(item.baseName||item.name)):marketplaceState.catalog;
+        const list=marketElement('div','market-trait-collections');
+        scope.filter(item=>String(item.baseName||item.name).toLowerCase().includes(query)).forEach(item=>{
+            const name=item.baseName||item.name,button=marketElement('button','market-trait-collection');button.type='button';button.dataset.collection=name;button.appendChild(marketArtwork(item));
+            const body=marketElement('span','market-trait-collection-body');const title=marketElement('span','market-trait-name',name);title.dataset.i18nPreserve='';body.append(title,marketElement('small','',mt('localOffers',{count:item.listingCount||0})));button.appendChild(body);
+            button.onclick=()=>loadMarketTraits(name,key);list.appendChild(button);
+        });
+        if(!list.children.length)list.appendChild(marketElement('p','market-sheet-note',mt('notFound')));
+        content.appendChild(list);return;
+    }
+    if(search)search.placeholder=key==='model'?mt('modelSearch'):mt('searchOptions',{name:marketFilterLabel(key)});
+    const back=marketElement('button','market-trait-back',mt('backCollections'));back.type='button';back.onclick=()=>{++marketplaceState.traitRequest;marketplaceState.traitView='collections';marketplaceState.traitCollection='';marketplaceState.traitData=null;marketplaceState.traitLoading=false;search.value='';renderMarketPicker();};content.appendChild(back);
+    const collection=marketElement('h4','market-trait-collection-title',marketplaceState.traitCollection);collection.dataset.i18nPreserve='';content.appendChild(collection);
+    content.appendChild(marketElement('p','market-sheet-note market-counts-note',mt('countsMeaning')));
+    if(marketplaceState.traitLoading){content.appendChild(marketElement('p','market-sheet-note',mt(key==='model'?'modelsLoading':'attributesLoading')));return;}
+    if(marketplaceState.traitError){content.appendChild(marketElement('p','market-sheet-note',marketplaceState.traitError));const retry=marketElement('button','market-option',mt('retryModels'));retry.type='button';retry.onclick=()=>loadMarketTraits(marketplaceState.traitCollection,key,true);content.appendChild(retry);return;}
+    const data=marketplaceState.traitData||{},options=data.traits||[];
+    if(data.complete===false)content.appendChild(marketElement('p','market-sheet-note market-partial-warning',mt('modelsIncomplete')));
+    const all=marketElement('button','market-option',mt(key==='model'?'clearModels':'clearAttributes'));all.type='button';all.onclick=()=>applyMarketTrait(key,'',marketplaceState.traitCollection);content.appendChild(all);
+    const list=marketElement('div','market-trait-list');
+    options.filter(item=>String(item.name||'').toLowerCase().includes(query)).forEach(item=>{
+        const button=marketElement('button','market-trait-option');button.type='button';button.dataset.model=item.name;
+        if(item.imageUrl){const art=marketElement('div','market-model-art'),image=marketElement('img');image.alt=item.name;image.loading='lazy';image.decoding='async';const src=marketSafeImage(item.imageUrl);if(src){image.src=src;image.onerror=()=>art.remove();art.appendChild(image);button.appendChild(art);}}
+        const body=marketElement('div','market-trait-option-body');const label=marketElement('span','market-trait-name',item.name);label.dataset.i18nPreserve='';body.appendChild(label);
+        body.appendChild(marketElement('small','market-trait-count',mt('modelOffers',{count:Number(item.count)||0})));
+        if(item.totalIssued!=null&&Number.isSafeInteger(Number(item.totalIssued))&&Number(item.totalIssued)>=0)body.appendChild(marketElement('small','market-trait-issued',mt('issuedCount',{count:Number(item.totalIssued)})));
+        button.appendChild(body);if(item.marketFloorTon!=null)button.appendChild(marketMetric(item.marketFloorTon));button.onclick=()=>applyMarketTrait(key,item.name,marketplaceState.traitCollection);list.appendChild(button);
+    });
+    if(!list.children.length)list.appendChild(marketElement('p','market-sheet-note',mt('notFound')));
+    content.appendChild(list);
+    if(query){const exact=marketElement('button','market-sheet-apply',mt('searchExact',{name:search.value.trim()}));exact.type='button';exact.onclick=()=>applyMarketTrait(key,search.value.trim(),marketplaceState.traitCollection);content.appendChild(exact);}
+}
+function applyMarketTrait(key,value,collection){
+    const existing=marketplaceState.filters.collection;
+    marketplaceState.selectedCollections=[collection];marketplaceState.filters.collection=collection;
+    if(existing!==collection){marketplaceState.filters.model='';marketplaceState.filters.backdrop='';marketplaceState.filters.symbol='';}
+    setMarketFilter(key,value);
+}
