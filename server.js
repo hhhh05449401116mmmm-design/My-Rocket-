@@ -358,6 +358,12 @@ const {
     startPvpCountdown,
     getPvpRoundWithParticipants,
     getLastPvpRoundNumber,
+    getMarketplaceCatalog,
+    getMarketplaceListings,
+    createMarketplaceListing,
+    cancelMarketplaceListing,
+    buyMarketplaceListing,
+    recordMarketplaceInstantSale,
     crashPvpRound,
     joinPvpRound,
     cashoutPvpBet,
@@ -424,6 +430,8 @@ const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || null;
 // TEST BALANCE: opt-in fake balance for QA only. Disabled by default.
 // When disabled, the test_balance field is never read or written for gameplay.
 const ENABLE_TEST_BALANCE = process.env.ENABLE_TEST_BALANCE === 'true';
+// Marketplace is additive and can be disabled instantly without affecting games.
+const MARKETPLACE_ENABLED = process.env.MARKETPLACE_ENABLED !== 'false';
 
 const TON_CONNECT_PROOF_DOMAIN = process.env.TON_CONNECT_PROOF_DOMAIN || 'my-rocket.vercel.app';
 const TON_CONNECT_PROOF_NETWORK = process.env.TON_CONNECT_PROOF_NETWORK || '-239';
@@ -3957,6 +3965,44 @@ app.post('/api/collectibles/sell', authenticate, async (req, res) => {
     } catch (error) {
         res.status(400).json({ ok: false, error: error.message });
     }
+});
+
+// ===== Isolated collectible marketplace =====
+function marketplaceGuard(req, res, next) {
+    if (!MARKETPLACE_ENABLED) return res.status(503).json({ ok: false, code: 'MARKETPLACE_DISABLED', error: 'Marketplace is temporarily unavailable' });
+    next();
+}
+app.get('/api/market/items', authenticate, marketplaceGuard, async (req, res) => {
+    try { res.json({ ok: true, catalog: await getMarketplaceCatalog(), listings: await getMarketplaceListings(req.query.limit) }); }
+    catch (error) { res.status(500).json({ ok: false, error: error.message }); }
+});
+app.post('/api/market/list', authenticate, marketplaceGuard, async (req, res) => {
+    try { res.json({ ok: true, listing: await createMarketplaceListing(req.user.id, req.body?.collectibleId, req.body?.priceTon) }); }
+    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
+});
+app.post('/api/market/cancel', authenticate, marketplaceGuard, async (req, res) => {
+    try { res.json(await cancelMarketplaceListing(req.user.id, req.body?.listingId)); }
+    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
+});
+app.post('/api/market/buy', authenticate, marketplaceGuard, async (req, res) => {
+    try { res.json({ ok: true, order: await buyMarketplaceListing(req.user.id, req.body?.listingId) }); }
+    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
+});
+app.post('/api/market/instant-sell', authenticate, marketplaceGuard, async (req, res) => {
+    try {
+        const { collectibleId } = req.body || {};
+        const collectible = await getCollectibleByUniqueId(collectibleId);
+        if (!collectible || collectible.user_id !== req.user.id || collectible.ownership_status !== 'OWNED') throw new Error('Collectible not found or unavailable');
+        const metadata = parseCollectibleMetadata(collectible);
+        const live = await refreshVerifiedCollectibleMarketValue({ uniqueCollectibleId: collectible.unique_collectible_id, verifiedMetadata: collectible.verified_metadata, telegramGiftModel: { telegramGiftId: collectible.telegram_gift_id || metadata.telegramGiftId || metadata.baseName || collectible.name, slug: collectible.unique_collectible_id } }, collectible.user_gift_id);
+        const marketValue = Number(live?.value ?? collectible.collectible_market_value ?? collectible.value ?? 0);
+        const sellRate = Number(process.env.COLLECTIBLE_SELL_RATE || '0.89');
+        if (!Number.isFinite(marketValue) || marketValue <= 0 || !Number.isFinite(sellRate) || sellRate <= 0 || sellRate > 1) throw new Error('No valid valuation is available');
+        const saleTon = Number((marketValue * sellRate).toFixed(9));
+        const result = await sellCollectibleForBalance(req.user.id, collectibleId, saleTon);
+        await recordMarketplaceInstantSale(req.user.id, collectibleId, marketValue, saleTon);
+        res.json({ ok: true, collectibleId, valuationTon: marketValue, saleTon, balance: result.balance });
+    } catch (error) { res.status(400).json({ ok: false, error: error.message }); }
 });
 
 app.get('/api/channel-subscription/status', authenticate, async (req, res) => {

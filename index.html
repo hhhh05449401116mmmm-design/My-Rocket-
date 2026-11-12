@@ -2598,6 +2598,27 @@
         .empty-players { padding: 17px 0; text-align: center; color: #3a5a7a; font-size: 11px; }
 
         /* =========================================================
+        /* Isolated marketplace page */
+        .market-page { display:none; padding:16px 14px 120px; }
+        .market-page.show { display:block; }
+        .market-hero { padding:18px; border-radius:22px; background:linear-gradient(145deg,#241847,#11152b); border:1px solid rgba(164,119,255,.35); }
+        .market-hero h2 { margin:0 0 5px; color:#fff; font-size:25px; }
+        .market-hero p { margin:0; color:#b9afd4; font-size:12px; }
+        .market-tabs { display:flex; gap:8px; margin:12px 0; }
+        .market-tab { flex:1; border:1px solid rgba(255,255,255,.12); color:#cfc6e8; background:#181828; border-radius:12px; padding:10px 6px; font-weight:800; }
+        .market-tab.active { color:#fff; background:linear-gradient(135deg,#7d4cff,#c35cff); }
+        .market-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .market-card { min-width:0; padding:10px; border-radius:16px; background:rgba(24,24,38,.92); border:1px solid rgba(255,255,255,.10); }
+        .market-card img { width:100%; height:92px; object-fit:contain; border-radius:10px; background:#11121b; }
+        .market-card h3 { margin:7px 0 3px; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .market-card p { margin:0 0 7px; color:#a8a3b8; font-size:11px; }
+        .market-price { color:#ffd75a; font-weight:900; font-size:13px; }
+        .market-action { width:100%; margin-top:8px; border:0; border-radius:10px; padding:9px 6px; background:#ffd23f; color:#211600; font-weight:900; font-size:11px; }
+        .market-action.secondary { background:#28283b; color:#e8dfff; border:1px solid rgba(255,255,255,.12); }
+        .market-empty { grid-column:1/-1; text-align:center; padding:30px 10px; color:#aaa4b9; }
+        .market-nav-button { background:linear-gradient(145deg,#7d4cff,#c34dff) !important; color:#fff !important; border:1px solid rgba(255,255,255,.28) !important; box-shadow:0 0 18px rgba(176,73,255,.32); }
+        .market-nav-button .nav-icon svg { stroke:#fff; }
+
            BOTTOM NAV - PREMIUM GEM BUTTONS
         ========================================================= */
         .bottom-nav {
@@ -6004,6 +6025,12 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
         <!-- =========================================================
            EARNINGS / WITHDRAW PAGE
         ========================================================= -->
+        <div id="market-page" class="market-page">
+            <div class="market-hero"><h2>🛍️ متجر المقتنيات</h2><p>اشترِ مقتنيات Telegram أو اعرض مقتناك للبيع داخل اللعبة.</p></div>
+            <div class="market-tabs"><button class="market-tab active" id="market-tab-shop" onclick="selectMarketTab('shop')">السوق</button><button class="market-tab" id="market-tab-mine" onclick="selectMarketTab('mine')">مقتنياتي</button></div>
+            <div id="market-status" class="market-empty">جارٍ تحميل المتجر...</div>
+            <div id="market-grid" class="market-grid"></div>
+        </div>
         <div id="top-page" class="top-page">
             <div class="weekly-leaderboard-hero">
                 <div class="weekly-leaderboard-title-row">
@@ -6349,6 +6376,9 @@ body.pvp-open .bottom-nav { z-index:35; bottom:calc(10px + max(env(safe-area-ins
            BOTTOM NAV - 5 GEM BUTTONS
         ========================================================= -->
         <nav class="bottom-nav">
+            <button id="nav-market" class="nav-button market-nav-button" type="button" onclick="showPage('market')" aria-label="المتجر">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9h16l-1 11H5L4 9Z"/><path d="M8 9a4 4 0 0 1 8 0M3 9h18"/></svg></span><span>Store</span>
+            </button>
             <button id="nav-gifts-btn" class="nav-button gem-emerald" type="button" onclick="showPage('gifts')">
                 <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7M2 8h20v4H2zM12 8v13M7.5 8A2.5 2.5 0 1 1 10 5.5V8M16.5 8A2.5 2.5 0 1 0 14 5.5V8"/></svg></span>
                 <span id="nav-gifts-text">Gifts</span>
@@ -12107,7 +12137,7 @@ function activeNavigationOverlay() {
 }
 function telegramCanGoBack() {
   if (activeNavigationOverlay() || pvpHistoryIsOpen()) return true;
-  for (const id of ['profile-page', 'gifts-page', 'earn-page', 'top-page']) if (navigationVisible(id, 'show')) return true;
+  for (const id of ['profile-page', 'gifts-page', 'earn-page', 'top-page', 'market-page']) if (navigationVisible(id, 'show')) return true;
   for (const id of ['rocket-game', 'playhub-screen', 'mines-game', 'plinko-game', 'dice-game', 'crafts-game', 'pvp-game', 'upgrade-game', 'lottery-game']) if (navigationVisible(id)) return true;
   return false;
 }
@@ -12157,6 +12187,16 @@ function initializeTelegramNavigation() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeTelegramNavigation, { once: true });
 else initializeTelegramNavigation();
 
+        let marketplaceState = { tab: 'shop', catalog: [], listings: [], collectibles: [] };
+        function selectMarketTab(tab) { marketplaceState.tab = tab === 'mine' ? 'mine' : 'shop'; document.querySelectorAll('.market-tab').forEach(b => b.classList.toggle('active', b.id === 'market-tab-' + marketplaceState.tab)); renderMarketplace(); }
+        async function loadMarketplace() { const status=document.getElementById('market-status'); if(status)status.textContent='جارٍ تحميل المتجر...'; try { const [a,b]=await Promise.all([fetch(BACKEND_URL+'/api/market/items',{headers:getAuthHeaders(),cache:'no-store'}),fetch(BACKEND_URL+'/api/collectibles',{headers:getAuthHeaders(),cache:'no-store'})]); const m=await a.json(),g=await b.json(); if(!a.ok||!m.ok)throw new Error(m.error||'تعذر تحميل المتجر'); marketplaceState.catalog=m.catalog||[];marketplaceState.listings=m.listings||[];marketplaceState.collectibles=g.collectibles||[];renderMarketplace(); } catch(e) { if(status)status.textContent=e.message||'تعذر تحميل المتجر'; } }
+        function marketImage(item){return item.image_url||item.imageUrl||'/assets/gift-icon.svg';}
+        function renderMarketplace(){const grid=document.getElementById('market-grid'),status=document.getElementById('market-status');if(!grid||!status)return;grid.replaceChildren();const owned=marketplaceState.collectibles.filter(x=>['OWNED','WON'].includes(String(x.status||x.ownershipStatus||'').toUpperCase()));const items=marketplaceState.tab==='mine'?owned:marketplaceState.listings;status.textContent=marketplaceState.tab==='mine'?(items.length?'مقتنياتك — يمكنك عرضها أو بيعها فورًا':'لا توجد مقتنيات موثقة في حقيبتك'):(items.length?'عروض اللاعبين المتاحة للشراء':'لا توجد عروض حاليًا — يمكنك بيع مقتناك من تبويب مقتنياتي');if(!items.length){grid.innerHTML='<div class="market-empty">'+escapeHtml(status.textContent)+'</div>';return;}items.forEach(item=>{const card=document.createElement('article');card.className='market-card';const id=item.uniqueCollectibleId||item.unique_collectible_id||'';const price=Number(item.price_ton??item.marketValue??item.value??0);card.innerHTML='<img src="'+escapeHtmlAttribute(marketImage(item))+'" alt=""><h3>'+escapeHtml(item.name||item.giftName||'Telegram collectible')+'</h3><p>'+escapeHtml(item.collection||item.collectionName||'Telegram')+'</p><div class="market-price">'+price.toFixed(2)+' TON</div>';if(marketplaceState.tab==='mine'){const l=document.createElement('button');l.className='market-action';l.textContent='عرض للبيع';l.onclick=()=>marketList(id);card.appendChild(l);const x=document.createElement('button');x.className='market-action secondary';x.textContent='بيع فوري بالتقييم';x.onclick=()=>marketInstantSell(id);card.appendChild(x);}else{const b=document.createElement('button');b.className='market-action';b.textContent='شراء';b.onclick=()=>marketBuy(item.id);card.appendChild(b);}grid.appendChild(card);});}
+        async function marketList(id){const p=prompt('أدخل سعر العرض بـ TON:');if(!p||!Number.isFinite(Number(p))||Number(p)<=0)return;await marketAction('/api/market/list',{collectibleId:id,priceTon:Number(p)},'تم عرض المقتنى للبيع');}
+        async function marketBuy(id){if(!confirm('تأكيد شراء هذا المقتنى؟'))return;await marketAction('/api/market/buy',{listingId:id},'تم الشراء وإضافة المقتنى إلى حقيبتك');}
+        async function marketInstantSell(id){if(!confirm('سيتم البيع بالتقييم الذي تحدده اللعبة. متابعة؟'))return;await marketAction('/api/market/instant-sell',{collectibleId:id},'تم البيع الفوري وإضافة TON إلى رصيدك');}
+        async function marketAction(path,body,success){try{const r=await fetch(BACKEND_URL+path,{method:'POST',headers:getAuthHeaders(),body:JSON.stringify(body)}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||'فشلت العملية');showToast(success);await loadMarketplace();if(typeof fetchBalance==='function')fetchBalance();}catch(e){showToast(e.message||'فشلت العملية');}}
+
         function showPage(page) {
             if (pvpState && pvpState.active) { stopPvpTimer(); closePvpBetModal(); }
             try { setHomeBannerAudioEnabled(false); } catch (e) {}
@@ -12173,6 +12213,7 @@ else initializeTelegramNavigation();
             document.getElementById("gifts-page").classList.remove("show");
             document.getElementById("earn-page").classList.remove("show");
             document.getElementById("top-page").classList.remove("show");
+            document.getElementById("market-page").classList.remove("show");
             if (page === "home") {
                 document.getElementById("nav-home").classList.add("active");
                 document.getElementById("game-hub").classList.remove("hidden");
@@ -12191,6 +12232,10 @@ else initializeTelegramNavigation();
                 renderCollectibles();
                 fetchCollectibles();
                 document.getElementById("gifts-page").classList.add("show");
+            } else if (page === "market") {
+                document.getElementById("nav-market").classList.add("active");
+                document.getElementById("market-page").classList.add("show");
+                loadMarketplace();
             } else if (page === "earn") {
                 document.getElementById("nav-earn").classList.add("active");
                 document.getElementById("earn-page").classList.add("show");

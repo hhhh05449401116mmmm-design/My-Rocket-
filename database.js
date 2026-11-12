@@ -229,6 +229,39 @@ function initDatabase() {
                 )
             `);
 
+            // ===== 3.1M متجر المقتنيات المعزول =====
+            // Additive marketplace tables; no existing game table is changed.
+            db.run(`CREATE TABLE IF NOT EXISTS market_listings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                collectible_id TEXT NOT NULL UNIQUE,
+                seller_user_id INTEGER NOT NULL,
+                price_ton REAL NOT NULL CHECK(price_ton > 0),
+                status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','SOLD','CANCELLED')),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                sold_at DATETIME,
+                FOREIGN KEY (seller_user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`);
+            db.run(`CREATE TABLE IF NOT EXISTS market_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                listing_id INTEGER NOT NULL,
+                collectible_id TEXT NOT NULL,
+                seller_user_id INTEGER NOT NULL,
+                buyer_user_id INTEGER NOT NULL,
+                price_ton REAL NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (listing_id) REFERENCES market_listings(id)
+            )`);
+            db.run(`CREATE TABLE IF NOT EXISTS market_instant_sales (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                collectible_id TEXT NOT NULL,
+                seller_user_id INTEGER NOT NULL,
+                valuation_ton REAL NOT NULL,
+                sale_ton REAL NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_market_listings_status ON market_listings(status, created_at)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_market_orders_buyer ON market_orders(buyer_user_id, created_at)`);
+
             // ===== 3.2 جدول الهدايا (المرجع الرئيسي) =====
             db.run(`
                 CREATE TABLE IF NOT EXISTS gifts (
@@ -4198,6 +4231,58 @@ async function getLastPvpRoundNumber() {
     return row.max ? row.max : 0;
 }
 
+
+// =========================================================
+// Isolated collectible marketplace
+// =========================================================
+async function getMarketplaceCatalog() {
+    return await query(`SELECT id, telegram_gift_id, name, image_url, collection, rarity, value, total_supply FROM gifts ORDER BY value DESC, name ASC`);
+}
+async function getMarketplaceListings(limit = 60) {
+    return await query(`SELECT ml.id, ml.collectible_id, ml.seller_user_id, ml.price_ton, ml.created_at,
+        g.name, g.image_url, g.collection, g.rarity, COALESCE(ug.market_value, g.value) AS market_value
+        FROM market_listings ml JOIN user_gifts ug ON ug.unique_collectible_id = ml.collectible_id
+        JOIN gifts g ON g.id = ug.gift_id WHERE ml.status = 'ACTIVE' AND ug.status = 'OWNED' AND ug.ownership_verified = 1
+        ORDER BY ml.created_at DESC LIMIT ?`, [Math.min(Math.max(Number(limit) || 60, 1), 100)]);
+}
+async function createMarketplaceListing(userId, collectibleId, priceTon) {
+    const price = Number(priceTon);
+    if (!collectibleId || !Number.isFinite(price) || price <= 0) throw new Error('Invalid listing');
+    return await transaction(async () => {
+        const collectible = await get(`SELECT * FROM user_gifts WHERE user_id = ? AND unique_collectible_id = ? AND ownership_verified = 1 AND status = 'OWNED'`, [userId, collectibleId]);
+        if (!collectible) throw new Error('Collectible not found or unavailable');
+        const existing = await get(`SELECT id FROM market_listings WHERE collectible_id = ? AND status = 'ACTIVE'`, [collectibleId]);
+        if (existing) throw new Error('Collectible is already listed');
+        const result = await run(`INSERT INTO market_listings (collectible_id, seller_user_id, price_ton) VALUES (?, ?, ?)`, [collectibleId, userId, Number(price.toFixed(9))]);
+        return await get(`SELECT * FROM market_listings WHERE id = ?`, [result.lastID]);
+    });
+}
+async function cancelMarketplaceListing(userId, listingId) {
+    const result = await run(`UPDATE market_listings SET status = 'CANCELLED' WHERE id = ? AND seller_user_id = ? AND status = 'ACTIVE'`, [listingId, userId]);
+    if (result.changes !== 1) throw new Error('Listing not found');
+    return { ok: true };
+}
+async function buyMarketplaceListing(userId, listingId) {
+    return await transaction(async () => {
+        const listing = await get(`SELECT * FROM market_listings WHERE id = ? AND status = 'ACTIVE'`, [listingId]);
+        if (!listing) throw new Error('Listing is no longer available');
+        if (Number(listing.seller_user_id) === Number(userId)) throw new Error('You cannot buy your own listing');
+        const collectible = await get(`SELECT * FROM user_gifts WHERE unique_collectible_id = ? AND user_id = ? AND ownership_verified = 1 AND status = 'OWNED'`, [listing.collectible_id, listing.seller_user_id]);
+        if (!collectible) throw new Error('Collectible is no longer available');
+        const debit = await run(`UPDATE users SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND balance >= ?`, [listing.price_ton, userId, listing.price_ton]);
+        if (debit.changes !== 1) throw new Error('Insufficient balance');
+        await run(`UPDATE users SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [listing.price_ton, listing.seller_user_id]);
+        await run(`UPDATE user_gifts SET user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND status = 'OWNED'`, [userId, collectible.id, listing.seller_user_id]);
+        const updated = await run(`UPDATE market_listings SET status = 'SOLD', sold_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'ACTIVE'`, [listingId]);
+        if (updated.changes !== 1) throw new Error('Listing changed during purchase');
+        await run(`INSERT INTO market_orders (listing_id, collectible_id, seller_user_id, buyer_user_id, price_ton) VALUES (?, ?, ?, ?, ?)`, [listingId, listing.collectible_id, listing.seller_user_id, userId, listing.price_ton]);
+        return { listingId, collectibleId: listing.collectible_id, priceTon: listing.price_ton, balance: await getUserBalance(userId) };
+    });
+}
+async function recordMarketplaceInstantSale(userId, collectibleId, valuationTon, saleTon) {
+    return await run(`INSERT INTO market_instant_sales (collectible_id, seller_user_id, valuation_ton, sale_ton) VALUES (?, ?, ?, ?)`, [collectibleId, userId, valuationTon, saleTon]);
+}
+
 module.exports = {
     // اتصال قاعدة البيانات
     db,
@@ -4349,6 +4434,12 @@ module.exports = {
     crashPvpRound,
     getPvpRoundWithParticipants,
     getLastPvpRoundNumber,
+    getMarketplaceCatalog,
+    getMarketplaceListings,
+    createMarketplaceListing,
+    cancelMarketplaceListing,
+    buyMarketplaceListing,
+    recordMarketplaceInstantSale,
     MAX_PVP_PLAYERS,
     calculateParticipationPercent
 };
