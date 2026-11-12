@@ -13,6 +13,13 @@ function marketElement(tag, className, text) {
     return element;
 }
 function marketApiUrl(path) { return (typeof BACKEND_URL==='string' ? BACKEND_URL : '') + path; }
+function marketAuthHeaders() {
+    // The original auth variable is initialized by Telegram bootstrap; never fabricate a session.
+    try { if(typeof getAuthHeaders==='function') return getAuthHeaders(); } catch { /* Outside Telegram: use an existing stored session only. */ }
+    let token='';
+    try { token=localStorage.getItem('authToken')||''; } catch { /* Storage unavailable. */ }
+    return { 'Content-Type':'application/json', ...(token?{Authorization:'Bearer '+token}:{}) };
+}
 function marketSafeImage(value) {
     if(typeof value!=='string'||!value.trim()) return '';
     try {
@@ -76,7 +83,7 @@ async function loadMarketplace(append=false) {
     try {
         const params=new URLSearchParams({limit:'40',offset:String(append?marketplaceState.nextOffset:0)});
         Object.entries(marketplaceState.filters).forEach(([key,value])=>{if(value!=='') params.set(key,String(value));});
-        const response=await fetch(marketApiUrl('/api/market/items?'+params),{headers:getAuthHeaders(),cache:'no-store',signal:controller.signal});
+        const response=await fetch(marketApiUrl('/api/market/items?'+params),{headers:marketAuthHeaders(),cache:'no-store',signal:controller.signal});
         const data=await response.json();
         if(seq!==marketplaceState.request) return;
         if(!response.ok||!data.ok) throw new Error(response.status===401?'افتح اللعبة من Telegram لعرض المقتنيات والشراء.':data.error||'تعذر تحميل المتجر');
@@ -224,7 +231,7 @@ async function marketInstantSell(id) {
 }
 async function marketAction(path,body,success) {
     try {
-        const response=await fetch(marketApiUrl(path),{method:'POST',headers:getAuthHeaders(),body:JSON.stringify(body)}),data=await response.json();
+        const response=await fetch(marketApiUrl(path),{method:'POST',headers:marketAuthHeaders(),body:JSON.stringify(body)}),data=await response.json();
         if(!response.ok||!data.ok)throw new Error(data.error||'فشلت العملية');
         showToast(success);await loadMarketplace();if(typeof fetchBalance==='function')await fetchBalance();
     } catch(error) {showToast(error.message||'فشلت العملية');}
